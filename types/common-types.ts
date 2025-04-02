@@ -9,6 +9,7 @@ export interface ProfileFormData {
   name: string
   phone: string
   profile_photo?: string | null
+  email: string
 }
 
 export interface BankDetailsFormData {

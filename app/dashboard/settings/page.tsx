@@ -18,10 +18,11 @@ import { useDatabaseSetup } from "@/hooks/use-database-setup"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import type { ProfileFormData, BankDetailsFormData } from "@/types"
 import { Skeleton } from "@/components/ui/skeleton"
+import { useQueryState } from "nuqs"
 
 export default function SettingsPage() {
   const router = useRouter()
-  const { user, isLoading: authLoading } = useAuth()
+  const { user } = useAuth()
   const {
     profile,
     isLoading: profileLoading,
@@ -31,69 +32,61 @@ export default function SettingsPage() {
     updateProfilePhoto,
     updateBankDetails,
   } = useProfile(user?.id)
-  const { isReady, missingTables, error: dbError } = useDatabaseSetup()
+
+  const [activeTab, setActiveTab] = useQueryState("tab", {
+    defaultValue: "profile",
+    parse: (value) => value,
+    serialize: (value) => value,
+  })
+
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [activeTab, setActiveTab] = useState("profile")
-  const [profileData, setProfileData] = useState<ProfileFormData>({
-    name: "",
-    phone: "",
-  })
-  const [bankData, setBankData] = useState<BankDetailsFormData>({
-    accountNumber: "",
-    bankName: "",
-    accountName: "",
-  })
   const fileInputRef = useRef<HTMLInputElement>(null)
-
-  // Database error message
-  const databaseError =
-    dbError || profileError || (!isReady ? `Missing database tables: ${missingTables.join(", ")}` : null)
-
-  useEffect(() => {
-    // Get the tab from URL if present
-    const params = new URLSearchParams(window.location.search)
-    const tab = params.get("tab")
-    if (tab) {
-      setActiveTab(tab)
-    }
-  }, [])
-
-  useEffect(() => {
-    if (profile) {
-      setProfileData({
-        name: profile.full_name || "",
-        phone: profile.phone || "",
-      })
-
-      setBankData({
-        accountNumber: profile.account_number || "",
-        bankName: profile.bank_name || "",
-        accountName: profile.account_name || "",
-      })
-    }
-  }, [profile])
 
   const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
-    setProfileData((prev) => ({ ...prev, [name]: value }))
+    const updatedProfile: ProfileFormData = {
+      name: name === 'full_name' ? value : profile?.full_name || '',
+      email: profile?.email || '',
+      phone: name === 'phone' ? value : profile?.phone || ''
+    }
+    updateProfile(updatedProfile)
   }
 
   const handleBankChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
-    setBankData((prev) => ({ ...prev, [name]: value }))
+    const bankDetails: BankDetailsFormData = {
+      accountNumber: name === 'accountNumber' ? value : profile?.account_number || '',
+      bankName: name === 'bankName' ? value : profile?.bank_name || '',
+      accountName: name === 'accountName' ? value : profile?.account_name || ''
+    }
+    updateBankDetails(bankDetails)
   }
 
   const handleProfileSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
-    await updateProfile(profileData)
+    if (profile) {
+      const profileFormData: ProfileFormData = {
+        name: profile.full_name || '',
+        email: profile.email || '',
+        phone: profile.phone || ''
+      }
+      await updateProfile(profileFormData)
+    }
     setIsSubmitting(false)
   }
 
   const handleBankSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
-    await updateBankDetails(bankData)
+    if (profile) {
+      const bankDetails: BankDetailsFormData = {
+        accountNumber: profile.account_number || '',
+        bankName: profile.bank_name || '',
+        accountName: profile.account_name || ''
+      }
+      await updateBankDetails(bankDetails)
+    }
     setIsSubmitting(false)
   }
 
@@ -110,8 +103,8 @@ export default function SettingsPage() {
 
   // Get initials for avatar fallback
   const getInitials = () => {
-    if (profileData.name) {
-      return profileData.name
+    if (profile?.full_name) {
+      return profile.full_name
         .split(" ")
         .map((n) => n[0])
         .join("")
@@ -129,7 +122,7 @@ export default function SettingsPage() {
   }
 
   // Show skeleton while either auth or profile is loading
-  if (authLoading || profileLoading) {
+  if (profileLoading) {
     return (
       <div className="space-y-6">
         <div>
@@ -223,13 +216,6 @@ export default function SettingsPage() {
         <p className="text-muted-foreground">Manage your account settings and payment details.</p>
       </div>
 
-      {databaseError && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Database Error</AlertTitle>
-          <AlertDescription>{databaseError} Please follow the database setup instructions.</AlertDescription>
-        </Alert>
-      )}
 
       <Tabs defaultValue={activeTab} className="space-y-4" onValueChange={setActiveTab}>
         <TabsList>
@@ -250,7 +236,7 @@ export default function SettingsPage() {
                 <div className="flex flex-col items-center space-y-4">
                   <div className="relative">
                     <Avatar className="h-24 w-24 cursor-pointer" onClick={handlePhotoClick}>
-                      <AvatarImage src={profile?.profile_photo || ""} alt={profileData.name || user?.email || ""} />
+                      <AvatarImage src={profile?.profile_photo || ""} alt={profile?.full_name || user?.email || ""} />
                       <AvatarFallback className="text-lg">{getInitials()}</AvatarFallback>
                     </Avatar>
                     <div
@@ -286,16 +272,16 @@ export default function SettingsPage() {
                   <Label htmlFor="name">Full Name</Label>
                   <Input
                     id="name"
-                    name="name"
+                    name="full_name"
                     placeholder="Your full name"
-                    value={profileData.name}
+                    value={profile?.full_name || ""}
                     onChange={handleProfileChange}
                   />
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
-                  <Input id="email" name="email" type="email" value={user?.email || ""} disabled className="bg-muted" />
+                  <Input id="email" name="email" type="email" value={profile?.email || ""} disabled className="bg-muted" />
                   <p className="text-xs text-muted-foreground">Your email cannot be changed.</p>
                 </div>
 
@@ -305,13 +291,13 @@ export default function SettingsPage() {
                     id="phone"
                     name="phone"
                     placeholder="Your phone number"
-                    value={profileData.phone}
+                    value={profile?.phone || ""}
                     onChange={handleProfileChange}
                   />
                 </div>
               </CardContent>
               <CardFooter>
-                <Button type="submit" disabled={isSubmitting || profileLoading || !!databaseError}>
+                <Button type="submit" disabled={isSubmitting || profileLoading}>
                   {isSubmitting ? (
                     <>
                       <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
@@ -340,7 +326,7 @@ export default function SettingsPage() {
                     id="accountNumber"
                     name="accountNumber"
                     placeholder="Your Nigerian bank account number"
-                    value={bankData.accountNumber}
+                    value={profile?.account_number || ""}
                     onChange={handleBankChange}
                     required
                   />
@@ -352,7 +338,7 @@ export default function SettingsPage() {
                     id="bankName"
                     name="bankName"
                     placeholder="Your bank name"
-                    value={bankData.bankName}
+                    value={profile?.bank_name || ""}
                     onChange={handleBankChange}
                     required
                   />
@@ -364,7 +350,7 @@ export default function SettingsPage() {
                     id="accountName"
                     name="accountName"
                     placeholder="Name on your bank account"
-                    value={bankData.accountName}
+                    value={profile?.account_name || ""}
                     onChange={handleBankChange}
                     required
                   />
@@ -388,7 +374,7 @@ export default function SettingsPage() {
                 </div>
               </CardContent>
               <CardFooter>
-                <Button type="submit" disabled={isSubmitting || profileLoading || !!databaseError}>
+                <Button type="submit" disabled={isSubmitting || profileLoading}>
                   {isSubmitting ? (
                     <>
                       <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />

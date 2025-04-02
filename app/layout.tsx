@@ -1,11 +1,9 @@
-import type React from "react"
 import type { Metadata } from "next/types"
 import { Inter } from "next/font/google"
 import "./globals.css"
 import { Toaster } from "@/components/ui/toaster"
-import { ThemeProvider } from "@/components/theme-provider"
 import { Header } from "@/components/header"
-import { NuqsAdapter } from 'nuqs/adapters/next/app'
+import { Providers } from "./providers"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -23,12 +21,11 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-          <NuqsAdapter>
-            <div className="flex min-h-screen flex-col">
-              <Header />
-              <main className="flex-1">{children}</main>
-              <footer className="border-t py-6">
+        <Providers>
+          <div className="flex min-h-screen flex-col">
+            <Header />
+            <main className="flex-1">{children}</main>
+            <footer className="border-t py-6">
               <div className="container flex flex-col items-center justify-between gap-4 md:flex-row">
                 <p className="text-center text-sm text-muted-foreground md:text-left">
                   &copy; {new Date().getFullYear()} Refreeg. All rights reserved.
@@ -37,13 +34,10 @@ export default function RootLayout({
             </footer>
           </div>
           <Toaster />
-          </NuqsAdapter>
-        </ThemeProvider>
+        </Providers>
       </body>
     </html>
   )
 }
-
-
 
 import './globals.css'
