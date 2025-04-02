@@ -17,10 +17,11 @@ import { useProfile } from "@/hooks/use-profile"
 import { useDatabaseSetup } from "@/hooks/use-database-setup"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import type { ProfileFormData, BankDetailsFormData } from "@/types"
+import { Skeleton } from "@/components/ui/skeleton"
 
 export default function SettingsPage() {
   const router = useRouter()
-  const { user } = useAuth()
+  const { user, isLoading: authLoading } = useAuth()
   const {
     profile,
     isLoading: profileLoading,
@@ -119,12 +120,100 @@ export default function SettingsPage() {
     }
     return user?.email
       ? user.email
-          .split("@")[0]
-          .split(".")
-          .map((n: any[]) => n[0])
-          .join("")
-          .toUpperCase()
+        .split("@")[0]
+        .split(".")
+        .map((n: any[]) => n[0])
+        .join("")
+        .toUpperCase()
       : "U"
+  }
+
+  // Show skeleton while either auth or profile is loading
+  if (authLoading || profileLoading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <Skeleton className="h-9 w-48" />
+          <Skeleton className="h-5 w-64 mt-2" />
+        </div>
+
+        <Tabs defaultValue={activeTab} className="space-y-4" onValueChange={setActiveTab}>
+          <TabsList>
+            <TabsTrigger value="profile">Profile</TabsTrigger>
+            <TabsTrigger value="bank">Bank Details</TabsTrigger>
+            <TabsTrigger value="notifications">Notifications</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="profile">
+            <Card>
+              <CardHeader>
+                <Skeleton className="h-6 w-24" />
+                <Skeleton className="h-4 w-48 mt-2" />
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="flex flex-col items-center space-y-4">
+                  <Skeleton className="h-24 w-24 rounded-full" />
+                  <Skeleton className="h-10 w-32" />
+                </div>
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-16" />
+                  <Skeleton className="h-10 w-full" />
+                </div>
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-16" />
+                  <Skeleton className="h-10 w-full" />
+                </div>
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-16" />
+                  <Skeleton className="h-10 w-full" />
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Skeleton className="h-10 w-32" />
+              </CardFooter>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="bank">
+            <Card>
+              <CardHeader>
+                <Skeleton className="h-6 w-32" />
+                <Skeleton className="h-4 w-64 mt-2" />
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-10 w-full" />
+                </div>
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-10 w-full" />
+                </div>
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-28" />
+                  <Skeleton className="h-10 w-full" />
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Skeleton className="h-10 w-32" />
+              </CardFooter>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="notifications">
+            <Card>
+              <CardHeader>
+                <Skeleton className="h-6 w-32" />
+                <Skeleton className="h-4 w-48 mt-2" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-4 w-64" />
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
+    )
   }
 
   return (
@@ -327,155 +416,7 @@ export default function SettingsPage() {
         </TabsContent>
       </Tabs>
 
-      {databaseError && (
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle>Database Setup Instructions</CardTitle>
-            <CardDescription>
-              Run the following SQL in your Supabase SQL Editor to create the required tables
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <pre className="bg-muted p-4 rounded-md overflow-auto text-sm">
-              {`-- Create profiles table
-CREATE TABLE public.profiles (
-  id UUID REFERENCES auth.users(id) PRIMARY KEY,
-  full_name TEXT,
-  phone TEXT,
-  account_number TEXT,
-  bank_name TEXT,
-  account_name TEXT,
-  profile_photo TEXT,
-  is_blocked BOOLEAN DEFAULT false,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
-);
 
--- Create causes table
-CREATE TABLE public.causes (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID REFERENCES auth.users(id) NOT NULL,
-  title TEXT NOT NULL,
-  description TEXT NOT NULL,
-  category TEXT NOT NULL,
-  goal DECIMAL NOT NULL,
-  raised DECIMAL DEFAULT 0,
-  status TEXT DEFAULT 'pending',
-  rejection_reason TEXT,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
-  image TEXT
-);
-
--- Create donations table
-CREATE TABLE public.donations (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  cause_id UUID REFERENCES public.causes(id) NOT NULL,
-  user_id UUID REFERENCES auth.users(id),
-  amount DECIMAL NOT NULL,
-  name TEXT,
-  email TEXT NOT NULL,
-  message TEXT,
-  is_anonymous BOOLEAN DEFAULT false,
-  status TEXT DEFAULT 'completed',
-  receipt_url TEXT,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
-);
-
--- Create roles table
-CREATE TABLE public.roles (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID REFERENCES auth.users(id) NOT NULL,
-  role TEXT NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
-);
-
--- Set up Row Level Security (RLS)
-ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.causes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.donations ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.roles ENABLE ROW LEVEL SECURITY;
-
--- Create policies for profiles
-CREATE POLICY "Users can view their own profile" 
-  ON public.profiles FOR SELECT 
-  USING (auth.uid() = id);
-
-CREATE POLICY "Users can update their own profile" 
-  ON public.profiles FOR UPDATE 
-  USING (auth.uid() = id);
-
-CREATE POLICY "Users can insert their own profile" 
-  ON public.profiles FOR INSERT 
-  WITH CHECK (auth.uid() = id);
-
--- Create policies for causes
-CREATE POLICY "Anyone can view approved causes" 
-  ON public.causes FOR SELECT 
-  USING (status = 'approved' OR auth.uid() = user_id);
-
-CREATE POLICY "Users can insert their own causes" 
-  ON public.causes FOR INSERT 
-  WITH CHECK (auth.uid() = user_id);
-
-CREATE POLICY "Users can update their own causes" 
-  ON public.causes FOR UPDATE 
-  USING (auth.uid() = user_id);
-
--- Create policies for donations
-CREATE POLICY "Anyone can view donations for approved causes" 
-  ON public.donations FOR SELECT 
-  USING (EXISTS (
-    SELECT 1 FROM public.causes 
-    WHERE causes.id = donations.cause_id 
-    AND (causes.status = 'approved' OR causes.user_id = auth.uid())
-  ));
-
-CREATE POLICY "Anyone can insert donations" 
-  ON public.donations FOR INSERT 
-  WITH CHECK (true);
-
--- Create policies for roles
-CREATE POLICY "Admins can manage roles" 
-  ON public.roles 
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.roles 
-      WHERE roles.user_id = auth.uid() 
-      AND roles.role = 'admin'
-    )
-  );
-
-CREATE POLICY "Users can view their own role" 
-  ON public.roles FOR SELECT 
-  USING (user_id = auth.uid());
-
--- Create function to update cause raised amount when donation is added
-CREATE OR REPLACE FUNCTION update_cause_raised_amount()
-RETURNS TRIGGER AS $$
-BEGIN
-  UPDATE public.causes
-  SET raised = raised + NEW.amount
-  WHERE id = NEW.cause_id;
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
--- Create trigger to update cause raised amount
-CREATE TRIGGER update_cause_raised_amount_trigger
-AFTER INSERT ON public.donations
-FOR EACH ROW
-EXECUTE FUNCTION update_cause_raised_amount();`}
-            </pre>
-          </CardContent>
-          <CardFooter>
-            <p className="text-sm text-muted-foreground">
-              After running this SQL, refresh this page to continue setting up your profile.
-            </p>
-          </CardFooter>
-        </Card>
-      )}
     </div>
   )
 }

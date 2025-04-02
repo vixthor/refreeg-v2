@@ -8,8 +8,8 @@ import type {
   ToastProps,
 } from "@/components/ui/toast"
 
-const TOAST_LIMIT = 3
-const TOAST_REMOVE_DELAY = 5000
+const TOAST_LIMIT = 2
+const TOAST_REMOVE_DELAY = 3000
 
 type ToasterToast = ToastProps & {
   id: string
@@ -144,7 +144,8 @@ type Toast = Omit<ToasterToast, "id">
 
 function toast({ ...props }: Toast) {
   const id = genId()
-  console.log("Creating toast with props:", props)
+
+ 
 
   const update = (props: ToasterToast) =>
     dispatch({
@@ -160,7 +161,8 @@ function toast({ ...props }: Toast) {
       id,
       open: true,
       onOpenChange: (open) => {
-        console.log("Toast open state changed:", open)
+
+      
         if (!open) dismiss()
       },
     },
@@ -175,7 +177,6 @@ function toast({ ...props }: Toast) {
 
 function useToast() {
   const [state, setState] = React.useState<State>(memoryState)
-  console.log("Current toast state:", state)
 
   React.useEffect(() => {
     listeners.push(setState)

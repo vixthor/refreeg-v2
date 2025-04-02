@@ -39,7 +39,7 @@ export function Header() {
             >
               How It Works
             </Link>
-            {!isLoading && user && (
+            {/* {!isLoading && user && (
               <Link
                 href="/dashboard"
                 className={`text-sm font-medium transition-colors hover:text-secondary flex items-center ${
@@ -51,7 +51,7 @@ export function Header() {
                 <LayoutDashboard className="mr-1 h-4 w-4" />
                 Dashboard
               </Link>
-            )}
+            )} */}
             {/* Add Admin Dashboard link if user has admin/manager access */}
             {!isLoading && !adminLoading && user && isAdminOrManager && (
               <Link

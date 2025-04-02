@@ -10,8 +10,7 @@ const DEFAULT_ADMIN_EMAIL = "kingraj1344@gmail.com"
  * Check if a user is an admin
  */
 export async function isAdmin(userId: string): Promise<boolean> {
-  const supabase = await
-    createClient()
+  const supabase = await createClient()
 
 
   // Check if the user has an admin role
@@ -34,8 +33,7 @@ export async function isAdmin(userId: string): Promise<boolean> {
  * Check if a user is a manager
  */
 export async function isManager(userId: string): Promise<boolean> {
-  const supabase = await
-    createClient()
+  const supabase = await createClient()
 
 
   // Check if the user has a manager role
@@ -58,8 +56,7 @@ export async function isManager(userId: string): Promise<boolean> {
  * Check if a user is an admin or manager
  */
 export async function isAdminOrManager(userId: string): Promise<boolean> {
-  const supabase = await
-    createClient()
+  const supabase = await createClient()
 
 
   // Check if the user has an admin or manager role
@@ -82,8 +79,7 @@ export async function isAdminOrManager(userId: string): Promise<boolean> {
  * Get a user's role
  */
 export async function getUserRole(userId: string): Promise<UserRole> {
-  const supabase = await
-    createClient()
+  const supabase = await createClient()
 
 
   // Check if the user has a role
@@ -101,8 +97,7 @@ export async function getUserRole(userId: string): Promise<UserRole> {
  * Set a user's role
  */
 export async function setUserRole(userId: string, role: UserRole): Promise<boolean> {
-  const supabase = await
-    createClient()
+  const supabase = await createClient()
 
 
   // Check if the user already has a role
@@ -142,8 +137,7 @@ export async function setUserRole(userId: string, role: UserRole): Promise<boole
  * List all users with their roles
  */
 export async function listUsersWithRoles(): Promise<UserWithRole[]> {
-  const supabase = await
-    createClient()
+  const supabase = await createClient()
 
 
   // Get all users
@@ -200,40 +194,31 @@ export async function listUsersWithRoles(): Promise<UserWithRole[]> {
  * Ensure default admin exists
  */
 export async function ensureDefaultAdmin(): Promise<void> {
-  const supabase = await
-    createClient()
+  const supabase = await createClient()
 
-
-  // Find the user with the default admin email
-  const { data: userData, error: userError } = await supabase.auth.admin.listUsers()
+  // Get the current user
+  const { data: { user }, error: userError } = await supabase.auth.getUser()
 
   if (userError) {
-    console.error("Error listing users:", userError)
+    console.error("Error getting current user:", userError)
     return
   }
 
-  const adminUser = userData.users.find((user) => user.email === DEFAULT_ADMIN_EMAIL)
+  // If the current user's email matches the default admin email, set them as admin
+  if (user?.email === DEFAULT_ADMIN_EMAIL) {
+    // Check if the user already has an admin role
+    const { data: roleData } = await supabase
+      .from("roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .eq("role", "admin")
+      .maybeSingle()
 
-  if (!adminUser) {
-    console.log("Default admin user not found")
-    return
+    if (!roleData) {
+      // Set the user as an admin
+      await setUserRole(user.id, "admin")
+      console.log(`Set ${DEFAULT_ADMIN_EMAIL} as admin`)
+    }
   }
-
-  // Check if the user already has an admin role
-  const { data: roleData } = await supabase
-    .from("roles")
-    .select("role")
-    .eq("user_id", adminUser.id)
-    .eq("role", "admin")
-    .maybeSingle()
-
-  if (roleData) {
-    // User is already an admin
-    return
-  }
-
-  // Set the user as an admin
-  await setUserRole(adminUser.id, "admin")
-  console.log(`Set ${DEFAULT_ADMIN_EMAIL} as admin`)
 }
 

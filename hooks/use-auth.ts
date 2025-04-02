@@ -40,21 +40,23 @@ export function useAuth() {
   }, [supabase.auth])
 
   const signIn = async (email: string, password: string) => {
-    console.log("signIn", email, password)
-    try {
+
+     try {
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
 
       if (error) {
-        console.log("Supabase error:", error)
+
+     
         toast({
           title: "Error signing in",
           description: error.message,
           variant: "destructive",
         })
-        console.log("Toast shown for Supabase error")
+
+         
         return
       }
 
@@ -66,13 +68,15 @@ export function useAuth() {
       // Redirect to home page instead of dashboard
       router.push("/")
     } catch (error: any) {
-      console.log("Caught error:", error)
+
+    
       toast({
         title: "Error signing in",
         description: error.message,
         variant: "destructive",
       })
-      console.log("Toast shown for caught error")
+
+      
     }
   }
 
