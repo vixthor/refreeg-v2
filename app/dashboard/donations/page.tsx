@@ -6,11 +6,9 @@ import { MyDonationsList } from "@/components/my-donations-list"
 export default async function MyDonationsPage() {
   const supabase = await createClient()
 
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
+  const { data: { user }, error } = await supabase.auth.getUser()
 
-  if (!session) {
+  if (error || !user) {
     redirect("/auth/signin")
   }
 
@@ -28,13 +26,13 @@ export default async function MyDonationsPage() {
           <TabsTrigger value="receipts">Receipts</TabsTrigger>
         </TabsList>
         <TabsContent value="all" className="space-y-4">
-          <MyDonationsList userId={session.user.id} />
+          <MyDonationsList userId={user.id} />
         </TabsContent>
         <TabsContent value="recent" className="space-y-4">
-          <MyDonationsList userId={session.user.id} timeframe="recent" />
+          <MyDonationsList userId={user.id} timeframe="recent" />
         </TabsContent>
         <TabsContent value="receipts" className="space-y-4">
-          <MyDonationsList userId={session.user.id} showReceipts={true} />
+          <MyDonationsList userId={user.id} showReceipts={true} />
         </TabsContent>
       </Tabs>
     </div>

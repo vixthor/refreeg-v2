@@ -5,13 +5,13 @@ import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 import { toast } from "@/components/ui/use-toast"
 import { getCurrentUser } from "@/actions/auth-actions"
+import { updateProfile } from "@/actions"
 
 export function useAuth() {
   const [user, setUser] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
   const supabase = createClient()
-
 
   useEffect(() => {
     const getUser = async () => {
@@ -20,6 +20,7 @@ export function useAuth() {
         setUser(currentUser)
       } catch (error) {
         console.error("Error getting current user:", error)
+        setUser(null)
       } finally {
         setIsLoading(false)
       }
@@ -29,8 +30,17 @@ export function useAuth() {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user || null)
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (session) {
+        const { data: { user }, error } = await supabase.auth.getUser()
+        if (!error && user) {
+          setUser(user)
+        } else {
+          setUser(null)
+        }
+      } else {
+        setUser(null)
+      }
       setIsLoading(false)
     })
 
@@ -40,23 +50,18 @@ export function useAuth() {
   }, [supabase.auth])
 
   const signIn = async (email: string, password: string) => {
-
-     try {
+    try {
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
 
       if (error) {
-
-     
         toast({
           title: "Error signing in",
           description: error.message,
           variant: "destructive",
         })
-
-         
         return
       }
 
@@ -65,24 +70,19 @@ export function useAuth() {
         description: "You have successfully signed in.",
       })
 
-      // Redirect to home page instead of dashboard
       router.push("/")
     } catch (error: any) {
-
-    
       toast({
         title: "Error signing in",
         description: error.message,
         variant: "destructive",
       })
-
-      
     }
   }
 
   const signUp = async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -91,7 +91,33 @@ export function useAuth() {
       })
 
       if (error) {
-        throw error
+        toast({
+          title: "Error signing up",
+          description: error.message,
+          variant: "destructive"
+        })
+        return
+      }
+
+      // Create profile for the new user
+      if (data.user) {
+        const { error: profileError } = await supabase
+          .from("profiles")
+          .insert({
+            id: data.user.id,
+            email: data.user.email,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+
+        if (profileError) {
+          console.error("Error creating profile:", profileError)
+          toast({
+            title: "Error creating profile",
+            description: "Your account was created but there was an error setting up your profile.",
+            variant: "destructive"
+          })
+        }
       }
 
       toast({

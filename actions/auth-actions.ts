@@ -3,15 +3,18 @@
 import { createClient } from "@/lib/supabase/server"
 
 /**
- * Get the current user session
+ * Get the current user
  */
 export async function getCurrentUser() {
-  const supabase = await
-    createClient()
+  const supabase = await createClient()
 
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
-  return session?.user || null
+  const { data: { user }, error } = await supabase.auth.getUser()
+
+  if (error) {
+    console.error("Error getting current user:", error)
+    return null
+  }
+
+  return user
 }
 

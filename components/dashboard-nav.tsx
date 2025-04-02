@@ -53,7 +53,9 @@ const adminNavItems = [
 export function DashboardNav() {
   const pathname = usePathname()
   const { user } = useAuth()
-  // const { isAdminOrManager, isLoading } = useAdmin(user?.id)
+  const { isAdminOrManager, isLoading } = useAdmin(user?.id)
+
+
 
   return (
     <nav className="grid items-start gap-2 py-4">
@@ -69,7 +71,7 @@ export function DashboardNav() {
         </Link>
       ))}
 
-      {/* {!isLoading && isAdminOrManager && (
+      {!isLoading && isAdminOrManager && (
         <>
           <div className="my-2">
             <div className="mb-2 px-2 text-xs font-semibold tracking-tight flex items-center">
@@ -82,7 +84,7 @@ export function DashboardNav() {
                   variant={pathname === item.href || pathname.startsWith(`${item.href}/`) ? "secondary" : "ghost"}
                   className={cn(
                     "w-full justify-start",
-                    pathname === item.href || pathname.startsWith(`${item.href}/`) ? "bg-muted hover:bg-muted" : "",
+                    pathname === item.href || pathname.startsWith(`${item.href}/`) ? "bg-secondary hover:bg-secondary" : "",
                   )}
                 >
                   <item.icon className="mr-2 h-4 w-4" />
@@ -92,7 +94,7 @@ export function DashboardNav() {
             ))}
           </div>
         </>
-      )} */}
+      )}
     </nav>
   )
 }

@@ -7,49 +7,52 @@ import type { UserRole, UserWithRole } from "@/types"
 const DEFAULT_ADMIN_EMAIL = "kingraj1344@gmail.com"
 
 /**
- * Check if a user is an admin
+ * Get all role information for a user in a single query
  */
-export async function isAdmin(userId: string): Promise<boolean> {
+export async function getUserRoleInfo(userId: string): Promise<{
+  isAdmin: boolean;
+  isManager: boolean;
+  role: UserRole;
+}> {
   const supabase = await createClient()
 
-
-  // Check if the user has an admin role
   const { data, error } = await supabase
     .from("roles")
     .select("role")
     .eq("user_id", userId)
-    .eq("role", "admin")
     .maybeSingle()
 
   if (error) {
-    console.error("Error checking admin status:", error)
-    return false
+    console.error("Error getting user role info:", error)
+    return {
+      isAdmin: false,
+      isManager: false,
+      role: "user"
+    }
   }
 
-  return !!data
+  const role = data?.role || "user"
+  return {
+    isAdmin: role === "admin",
+    isManager: role === "manager" || role === "admin",
+    role
+  }
+}
+
+/**
+ * Check if a user is an admin
+ */
+export async function isAdmin(userId: string): Promise<boolean> {
+  const { isAdmin } = await getUserRoleInfo(userId)
+  return isAdmin
 }
 
 /**
  * Check if a user is a manager
  */
 export async function isManager(userId: string): Promise<boolean> {
-  const supabase = await createClient()
-
-
-  // Check if the user has a manager role
-  const { data, error } = await supabase
-    .from("roles")
-    .select("role")
-    .eq("user_id", userId)
-    .eq("role", "manager")
-    .maybeSingle()
-
-  if (error) {
-    console.error("Error checking manager status:", error)
-    return false
-  }
-
-  return !!data
+  const { isManager } = await getUserRoleInfo(userId)
+  return isManager
 }
 
 /**
@@ -58,13 +61,10 @@ export async function isManager(userId: string): Promise<boolean> {
 export async function isAdminOrManager(userId: string): Promise<boolean> {
   const supabase = await createClient()
 
-
-  // Check if the user has an admin or manager role
   const { data, error } = await supabase
     .from("roles")
     .select("role")
     .eq("user_id", userId)
-    .in("role", ["admin", "manager"])
     .maybeSingle()
 
   if (error) {
@@ -72,25 +72,15 @@ export async function isAdminOrManager(userId: string): Promise<boolean> {
     return false
   }
 
-  return !!data
+  return data?.role === "admin" || data?.role === "manager"
 }
 
 /**
  * Get a user's role
  */
 export async function getUserRole(userId: string): Promise<UserRole> {
-  const supabase = await createClient()
-
-
-  // Check if the user has a role
-  const { data, error } = await supabase.from("roles").select("role").eq("user_id", userId).maybeSingle()
-
-  if (error) {
-    console.error("Error getting user role:", error)
-    return "user"
-  }
-
-  return (data?.role as UserRole) || "user"
+  const { role } = await getUserRoleInfo(userId)
+  return role
 }
 
 /**
@@ -99,9 +89,32 @@ export async function getUserRole(userId: string): Promise<UserRole> {
 export async function setUserRole(userId: string, role: UserRole): Promise<boolean> {
   const supabase = await createClient()
 
+  // Get the current user's ID
+  const { data: { user }, error: userError } = await supabase.auth.getUser()
+
+  if (userError || !user) {
+    console.error("Error getting current user:", userError)
+    return false
+  }
+
+  // Check if the current user is an admin by checking their role directly
+  const { data: currentUserRole } = await supabase
+    .from("roles")
+    .select("role")
+    .eq("user_id", user.id)
+    .maybeSingle()
+
+  if (currentUserRole?.role !== "admin") {
+    console.error("Only admins can set roles")
+    return false
+  }
 
   // Check if the user already has a role
-  const { data: existingRole } = await supabase.from("roles").select("id").eq("user_id", userId).maybeSingle()
+  const { data: existingRole } = await supabase
+    .from("roles")
+    .select("id")
+    .eq("user_id", userId)
+    .maybeSingle()
 
   let result
 
@@ -116,12 +129,14 @@ export async function setUserRole(userId: string, role: UserRole): Promise<boole
       .eq("user_id", userId)
   } else {
     // Insert new role
-    result = await supabase.from("roles").insert({
-      user_id: userId,
-      role,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    })
+    result = await supabase
+      .from("roles")
+      .insert({
+        user_id: userId,
+        role,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
   }
 
   if (result.error) {
@@ -139,55 +154,54 @@ export async function setUserRole(userId: string, role: UserRole): Promise<boole
 export async function listUsersWithRoles(): Promise<UserWithRole[]> {
   const supabase = await createClient()
 
+  // Get the current user
+  const { data: { user }, error: userError } = await supabase.auth.getUser()
 
-  // Get all users
-  const { data: users, error: usersError } = await supabase.auth.admin.listUsers()
-
-  if (usersError) {
-    console.error("Error listing users:", usersError)
-    throw usersError
+  if (userError || !user) {
+    console.error("Error getting current user:", userError)
+    throw new Error("Not authenticated")
   }
 
-  // Get all roles
-  const { data: roles, error: rolesError } = await supabase.from("roles").select("user_id, role")
+  // Check if current user is admin
+  const { data: currentUserRole } = await supabase
+    .from("roles")
+    .select("role")
+    .eq("user_id", user.id)
+    .maybeSingle()
 
-  if (rolesError) {
-    console.error("Error listing roles:", rolesError)
-    throw rolesError
+  if (currentUserRole?.role !== "admin") {
+    throw new Error("Only admins can list users")
   }
 
-  // Get all profiles
-  const { data: profiles, error: profilesError } = await supabase.from("profiles").select("id, full_name, is_blocked")
+  // Get all profiles with their roles using left join to include users without roles
+  const { data: profiles, error: profilesError } = await supabase
+    .from("profiles")
+    .select(`
+      id,
+      full_name,
+      email,
+      is_blocked,
+      created_at,
+      roles:roles!left ( role )
+    `)
+    .order("created_at", { ascending: false });
+
+
 
   if (profilesError) {
     console.error("Error listing profiles:", profilesError)
     throw profilesError
   }
-
-  // Create a map of user_id to role
-  const roleMap = new Map()
-  roles?.forEach((role) => {
-    roleMap.set(role.user_id, role.role)
-  })
-
-  // Create a map of user_id to profile
-  const profileMap = new Map()
-  profiles?.forEach((profile) => {
-    profileMap.set(profile.id, profile)
-  })
-
-  // Map users to UserWithRole
-  return users.users.map((user) => {
-    const profile = profileMap.get(user.id)
-    return {
-      id: user.id,
-      email: user.email || "",
-      role: roleMap.get(user.id) || "user",
-      is_blocked: profile?.is_blocked || false,
-      full_name: profile?.full_name || null,
-      created_at: user.created_at,
-    }
-  })
+  // revalidatePath("/dashboard/admin/users")
+  // Map profiles to UserWithRole
+  return profiles.map(profile => ({
+    id: profile.id,
+    email: profile.email || "",
+    role: profile.roles?.[0]?.role || "user",
+    is_blocked: profile.is_blocked || false,
+    full_name: profile.full_name || null,
+    created_at: profile.created_at,
+  }))
 }
 
 /**
@@ -211,14 +225,47 @@ export async function ensureDefaultAdmin(): Promise<void> {
       .from("roles")
       .select("role")
       .eq("user_id", user.id)
-      .eq("role", "admin")
       .maybeSingle()
 
     if (!roleData) {
       // Set the user as an admin
       await setUserRole(user.id, "admin")
-      console.log(`Set ${DEFAULT_ADMIN_EMAIL} as admin`)
     }
   }
+}
+
+/**
+ * Get all users from profiles
+ */
+export async function getAllUsers(): Promise<UserWithRole[]> {
+  const supabase = await createClient()
+
+  const { data: profiles, error: profilesError } = await supabase
+    .from("profiles")
+    .select(`
+      id,
+      full_name,
+      email,
+      is_blocked,
+      created_at,
+      roles (
+        role
+      )
+    `)
+
+  if (profilesError) {
+    console.error("Error listing profiles:", profilesError)
+    throw profilesError
+  }
+
+  // Map profiles to UserWithRole
+  return profiles.map(profile => ({
+    id: profile.id,
+    email: profile.email || "",
+    role: profile.roles?.[0]?.role || "user",
+    is_blocked: profile.is_blocked || false,
+    full_name: profile.full_name || null,
+    created_at: profile.created_at,
+  }))
 }
 
