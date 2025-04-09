@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useAuth } from "@/hooks/use-auth"
 import { useAdmin } from "@/hooks/use-admin"
 import { BarChart, Users, DollarSign, TrendingUp } from "lucide-react"
+import { AnalyticsCard } from "@/components/analytics-card"
 
 export default function AdminAnalyticsPage() {
   const router = useRouter()
@@ -42,46 +43,30 @@ export default function AdminAnalyticsPage() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Donations</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">₦125,500</div>
-            <p className="text-xs text-muted-foreground">+20.1% from last month</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">+42</div>
-            <p className="text-xs text-muted-foreground">+10.1% from last month</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Causes</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">12</div>
-            <p className="text-xs text-muted-foreground">+2 new this month</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Approvals</CardTitle>
-            <BarChart className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">7</div>
-            <p className="text-xs text-muted-foreground">+5 new this week</p>
-          </CardContent>
-        </Card>
+        <AnalyticsCard
+          title="Total Donations"
+          value="₦125,500"
+          description="+20.1% from last month"
+          icon={DollarSign}
+        />
+        <AnalyticsCard
+          title="Total Users"
+          value="+42"
+          description="+10.1% from last month"
+          icon={Users}
+        />
+        <AnalyticsCard
+          title="Active Causes"
+          value="12"
+          description="+2 new this month"
+          icon={TrendingUp}
+        />
+        <AnalyticsCard
+          title="Pending Approvals"
+          value="7"
+          description="+5 new this week"
+          icon={BarChart}
+        />
       </div>
 
       <Tabs defaultValue="donations" className="space-y-4">
