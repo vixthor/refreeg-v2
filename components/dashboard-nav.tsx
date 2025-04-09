@@ -91,7 +91,7 @@ export function DashboardNav() {
 
       {!isLoading && isAdminOrManager && (
         <>
-          <div className="my-2">
+          <div className="my-2 grid items-start gap-2 ">
             <div className="mb-2 px-2 text-xs font-semibold tracking-tight flex items-center">
               <Shield className="mr-1 h-3 w-3" />
               Admin

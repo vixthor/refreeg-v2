@@ -19,8 +19,9 @@ export default async function CausesPage({
 }: {
   searchParams: { category?: string; page?: string }
 }) {
-  const category = searchParams.category || "all"
-  const page = Number.parseInt(searchParams.page || "1")
+  const params = await searchParams
+  const category = params.category || "all"
+  const page = Number.parseInt(params.page || "1")
   const pageSize = 9
 
   return (

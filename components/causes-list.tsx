@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { PaginationButton } from "@/components/pagination-button"
+import { listCauses } from "@/actions"
 
 // Mock data for causes
 const mockCauses = [
@@ -135,22 +136,12 @@ interface CausesListProps {
 }
 
 export async function CausesList({ category, page, pageSize }: CausesListProps) {
-  // In a real app, fetch causes from Supabase
-  // const supabase = await createClient()
-
-  // let query = supabase.from("causes").select("*").eq("status", "approved")
-
-  // if (category !== "all") {
-  //   query = query.eq("category", category)
-  // }
-
-  // const { data: causes, error, count } = await query
-  //   .order("created_at", { ascending: false })
-  //   .range((page - 1) * pageSize, page * pageSize - 1)
-  //   .limit(pageSize)
-
-  // Use mock data for now
-  const filteredCauses = category === "all" ? mockCauses : mockCauses.filter((cause) => cause.category === category)
+  const causes = await listCauses({
+    category: category === "all" ? undefined : category,
+    limit: pageSize,
+    offset: (page - 1) * pageSize
+  })
+  const filteredCauses = category === "all" ? causes : causes.filter((cause) => cause.category === category)
 
   const paginatedCauses = filteredCauses.slice((page - 1) * pageSize, page * pageSize)
   const totalCauses = filteredCauses.length
