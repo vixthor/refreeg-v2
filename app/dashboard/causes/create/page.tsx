@@ -1,145 +1,45 @@
-"use client"
-
-import type React from "react"
-
-import { useState } from "react"
+import { createClient } from "@/lib/supabase/server"
+import { redirect } from "next/navigation"
+import { hasBankDetails } from "@/actions/profile-actions"
+import CreateCauseForm from "./create-cause-form"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Icons } from "@/components/icons"
-import { useAuth } from "@/hooks/use-auth"
-import { BankDetailsCheck } from "@/components/bank-details-check"
-import { useCause } from "@/hooks/use-cause"
+import Link from "next/link"
 
-// Mock categories
-const categories = [
-  { id: "education", name: "Education" },
-  { id: "health", name: "Healthcare" },
-  { id: "environment", name: "Environment" },
-  { id: "community", name: "Community" },
-  { id: "disaster", name: "Disaster Relief" },
-  { id: "animals", name: "Animal Welfare" },
-]
+export default async function CreateCausePage() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
 
-export default function CreateCausePage() {
-  const { user } = useAuth()
-  const { isLoading, createCause } = useCause()
-  const [formData, setFormData] = useState({
-    title: "",
-    description: "",
-    category: "",
-    goal: "",
-  })
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
+  if (!user) {
+    redirect("/auth/signin")
   }
 
-  const handleSelectChange = (name: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [name]: value }))
-  }
+  const hasBankInfo = await hasBankDetails(user.id)
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-
-    if (!user) {
-      return
-    }
-
-    await createCause(user.id, formData)
+  const handleRedirect = () => {
+    redirect("/dashboard/settings?tab=bank")
   }
 
   return (
     <div className="container py-10">
       <div className="mx-auto max-w-2xl">
-        <BankDetailsCheck>
-          <Card>
-            <CardHeader>
-              <CardTitle>Create a New Cause</CardTitle>
-              <CardDescription>
-                Fill out the form below to create a new fundraising cause. All causes require approval before going
-                live.
-              </CardDescription>
-            </CardHeader>
-            <form onSubmit={handleSubmit}>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="title">Cause Title</Label>
-                  <Input
-                    id="title"
-                    name="title"
-                    placeholder="Enter a clear, specific title"
-                    value={formData.title}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea
-                    id="description"
-                    name="description"
-                    placeholder="Describe your cause, why it matters, and how the funds will be used"
-                    rows={5}
-                    value={formData.description}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="category">Category</Label>
-                  <Select
-                    value={formData.category}
-                    onValueChange={(value) => handleSelectChange("category", value)}
-                    required
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories.map((category) => (
-                        <SelectItem key={category.id} value={category.id}>
-                          {category.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="goal">Funding Goal (₦)</Label>
-                  <Input
-                    id="goal"
-                    name="goal"
-                    type="number"
-                    placeholder="Enter amount in Naira"
-                    value={formData.goal}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-              </CardContent>
-              <CardFooter>
-                <Button type="submit" disabled={isLoading} className="w-full">
-                  {isLoading ? (
-                    <>
-                      <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
-                      Creating...
-                    </>
-                  ) : (
-                    "Create Cause"
-                  )}
+        {!hasBankInfo ? (
+          <Alert variant="destructive" className="mb-6">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Bank Details Required</AlertTitle>
+            <AlertDescription className="flex flex-col gap-4">
+              Please add your bank details in the settings to create a cause. This is required to receive donations.
+              <Link href="/dashboard/settings?tab=bank">
+                <Button variant="destructive" className="w-fit">
+                  Add Bank Details
                 </Button>
-              </CardFooter>
-            </form>
-          </Card>
-        </BankDetailsCheck>
+              </Link>
+            </AlertDescription>
+          </Alert>
+        ) : (
+          <CreateCauseForm />
+        )}
       </div>
     </div>
   )

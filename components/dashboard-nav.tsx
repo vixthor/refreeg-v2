@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils"
 import { BarChart3, FileText, Home, Settings, Users, Shield, UserCog } from "lucide-react"
 import { useAdmin } from "@/hooks/use-admin"
 import { useAuth } from "@/hooks/use-auth"
+import { Skeleton } from "@/components/ui/skeleton"
 
 const userNavItems = [
   {
@@ -55,7 +56,24 @@ export function DashboardNav() {
   const { user } = useAuth()
   const { isAdminOrManager, isLoading } = useAdmin(user?.id)
 
-
+  if (isLoading) {
+    return (
+      <nav className="grid items-start gap-2 py-4">
+        {userNavItems.map((_, index) => (
+          <Skeleton key={index} className="h-10 w-full" />
+        ))}
+        <div className="my-2">
+          {/* <div className="mb-2 px-2 text-xs font-semibold tracking-tight flex items-center">
+            <Shield className="mr-1 h-3 w-3" />
+            Admin
+          </div> */}
+          {adminNavItems.map((_, index) => (
+            <Skeleton key={index} className="h-10 w-full" />
+          ))}
+        </div>
+      </nav>
+    )
+  }
 
   return (
     <nav className="grid items-start gap-2 py-4">

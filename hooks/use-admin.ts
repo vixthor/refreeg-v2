@@ -1,86 +1,140 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { getUserRoleInfo, setUserRole, listUsersWithRoles } from "@/actions/role-actions"
 import { blockUser, unblockUser } from "@/actions/user-actions"
 import { updateCauseStatus } from "@/actions/cause-actions"
 import { toast } from "@/components/ui/use-toast"
 import type { UserRole, UserWithRole } from "@/types"
 
-// Cache to store role information
-const roleCache = new Map<string, {
-  isAdmin: boolean;
-  isManager: boolean;
-  role: UserRole;
-}>()
-
 export function useAdmin(userId: string | undefined) {
-  const [isAdminUser, setIsAdminUser] = useState<boolean>(false)
-  const [isManagerUser, setIsManagerUser] = useState<boolean>(false)
-  const [userRole, setUserRoleState] = useState<UserRole>("user")
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const queryClient = useQueryClient()
 
-  useEffect(() => {
-    let isMounted = true;
+  const { data: roleInfo, isLoading, error } = useQuery({
+    queryKey: ["userRole", userId],
+    queryFn: () => userId ? getUserRoleInfo(userId) : null,
+    enabled: !!userId,
+  })
 
-    const checkRoles = async () => {
-      if (!userId) {
-        if (isMounted) {
-          setIsLoading(false);
-          setIsAdminUser(false);
-          setIsManagerUser(false);
-          setUserRoleState("user");
-        }
-        return;
-      }
+  const isAdminUser = roleInfo?.isAdmin ?? false
+  const isManagerUser = roleInfo?.isManager ?? false
+  const userRole = roleInfo?.role ?? "user"
 
-      // Check cache first
-      const cachedRole = roleCache.get(userId);
-      if (cachedRole) {
-        if (isMounted) {
-          setIsAdminUser(cachedRole.isAdmin);
-          setIsManagerUser(cachedRole.isManager);
-          setUserRoleState(cachedRole.role);
-          setIsLoading(false);
-        }
-        return;
-      }
+  const appointManagerMutation = useMutation({
+    mutationFn: (targetUserId: string) => setUserRole(targetUserId, "manager"),
+    onSuccess: (_, targetUserId) => {
+      queryClient.invalidateQueries({ queryKey: ["userRole", targetUserId] })
+      toast({
+        title: "Manager appointed",
+        description: "User has been appointed as a manager",
+      })
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error appointing manager",
+        description: error.message,
+        variant: "destructive",
+      })
+    },
+  })
 
-      try {
-        const roleInfo = await getUserRoleInfo(userId);
+  const removeManagerMutation = useMutation({
+    mutationFn: (targetUserId: string) => setUserRole(targetUserId, "user"),
+    onSuccess: (_, targetUserId) => {
+      queryClient.invalidateQueries({ queryKey: ["userRole", targetUserId] })
+      toast({
+        title: "Manager removed",
+        description: "User's manager role has been removed",
+      })
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error removing manager",
+        description: error.message,
+        variant: "destructive",
+      })
+    },
+  })
 
-        // Update cache
-        roleCache.set(userId, roleInfo);
+  const blockUserMutation = useMutation({
+    mutationFn: blockUser,
+    onSuccess: () => {
+      toast({
+        title: "User blocked",
+        description: "User has been blocked successfully",
+      })
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error blocking user",
+        description: error.message,
+        variant: "destructive",
+      })
+    },
+  })
 
-        if (isMounted) {
-          setIsAdminUser(roleInfo.isAdmin);
-          setIsManagerUser(roleInfo.isManager);
-          setUserRoleState(roleInfo.role);
-        }
-      } catch (err: any) {
-        if (isMounted) {
-          console.error("Error checking admin status:", err);
-          setError(err.message);
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      }
-    }
+  const unblockUserMutation = useMutation({
+    mutationFn: unblockUser,
+    onSuccess: () => {
+      toast({
+        title: "User unblocked",
+        description: "User has been unblocked successfully",
+      })
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error unblocking user",
+        description: error.message,
+        variant: "destructive",
+      })
+    },
+  })
 
-    checkRoles();
+  const approveCauseMutation = useMutation({
+    mutationFn: async (causeId: string) => {
+      await updateCauseStatus(causeId, "approved")
+      return true
+    },
+    onSuccess: () => {
+      toast({
+        title: "Cause approved",
+        description: "The cause has been approved successfully",
+      })
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error approving cause",
+        description: error.message,
+        variant: "destructive",
+      })
+    },
+  })
 
-    return () => {
-      isMounted = false;
-    }
-  }, [userId]);
+  const rejectCauseMutation = useMutation({
+    mutationFn: async ({ causeId, reason }: { causeId: string; reason: string }) => {
+      await updateCauseStatus(causeId, "rejected", reason)
+      return true
+    },
+    onSuccess: () => {
+      toast({
+        title: "Cause rejected",
+        description: "The cause has been rejected",
+      })
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error rejecting cause",
+        description: error.message,
+        variant: "destructive",
+      })
+    },
+  })
 
-  // Clear cache when role is updated
-  const clearRoleCache = (userId: string) => {
-    roleCache.delete(userId);
-  };
+  const { data: users = [], isLoading: isUsersLoading } = useQuery({
+    queryKey: ["usersWithRoles"],
+    queryFn: listUsersWithRoles,
+    enabled: isAdminUser || isManagerUser,
+  })
 
   const appointManager = async (targetUserId: string): Promise<boolean> => {
     if (!isAdminUser) {
@@ -91,27 +145,7 @@ export function useAdmin(userId: string | undefined) {
       })
       return false
     }
-
-    try {
-      const success = await setUserRole(targetUserId, "manager")
-
-      if (success) {
-        clearRoleCache(targetUserId);
-        toast({
-          title: "Manager appointed",
-          description: "User has been appointed as a manager",
-        })
-      }
-
-      return success
-    } catch (error: any) {
-      toast({
-        title: "Error appointing manager",
-        description: error.message,
-        variant: "destructive",
-      })
-      return false
-    }
+    return appointManagerMutation.mutateAsync(targetUserId)
   }
 
   const removeManager = async (targetUserId: string): Promise<boolean> => {
@@ -123,27 +157,7 @@ export function useAdmin(userId: string | undefined) {
       })
       return false
     }
-
-    try {
-      const success = await setUserRole(targetUserId, "user")
-
-      if (success) {
-        clearRoleCache(targetUserId);
-        toast({
-          title: "Manager removed",
-          description: "User's manager role has been removed",
-        })
-      }
-
-      return success
-    } catch (error: any) {
-      toast({
-        title: "Error removing manager",
-        description: error.message,
-        variant: "destructive",
-      })
-      return false
-    }
+    return removeManagerMutation.mutateAsync(targetUserId)
   }
 
   const blockUserAccount = async (targetUserId: string): Promise<boolean> => {
@@ -155,26 +169,7 @@ export function useAdmin(userId: string | undefined) {
       })
       return false
     }
-
-    try {
-      const success = await blockUser(targetUserId)
-
-      if (success) {
-        toast({
-          title: "User blocked",
-          description: "User has been blocked successfully",
-        })
-      }
-
-      return success
-    } catch (error: any) {
-      toast({
-        title: "Error blocking user",
-        description: error.message,
-        variant: "destructive",
-      })
-      return false
-    }
+    return blockUserMutation.mutateAsync(targetUserId)
   }
 
   const unblockUserAccount = async (targetUserId: string): Promise<boolean> => {
@@ -186,26 +181,7 @@ export function useAdmin(userId: string | undefined) {
       })
       return false
     }
-
-    try {
-      const success = await unblockUser(targetUserId)
-
-      if (success) {
-        toast({
-          title: "User unblocked",
-          description: "User has been unblocked successfully",
-        })
-      }
-
-      return success
-    } catch (error: any) {
-      toast({
-        title: "Error unblocking user",
-        description: error.message,
-        variant: "destructive",
-      })
-      return false
-    }
+    return unblockUserMutation.mutateAsync(targetUserId)
   }
 
   const approveCause = async (causeId: string): Promise<boolean> => {
@@ -217,24 +193,7 @@ export function useAdmin(userId: string | undefined) {
       })
       return false
     }
-
-    try {
-      await updateCauseStatus(causeId, "approved")
-
-      toast({
-        title: "Cause approved",
-        description: "The cause has been approved successfully",
-      })
-
-      return true
-    } catch (error: any) {
-      toast({
-        title: "Error approving cause",
-        description: error.message,
-        variant: "destructive",
-      })
-      return false
-    }
+    return approveCauseMutation.mutateAsync(causeId)
   }
 
   const rejectCause = async (causeId: string, reason: string): Promise<boolean> => {
@@ -246,46 +205,7 @@ export function useAdmin(userId: string | undefined) {
       })
       return false
     }
-
-    try {
-      await updateCauseStatus(causeId, "rejected", reason)
-
-      toast({
-        title: "Cause rejected",
-        description: "The cause has been rejected",
-      })
-
-      return true
-    } catch (error: any) {
-      toast({
-        title: "Error rejecting cause",
-        description: error.message,
-        variant: "destructive",
-      })
-      return false
-    }
-  }
-
-  const fetchUsers = async (): Promise<UserWithRole[]> => {
-    if (!isAdminUser && !isManagerUser) {
-      toast({
-        title: "Permission denied",
-        description: "Only admins and managers can view user list",
-        variant: "destructive",
-      })
-      return []
-    }
-
-    try {
-      return await listUsersWithRoles()
-    } catch (error: any) {
-      toast({
-        title: "Error fetching users",
-        description: error.message,
-        variant: "destructive",
-      })
-      return []
-    }
+    return rejectCauseMutation.mutateAsync({ causeId, reason })
   }
 
   return {
@@ -293,15 +213,15 @@ export function useAdmin(userId: string | undefined) {
     isManager: isManagerUser,
     isAdminOrManager: isAdminUser || isManagerUser,
     userRole,
-    isLoading,
-    error,
+    isLoading: isLoading || isUsersLoading,
+    error: error as string | null,
     appointManager,
     removeManager,
     blockUser: blockUserAccount,
     unblockUser: unblockUserAccount,
     approveCause,
     rejectCause,
-    fetchUsers,
+    fetchUsers: () => users,
   }
 }
 
