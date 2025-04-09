@@ -17,9 +17,6 @@ export default async function CreateCausePage() {
 
   const hasBankInfo = await hasBankDetails(user.id)
 
-  const handleRedirect = () => {
-    redirect("/dashboard/settings?tab=bank")
-  }
 
   return (
     <div className="container py-10">
