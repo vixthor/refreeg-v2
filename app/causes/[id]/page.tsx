@@ -4,6 +4,8 @@ import { Progress } from "@/components/ui/progress"
 import { DonationForm } from "@/components/donation-form"
 import { DonorsList } from "@/components/donors-list"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { getCause, listDonationsForCause } from "@/actions"
+import { notFound } from "next/navigation"
 
 // Mock data for a cause
 const mockCause = {
@@ -33,23 +35,14 @@ const mockDonors = [
 ]
 
 export default async function CauseDetailPage({ params }: { params: { id: string } }) {
-  const supabase = await createClient()
-
-
-  // In a real app, fetch the cause from the database
-  // const { data: cause, error } = await supabase
-  //   .from("causes")
-  //   .select("*, users(name, email)")
-  //   .eq("id", params.id)
-  //   .single()
-
-  // if (error || !cause) {
-  //   notFound()
-  // }
-
+  const myparams = await params
+  const cause = await getCause(myparams.id)
+  if (!cause) {
+    notFound()
+  }
   // Use mock data for now
-  const cause = mockCause
-  const donors = mockDonors
+  // const cause = mockCause
+  const donors = await listDonationsForCause(cause.id)
 
   // Format the date
   const formattedDate = new Date(cause.created_at).toLocaleDateString("en-US", {
