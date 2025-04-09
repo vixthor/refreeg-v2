@@ -18,8 +18,6 @@ export default function DashboardPage() {
         </TabsList>
         <TabsContent value="overview" className="space-y-4">
           <DashboardStats />
-
-          <h2 className="text-xl font-bold">Your Causes</h2>
           <DashboardCauses />
         </TabsContent>
         <TabsContent value="analytics" className="space-y-4">

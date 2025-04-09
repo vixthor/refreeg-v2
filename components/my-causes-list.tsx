@@ -11,6 +11,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { getUserCausesWithStatus } from "@/actions"
+
 
 // Mock data for user's causes
 const mockUserCauses = [
@@ -67,22 +69,9 @@ interface MyCausesListProps {
 }
 
 export async function MyCausesList({ status, userId }: MyCausesListProps) {
-  // In a real app, fetch causes from Supabase
-  // const supabase = await createClient()
+  const causes = await getUserCausesWithStatus(userId, status)
 
-  // let query = supabase.from("causes")
-  //   .select("*")
-  //   .eq("user_id", userId)
-
-  // if (status !== "all") {
-  //   query = query.eq("status", status)
-  // }
-
-  // const { data: causes, error } = await query
-  //   .order("created_at", { ascending: false })
-
-  // Use mock data for now
-  const filteredCauses = status === "all" ? mockUserCauses : mockUserCauses.filter((cause) => cause.status === status)
+  const filteredCauses = status === "all" ? causes : causes.filter((cause) => cause.status === status)
 
   if (filteredCauses.length === 0) {
     return (

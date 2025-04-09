@@ -228,3 +228,42 @@ export async function updateCauseStatus(
   return data as Cause
 }
 
+/**
+ * Get all causes for a specific user
+ */
+export async function getUserCauses(userId: string): Promise<Cause[]> {
+  const supabase = await createClient()
+
+  const { data, error } = await supabase
+    .from("causes")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+
+  if (error) {
+    console.error("Error fetching user causes:", error)
+    throw error
+  }
+
+  return data as Cause[]
+}
+export async function getUserCausesWithStatus(userId: string, status: string): Promise<Cause[]> {
+  const supabase = await createClient()
+
+  const { data, error } = await supabase
+    .from("causes")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("status", status)
+    .order("created_at", { ascending: false })
+
+  if (error) {
+    console.error("Error fetching user causes with status:", error)
+    throw error
+  }
+
+  return data as Cause[]
+}
+
+  
+

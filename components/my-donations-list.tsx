@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Download, ExternalLink } from "lucide-react"
+import { listUserDonations } from "@/actions"
 
 // Mock data for user's donations
 const mockUserDonations = [
@@ -65,31 +66,16 @@ interface MyDonationsListProps {
 }
 
 export async function MyDonationsList({ userId, timeframe = "all", showReceipts = false }: MyDonationsListProps) {
-  // In a real app, fetch donations from Supabase
-  // const supabase = await createClient()
-
-  // let query = supabase.from("donations")
-  //   .select("*, causes(title)")
-  //   .eq("user_id", userId)
-
-  // if (timeframe === "recent") {
-  //   // Get donations from the last 30 days
-  //   const thirtyDaysAgo = new Date()
-  //   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
-  //   query = query.gte("created_at", thirtyDaysAgo.toISOString())
-  // }
-
-  // const { data: donations, error } = await query
-  //   .order("created_at", { ascending: false })
+  
+  const donations = await listUserDonations(userId, timeframe)
 
   // Use mock data for now
-  let filteredDonations = [...mockUserDonations]
-
+  let filteredDonations = donations
   if (timeframe === "recent") {
     // Filter to only show donations from the last 30 days
     const thirtyDaysAgo = new Date()
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
-    filteredDonations = filteredDonations.filter((donation) => new Date(donation.date) >= thirtyDaysAgo)
+    filteredDonations = filteredDonations.filter((donation) => new Date(donation.created_at) >= thirtyDaysAgo)
   }
 
   // Calculate total amount donated
@@ -127,9 +113,9 @@ export async function MyDonationsList({ userId, timeframe = "all", showReceipts 
             <CardHeader className="pb-2">
               <div className="flex justify-between items-start">
                 <div>
-                  <CardTitle className="text-lg">{donation.cause_title}</CardTitle>
+                  <CardTitle className="text-lg">{donation.cause.title}</CardTitle>
                   <CardDescription>
-                    {new Date(donation.date).toLocaleDateString("en-US", {
+                    {new Date(donation.created_at).toLocaleDateString("en-US", {
                       year: "numeric",
                       month: "long",
                       day: "numeric",

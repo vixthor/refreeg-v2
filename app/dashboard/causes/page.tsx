@@ -1,27 +1,22 @@
 import Link from "next/link"
 import { redirect } from "next/navigation"
-import { createClient } from "@/lib/supabase/server"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Plus } from "lucide-react"
 import { MyCausesList } from "@/components/my-causes-list"
-
+import { getCurrentUser } from "@/actions"
 export default async function MyCausesPage({
   searchParams,
 }: {
   searchParams: { status?: string }
 }) {
-  const supabase = await createClient()
+const user = await getCurrentUser()
 
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
-
-  if (!session) {
+  if (!user) {
     redirect("/auth/signin")
   }
-
-  const status = searchParams.status || "all"
+ const param = await searchParams
+  const status = param.status || "all"
 
   return (
     <div className="space-y-6">
@@ -54,7 +49,7 @@ export default async function MyCausesPage({
           </TabsTrigger>
         </TabsList>
         <TabsContent value={status} className="space-y-4">
-          <MyCausesList status={status} userId={session.user.id} />
+          <MyCausesList status={status} userId={user.id} />
         </TabsContent>
       </Tabs>
     </div>

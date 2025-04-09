@@ -2,15 +2,15 @@ import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { MyDonationsList } from "@/components/my-donations-list"
+import { getCurrentUser, listUserDonations } from "@/actions"
 
 export default async function MyDonationsPage() {
-  const supabase = await createClient()
+  const user = await getCurrentUser()
 
-  const { data: { user }, error } = await supabase.auth.getUser()
-
-  if (error || !user) {
-    redirect("/auth/signin")
+  if ( !user) {
+    redirect("/auth/signin")  
   }
+
 
   return (
     <div className="space-y-6">
@@ -23,10 +23,10 @@ export default async function MyDonationsPage() {
         <TabsList>
           <TabsTrigger value="all">All Donations</TabsTrigger>
           <TabsTrigger value="recent">Recent</TabsTrigger>
-          <TabsTrigger value="receipts">Receipts</TabsTrigger>
+          {/* <TabsTrigger value="receipts">Receipts</TabsTrigger> */}
         </TabsList>
         <TabsContent value="all" className="space-y-4">
-          <MyDonationsList userId={user.id} />
+          <MyDonationsList userId={user.id} showReceipts={false}/>
         </TabsContent>
         <TabsContent value="recent" className="space-y-4">
           <MyDonationsList userId={user.id} timeframe="recent" />
