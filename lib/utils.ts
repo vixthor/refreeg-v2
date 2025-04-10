@@ -13,3 +13,7 @@ export function formatCurrency(amount: number): string {
     maximumFractionDigits: 2,
   }).format(amount)
 }
+
+export function getBaseURL(): string {
+  return process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
+}

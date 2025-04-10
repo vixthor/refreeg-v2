@@ -1,3 +1,5 @@
+import { Profile } from "./profile-types"
+
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
 
 // Status types
@@ -31,6 +33,23 @@ export interface DonationFormData {
   email: string
   message: string
   isAnonymous: boolean
+}
+export interface TransactionData
+  extends Pick<Profile, "email" | "full_name"  | "id"> {
+  amount: number;
+  serviceFee: number;
+  causeId: string;
+  subaccounts: {
+    subaccount: string;
+    share: number;
+  }[];
+}
+
+export interface ICreateSubaccount {
+  bank_code: string;
+  account_number: string;
+  percentage_charge?: number;
+  business_name: string;
 }
 
 // Filter options
