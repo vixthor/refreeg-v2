@@ -19,8 +19,8 @@ export default async function CreateCausePage() {
 
 
   return (
-    <div className="container py-10">
-      <div className="mx-auto max-w-2xl">
+    <div className="md:container py-10">
+      <div className="md:mx-auto max-w-2xl">
         {!hasBankInfo ? (
           <Alert variant="destructive" className="mb-6">
             <AlertCircle className="h-4 w-4" />

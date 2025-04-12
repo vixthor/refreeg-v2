@@ -10,15 +10,12 @@ import type { Cause, CauseWithUser, CauseFormData, CauseFilterOptions } from "@/
 export async function getCause(causeId: string): Promise<CauseWithUser | null> {
   const supabase = await createClient()
 
-
   const { data, error } = await supabase
     .from("causes")
     .select(`
       *,
-      profiles:user_id (
-        full_name
-      ),
-      auth_users:user_id (
+      profiles!inner (
+        full_name,
         email
       )
     `)
@@ -38,13 +35,12 @@ export async function getCause(causeId: string): Promise<CauseWithUser | null> {
     ...data,
     user: {
       name: data.profiles?.full_name || "Anonymous",
-      email: data.auth_users?.email || "",
+      email: data.profiles?.email || "",
     },
   } as unknown as CauseWithUser
 
   // Remove the nested objects that we've flattened
   delete (cause as any).profiles
-  delete (cause as any).auth_users
 
   return cause
 }
@@ -60,7 +56,7 @@ async function uploadImageToSupabase(file: File, userId: string, type: "cover" |
 
   // Upload the file to Supabase Storage
   const { data: uploadData, error: uploadError } = await supabase.storage
-    .from("cause-images")
+    .from("profile-photos")
     .upload(fileName, file, {
       cacheControl: "3600",
       upsert: true,
@@ -72,7 +68,7 @@ async function uploadImageToSupabase(file: File, userId: string, type: "cover" |
   }
 
   // Get the public URL
-  const { data: urlData } = supabase.storage.from("cause-images").getPublicUrl(fileName)
+  const { data: urlData } = supabase.storage.from("profile-photos").getPublicUrl(fileName)
   return urlData.publicUrl
 }
 
@@ -189,6 +185,7 @@ export async function listCauses(options: CauseFilterOptions = {}): Promise<Caus
     console.error("Error listing causes:", error)
     throw error
   }
+  console.log("data", data)
 
   return data as Cause[]
 }
@@ -280,15 +277,23 @@ export async function getUserCauses(userId: string): Promise<Cause[]> {
 
   return data as Cause[]
 }
-export async function getUserCausesWithStatus(userId: string, status: string): Promise<Cause[]> {
+
+export async function getUserCausesWithStatus(userId: string, status?: string): Promise<Cause[]> {
   const supabase = await createClient()
 
-  const { data, error } = await supabase
+
+  let query = supabase
     .from("causes")
     .select("*")
     .eq("user_id", userId)
-    .eq("status", status)
     .order("created_at", { ascending: false })
+
+  // Only apply status filter if status is provided and not empty
+  if (status && status !== "all") {
+    query = query.eq("status", status)
+  }
+
+  const { data, error } = await query
 
   if (error) {
     console.error("Error fetching user causes with status:", error)

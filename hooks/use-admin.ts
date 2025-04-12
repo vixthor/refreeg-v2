@@ -3,11 +3,11 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { getUserRoleInfo, setUserRole, listUsersWithRoles } from "@/actions/role-actions"
 import { blockUser, unblockUser } from "@/actions/user-actions"
-import { updateCauseStatus } from "@/actions/cause-actions"
+import { updateCauseStatus, listCauses } from "@/actions/cause-actions"
 import { toast } from "@/components/ui/use-toast"
-import type { UserRole, UserWithRole } from "@/types"
+import type { CauseStatus, UserRole, UserWithRole } from "@/types"
 
-export function useAdmin(userId: string | undefined) {
+export function useAdmin(userId: string | undefined, status?: CauseStatus) {
   const queryClient = useQueryClient()
 
   const { data: roleInfo, isLoading, error } = useQuery({
@@ -135,6 +135,11 @@ export function useAdmin(userId: string | undefined) {
     queryFn: listUsersWithRoles,
     enabled: isAdminUser || isManagerUser,
   })
+  const { data: causes = [], isLoading: isCausesLoading } = useQuery({
+    queryKey: ["adminCauses", status],
+    queryFn: () => listCauses({ status: status  }),
+    enabled: isAdminUser || isManagerUser,
+  })
 
   const appointManager = async (targetUserId: string): Promise<boolean> => {
     if (!isAdminUser) {
@@ -213,7 +218,7 @@ export function useAdmin(userId: string | undefined) {
     isManager: isManagerUser,
     isAdminOrManager: isAdminUser || isManagerUser,
     userRole,
-    isLoading: isLoading || isUsersLoading,
+    isLoading: isLoading || isUsersLoading || isCausesLoading,
     error: error as string | null,
     appointManager,
     removeManager,
@@ -222,6 +227,7 @@ export function useAdmin(userId: string | undefined) {
     approveCause,
     rejectCause,
     fetchUsers: () => users,
+    causes,
   }
 }
 

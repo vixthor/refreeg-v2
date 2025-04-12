@@ -35,7 +35,6 @@ type FormData = {
     goal: string
     currency: string
     coverImage: File | null
-    additionalImages: File[]
 }
 
 type FormErrors = {
@@ -53,7 +52,6 @@ type CauseFormData = {
     goal: string
     currency: string
     coverImage: File | null
-    additionalImages: File[]
 }
 
 const validateForm = (formData: FormData): FormErrors => {
@@ -99,7 +97,6 @@ export default function CreateCauseForm() {
         goal: "",
         currency: "NGN",
         coverImage: null,
-        additionalImages: [],
     })
     const [errors, setErrors] = useState<FormErrors>({})
 
@@ -107,12 +104,19 @@ export default function CreateCauseForm() {
     useEffect(() => {
         const savedDraft = localStorage.getItem("causeDraft")
         if (savedDraft) {
-            setFormData(JSON.parse(savedDraft))
+            const parsedDraft = JSON.parse(savedDraft)
+            // Don't restore files from localStorage
+            setFormData(prev => ({
+                ...parsedDraft,
+                coverImage: prev.coverImage,
+            }))
         }
     }, [])
 
     useEffect(() => {
-        localStorage.setItem("causeDraft", JSON.stringify(formData))
+        // Don't save files to localStorage
+        const { coverImage, ...dataToSave } = formData
+        localStorage.setItem("causeDraft", JSON.stringify(dataToSave))
     }, [formData])
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -132,14 +136,10 @@ export default function CreateCauseForm() {
         }
     }
 
-    const handleImageUpload = (files: File[], type: "cover" | "additional") => {
-        if (type === "cover") {
-            setFormData((prev) => ({ ...prev, coverImage: files[0] }))
-            if (errors.coverImage) {
-                setErrors((prev) => ({ ...prev, coverImage: undefined }))
-            }
-        } else {
-            setFormData((prev) => ({ ...prev, additionalImages: files }))
+    const handleImageUpload = (files: File[]) => {
+        setFormData((prev) => ({ ...prev, coverImage: files[0] }))
+        if (errors.coverImage) {
+            setErrors((prev) => ({ ...prev, coverImage: undefined }))
         }
     }
 
@@ -178,10 +178,6 @@ export default function CreateCauseForm() {
         Object.entries(formData).forEach(([key, value]) => {
             if (key === "coverImage" && value) {
                 formDataToSubmit.append(key, value as File)
-            } else if (key === "additionalImages" && Array.isArray(value)) {
-                value.forEach((file, index) => {
-                    formDataToSubmit.append(`additionalImages[${index}]`, file as File)
-                })
             } else {
                 formDataToSubmit.append(key, value as string)
             }
@@ -194,7 +190,6 @@ export default function CreateCauseForm() {
             goal: formData.goal,
             currency: formData.currency,
             coverImage: formData.coverImage,
-            additionalImages: formData.additionalImages,
         }
 
         await createCause(user.id, causeData)
@@ -299,7 +294,7 @@ export default function CreateCauseForm() {
                         <div className="space-y-2">
                             <Label>Cover Image</Label>
                             <ImageUpload
-                                onUpload={(files) => handleImageUpload(files, "cover")}
+                                onUpload={(files) => handleImageUpload(files)}
                                 maxFiles={1}
                                 accept="image/*"
                             />
@@ -350,21 +345,6 @@ export default function CreateCauseForm() {
                                             alt="Cover preview"
                                             className="h-48 w-full object-cover rounded-md"
                                         />
-                                    </div>
-                                )}
-                                {formData.additionalImages.length > 0 && (
-                                    <div>
-                                        <p className="text-sm font-medium mb-2">Additional Images</p>
-                                        <div className="grid grid-cols-2 gap-2">
-                                            {formData.additionalImages.map((file, index) => (
-                                                <img
-                                                    key={index}
-                                                    src={URL.createObjectURL(file)}
-                                                    alt={`Additional image ${index + 1}`}
-                                                    className="h-24 w-full object-cover rounded-md"
-                                                />
-                                            ))}
-                                        </div>
                                     </div>
                                 )}
                             </div>

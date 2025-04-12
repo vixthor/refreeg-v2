@@ -18,17 +18,20 @@ import { Textarea } from "@/components/ui/textarea"
 import { Icons } from "@/components/icons"
 import { useAuth } from "@/hooks/use-auth"
 import { useAdmin } from "@/hooks/use-admin"
-import { listCauses } from "@/actions/cause-actions"
-import type { Cause } from "@/types"
+import type { Cause, CauseStatus } from "@/types"
+import Image from "next/image"
+import { useQueryState } from "nuqs"
 
 export default function AdminCausesPage() {
   const router = useRouter()
   const { user } = useAuth()
-  const { isAdminOrManager, isLoading: adminLoading, approveCause, rejectCause } = useAdmin(user?.id)
+  const [activeTab, setActiveTab] = useQueryState("tab", {
+    defaultValue: "pending",
+    parse: (value) => value,
+    serialize: (value) => value,
+  })
+  const { isAdminOrManager, isLoading: adminLoading, approveCause, rejectCause, causes } = useAdmin(user?.id, activeTab as CauseStatus)
 
-  const [activeTab, setActiveTab] = useState("pending")
-  const [causes, setCauses] = useState<Cause[]>([])
-  const [isLoading, setIsLoading] = useState(true)
   const [rejectDialog, setRejectDialog] = useState<{
     open: boolean
     causeId: string
@@ -41,32 +44,10 @@ export default function AdminCausesPage() {
     reason: "",
   })
 
-  useEffect(() => {
-    const loadCauses = async () => {
-      if (!user?.id || !isAdminOrManager) {
-        router.push("/dashboard")
-        return
-      }
 
-      setIsLoading(true)
-      const causesList = await listCauses({ status: activeTab as any })
-      setCauses(causesList)
-      setIsLoading(false)
-    }
-
-    if (!adminLoading && isAdminOrManager) {
-      loadCauses()
-    }
-  }, [user?.id, adminLoading, isAdminOrManager, activeTab, router])
 
   const handleApprove = async (causeId: string) => {
-    const success = await approveCause(causeId)
-    if (success) {
-      // Remove the cause from the list if we're on the pending tab
-      if (activeTab === "pending") {
-        setCauses((prevCauses) => prevCauses.filter((cause) => cause.id !== causeId))
-      }
-    }
+    await approveCause(causeId)
   }
 
   const openRejectDialog = (causeId: string, title: string) => {
@@ -79,14 +60,8 @@ export default function AdminCausesPage() {
   }
 
   const handleReject = async () => {
-    const success = await rejectCause(rejectDialog.causeId, rejectDialog.reason)
-    if (success) {
-      // Remove the cause from the list if we're on the pending tab
-      if (activeTab === "pending") {
-        setCauses((prevCauses) => prevCauses.filter((cause) => cause.id !== rejectDialog.causeId))
-      }
-      setRejectDialog((prev) => ({ ...prev, open: false }))
-    }
+    await rejectCause(rejectDialog.causeId, rejectDialog.reason)
+    setRejectDialog((prev) => ({ ...prev, open: false }))
   }
 
   if (adminLoading) {
@@ -118,17 +93,25 @@ export default function AdminCausesPage() {
           <TabsTrigger value="rejected">Rejected</TabsTrigger>
         </TabsList>
         <TabsContent value={activeTab} className="space-y-4">
-          {isLoading ? (
-            <div className="flex justify-center py-8">
-              <Icons.spinner className="h-8 w-8 animate-spin" />
-            </div>
-          ) : causes.length === 0 ? (
+          {causes.length === 0 ? (
             <p className="text-muted-foreground text-center py-8">No {activeTab} causes to display.</p>
           ) : (
             <div className="grid gap-4">
               {causes.map((cause) => (
                 <Card key={cause.id}>
                   <CardHeader>
+                    {cause.image && (
+                      <div className="relative w-full h-48 mb-4 rounded-lg overflow-hidden">
+                        <Image
+                          priority
+                          src={cause.image}
+                          alt={cause.title}
+                          className="object-cover w-full h-full"
+                          width={1000}
+                          height={1000}
+                        />
+                      </div>
+                    )}
                     <div className="flex justify-between items-start">
                       <div>
                         <CardTitle>{cause.title}</CardTitle>
@@ -177,6 +160,13 @@ export default function AdminCausesPage() {
                         Reject
                       </Button>
                       <Button onClick={() => handleApprove(cause.id)}>Approve</Button>
+                    </CardFooter>
+                  )}
+                  {activeTab === "approved" && (
+                    <CardFooter className="flex justify-end gap-2">
+                      <Button variant="destructive" onClick={() => openRejectDialog(cause.id, cause.title)}>
+                        Take Down
+                      </Button>
                     </CardFooter>
                   )}
                 </Card>
