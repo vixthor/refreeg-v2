@@ -30,3 +30,13 @@ export interface Category {
   name: string
 }
 
+// Cause form data
+export interface CauseFormData {
+  title: string
+  description: string
+  category: string
+  goal: string | number
+  currency: string
+  coverImage: File | null
+}
+

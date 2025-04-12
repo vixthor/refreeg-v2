@@ -26,6 +26,7 @@ export interface CauseFormData {
   description: string
   category: string
   goal: string | number
+  coverImage: File | null
 }
 
 export interface DonationFormData {

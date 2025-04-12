@@ -50,11 +50,43 @@ export async function getCause(causeId: string): Promise<CauseWithUser | null> {
 }
 
 /**
+ * Upload an image to Supabase storage
+ */
+async function uploadImageToSupabase(file: File, userId: string, type: "cover" | "additional"): Promise<string> {
+  const supabase = await createClient()
+
+  // Generate a unique filename
+  const fileName = `${userId}-${Date.now()}-${type}-${file.name}`
+
+  // Upload the file to Supabase Storage
+  const { data: uploadData, error: uploadError } = await supabase.storage
+    .from("cause-images")
+    .upload(fileName, file, {
+      cacheControl: "3600",
+      upsert: true,
+    })
+
+  if (uploadError) {
+    console.error("Error uploading image:", uploadError)
+    throw uploadError
+  }
+
+  // Get the public URL
+  const { data: urlData } = supabase.storage.from("cause-images").getPublicUrl(fileName)
+  return urlData.publicUrl
+}
+
+/**
  * Create a new cause
  */
 export async function createCause(userId: string, causeData: CauseFormData): Promise<Cause> {
   const supabase = await createClient()
 
+  // Upload cover image if provided
+  let coverImageUrl = null
+  if (causeData.coverImage) {
+    coverImageUrl = await uploadImageToSupabase(causeData.coverImage, userId, "cover")
+  }
 
   const { data, error } = await supabase
     .from("causes")
@@ -65,6 +97,7 @@ export async function createCause(userId: string, causeData: CauseFormData): Pro
       category: causeData.category,
       goal: typeof causeData.goal === "string" ? Number.parseFloat(causeData.goal) : causeData.goal,
       status: "pending", // All causes start as pending
+      image: coverImageUrl, // Store the cover image URL
     })
     .select()
     .single()
@@ -265,5 +298,5 @@ export async function getUserCausesWithStatus(userId: string, status: string): P
   return data as Cause[]
 }
 
-  
+
 
