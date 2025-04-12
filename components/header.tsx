@@ -52,18 +52,7 @@ export function Header() {
                 Dashboard
               </Link>
             )} */}
-            {/* Add Admin Dashboard link if user has admin/manager access */}
-            {!isLoading && !adminLoading && user && isAdminOrManager && (
-              <Link
-                href="/dashboard/admin/causes"
-                className={`text-sm font-medium transition-colors hover:text-secondary flex items-center ${
-                  pathname.startsWith("/dashboard/admin") ? "text-foreground" : "text-muted-foreground"
-                }`}
-              >
-                <ShieldAlert className="mr-1 h-4 w-4" />
-                Admin
-              </Link>
-            )}
+           
           </nav>
         </div>
         <div className="flex items-center gap-2">

@@ -122,6 +122,7 @@ export async function updateBankDetails(userId: string, bankData: BankDetailsFor
       account_number: bankData.accountNumber,
       bank_name: bankData.bankName,
       account_name: bankData.accountName,
+      sub_account_code: bankData.sub_account_code,
       updated_at: new Date().toISOString(),
     })
     .select()

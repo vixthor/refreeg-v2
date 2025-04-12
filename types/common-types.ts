@@ -18,6 +18,7 @@ export interface BankDetailsFormData {
   accountNumber: string
   bankName: string
   accountName: string
+  sub_account_code: string
 }
 
 export interface CauseFormData {
