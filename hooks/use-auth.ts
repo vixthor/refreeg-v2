@@ -89,6 +89,7 @@ export function useAuth() {
           emailRedirectTo: `${window.location.origin}/auth/callback`,
         },
       })
+       
 
       if (error) {
         toast({

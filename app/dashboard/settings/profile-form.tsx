@@ -26,30 +26,32 @@ interface ProfileFormProps {
 
 export function ProfileForm({ profile, user }: ProfileFormProps) {
     const [isSubmitting, setIsSubmitting] = useState(false)
+    const [formData, setFormData] = useState({
+        full_name: profile?.full_name || '',
+        email:  profile?.email ||user?.email || '',
+        phone: profile?.phone || ''
+    })
     const fileInputRef = useRef<HTMLInputElement>(null)
     const { updateProfile, updateProfilePhoto, isUploading } = useProfile(user?.id)
 
     const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target
-        const updatedProfile: ProfileFormData = {
-            name: name === 'full_name' ? value : profile?.full_name || '',
-            email: profile?.email || '',
-            phone: name === 'phone' ? value : profile?.phone || ''
-        }
-        updateProfile(updatedProfile)
+        setFormData(prev => ({
+            ...prev,
+            [name]: value
+        }))
+       
     }
 
     const handleProfileSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setIsSubmitting(true)
-        if (profile) {
-            const profileFormData: ProfileFormData = {
-                name: profile.full_name || '',
-                email: profile.email || '',
-                phone: profile.phone || ''
-            }
-            await updateProfile(profileFormData)
+        const updatedProfile: ProfileFormData = {
+            name: formData.full_name,
+            email: formData.email,
+            phone: formData.phone
         }
+        await updateProfile(updatedProfile)
         setIsSubmitting(false)
     }
 
@@ -133,14 +135,14 @@ export function ProfileForm({ profile, user }: ProfileFormProps) {
                             id="name"
                             name="full_name"
                             placeholder="Your full name"
-                            value={profile?.full_name || ""}
+                            value={formData.full_name}
                             onChange={handleProfileChange}
                         />
                     </div>
 
                     <div className="space-y-2">
                         <Label htmlFor="email">Email</Label>
-                        <Input id="email" name="email" type="email" value={profile?.email || ""} disabled className="bg-muted" />
+                        <Input id="email" name="email" type="email" value={formData.email} disabled className="bg-muted" />
                         <p className="text-xs text-muted-foreground">Your email cannot be changed.</p>
                     </div>
 
@@ -150,7 +152,7 @@ export function ProfileForm({ profile, user }: ProfileFormProps) {
                             id="phone"
                             name="phone"
                             placeholder="Your phone number"
-                            value={profile?.phone || ""}
+                            value={formData.phone}
                             onChange={handleProfileChange}
                         />
                     </div>

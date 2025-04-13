@@ -45,6 +45,7 @@ export async function updateProfile(userId: string, profileData: ProfileFormData
     .upsert({
       id: userId,
       full_name: profileData.name,
+      email: profileData.email,
       phone: profileData.phone,
       profile_photo: profileData.profile_photo,
       updated_at: new Date().toISOString(),
