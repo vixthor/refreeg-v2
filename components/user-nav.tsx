@@ -45,11 +45,11 @@ export function UserNav() {
 
   const initials = user.email
     ? user.email
-        .split("@")[0]
-        .split(".")
-        .map((n) => n[0])
-        .join("")
-        .toUpperCase()
+      .split("@")[0]
+      .split(".")
+      .map((n: string) => n[0])
+      .join("")
+      .toUpperCase()
     : "U"
 
   return (
@@ -88,11 +88,20 @@ export function UserNav() {
           {!adminLoading && isAdminOrManager && (
             <>
               <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link href="/dashboard/admin/causes" className="flex items-center">
+              <DropdownMenuLabel className="font-normal">
+                <div className="flex items-center">
                   <ShieldAlert className="mr-2 h-4 w-4" />
-                  Admin Dashboard
-                </Link>
+                  <span>Admin</span>
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuItem asChild>
+                <Link href="/dashboard/admin/causes">Manage Causes</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/dashboard/admin/users">Manage Users</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/dashboard/admin/analytics">Analytics</Link>
               </DropdownMenuItem>
             </>
           )}

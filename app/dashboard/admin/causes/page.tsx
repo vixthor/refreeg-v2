@@ -98,7 +98,7 @@ export default function AdminCausesPage() {
           ) : (
             <div className="grid gap-4">
               {causes.map((cause) => (
-                <Card key={cause.id}>
+                <Card key={cause.id} className="max-w-sm">
                   <CardHeader>
                     {cause.image && (
                       <div className="relative w-full h-48 mb-4 rounded-lg overflow-hidden">

@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 import type { Cause, CauseWithUser, CauseFormData, CauseFilterOptions } from "@/types"
+import { redirect } from "next/navigation"
 
 /**
  * Get a cause by ID
@@ -113,10 +114,16 @@ export async function createCause(userId: string, causeData: CauseFormData): Pro
 export async function updateCause(causeId: string, userId: string, causeData: Partial<CauseFormData>): Promise<Cause> {
   const supabase = await createClient()
 
-
+  let coverImageUrl = causeData.coverImage ? await uploadImageToSupabase(causeData.coverImage, userId, "cover") : causeData.image
   // Prepare the update data
+ 
   const updateData: any = {
-    ...causeData,
+    title: causeData.title,
+    description: causeData.description,
+    category: causeData.category,
+    goal: causeData.goal,
+    status: "pending",
+    image: coverImageUrl,
     updated_at: new Date().toISOString(),
   }
 
@@ -140,6 +147,7 @@ export async function updateCause(causeId: string, userId: string, causeData: Pa
 
   revalidatePath(`/dashboard/causes/${causeId}`)
   revalidatePath("/dashboard/causes")
+
   return data as Cause
 }
 
@@ -185,7 +193,7 @@ export async function listCauses(options: CauseFilterOptions = {}): Promise<Caus
     console.error("Error listing causes:", error)
     throw error
   }
-  console.log("data", data)
+
 
   return data as Cause[]
 }

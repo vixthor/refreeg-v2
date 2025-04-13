@@ -107,15 +107,12 @@ const Paystack = {
     bankCode: string
   ) {
     try {
-      console.log(
-        `Verifying account: ${accountNumber} with bank code: ${bankCode}`
-      );
-
+     
       const response = await this.api.get("/bank/resolve", {
         params: { account_number: accountNumber, bank_code: bankCode },
       });
 
-      console.log("Verification response:", response.data);
+
 
       return response.data.data as {
         account_name: string;

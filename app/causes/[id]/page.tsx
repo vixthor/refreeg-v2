@@ -4,7 +4,7 @@ import { Progress } from "@/components/ui/progress"
 import { DonationForm } from "@/components/donation-form"
 import { DonorsList } from "@/components/donors-list"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { getCause, listDonationsForCause } from "@/actions"
+import { getCause, getCurrentUser, getProfile, listDonationsForCause } from "@/actions"
 import { notFound } from "next/navigation"
 
 // Mock data for a cause
@@ -53,6 +53,8 @@ export default async function CauseDetailPage({ params }: { params: { id: string
 
   // Calculate percentage raised
   const percentRaised = Math.min(Math.round((cause.raised / cause.goal) * 100), 100)
+  const user = await getCurrentUser()
+  const profile = await getProfile(user?.id || "")
 
   return (
     <div className="container py-10">
@@ -113,7 +115,7 @@ export default async function CauseDetailPage({ params }: { params: { id: string
             </CardContent>
           </Card>
 
-          <DonationForm causeId={cause.id} />
+          <DonationForm causeId={cause.id} profile={{email: profile?.email || "", name: profile?.full_name || ""}} />
         </div>
       </div>
     </div>

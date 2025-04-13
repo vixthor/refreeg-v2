@@ -39,6 +39,7 @@ export function useCause() {
         description: "Your cause has been updated.",
       })
       queryClient.invalidateQueries({ queryKey: ["causes"] })
+      router.push(`/dashboard/causes`)
     },
     onError: (error: any) => {
       toast({

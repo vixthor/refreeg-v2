@@ -53,7 +53,7 @@ export default function SettingsPage() {
       </div>
     )
   }
-  console.log(profile)
+
   return (
     <div className="space-y-6">
       <div>

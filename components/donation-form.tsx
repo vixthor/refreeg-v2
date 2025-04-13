@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -12,21 +12,28 @@ import { Switch } from "@/components/ui/switch"
 import { Icons } from "@/components/icons"
 import { useAuth } from "@/hooks/use-auth"
 import { useDonation } from "@/hooks/use-donation"
+import { useProfile } from "@/hooks/use-profile"
+
 
 interface DonationFormProps {
   causeId: string
+  profile: {
+    email?: string
+    name?: string
+  }
 }
 
-export function DonationForm({ causeId }: DonationFormProps) {
-  const { user } = useAuth()
+export function DonationForm({ causeId , profile}: DonationFormProps) {
+ 
   const { isLoading, createDonation } = useDonation()
   const [formData, setFormData] = useState({
     amount: "",
-    name: "",
-    email: "",
+    name:  profile?.name || "",
+    email:  profile?.email || "",
     message: "",
     isAnonymous: false,
   })
+
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
@@ -39,8 +46,9 @@ export function DonationForm({ causeId }: DonationFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    await createDonation(causeId, user?.id || null, formData)
+    // await createDonation(causeId, user?.id || null, formData)
   }
+
 
   return (
     <Card>
