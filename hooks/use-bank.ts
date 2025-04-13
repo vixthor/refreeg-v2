@@ -3,7 +3,6 @@ import { toast } from "@/components/ui/use-toast"
 import Paystack from "@/services/paystack"
 import type { BankDetailsFormData, ICreateSubaccount } from "@/types"
 import { updateBankDetails } from "@/actions"
-import { useQuery, useMutation } from "@tanstack/react-query"
 
 interface UseBankProps {
     initialData?: {
@@ -18,6 +17,8 @@ interface UseBankProps {
 export function useBank({ initialData, userId }: UseBankProps) {
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [isVerifying, setIsVerifying] = useState(false)
+    const [isLoadingBanks, setIsLoadingBanks] = useState(false)
+    const [banks, setBanks] = useState<{ name: string; code: string }[]>([])
     const [formData, setFormData] = useState<BankDetailsFormData>({
         accountNumber: initialData?.account_number || "",
         bankName: initialData?.bank_name || "",
@@ -25,28 +26,40 @@ export function useBank({ initialData, userId }: UseBankProps) {
         sub_account_code: initialData?.sub_account_code || ""
     })
 
-    // Fetch banks using React Query
-    const { data: banks = [], isLoading: isLoadingBanks } = useQuery({
-        queryKey: ['banks'],
-        queryFn: async () => {
-            const banksList = await Paystack.listBanks()
-            // Deduplicate banks list
-            return banksList.reduce((acc, bank) => {
-                const key = `${bank.code}-${bank.name}`
-                if (!acc.some(b => `${b.code}-${b.name}` === key)) {
-                    acc.push(bank)
-                }
-                return acc
-            }, [] as { name: string; code: string }[])
-        },
-    })
+    // Fetch banks using useEffect
+    useEffect(() => {
+        const fetchBanks = async () => {
+            setIsLoadingBanks(true)
+            try {
+                const banksList = await Paystack.listBanks()
+                // Deduplicate banks list
+                const uniqueBanks = banksList.reduce((acc, bank) => {
+                    const key = `${bank.code}-${bank.name}`
+                    if (!acc.some(b => `${b.code}-${b.name}` === key)) {
+                        acc.push(bank)
+                    }
+                    return acc
+                }, [] as { name: string; code: string }[])
+                setBanks(uniqueBanks)
+            } catch (error) {
+                
+                toast({
+                    title: "Error",
+                    description: "Failed to fetch banks list",
+                    variant: "destructive"
+                })
+            } finally {
+                setIsLoadingBanks(false)
+            }
+        }
 
-    // Account verification mutation
-    const verifyAccountMutation = useMutation({
-        mutationFn: async ({ accountNumber, bankCode }: { accountNumber: string; bankCode: string }) => {
-            return Paystack.verifyAccountNumber(accountNumber, bankCode)
-        },
-        onSuccess: (verification) => {
+        fetchBanks()
+    }, [])
+
+    // Account verification function
+    const verifyAccount = async (accountNumber: string, bankCode: string) => {
+        try {
+            const verification = await Paystack.verifyAccountNumber(accountNumber, bankCode)
             setFormData(prev => ({
                 ...prev,
                 accountName: verification.account_name
@@ -55,67 +68,28 @@ export function useBank({ initialData, userId }: UseBankProps) {
                 title: "Account verified",
                 description: "Your bank account details have been verified successfully",
             })
-        },
-        onError: (error) => {
+        } catch (error) {
             console.error('Error verifying account:', error)
             toast({
                 title: "Verification failed",
                 description: "Could not verify the account details. Please check and try again.",
                 variant: "destructive"
             })
-        },
-        onSettled: () => {
+        } finally {
             setIsVerifying(false)
         }
-    })
-
-    // Debounced verification function
-    const debouncedVerify = useCallback(
-        (accountNumber: string, bankName: string) => {
-            const bank = banks.find(b => b.name === bankName)
-            if (bank) {
-                setIsVerifying(true)
-                verifyAccountMutation.mutate({
-                    accountNumber,
-                    bankCode: bank.code
-                })
-            }
-        },
-        [banks, verifyAccountMutation]
-    )
+    }
 
     // Improved useEffect for account verification
     useEffect(() => {
-        const timer = setTimeout(() => {
-            if (formData.accountNumber && formData.bankName && !verifyAccountMutation.isSuccess) {
-                debouncedVerify(formData.accountNumber, formData.bankName)
+        if (formData.accountNumber && formData.bankName) {
+            const bank = banks.find(b => b.name === formData.bankName)
+            if (bank) {
+                setIsVerifying(true)
+                verifyAccount(formData.accountNumber, bank.code)
             }
-        }, 1000) // 1 second debounce
-
-        return () => clearTimeout(timer)
-    }, [formData.accountNumber, formData.bankName, debouncedVerify, verifyAccountMutation.isSuccess])
-
-    // Handle bank details update mutation
-    const updateBankDetailsMutation = useMutation({
-        mutationFn: async (data: ICreateSubaccount) => {
-            const sub_account_code = await Paystack.createSubaccount(data)
-            await updateBankDetails(userId, { ...formData, sub_account_code: sub_account_code.subaccount_code })
-        },
-        onSuccess: () => {
-            toast({
-                title: "Success",
-                description: "Bank details updated successfully",
-            })
-        },
-        onError: (error) => {
-            console.error('Error updating bank details:', error)
-            toast({
-                title: "Error",
-                description: "Failed to update bank details",
-                variant: "destructive"
-            })
         }
-    })
+    }, [formData.accountNumber, formData.bankName, banks])
 
     const handleBankChange = (value: string, field: string) => {
         const updatedFormData = {
@@ -138,10 +112,23 @@ export function useBank({ initialData, userId }: UseBankProps) {
                 bank_code: bank.code,
                 account_number: formData.accountNumber,
                 business_name: formData.accountName,
-                percentage_charge:0
+                percentage_charge: 0
             }
 
-            await updateBankDetailsMutation.mutateAsync(data)
+            const sub_account_code = await Paystack.createSubaccount(data)
+            await updateBankDetails(userId, { ...formData, sub_account_code: sub_account_code.subaccount_code })
+
+            toast({
+                title: "Success",
+                description: "Bank details updated successfully",
+            })
+        } catch (error) {
+            console.error('Error updating bank details:', error)
+            toast({
+                title: "Error",
+                description: "Failed to update bank details",
+                variant: "destructive"
+            })
         } finally {
             setIsSubmitting(false)
         }
@@ -152,7 +139,7 @@ export function useBank({ initialData, userId }: UseBankProps) {
         isVerifying,
         banks,
         isLoadingBanks,
-        isVerified: verifyAccountMutation.isSuccess,
+        isVerified: !!formData.accountName,
         formData,
         handleBankChange,
         handleBankSubmit

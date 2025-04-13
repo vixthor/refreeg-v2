@@ -54,7 +54,11 @@ export default async function CauseDetailPage({ params }: { params: { id: string
   // Calculate percentage raised
   const percentRaised = Math.min(Math.round((cause.raised / cause.goal) * 100), 100)
   const user = await getCurrentUser()
-  const profile = await getProfile(user?.id || "")
+  const myprofile = user ? await getProfile(user.id) : undefined
+  const profile = {
+    email: myprofile?.email || "",
+    name: myprofile?.full_name || "",
+  }
 
   return (
     <div className="container py-10">
@@ -115,7 +119,7 @@ export default async function CauseDetailPage({ params }: { params: { id: string
             </CardContent>
           </Card>
 
-          <DonationForm causeId={cause.id} profile={{email: profile?.email || "", name: profile?.full_name || ""}} />
+          <DonationForm causeId={cause.id} profile={profile} />
         </div>
       </div>
     </div>
