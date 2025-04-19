@@ -6,7 +6,8 @@ import { DonorsList } from "@/components/donors-list"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { getCause, getCurrentUser, getProfile, listDonationsForCause } from "@/actions"
 import { notFound } from "next/navigation"
-
+import { ShareModal } from "@/components/share-modal"
+import { getBaseURL } from "@/lib/utils"
 // Mock data for a cause
 const mockCause = {
   id: "1",
@@ -59,6 +60,8 @@ export default async function CauseDetailPage({ params }: { params: { id: string
     email: myprofile?.email || "",
     name: myprofile?.full_name || "",
   }
+
+  const baseUrl = getBaseURL()
 
   return (
     <div className="container py-10">
@@ -115,6 +118,14 @@ export default async function CauseDetailPage({ params }: { params: { id: string
                   <span>Days active</span>
                   <span className="font-medium">30</span>
                 </div>
+              </div>
+
+              <div className="pt-4">
+                <ShareModal
+                  url={`${baseUrl}/causes/${cause.id}`}
+                  title={cause.title}
+                  causeId={cause.id}
+                />
               </div>
             </CardContent>
           </Card>

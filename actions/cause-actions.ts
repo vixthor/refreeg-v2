@@ -116,7 +116,7 @@ export async function updateCause(causeId: string, userId: string, causeData: Pa
 
   let coverImageUrl = causeData.coverImage ? await uploadImageToSupabase(causeData.coverImage, userId, "cover") : causeData.image
   // Prepare the update data
- 
+
   const updateData: any = {
     title: causeData.title,
     description: causeData.description,
@@ -310,6 +310,50 @@ export async function getUserCausesWithStatus(userId: string, status?: string): 
 
   return data as Cause[]
 }
+
+export async function deleteCause(causeId: string): Promise<void> {
+  const supabase = await createClient()
+
+  const { error } = await supabase.from("causes").delete().eq("id", causeId)
+
+  if (error) {
+    console.error("Error deleting cause:", error)
+    throw error
+  }
+}
+
+/**
+ * Save a cause share to the database
+ */
+export async function saveCauseShare(causeId: string, ): Promise<void> {
+  const supabase = await createClient()
+
+  // Start a transaction
+  const { error: shareError, data: causeData } = await supabase
+    .from("causes")
+   .select('shared')
+   .eq('id', causeId)
+   .single()
+   if (shareError) {
+     console.error("Error saving cause share:", shareError)
+     throw shareError
+   }
+
+   const { data: mine, error: causeError } = await supabase
+   .from("causes")
+   .update({ shared: causeData.shared + 1 })
+   .eq('id', causeId)
+   .single()
+
+   if (causeError) {
+    console.error("Error saving cause share:", causeError)
+    throw causeError
+   }
+
+   return mine
+}
+
+
 
 
 

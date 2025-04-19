@@ -11,7 +11,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { getUserCausesWithStatus } from "@/actions"
+import { deleteCause, getUserCausesWithStatus } from "@/actions"
+import { CauseDropdown } from "./cause-dropdown"
 
 
 // Mock data for user's causes
@@ -111,35 +112,7 @@ export async function MyCausesList({ status, userId }: MyCausesListProps) {
                 >
                   {cause.status}
                 </Badge>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="ml-1 h-8 w-8">
-                      <MoreHorizontal className="h-4 w-4" />
-                      <span className="sr-only">More options</span>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem asChild>
-                      <Link href={`/causes/${cause.id}`}>
-                        <Eye className="mr-2 h-4 w-4" />
-                        View Cause
-                      </Link>
-                    </DropdownMenuItem>
-                    {cause.status !== "approved" && (
-                      <DropdownMenuItem asChild>
-                        <Link href={`/dashboard/causes/${cause.id}/edit`}>
-                          <Edit className="mr-2 h-4 w-4" />
-                          Edit Cause
-                        </Link>
-                      </DropdownMenuItem>
-                    )}
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem className="text-destructive">
-                      <Trash className="mr-2 h-4 w-4" />
-                      Delete Cause
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <CauseDropdown causeId={cause.id} />
               </div>
             </div>
           </CardHeader>
