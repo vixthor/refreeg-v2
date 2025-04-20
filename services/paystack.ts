@@ -43,6 +43,9 @@ const Paystack = {
           amount: data.amount,
           customer_name: data.full_name,
           cause_id: data.causeId,
+          email: data.email,
+          message: data.message,
+          is_anonymous: data.isAnonymous,
         },
       };
 

@@ -42,6 +42,8 @@ export interface TransactionData
   amount: number;
   serviceFee: number;
   causeId: string;
+  message: string;
+  isAnonymous: boolean;
   subaccounts: {
     subaccount: string;
     share: number;

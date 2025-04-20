@@ -59,6 +59,8 @@ export default async function CauseDetailPage({ params }: { params: { id: string
   const profile = {
     email: myprofile?.email || "",
     name: myprofile?.full_name || "",
+    id: myprofile?.id || "",
+    subaccount: myprofile?.sub_account_code || "",
   }
 
   const baseUrl = getBaseURL()
@@ -130,7 +132,7 @@ export default async function CauseDetailPage({ params }: { params: { id: string
             </CardContent>
           </Card>
 
-          <DonationForm causeId={cause.id} profile={profile} />
+          <DonationForm causeId={cause.id} profile={profile} status={cause.status} />
         </div>
       </div>
     </div>

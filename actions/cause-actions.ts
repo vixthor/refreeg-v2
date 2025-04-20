@@ -4,13 +4,14 @@ import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 import type { Cause, CauseWithUser, CauseFormData, CauseFilterOptions } from "@/types"
 import { redirect } from "next/navigation"
+import { getCurrentUser } from "./auth-actions"
 
 /**
  * Get a cause by ID
  */
 export async function getCause(causeId: string): Promise<CauseWithUser | null> {
   const supabase = await createClient()
-
+  const user = await getCurrentUser()
   const { data, error } = await supabase
     .from("causes")
     .select(`
@@ -23,6 +24,10 @@ export async function getCause(causeId: string): Promise<CauseWithUser | null> {
     .eq("id", causeId)
     .single()
 
+    if((data?.status === "pending" || data?.status === "rejected" )&& user?.id !== data?.user_id) {
+      redirect("/")
+      return null  
+    }
   if (error) {
     if (error.code === "PGRST116") {
       return null

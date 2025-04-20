@@ -13,6 +13,9 @@ import { Icons } from "@/components/icons"
 import { useAuth } from "@/hooks/use-auth"
 import { useDonation } from "@/hooks/use-donation"
 import { useProfile } from "@/hooks/use-profile"
+import { calculateServiceFee } from "@/lib/utils"
+import paystack from "@/services/paystack"
+import { usePayment } from "@/hooks/use-payment"
 
 
 interface DonationFormProps {
@@ -20,21 +23,23 @@ interface DonationFormProps {
   profile: {
     email?: string
     name?: string
+    id?: string
+    subaccount?: string
   }
+  status: "pending" | "rejected" | "approved"
 }
 
-export function DonationForm({ causeId , profile}: DonationFormProps) {
- 
-  const { isLoading, createDonation } = useDonation()
+export function DonationForm({ causeId, profile, status }: DonationFormProps) {
+  const { initializePayment,isLoading } = usePayment()
   const [formData, setFormData] = useState({
     amount: "",
-    name:  profile?.name || "",
-    email:  profile?.email || "",
+    name: profile?.name || "",
+    email: profile?.email || "",
     message: "",
     isAnonymous: false,
   })
 
-
+  const isDisabled = status === "pending" || status === "rejected" ? true : false
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
@@ -46,9 +51,23 @@ export function DonationForm({ causeId , profile}: DonationFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // await createDonation(causeId, user?.id || null, formData)
+   
+    await initializePayment({
+      email: formData.email,
+      amount: Number(formData.amount),
+      causeId: causeId,
+      id: profile.id || "",
+      full_name: formData.name,
+      serviceFee: serviceFee,
+      subaccounts: [{ subaccount: profile.subaccount || "", share: Number(formData.amount)*100 }],
+      message: formData.message,
+      isAnonymous: formData.isAnonymous,
+    })
   }
 
+  const donationAmount = Number(formData.amount) || 0
+  const serviceFee = calculateServiceFee(donationAmount)
+  const totalAmount = donationAmount + serviceFee
 
   return (
     <Card>
@@ -112,9 +131,27 @@ export function DonationForm({ causeId , profile}: DonationFormProps) {
             <Switch id="anonymous" checked={formData.isAnonymous} onCheckedChange={handleSwitchChange} />
             <Label htmlFor="anonymous">Donate anonymously</Label>
           </div>
+
+          {donationAmount > 0 && (
+            <div className="space-y-2 pt-4 border-t">
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Donation Amount</span>
+                <span>₦{donationAmount.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Service Fee</span>
+                <span>₦{serviceFee.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between font-medium pt-2 border-t">
+                <span>Total Amount</span>
+                <span>₦{totalAmount.toLocaleString()}</span>
+              </div>
+            </div>
+          )}
+
         </CardContent>
         <CardFooter>
-          <Button type="submit" disabled={isLoading} className="w-full">
+          <Button type="submit" disabled={isLoading || isDisabled} className="w-full" >
             {isLoading ? (
               <>
                 <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
