@@ -98,9 +98,9 @@ export async function DashboardCauses() {
                 </div>
               </CardContent>
               <CardFooter className="flex justify-between">
-                <Link href={`/dashboard/causes/${cause.id}`}>
+                <Link href={`/dashboard/causes/${cause.id}/analytics`}>
                   <Button variant="outline" size="sm">
-                    Manage
+                    Analytics
                   </Button>
                 </Link>
                 <Link href={`/causes/${cause.id}`}>
