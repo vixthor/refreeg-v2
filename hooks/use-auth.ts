@@ -85,11 +85,7 @@ export function useAuth() {
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
-        },
       })
-       
 
       if (error) {
         toast({
@@ -122,9 +118,11 @@ export function useAuth() {
       }
 
       toast({
-        title: "Check your email",
-        description: "We've sent you a verification link.",
+        title: "Account created successfully",
+        description: "You can now sign in with your credentials.",
       })
+
+      router.push("/")
     } catch (error: any) {
       toast({
         title: "Error signing up",
