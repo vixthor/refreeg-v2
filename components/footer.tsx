@@ -23,7 +23,7 @@ const Icon = ({ href, children }: { href: string; children: ReactNode }) => {
 
 export function Footer() {
   return (
-    <div className="bg-muted">
+    <div className=" pt-8 bg-muted">
       <div className="flex flex-col items-center w-10/12 lg:w-8/12 mx-auto rounded-3xl text-secondary-foreground dark:text-secondary-foreground bg-secondary dark:bg-secondary-8 px-10 py-10 mb-16">
         <div className="text-lg lg:text-3xl font-semibold mb-6">
           Ready to be part of the solution?
@@ -40,12 +40,12 @@ export function Footer() {
           target="_blank"
           rel="noopener noreferrer"
         >
-          <button className="flex border rounded-md bg-white dark:bg-gray-800 px-3 py-3 text-blue-900 dark:text-blue-300 font-semibold hover:bg-gray-300 dark:hover:bg-gray-700 transition delay-150">
+          <button className="flex border rounded-md bg-white dark:bg-muted px-3 py-3 text-blue-900 dark:text-white font-semibold hover:bg-gray-300 dark:hover:bg-gray-700 transition delay-150">
             Join our community
           </button>
         </Link>
       </div>
-      <section className="w-full h-full px-[10px] md:px-[50px] py-[25px] mt-[30px] bg-footer dark:bg-gray-900">
+      <section className="w-full h-full px-[10px] md:px-[50px] py-[25px] mt-[30px] bg-muted">
         <div className="md:flex md:justify-between md:space-x-3 space-y-4 md:space-y-0">
           <div className="w-full md:w-4/12">
             <p className="font-semibold text-[18px] mb-2 dark:text-white">Subscribe</p>
