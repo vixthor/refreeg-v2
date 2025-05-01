@@ -25,6 +25,7 @@ export default function RootLayout({
           <div className="flex min-h-screen flex-col">
             <Header />
             <main className="flex-1">{children}</main>
+            <Footer/>
             <footer className="border-t py-6">
               <div className="container flex flex-col items-center justify-between gap-4 md:flex-row">
                 <p className="text-center text-sm text-muted-foreground md:text-left">
@@ -41,3 +42,4 @@ export default function RootLayout({
 }
 
 import './globals.css'
+import { Footer } from "@/components/footer"
