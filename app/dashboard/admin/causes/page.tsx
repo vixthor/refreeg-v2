@@ -157,7 +157,7 @@ export default function AdminCausesPage() {
                       )}
                     </div>
                   </CardContent>
-                  {activeTab === "pending" && (
+                  {(activeTab === "pending" ) && (
                     <CardFooter className="flex justify-end gap-2">
                       <Button variant="destructive" onClick={() => openRejectDialog(cause.id, cause.title)}>
                         Reject
@@ -165,6 +165,12 @@ export default function AdminCausesPage() {
                       <Button onClick={() => handleApprove(cause.id)}>Approve</Button>
                     </CardFooter>
                   )}
+                  {(activeTab === "rejected" ) && (
+                    <CardFooter className="flex justify-end gap-2">
+                      <Button onClick={() => handleApprove(cause.id)}>Approve</Button>
+                    </CardFooter>
+                  )}
+                 
                   {activeTab === "approved" && (
                     <CardFooter className="flex justify-end gap-2">
                       <Button variant="destructive" onClick={() => openRejectDialog(cause.id, cause.title)}>
