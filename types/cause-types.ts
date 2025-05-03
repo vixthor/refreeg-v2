@@ -14,6 +14,10 @@ export interface Cause {
   created_at: string
   updated_at: string
   image?: string | null
+  profiles?: {
+    full_name: string
+    email: string
+  }
 }
 
 // Cause with user information

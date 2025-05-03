@@ -122,6 +122,9 @@ export default function AdminCausesPage() {
                             day: "numeric",
                           })}
                         </CardDescription>
+                        <div className="mt-1 text-sm text-muted-foreground">
+                          Created by: {cause.profiles?.full_name || "Anonymous"}
+                        </div>
                       </div>
                       <Badge
                         variant={
