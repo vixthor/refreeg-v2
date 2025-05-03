@@ -163,7 +163,7 @@ export async function listCauses(options: CauseFilterOptions = {}): Promise<Caus
   const supabase = await createClient()
 
 
-  let query = supabase.from("causes").select("*").order("created_at", { ascending: false })
+  let query = supabase.from("causes").select("*,profiles(full_name,email)").order("created_at", { ascending: false })
 
   // Apply filters
   if (options.category && options.category !== "all") {
@@ -198,7 +198,6 @@ export async function listCauses(options: CauseFilterOptions = {}): Promise<Caus
     console.error("Error listing causes:", error)
     throw error
   }
-
 
   return data as Cause[]
 }
