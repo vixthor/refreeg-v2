@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createDonation } from "@/actions";
 import { calculateServiceFee } from "@/lib/utils";
+import { createClient } from "@/lib/supabase/server";
 
 // Define types for Paystack webhook data
 interface PaystackWebhookData {
@@ -46,15 +47,31 @@ export async function POST(request: Request) {
                 error: "Missing required metadata fields"
             }), { status: 400 });
         }
-       const amount = Number(metadata.amount)
-       const serviceFee = calculateServiceFee(amount)
-       const correctAmount = amount - serviceFee
+
+        // Check if the cause exists
+        const supabase = await createClient();
+        const { data: cause, error: causeError } = await supabase
+            .from("causes")
+            .select("id")
+            .eq("id", metadata.cause_id.toString())
+            .single();
+
+        if (causeError || !cause) {
+            return new NextResponse(JSON.stringify({
+                error: "Cause not found"
+            }), { status: 404 });
+        }
+
+        const amount = Number(metadata.amount)
+        const serviceFee = calculateServiceFee(amount)
+        const correctAmount = amount - serviceFee
+
         switch (event) {
             case "charge.success":
                 await createDonation(
+                    metadata.cause_id,
                     metadata.user_id,
-                     metadata.cause_id,
-                     {
+                    {
                         amount: correctAmount,
                         email: metadata.email,
                         message: metadata.message,

@@ -45,7 +45,7 @@ export default function PaymentVerification() {
     }, [reference, verifyPayment]);
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-palette-baseWhite p-4">
+        <div className="min-h-screen flex items-center justify-center bg-background p-4">
             <Card className="w-full max-w-md p-8">
                 <div className="flex flex-col items-center space-y-6">
                     {(verificationStatus === 'loading') && (
@@ -55,9 +55,9 @@ export default function PaymentVerification() {
                             transition={{ duration: 0.5 }}
                             className="text-center"
                         >
-                            <Loader2 className="w-16 h-16 animate-spin text-palette-primary mx-auto mb-4" />
-                            <h2 className="text-2xl font-semibold text-palette-gray01">Verifying Payment</h2>
-                            <p className="text-palette-secondary mt-2">Please wait while we verify your payment...</p>
+                            <Loader2 className="w-16 h-16 animate-spin text-primary mx-auto mb-4" />
+                            <h2 className="text-2xl font-semibold text-foreground">Verifying Payment</h2>
+                            <p className="text-muted-foreground mt-2">Please wait while we verify your payment...</p>
                         </motion.div>
                     )}
 
@@ -68,20 +68,20 @@ export default function PaymentVerification() {
                             transition={{ duration: 0.5 }}
                             className="text-center"
                         >
-                            <CheckCircle2 className="w-16 h-16 text-palette-success mx-auto mb-4" />
-                            <h2 className="text-2xl font-semibold text-palette-gray01">Payment Successful!</h2>
-                            <p className="text-palette-secondary mt-2">Thank you for your contribution.</p>
+                            <CheckCircle2 className="w-16 h-16 text-brand mx-auto mb-4" />
+                            <h2 className="text-2xl font-semibold text-foreground">Payment Successful!</h2>
+                            <p className="text-muted-foreground mt-2">Thank you for your contribution.</p>
                             <div className="mt-6 space-y-3">
                                 <Button
                                     onClick={() => router.push('/')}
-                                    className="w-full bg-palette-primary hover:bg-primaryShades-700"
+                                    className="w-full bg-brand hover:bg-secondary"
                                 >
                                     Return to Home
                                 </Button>
                                 <Button
                                     variant="outline"
                                     onClick={() => router.push('/cause')}
-                                    className="w-full border-palette-primary text-palette-primary hover:bg-primaryShades-100"
+                                    className="w-full border-brand text-brand hover:bg-secondary hover:text-secondary-foreground"
                                 >
                                     Browse More Causes
                                 </Button>
@@ -96,20 +96,20 @@ export default function PaymentVerification() {
                             transition={{ duration: 0.5 }}
                             className="text-center"
                         >
-                            <XCircle className="w-16 h-16 text-palette-error mx-auto mb-4" />
-                            <h2 className="text-2xl font-semibold text-palette-gray01">Verification Failed</h2>
-                            <p className="text-palette-secondary mt-2">{errorMessage}</p>
+                            <XCircle className="w-16 h-16 text-destructive mx-auto mb-4" />
+                            <h2 className="text-2xl font-semibold text-foreground">Verification Failed</h2>
+                            <p className="text-muted-foreground mt-2">{errorMessage}</p>
                             <div className="mt-6 space-y-3">
                                 <Button
                                     onClick={() => router.push('/')}
-                                    className="w-full bg-palette-primary hover:bg-primaryShades-700"
+                                    className="w-full bg-brand hover:bg-secondary"
                                 >
                                     Return to Home
                                 </Button>
                                 <Button
                                     variant="outline"
                                     onClick={() => router.push('/causes')}
-                                    className="w-full border-palette-primary text-palette-primary hover:bg-primaryShades-100"
+                                    className="w-full border-brand text-brand hover:bg-secondary hover:text-secondary-foreground"
                                 >
                                     Try Another Cause
                                 </Button>

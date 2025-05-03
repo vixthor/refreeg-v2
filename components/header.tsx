@@ -55,7 +55,7 @@ export function Header() {
           </nav>
         </div>
         <div className="flex items-center gap-2">
-          <ThemeToggle />
+          {/* <ThemeToggle /> */}
           {!isLoading && !user ? (
             <div className="flex items-center gap-2">
               <Link href="/auth/signin">
