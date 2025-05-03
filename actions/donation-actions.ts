@@ -36,6 +36,8 @@ export async function createDonation(
   }
 
   revalidatePath(`/causes/${causeId}`)
+  revalidatePath('/causes')
+  revalidatePath('/')
   if (userId) {
     revalidatePath("/dashboard/donations")
   }
