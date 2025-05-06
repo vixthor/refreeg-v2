@@ -98,7 +98,7 @@ export default function Home() {
           <div className="flex justify-center mt-8">
             <Link href="/causes">
               <Button variant="outline" size="lg">
-                View All Causes
+                View All Causess
               </Button>
             </Link>
           </div>
