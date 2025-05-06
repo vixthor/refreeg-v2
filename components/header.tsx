@@ -177,7 +177,7 @@ export function Header() {
                   List a Cause
                 </Button>
               </Link>
-              <Link href="/auth/signup">
+              <Link href="/auth/signin">
                 <Button size="sm">Sign In</Button>
               </Link>
             </div>
