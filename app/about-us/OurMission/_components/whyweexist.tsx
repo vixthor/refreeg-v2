@@ -47,7 +47,7 @@ export default function Whyweexist() {
       </div>
       <div className="mt-16 lg:mt-24">
         <div>
-          <div className="text-xl md:text-2xl font-semibold">
+          <div className="text-xl md:text-2xl lg:text-4xl font-semibold">
             Why do we exist?
           </div>
           <div className="text-xs md:text-base lg:text-lg">

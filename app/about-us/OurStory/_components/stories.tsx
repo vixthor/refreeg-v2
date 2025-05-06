@@ -27,7 +27,7 @@ export function Stories() {
 
 
   return (
-    <div className="px-10">
+    <div className="px-10 mt-16">
       <div>
         {stories.map((story, index) => (
           <StoryDescription key={index} {...story} />
