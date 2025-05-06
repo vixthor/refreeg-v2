@@ -38,7 +38,7 @@ export default function WhyChooseRefreeg() {
     <div className="w-full px-10 mt-4 lg:mt-24">
         <div className='mt-16 lg:mt-24'>
             <div>
-                <div className='text-xl md:text-2xl font-semibold'>Why Choose RefreeG?</div>
+                <div className='text-xl md:text-2xl lg:text-4xl font-semibold'>Why Choose RefreeG?</div>
                 <div className='text-xs md:text-base lg:text-lg'>We exist to be your go to risk free crowdfunding platform</div>
             </div>
             <div className='space-y-2 md:flex justify-between mt-4'>
