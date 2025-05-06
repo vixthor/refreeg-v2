@@ -2,10 +2,43 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { FeaturedCauses } from "@/components/featured-causes"
 import Hero from "@/components/home/hero"
+import WhyUseUs from "@/components/home/whyUseUs"
+import { H2, P, Ol } from "@/components/typograpy";
+import YouTubeEmbed from "@/components/YoutubeEmbed";
+import TransparencyEnsurance from "@/components/home/transparencyEnsurance"
+import CausesSupported from "@/components/home/causesWeSupport"
+import FAQ from "@/components/home/frequentlyAskedQuestions"
+
 export default function Home() {
   return (
     <div className="flex flex-col min-h-screen">
       <Hero />
+
+      <WhyUseUs />
+
+      <section>
+        <div className="pt-2 px-10 pb-8 mb-8">
+          <H2 className="mt-8 font-semibold text-2xl">How it works</H2>
+          <P className="text-xl mb-12">
+            How donation on{" "}
+            <Link
+              href="https://www.refreeg.com"
+              className="text-gray-500 text-xl font-semibold underline"
+            >
+              Refreeg
+            </Link>{" "}
+            works!
+          </P>
+
+          <div className="relative aspect-video w-full max-w-4xl mx-auto">
+            <YouTubeEmbed
+              videoId="lzAJXX99ew0"
+              title="How Refreeg donations work"
+              className="my-8"
+            />
+          </div>
+        </div>
+      </section>
 
       {/* How It Works */}
       <section className="w-full py-12 md:py-24 lg:py-32">
@@ -71,6 +104,12 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      <TransparencyEnsurance />
+
+      <CausesSupported />
+
+      <FAQ />
     </div>
   )
 }
