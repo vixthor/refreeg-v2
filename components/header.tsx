@@ -178,7 +178,7 @@ export function Header() {
                 </Button>
               </Link>
               <Link href="/auth/signin">
-                <Button size="sm">Sign In</Button>
+                <Button size="sm" className="bg-[#0070E0]">Sign In</Button>
               </Link>
             </div>
           ) : (

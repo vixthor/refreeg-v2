@@ -27,7 +27,7 @@ const Hero = () => {
         <p className="text-[12px] md:text-[14px] font-semibold text-center text-foreground">
           Building Africa's number 1 crowd funding platform.
         </p>
-        <p className="text-[65px] md:text-[100px] font-bold md:font-semibold text-brand">
+        <p className="text-[65px] md:text-[100px] font-bold md:font-semibold  text-[#10467c]">
           RefreeG
         </p>
         <p className="md:text-[20px] text-[16px] text-foreground font-medium">
