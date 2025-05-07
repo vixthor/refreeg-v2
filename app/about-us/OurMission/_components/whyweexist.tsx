@@ -46,7 +46,7 @@ export default function Whyweexist() {
         />
       </div>
       <div className="mt-16 lg:mt-24">
-        <div>
+        <div className="space-y-1">
           <div className="text-xl md:text-2xl lg:text-4xl font-semibold">
             Why do we exist?
           </div>
