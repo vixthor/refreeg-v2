@@ -1,27 +1,50 @@
-// components/DisconnectWalletButton.tsx
 "use client";
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Trash2Icon } from "lucide-react";
 import { ConfirmationModal } from "@/components/ConfirmationModal";
+import { createClient } from "@/lib/supabase/client";
+import { toast } from "sonner";
 
 interface DisconnectWalletButtonProps {
-  onDisconnect: () => Promise<void>;
   walletAddress: string;
+  walletNetwork: string;
+  onSuccess: () => void;
 }
 
 export function DisconnectWalletButton({
-  onDisconnect,
   walletAddress,
+  walletNetwork,
+  onSuccess,
 }: DisconnectWalletButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const supabase = createClient();
 
   const handleDisconnect = async () => {
     setIsLoading(true);
+
     try {
-      await onDisconnect();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) throw new Error("User not authenticated");
+
+      // Clear the wallet by setting it to NULL
+      const { error } = await supabase
+        .from("profiles")
+        .update({ polygon_wallet: null })
+        .eq("id", user.id);
+
+      if (error) throw error;
+
+      toast.success("Wallet disconnected successfully");
+      onSuccess();
+    } catch (error) {
+      console.error("Disconnection error:", error);
+      toast.error("Failed to disconnect wallet");
     } finally {
       setIsLoading(false);
       setIsOpen(false);
