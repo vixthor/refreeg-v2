@@ -9,7 +9,9 @@ export default function Impact() {
         <div className="w-full">
             <Hero />
             <ByNumbers />
-            <HowDoWeAchieveThis />
+            <div className="lg:mt-16">
+                <HowDoWeAchieveThis />
+            </div>
             <ChangeLives />           
         </div>
     )
