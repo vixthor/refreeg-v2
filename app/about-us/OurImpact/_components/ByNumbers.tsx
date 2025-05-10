@@ -35,7 +35,7 @@ export const FeatureCard: FC<FeatureCardProps> = ({
 
 export default function ByNumbers() {
   return (
-    <div className="w-full px-10 mt-4 lg:mt-24">
+    <div className="w-full px-10 mt-4 md:mt-8 lg:mt-16">
         
         <div className='mt-16 lg:mt-24'>
             <div>

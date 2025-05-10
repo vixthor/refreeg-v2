@@ -14,7 +14,12 @@ const Icon = ({ href, children }: { href: string; children: ReactNode }) => {
   return (
     <Link
       href={href}
-      className="bg-secondary-9 dark:bg-secondary-7 rounded-full flex items-center justify-center size-[30px] text-black dark:text-white transition-all duration-300 transform hover:scale-110 hover:bg-secondary-7 dark:hover:bg-secondary-9"
+      className="bg-secondary-9 dark:bg-
+      secondary-7 rounded-full flex items-center 
+      justify-center size-[30px] text-black 
+      dark:text-white transition-all duration-300 transform 
+      hover:scale-110 hover:bg-secondary-7 
+      dark:hover:bg-secondary-9"
     >
       {children}
     </Link>
