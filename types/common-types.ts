@@ -18,7 +18,6 @@ export interface ProfileFormData {
   phone: string;
   profile_photo?: string | null;
   email: string;
-  bio: string;
 }
 
 export interface BankDetailsFormData {
@@ -44,6 +43,7 @@ export interface DonationFormData {
   message: string;
   isAnonymous: boolean;
 }
+
 export interface TransactionData
   extends Pick<Profile, "email" | "full_name" | "id"> {
   amount: number;
