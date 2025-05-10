@@ -53,63 +53,70 @@ export function UserNav() {
     : "U"
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-          <Avatar className="h-8 w-8">
-            <AvatarImage src={profile?.profile_photo || user.user_metadata?.avatar_url} alt={user.email || ""} />
-            <AvatarFallback>{initials}</AvatarFallback>
-          </Avatar>
+    <div className="space-x-3">
+      <Link href="/dashboard/causes/create">
+        <Button variant="outline" size="sm" className="hover:bg-[#0070E0]">
+          List a Cause
         </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56" align="end" forceMount>
-        <DropdownMenuLabel className="font-normal">
-          <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">{profile?.full_name || user.email}</p>
-            <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
-          </div>
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuGroup>
-          <DropdownMenuItem asChild>
-            <Link href="/dashboard">Dashboard</Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link href="/dashboard/causes">My Causes</Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link href="/dashboard/donations">My Donations</Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link href="/dashboard/settings">Settings</Link>
-          </DropdownMenuItem>
+      </Link>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" className="relative h-8 w-8 rounded-full border-[#150aec] border">
+            <Avatar className="h-8 w-8">
+              <AvatarImage src={profile?.profile_photo || user.user_metadata?.avatar_url} alt={user.email || ""} />
+              <AvatarFallback>{initials}</AvatarFallback>
+            </Avatar>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="w-56" align="end" forceMount>
+          <DropdownMenuLabel className="font-normal">
+            <div className="flex flex-col space-y-1">
+              <p className="text-sm font-medium leading-none">{profile?.full_name || user.email}</p>
+              <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
+            </div>
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuGroup>
+            <DropdownMenuItem asChild>
+              <Link href="/dashboard" className="hover:bg-[#0070E0] focus:bg-[#0070E0] transition-colors">Dashboard</Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/dashboard/causes" className="hover:bg-[#0070E0] focus:bg-[#0070E0] transition-colors">My Causes</Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/dashboard/donations" className="hover:bg-[#0070E0] focus:bg-[#0070E0] transition-colors">My Donations</Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/dashboard/settings" className="hover:bg-[#0070E0] focus:bg-[#0070E0] transition-colors">Settings</Link>
+            </DropdownMenuItem>
 
-          {/* Add Admin Dashboard link if user has admin/manager access */}
-          {!adminLoading && isAdminOrManager && (
-            <>
-              <DropdownMenuSeparator />
-              <DropdownMenuLabel className="font-normal">
-                <div className="flex items-center">
-                  <ShieldAlert className="mr-2 h-4 w-4" />
-                  <span>Admin</span>
-                </div>
-              </DropdownMenuLabel>
-              <DropdownMenuItem asChild>
-                <Link href="/dashboard/admin/causes">Manage Causes</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/dashboard/admin/users">Manage Users</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/dashboard/admin/analytics">Analytics</Link>
-              </DropdownMenuItem>
-            </>
-          )}
-        </DropdownMenuGroup>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => signOut()}>Log out</DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+            {/* Add Admin Dashboard link if user has admin/manager access */}
+            {!adminLoading && isAdminOrManager && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel className="font-normal">
+                  <div className="flex items-center">
+                    <ShieldAlert className="mr-2 h-4 w-4" />
+                    <span>Admin</span>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuItem asChild>
+                  <Link href="/dashboard/admin/causes">Manage Causes</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/dashboard/admin/users">Manage Users</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/dashboard/admin/analytics">Analytics</Link>
+                </DropdownMenuItem>
+              </>
+            )}
+          </DropdownMenuGroup>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => signOut()} className="hover:bg-[#0070E0] focus:bg-[#0070E0] transition-colors">Log out</DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div> 
   )
 }
 
