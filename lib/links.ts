@@ -7,12 +7,12 @@ export const quickLinks = [
   {
     key: 2,
     label: "About Us",
-    route: "/OurMission",
+    route: "/about-us/WhatWeDo",
   },
   {
     key: 3,
     label: "Who we are",
-    route: "/OurStory",
+    route: "/about-us/OurStory",
   },
 ];
 
@@ -20,12 +20,12 @@ export const contactLinks = [
   {
     key: 1,
     label: "refreegcorrespondence@gmail.com",
-    route: "/",
+    route: "mailto:refreegcorrespondence@gmail.com",
   },
   {
     key: 2,
     label: "Phone: +234- 090-174-6760",
-    route: "/",
+    route: "tel:+234901746760",
   },
   {
     key: 3,
