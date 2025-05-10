@@ -12,5 +12,19 @@ export interface Profile {
   is_blocked: boolean;
   created_at: string;
   updated_at: string;
-  bio: string | null;
+  country_of_residence?: string;
+  date_of_birth?: string;
+  bvn?: number;
+  nin?: number;
+  pin?: number;
+  donation_preference?: string;
+  is_verified?: boolean;
+  followers_count?: number;
+  following_count?: number;
+  causes_count?: number;
+  user_type?: "individual" | "organization";
+  bio?: string;
+  crypto_wallets?: {
+    [network: string]: string;
+  };
 }

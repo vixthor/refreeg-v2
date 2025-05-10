@@ -19,63 +19,67 @@ import {
 import { notFound } from "next/navigation";
 import { ShareModal } from "@/components/share-modal";
 import { getBaseURL } from "@/lib/utils";
+import MaticDonationButton from "@/components/crypto-details/MaticDonationButton";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 import Link from "next/link";
-// // Mock data for a cause
-// const mockCause = {
-//   id: "1",
-//   title: "Clean Water Initiative",
-//   description:
-//     "Providing clean water to communities in rural areas. Access to clean water is a fundamental human right, yet millions of people around the world still lack this basic necessity. This initiative aims to install water purification systems in communities that currently rely on contaminated water sources, reducing waterborne diseases and improving overall health outcomes. Your donation will directly fund the purchase and installation of water filters, the construction of wells, and educational programs on water hygiene and conservation.",
-//   category: "Environment",
-//   raised: 12500,
-//   goal: 20000,
-//   image: "/placeholder.svg?height=300&width=600",
-//   user: {
-//     name: "Environmental Action Group",
-//     email: "contact@example.org",
-//   },
-//   created_at: "2023-05-15T10:30:00Z",
-//   status: "approved",
-// };
 
-// // Mock donors data
-// const mockDonors = [
-//   {
-//     id: "1",
-//     name: "John Doe",
-//     amount: 500,
-//     date: "2023-06-01T14:30:00Z",
-//     message: "Keep up the great work!",
-//   },
-//   {
-//     id: "2",
-//     name: "Anonymous",
-//     amount: 1000,
-//     date: "2023-06-02T09:15:00Z",
-//     message: null,
-//   },
-//   {
-//     id: "3",
-//     name: "Sarah Johnson",
-//     amount: 250,
-//     date: "2023-06-03T16:45:00Z",
-//     message: "Happy to support this cause",
-//   },
-//   {
-//     id: "4",
-//     name: "Anonymous",
-//     amount: 5000,
-//     date: "2023-06-04T11:20:00Z",
-//     message: "Water is life",
-//   },
-//   {
-//     id: "5",
-//     name: "Michael Brown",
-//     amount: 750,
-//     date: "2023-06-05T13:10:00Z",
-//     message: null,
-//   },
-// ];
+// Mock data for a cause
+const mockCause = {
+  id: "1",
+  title: "Clean Water Initiative",
+  description:
+    "Providing clean water to communities in rural areas. Access to clean water is a fundamental human right, yet millions of people around the world still lack this basic necessity. This initiative aims to install water purification systems in communities that currently rely on contaminated water sources, reducing waterborne diseases and improving overall health outcomes. Your donation will directly fund the purchase and installation of water filters, the construction of wells, and educational programs on water hygiene and conservation.",
+  category: "Environment",
+  raised: 12500,
+  goal: 20000,
+  image: "/placeholder.svg?height=300&width=600",
+  user: {
+    name: "Environmental Action Group",
+    email: "contact@example.org",
+  },
+  created_at: "2023-05-15T10:30:00Z",
+  status: "approved",
+};
+
+// Mock donors data
+const mockDonors = [
+  {
+    id: "1",
+    name: "John Doe",
+    amount: 500,
+    date: "2023-06-01T14:30:00Z",
+    message: "Keep up the great work!",
+  },
+  {
+    id: "2",
+    name: "Anonymous",
+    amount: 1000,
+    date: "2023-06-02T09:15:00Z",
+    message: null,
+  },
+  {
+    id: "3",
+    name: "Sarah Johnson",
+    amount: 250,
+    date: "2023-06-03T16:45:00Z",
+    message: "Happy to support this cause",
+  },
+  {
+    id: "4",
+    name: "Anonymous",
+    amount: 5000,
+    date: "2023-06-04T11:20:00Z",
+    message: "Water is life",
+  },
+  {
+    id: "5",
+    name: "Michael Brown",
+    amount: 750,
+    date: "2023-06-05T13:10:00Z",
+    message: null,
+  },
+];
 
 export default async function CauseDetailPage({
   params,
@@ -113,6 +117,10 @@ export default async function CauseDetailPage({
   };
 
   const baseUrl = getBaseURL();
+
+  // Check if creator has a wallet
+  const creatorProfile = await getProfile(cause.user_id);
+  const hasCreatorWallet = !!creatorProfile?.crypto_wallets?.ethereum;
 
   return (
     <div className="container py-10">
@@ -201,11 +209,51 @@ export default async function CauseDetailPage({
             </CardContent>
           </Card>
 
-          <DonationForm
-            causeId={cause.id}
-            profile={profile}
-            status={cause.status}
-          />
+          <Card>
+            <CardHeader>
+              <CardTitle>Make a Donation</CardTitle>
+              <CardDescription>
+                Choose your preferred donation method
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {hasCreatorWallet ? (
+                <div className="space-y-4">
+                  <MaticDonationButton causeId={cause.id} />
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-background px-2 text-muted-foreground">
+                        Or donate with
+                      </span>
+                    </div>
+                  </div>
+                  <DonationForm
+                    causeId={cause.id}
+                    profile={profile}
+                    status={cause.status}
+                  />
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      Crypto donations are not available for this cause as the
+                      creator has not connected their wallet.
+                    </AlertDescription>
+                  </Alert>
+                  <DonationForm
+                    causeId={cause.id}
+                    profile={profile}
+                    status={cause.status}
+                  />
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>
