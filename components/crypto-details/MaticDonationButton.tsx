@@ -8,7 +8,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { toast } from "sonner";
 
-const DEFAULT_MATIC_TO_NAIRA_RATE = 302.51;
+const DEFAULT_MATIC_TO_NAIRA_RATE = 413;
 
 declare global {
   interface Window {
@@ -335,7 +335,7 @@ export default function MaticDonationButton({
       }
 
       toast.error(userFriendlyMessage, {
-        autoClose: 5000,
+        duration: 5000, // duration in milliseconds
       });
 
       setError(userFriendlyMessage);
