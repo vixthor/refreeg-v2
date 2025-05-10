@@ -14,12 +14,12 @@ interface CryptoWallet {
 }
 
 export default function CryptoDetailsForm() {
-  const [paymentMethods, setPaymentMethods] = useState<CryptoWallet[]>([]);
+  const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const supabase = createClient();
 
   useEffect(() => {
-    const fetchWallets = async () => {
+    const fetchWallet = async () => {
       setIsLoading(true);
       try {
         const {
@@ -33,42 +33,43 @@ export default function CryptoDetailsForm() {
           .eq("id", user.id)
           .single();
 
+        // Handle both string and object formats
         if (profile?.polygon_wallet) {
-          const wallets = Object.entries(profile.polygon_wallet).map(
-            ([network, address], index) => ({
-              id: index,
-              address: address as string,
-              network,
-            })
-          );
-          setPaymentMethods(wallets);
+          const address =
+            typeof profile.polygon_wallet === "string"
+              ? profile.polygon_wallet
+              : Object.values(profile.polygon_wallet).join("");
+          setWalletAddress(address);
         } else {
-          setPaymentMethods([]);
+          setWalletAddress(null);
         }
       } catch (error) {
-        console.error("Error fetching wallets:", error);
-        toast.error("Failed to load wallets");
+        console.error("Error fetching wallet:", error);
+        toast.error("Failed to load wallet");
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchWallets();
+    fetchWallet();
   }, [supabase]);
 
-  const handleWalletConnected = async (
-    address: string,
-    network: string = "matic-amoy"
-  ) => {
+  const handleWalletConnected = async (address: string) => {
     try {
-      // Add to local state
-      const newWallet: CryptoWallet = {
-        id: Date.now(),
-        address,
-        network,
-      };
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) throw new Error("User not authenticated");
 
-      setPaymentMethods((prev) => [...prev, newWallet]);
+      // Store as a plain string
+      const { error } = await supabase
+        .from("profiles")
+        .update({ polygon_wallet: address })
+        .eq("id", user.id);
+
+      if (error) throw error;
+
+      setWalletAddress(address);
       toast.success("Wallet connected successfully");
     } catch (error) {
       console.error("Error handling wallet connection:", error);
@@ -76,21 +77,19 @@ export default function CryptoDetailsForm() {
     }
   };
 
-  const handleWalletDisconnected = (walletId: number) => {
-    setPaymentMethods((prev) =>
-      prev.filter((method) => method.id !== walletId)
-    );
+  const handleWalletDisconnected = () => {
+    setWalletAddress(null);
   };
 
   if (isLoading) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Crypto Wallets</CardTitle>
+          <CardTitle>Crypto Wallet</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-center py-4 text-muted-foreground">
-            Loading wallets...
+            Loading wallet...
           </div>
         </CardContent>
       </Card>
@@ -100,63 +99,54 @@ export default function CryptoDetailsForm() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Crypto Wallets</CardTitle>
+        <CardTitle>Crypto Wallet</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {paymentMethods.length > 0 ? (
-            paymentMethods.map((method) => (
-              <div
-                key={method.id}
-                className="flex items-center justify-between p-4 border rounded-lg"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="bg-purple-100 p-3 rounded-full">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="text-purple-600"
-                    >
-                      <circle cx="12" cy="12" r="10" />
-                      <path d="M8 14s1.5 2 4 2 4-2 4-2" />
-                      <line x1="9" x2="9.01" y1="9" y2="9" />
-                      <line x1="15" x2="15.01" y1="9" y2="9" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="font-medium">
-                      {method.network === "matic-amoy"
-                        ? "Polygon Amoy"
-                        : method.network}
-                    </p>
-                    <p className="text-sm text-muted-foreground truncate max-w-md">
-                      {method.address}
-                    </p>
-                  </div>
+          {walletAddress ? (
+            <div className="flex items-center justify-between p-4 border rounded-lg">
+              <div className="flex items-center gap-4">
+                <div className="bg-purple-100 p-3 rounded-full">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="text-purple-600"
+                  >
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M8 14s1.5 2 4 2 4-2 4-2" />
+                    <line x1="9" x2="9.01" y1="9" y2="9" />
+                    <line x1="15" x2="15.01" y1="9" y2="9" />
+                  </svg>
                 </div>
-                <DisconnectWalletButton
-                  walletAddress={method.address}
-                  walletNetwork={method.network}
-                  onSuccess={() => handleWalletDisconnected(method.id)}
-                />
+                <div>
+                  <p className="font-medium">Polygon Amoy</p>
+                  <p className="text-sm text-muted-foreground truncate max-w-md">
+                    {walletAddress}
+                  </p>
+                </div>
               </div>
-            ))
+              <DisconnectWalletButton
+                walletAddress={walletAddress}
+                walletNetwork="matic-amoy"
+                onSuccess={handleWalletDisconnected}
+              />
+            </div>
           ) : (
             <div className="text-center py-4 text-muted-foreground">
-              No wallets connected
+              No wallet connected
             </div>
           )}
 
           <ConnectWalletButton
             onConnected={handleWalletConnected}
-            disabled={paymentMethods.length > 0}
+            disabled={!!walletAddress}
           />
         </div>
       </CardContent>
