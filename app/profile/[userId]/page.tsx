@@ -4,26 +4,44 @@ import { getCurrentUser } from "@/actions/auth-actions";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import Link from "next/link";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
+import { ChevronLeft } from "lucide-react";
+import BackButton from "@/components/ui/BackButton";
+
+// Type definitions for our parameters
+type PageParams = {
+  userId: string;
+};
+
+type SearchParams = {
+  tab?: string;
+};
 
 export default async function PublicProfilePage({
   params,
   searchParams,
 }: {
-  params: { userId: string };
-  searchParams: { tab?: string };
+  params: PageParams;
+  searchParams: SearchParams;
 }) {
+  // Properly handle the params as recommended by Next.js
+  const { userId } = params;
+  const { tab: tabParam } = searchParams;
+
   const currentUser = await getCurrentUser();
-  const isOwner = currentUser?.id === params.userId;
-  const activeTab = searchParams.tab || "causes";
+  const isOwner = currentUser?.id === userId;
+  const activeTab = tabParam || "causes";
 
   // Fetch data
-  const profile = await getProfile(params.userId);
+  const profile = await getProfile(userId);
   if (!profile) {
     return <div className="text-center py-12">User not found</div>;
   }
 
-  const causes = await getUserCauses(params.userId);
-  const donations = await listUserDonations(params.userId);
+  const causes = await getUserCauses(userId);
+  const donations = await listUserDonations(userId);
+  const donationsCount = donations.length;
 
   // Tab configuration
   const tabs = [
@@ -52,9 +70,9 @@ export default async function PublicProfilePage({
     {
       id: "donations",
       label: "Donations",
-      count: donations.length,
+      count: donationsCount,
       content:
-        donations.length === 0 ? (
+        donationsCount === 0 ? (
           <EmptyState
             title="No Donations Yet"
             description={`${
@@ -75,6 +93,7 @@ export default async function PublicProfilePage({
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
+      <BackButton />
       {/* Profile Header */}
       <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
         <div className="relative w-24 h-24 rounded-full overflow-hidden border-2 border-gray-200">
@@ -88,35 +107,26 @@ export default async function PublicProfilePage({
         </div>
 
         <div className="flex-1">
-          <div className="flex justify-between items-start">
-            <div>
-              <h1 className="text-2xl font-bold">
-                {profile.full_name || "Anonymous"}
-              </h1>
-              <div className="flex items-center gap-2 mt-1">
-                <span className="text-sm bg-gray-100 px-2 py-1 rounded-full flex items-center gap-1">
-                  📌 Individual
-                </span>
-              </div>
+          <div>
+            <h1 className="text-2xl font-bold">
+              {profile.full_name || "Anonymous"}
+            </h1>
+            <div className="flex items-center gap-2 mt-1">
+              <span className="text-sm bg-gray-100 px-2 py-1 rounded-full flex items-center gap-1">
+                📌 Individual
+              </span>
             </div>
-
-            {!isOwner && (
-              <Button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-full text-sm font-medium transition-colors">
-                Follow
-              </Button>
-            )}
           </div>
 
           {/* Stats */}
           <div className="flex gap-4 mt-4 text-sm">
             <span className="text-gray-700">
-              <span className="font-semibold">{causes.length}</span> causes
+              <span className="font-semibold">{causes.length}</span>{" "}
+              {causes.length === 1 ? "cause" : "causes"}
             </span>
             <span className="text-gray-700">
-              <span className="font-semibold">0</span> followers
-            </span>
-            <span className="text-gray-700">
-              <span className="font-semibold">0</span> following
+              <span className="font-semibold">{donationsCount}</span>{" "}
+              {donationsCount === 1 ? "donation" : "donations"}
             </span>
           </div>
 
@@ -126,25 +136,27 @@ export default async function PublicProfilePage({
       </div>
 
       {/* Tab Navigation */}
-      <div className="flex border-b mt-8">
-        {tabs.map((tab) => (
-          <Link
-            key={tab.id}
-            href={`/profile/${params.userId}?tab=${tab.id}`}
-            className={`px-4 py-2 font-medium flex items-center gap-2 ${
-              activeTab === tab.id
-                ? "text-blue-600 border-b-2 border-blue-600"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
-          >
-            {tab.label}
-            {tab.count > 0 && (
-              <span className="text-xs bg-gray-100 px-2 py-1 rounded-full">
-                {tab.count}
-              </span>
-            )}
-          </Link>
-        ))}
+      <div className="border-b mt-8">
+        <div className="flex justify-center">
+          {tabs.map((tab) => (
+            <Link
+              key={tab.id}
+              href={`/profile/${userId}?tab=${tab.id}`}
+              className={`px-6 py-2 font-medium flex items-center gap-2 ${
+                activeTab === tab.id
+                  ? "text-blue-600 border-b-2 border-blue-600"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              {tab.label}
+              {tab.count > 0 && (
+                <span className="text-xs bg-gray-100 px-2 py-1 rounded-full">
+                  {tab.count}
+                </span>
+              )}
+            </Link>
+          ))}
+        </div>
       </div>
 
       {/* Tab Content */}
@@ -196,6 +208,11 @@ function EmptyState({
 
 // Component for cause cards
 function CauseCard({ cause }: { cause: any }) {
+  const progressPercentage = Math.min(
+    Math.round((cause.raised / cause.goal) * 100),
+    100
+  );
+
   return (
     <div className="border rounded-lg overflow-hidden hover:shadow-md transition-shadow">
       <Link href={`/causes/${cause.id}`}>
@@ -207,11 +224,30 @@ function CauseCard({ cause }: { cause: any }) {
             className="object-cover"
           />
         </div>
-        <div className="p-4">
+        <div className="p-4 space-y-3">
+          <div className="flex items-center gap-2">
+            <Badge
+              variant="secondary"
+              className="text-xs px-2 py-1 rounded-full"
+            >
+              {cause.category}
+            </Badge>
+          </div>
           <h3 className="font-medium line-clamp-2">{cause.title}</h3>
-          <div className="flex justify-between items-center mt-2 text-sm text-gray-500">
-            <span>{cause.category}</span>
-            <span>₦{(cause.raised || 0).toLocaleString()} raised</span>
+
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm">
+              <span className="font-medium">
+                ₦{cause.raised.toLocaleString()}
+              </span>
+              <span className="text-gray-500">
+                of ₦{cause.goal.toLocaleString()}
+              </span>
+            </div>
+            <Progress value={progressPercentage} className="h-2 bg-gray-200" />
+            <div className="text-xs text-gray-500 text-right">
+              {progressPercentage}% funded
+            </div>
           </div>
         </div>
       </Link>
