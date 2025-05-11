@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { BrowserProvider, ethers } from "ethers";
 import { MetaMaskInpageProvider } from "@metamask/providers";
 import { createClient } from "@/lib/supabase/client";
@@ -40,7 +40,6 @@ export default function MaticDonationButton({
   const params = useParams();
   const supabase = createClient();
 
-  // Format number with commas
   const formatNumberWithCommas = (value: string): string => {
     if (!value || isNaN(parseFloat(value))) return value;
     const parts = value.split(".");
@@ -48,7 +47,6 @@ export default function MaticDonationButton({
     return parts.length > 1 ? `${parts[0]}.${parts[1]}` : parts[0];
   };
 
-  // Remove commas for calculations
   const removeCommas = (value: string): string => {
     return value.replace(/,/g, "");
   };
@@ -94,33 +92,23 @@ export default function MaticDonationButton({
   useEffect(() => {
     const fetchRecipientAddress = async () => {
       try {
-        // Get cause creator's ID
         const { data: cause } = await supabase
           .from("causes")
           .select("user_id")
           .eq("id", causeId)
           .single();
 
-        if (!cause) {
-          throw new Error("Cause not found");
-        }
+        if (!cause) throw new Error("Cause not found");
 
-        // Get creator's profile
         const { data: profile } = await supabase
           .from("profiles")
           .select("polygon_wallet")
           .eq("id", cause.user_id)
           .single();
 
-        if (!profile) {
-          throw new Error("Creator not found");
-        }
+        if (!profile) throw new Error("Creator not found");
 
-        if (profile.polygon_wallet) {
-          setRecipientAddress(profile.polygon_wallet);
-        } else {
-          setRecipientAddress(null);
-        }
+        setRecipientAddress(profile.polygon_wallet || null);
       } catch (err) {
         console.error("Error fetching recipient address:", err);
         setError("Failed to load recipient wallet information");
@@ -167,13 +155,9 @@ export default function MaticDonationButton({
         });
 
       if (insertError) throw insertError;
-
-      console.log(
-        "Transaction logged with recipient address:",
-        recipientAddress
-      );
     } catch (error) {
       console.error("Error logging transaction:", error);
+      // Don't surface this error to the user since the donation was successful
     }
   };
 
@@ -181,7 +165,7 @@ export default function MaticDonationButton({
     try {
       await window.ethereum?.request({
         method: "wallet_switchEthereumChain",
-        params: [{ chainId: "0x13882" }], // Polygon Amoy Testnet chain ID (80002 in hex)
+        params: [{ chainId: "0x13882" }],
       });
     } catch (switchError: any) {
       if (switchError.code === 4902) {
@@ -190,7 +174,7 @@ export default function MaticDonationButton({
             method: "wallet_addEthereumChain",
             params: [
               {
-                chainId: "0x13882", // 80002 in hex
+                chainId: "0x13882",
                 chainName: "Polygon Amoy Testnet",
                 nativeCurrency: {
                   name: "MATIC",
@@ -215,30 +199,14 @@ export default function MaticDonationButton({
     }
   };
 
-  const handleDonate = async () => {
-    if (!recipientAddress) {
-      toast({
-        title: "Error",
-        description: "Recipient wallet address not available",
-        variant: "destructive",
-      });
-      setError("Recipient wallet address not available");
-      return;
-    }
-
-    if (!window.ethereum) {
-      toast({
-        title: "Error",
-        description: "Please install MetaMask to donate with MATIC",
-        variant: "destructive",
-      });
-      setError("Please install MetaMask to donate with MATIC");
-      return;
-    }
-
-    setIsDonating(true);
+  const handleDonate = useCallback(async () => {
+    // Reset states at start
     setError(null);
     setTxHash(null);
+    setIsDonating(true);
+
+    // Flag to track if we need to manually reset the isDonating state
+    let needsManualReset = true;
 
     try {
       const amount = parseFloat(donationAmount);
@@ -246,18 +214,15 @@ export default function MaticDonationButton({
         throw new Error("Please enter a valid donation amount");
       }
 
-      // Request account access if needed
-      await window.ethereum.request({ method: "eth_requestAccounts" });
-
-      // Switch to Polygon Amoy Testnet
-      try {
-        await switchToPolygonAmoyTestnet();
-      } catch (networkError) {
-        console.error("Network error:", networkError);
-        throw new Error(
-          "Please switch to Polygon Amoy Testnet in your wallet and try again"
-        );
+      if (!window.ethereum) {
+        throw new Error("MetaMask not installed");
       }
+
+      // Force state update before async operations
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      await window.ethereum.request({ method: "eth_requestAccounts" });
+      await switchToPolygonAmoyTestnet();
 
       const provider = new BrowserProvider(window.ethereum as any);
       const signer = await provider.getSigner();
@@ -266,31 +231,19 @@ export default function MaticDonationButton({
       const amountInWei = ethers.parseEther(donationAmount);
 
       if (balance < amountInWei) {
-        throw new Error(
-          "Insufficient MATIC balance. Please ensure you have enough MATIC in your wallet"
-        );
+        throw new Error("Insufficient MATIC balance");
       }
 
-      // Estimate gas for the transaction
-      let gasEstimate;
-      try {
-        gasEstimate = await provider.estimateGas({
-          to: recipientAddress,
-          value: amountInWei,
-        });
-      } catch (estimateError) {
-        console.error("Gas estimation error:", estimateError);
-        throw new Error(
-          "Failed to estimate transaction gas. Please try again later."
-        );
-      }
+      const gasEstimate = await provider.estimateGas({
+        to: recipientAddress!,
+        value: amountInWei,
+      });
 
-      // Add buffer to gas estimate (20% more)
-      const gasWithBuffer = (gasEstimate * 120n) / 100n;
+      const gasWithBuffer =
+        (BigInt(gasEstimate.toString()) * BigInt(120)) / BigInt(100);
 
-      // Send transaction with proper gas settings
       const tx = await signer.sendTransaction({
-        to: recipientAddress,
+        to: recipientAddress!,
         value: amountInWei,
         gasLimit: gasWithBuffer,
       });
@@ -301,55 +254,62 @@ export default function MaticDonationButton({
         description: "Waiting for confirmation...",
       });
 
-      const receipt = await tx.wait();
-      if (!receipt || receipt.status === 0) {
-        throw new Error("Transaction failed on chain");
-      }
+      try {
+        const receipt = await tx.wait();
 
-      toast({
-        title: "Success",
-        description: "Transaction confirmed! Thank you for your donation.",
-      });
+        // Reset donating state immediately after confirmation
+        setIsDonating(false);
+        needsManualReset = false;
 
-      const nairaAmount = parseFloat(removeCommas(nairaEquivalent));
-      const maticAmount = parseFloat(donationAmount);
+        if (!receipt || receipt.status === 0) {
+          throw new Error("Transaction failed on chain");
+        }
 
-      // Update cause raised amount
-      const { error: updateError } = await supabase
-        .from("causes")
-        .update({
-          raised_amount: supabase.rpc("increment", {
-            amount: nairaAmount,
-          }),
-        })
-        .eq("id", causeId);
+        toast({
+          title: "Success",
+          description: "Transaction confirmed! Thank you for your donation.",
+        });
 
-      if (updateError) throw updateError;
+        const nairaAmount = parseFloat(removeCommas(nairaEquivalent));
+        const maticAmount = parseFloat(donationAmount);
 
-      // Log transaction
-      await logTransaction(
-        causeId,
-        tx.hash,
-        maticAmount,
-        nairaAmount,
-        walletAddress,
-        recipientAddress
-      );
+        // Use a try/catch for database operations to avoid blocking UI
+        try {
+          const { error: updateError } = await supabase
+            .from("causes")
+            .update({
+              raised_amount: supabase.rpc("increment", { amount: nairaAmount }),
+            })
+            .eq("id", causeId);
 
-      if (onDonationSuccess) {
-        onDonationSuccess(nairaAmount);
+          if (updateError) {
+            console.error("Error updating raised amount:", updateError);
+          }
+
+          await logTransaction(
+            causeId,
+            tx.hash,
+            maticAmount,
+            nairaAmount,
+            walletAddress,
+            recipientAddress!
+          );
+
+          onDonationSuccess?.(nairaAmount);
+        } catch (dbError) {
+          console.error("Database operation error:", dbError);
+          // Don't surface database errors to the user since the blockchain transaction was successful
+        }
+      } catch (confirmError) {
+        console.error("Transaction confirmation error:", confirmError);
+        setIsDonating(false);
+        needsManualReset = false;
+        throw confirmError;
       }
     } catch (err: any) {
-      console.error("Donation error:", {
-        message: err.message,
-        code: err.code,
-        data: err.data,
-        stack: err.stack,
-        fullError: err,
-      });
+      console.error("Donation error:", err);
 
       let userFriendlyMessage = "Donation failed. Please try again.";
-
       if (err.code === 4001 || err.code === "ACTION_REJECTED") {
         userFriendlyMessage = "Transaction was rejected by your wallet";
       } else if (err.code === -32603 || err.message?.includes("JSON-RPC")) {
@@ -357,20 +317,13 @@ export default function MaticDonationButton({
           "Transaction failed. Please check your wallet and try again.";
       } else if (
         err.message?.includes("insufficient funds") ||
-        err.message?.includes("Insufficient") ||
-        err.message?.includes("not enough") ||
-        err.message?.includes("balance") ||
-        err.message?.includes("underflow") ||
         err.code === "INSUFFICIENT_FUNDS"
       ) {
-        userFriendlyMessage =
-          "Insufficient MATIC balance. Please ensure you have enough MATIC in your wallet";
+        userFriendlyMessage = "Insufficient MATIC balance";
       } else if (err.message?.includes("user rejected signing")) {
         userFriendlyMessage = "You rejected the transaction signature";
       } else if (err.message?.includes("invalid address")) {
         userFriendlyMessage = "Invalid recipient address";
-      } else if (err.message?.includes("transaction failed on chain")) {
-        userFriendlyMessage = "Transaction failed on the blockchain";
       }
 
       toast({
@@ -378,12 +331,30 @@ export default function MaticDonationButton({
         description: userFriendlyMessage,
         variant: "destructive",
       });
-
       setError(userFriendlyMessage);
+
+      // Make absolutely sure we reset the state
+      if (needsManualReset) {
+        setIsDonating(false);
+      }
     } finally {
-      setIsDonating(false);
+      // Last resort fallback to ensure button state is reset
+      if (needsManualReset) {
+        // Use setTimeout to ensure this runs after all other code
+        setTimeout(() => {
+          setIsDonating(false);
+        }, 100);
+      }
     }
-  };
+  }, [
+    donationAmount,
+    nairaEquivalent,
+    recipientAddress,
+    causeId,
+    supabase,
+    toast,
+    onDonationSuccess,
+  ]);
 
   if (isLoadingAddress) {
     return (
@@ -400,8 +371,7 @@ export default function MaticDonationButton({
           Donate with MATIC
         </h2>
         <div className="mt-4 p-3 bg-yellow-50 text-yellow-700 rounded-md">
-          <p>The creator hasn&apos;t set up a Polygon wallet address.</p>
-
+          <p>The creator hasn't set up a Polygon wallet address.</p>
           <p className="mt-2">
             <Link
               href={`/cause/${params.cause_id}/payment`}
