@@ -172,13 +172,13 @@ export function Header() {
           {/* <ThemeToggle /> */}
           {!isLoading && !user ? (
             <div className="flex items-center gap-2">
-              <Link href="/auth/signin">
+              <Link href="/dashboard/causes/create">
                 <Button variant="outline" size="sm">
                   List a Cause
                 </Button>
               </Link>
               <Link href="/auth/signin">
-                <Button size="sm">Sign In</Button>
+                <Button size="sm" className="bg-[#0070E0]">Sign In</Button>
               </Link>
             </div>
           ) : (
