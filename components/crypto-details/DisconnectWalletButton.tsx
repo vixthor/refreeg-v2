@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Trash2Icon } from "lucide-react";
 import { ConfirmationModal } from "@/components/ConfirmationModal";
 import { createClient } from "@/lib/supabase/client";
-import { toast } from "sonner";
+import { useToast } from "@/components/ui/use-toast";
 
 interface DisconnectWalletButtonProps {
   walletAddress: string;
@@ -21,6 +21,7 @@ export function DisconnectWalletButton({
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const supabase = createClient();
+  const { toast } = useToast();
 
   const handleDisconnect = async () => {
     setIsLoading(true);
@@ -40,11 +41,18 @@ export function DisconnectWalletButton({
 
       if (error) throw error;
 
-      toast.success("Wallet disconnected successfully");
+      toast({
+        title: "Success",
+        description: "Wallet disconnected successfully",
+      });
       onSuccess();
     } catch (error) {
       console.error("Disconnection error:", error);
-      toast.error("Failed to disconnect wallet");
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to disconnect wallet",
+      });
     } finally {
       setIsLoading(false);
       setIsOpen(false);

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { BrowserProvider } from "ethers";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
-import { toast } from "sonner";
+import { useToast } from "@/components/ui/use-toast";
 
 interface ConnectWalletButtonProps {
   onConnected?: (address: string, network?: string) => void;
@@ -18,6 +18,7 @@ export function ConnectWalletButton({
   const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const supabase = createClient();
+  const { toast } = useToast();
 
   const installMetaMask = () => {
     window.open("https://metamask.io/download/", "_blank");
@@ -33,12 +34,15 @@ export function ConnectWalletButton({
       if (!window.ethereum) {
         const errorMsg = "MetaMask is not installed";
         setError(errorMsg);
-        toast.error(errorMsg, {
-          action: {
-            label: "Install MetaMask",
-            onClick: installMetaMask,
-          },
-          duration: 5000,
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: errorMsg,
+          action: (
+            <Button variant="outline" onClick={installMetaMask}>
+              Install MetaMask
+            </Button>
+          ),
         });
         return;
       }
@@ -87,14 +91,21 @@ export function ConnectWalletButton({
 
       onConnected?.(address, "matic-amoy");
 
-      toast.success("Wallet connected on Polygon Amoy testnet");
+      toast({
+        title: "Success",
+        description: "Wallet connected on Polygon Amoy testnet",
+      });
       return { address, network: "matic-amoy" };
     } catch (err) {
       console.error("Wallet connection error:", err);
       const errorMessage =
         err instanceof Error ? err.message : "Failed to connect wallet";
       setError(errorMessage);
-      toast.error(errorMessage);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: errorMessage,
+      });
       throw new Error(errorMessage);
     } finally {
       setIsConnecting(false);
