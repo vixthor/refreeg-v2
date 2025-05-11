@@ -28,6 +28,14 @@ export async function getProfile(userId: string): Promise<Profile | null> {
 }
 
 /**
+ * Check if a user has bank details
+ */
+export async function hasBankDetails(userId: string): Promise<boolean> {
+  const profile = await getProfile(userId);
+  return !!(profile && profile.account_number && profile.bank_name);
+}
+
+/**
  * Update a user's profile
  */
 export async function updateProfile(
