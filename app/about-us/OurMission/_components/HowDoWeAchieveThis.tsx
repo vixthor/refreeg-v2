@@ -48,8 +48,8 @@ export const HowDoWeAchieveThis: FC = () => {
   }
   
   return (
-    <div className="w-full px-10 mt-16">
-      <div className="bg-white w-full mt-8 mb-12 z-10">
+    <div className="w-full px-10 mt-4 md:mt-8 lg:mt-16">
+      <div className="bg-white w-full z-10">
         <div className="text-xl md:text-2xl lg:text-4xl font-semibold w-full">
           How do we achieve this?
         </div>

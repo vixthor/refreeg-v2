@@ -9,7 +9,8 @@ export default function Mission() {
         <div className="w-full">
             <Hero />
             <Whyweexist />
-            <HowDoWeAchieveThis />
+            <div className="mt-16">
+            <HowDoWeAchieveThis /></div>
             <WhatDoWeFocusOn />
             <CreateBetterFuture />           
         </div>
