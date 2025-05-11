@@ -286,21 +286,34 @@ export default function MaticDonationButton({
         throw new Error("Insufficient MATIC balance");
       }
 
-      const gasEstimate = await provider.estimateGas({
-        to: recipientAddress,
-        value: amountInWei,
-      });
+      // FIXED: Using a more robust way to estimate gas with proper error handling
+      let gasEstimate;
+      try {
+        gasEstimate = await provider.estimateGas({
+          from: walletAddress,
+          to: recipientAddress,
+          value: amountInWei,
+        });
+      } catch (gasError) {
+        console.error("Gas estimation error:", gasError);
+        // Fallback to a reasonable gas limit if estimation fails
+        gasEstimate = BigInt(21000); // Basic transfer gas limit
+      }
 
+      // Add 30% buffer to gas estimate instead of 20%
       const gasWithBuffer =
-        (BigInt(gasEstimate.toString()) * BigInt(120)) / BigInt(100);
+        (BigInt(gasEstimate.toString()) * BigInt(130)) / BigInt(100);
 
       console.log("Gas estimate:", gasEstimate.toString());
       console.log("Gas with buffer:", gasWithBuffer.toString());
 
+      // FIXED: More robust transaction formatting
       const tx = await signer.sendTransaction({
+        from: walletAddress, // Explicitly set the from address
         to: recipientAddress,
         value: amountInWei,
         gasLimit: gasWithBuffer,
+        type: 2, // EIP-1559 transaction
       });
 
       console.log("Transaction submitted, hash:", tx.hash);
