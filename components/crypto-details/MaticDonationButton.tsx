@@ -6,7 +6,7 @@ import { MetaMaskInpageProvider } from "@metamask/providers";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { toast } from "sonner";
+import { useToast } from "@/components/ui/use-toast";
 
 const DEFAULT_MATIC_TO_NAIRA_RATE = 413;
 
@@ -25,6 +25,7 @@ export default function MaticDonationButton({
   causeId,
   onDonationSuccess,
 }: MaticDonationButtonProps) {
+  const { toast } = useToast();
   const [donationAmount, setDonationAmount] = useState<string>("0.1");
   const [nairaEquivalent, setNairaEquivalent] = useState<string>("41.3");
   const [formattedNairaEquivalent, setFormattedNairaEquivalent] =
@@ -161,7 +162,7 @@ export default function MaticDonationButton({
           user_id: user.id,
           payment_method: "MATIC",
           status: "completed",
-          network: "Polygon Mainnet",
+          network: "Polygon Amoy Testnet",
           currency: "MATIC",
         });
 
@@ -176,11 +177,11 @@ export default function MaticDonationButton({
     }
   };
 
-  const switchToPolygonMainnet = async () => {
+  const switchToPolygonAmoyTestnet = async () => {
     try {
       await window.ethereum?.request({
         method: "wallet_switchEthereumChain",
-        params: [{ chainId: "0x89" }], // Polygon Mainnet chain ID (137 in hex)
+        params: [{ chainId: "0x13882" }], // Polygon Amoy Testnet chain ID (80002 in hex)
       });
     } catch (switchError: any) {
       if (switchError.code === 4902) {
@@ -189,38 +190,48 @@ export default function MaticDonationButton({
             method: "wallet_addEthereumChain",
             params: [
               {
-                chainId: "0x89", // 137 in hex
-                chainName: "Polygon Mainnet",
+                chainId: "0x13882", // 80002 in hex
+                chainName: "Polygon Amoy Testnet",
                 nativeCurrency: {
                   name: "MATIC",
                   symbol: "MATIC",
                   decimals: 18,
                 },
-                rpcUrls: ["https://polygon-rpc.com/"],
-                blockExplorerUrls: ["https://polygonscan.com/"],
+                rpcUrls: ["https://rpc-amoy.polygon.technology/"],
+                blockExplorerUrls: ["https://amoy.polygonscan.com/"],
               },
             ],
           });
         } catch (addError) {
-          console.error("Failed to add Polygon network:", addError);
-          throw new Error("Please add Polygon Mainnet to MetaMask manually");
+          console.error("Failed to add Polygon Amoy network:", addError);
+          throw new Error(
+            "Please add Polygon Amoy Testnet to MetaMask manually"
+          );
         }
       } else {
-        console.error("Failed to switch to Polygon network:", switchError);
-        throw new Error("Failed to switch to Polygon Mainnet");
+        console.error("Failed to switch to Polygon Amoy network:", switchError);
+        throw new Error("Failed to switch to Polygon Amoy Testnet");
       }
     }
   };
 
   const handleDonate = async () => {
     if (!recipientAddress) {
-      toast.error("Recipient wallet address not available");
+      toast({
+        title: "Error",
+        description: "Recipient wallet address not available",
+        variant: "destructive",
+      });
       setError("Recipient wallet address not available");
       return;
     }
 
     if (!window.ethereum) {
-      toast.error("Please install MetaMask to donate with MATIC");
+      toast({
+        title: "Error",
+        description: "Please install MetaMask to donate with MATIC",
+        variant: "destructive",
+      });
       setError("Please install MetaMask to donate with MATIC");
       return;
     }
@@ -235,14 +246,16 @@ export default function MaticDonationButton({
         throw new Error("Please enter a valid donation amount");
       }
 
+      // Request account access if needed
       await window.ethereum.request({ method: "eth_requestAccounts" });
 
+      // Switch to Polygon Amoy Testnet
       try {
-        await switchToPolygonMainnet();
+        await switchToPolygonAmoyTestnet();
       } catch (networkError) {
         console.error("Network error:", networkError);
         throw new Error(
-          "Please switch to Polygon Mainnet in your wallet and try again"
+          "Please switch to Polygon Amoy Testnet in your wallet and try again"
         );
       }
 
@@ -258,16 +271,45 @@ export default function MaticDonationButton({
         );
       }
 
+      // Estimate gas for the transaction
+      let gasEstimate;
+      try {
+        gasEstimate = await provider.estimateGas({
+          to: recipientAddress,
+          value: amountInWei,
+        });
+      } catch (estimateError) {
+        console.error("Gas estimation error:", estimateError);
+        throw new Error(
+          "Failed to estimate transaction gas. Please try again later."
+        );
+      }
+
+      // Add buffer to gas estimate (20% more)
+      const gasWithBuffer = (gasEstimate * 120n) / 100n;
+
+      // Send transaction with proper gas settings
       const tx = await signer.sendTransaction({
         to: recipientAddress,
         value: amountInWei,
+        gasLimit: gasWithBuffer,
       });
 
       setTxHash(tx.hash);
-      toast.success("Transaction submitted! Waiting for confirmation...");
+      toast({
+        title: "Transaction Submitted",
+        description: "Waiting for confirmation...",
+      });
 
       const receipt = await tx.wait();
-      toast.success("Transaction confirmed! Thank you for your donation.");
+      if (!receipt || receipt.status === 0) {
+        throw new Error("Transaction failed on chain");
+      }
+
+      toast({
+        title: "Success",
+        description: "Transaction confirmed! Thank you for your donation.",
+      });
 
       const nairaAmount = parseFloat(removeCommas(nairaEquivalent));
       const maticAmount = parseFloat(donationAmount);
@@ -310,11 +352,9 @@ export default function MaticDonationButton({
 
       if (err.code === 4001 || err.code === "ACTION_REJECTED") {
         userFriendlyMessage = "Transaction was rejected by your wallet";
-      } else if (
-        err.code === "NETWORK_ERROR" ||
-        err.message?.includes("network")
-      ) {
-        userFriendlyMessage = "Network error. Please check your connection";
+      } else if (err.code === -32603 || err.message?.includes("JSON-RPC")) {
+        userFriendlyMessage =
+          "Transaction failed. Please check your wallet and try again.";
       } else if (
         err.message?.includes("insufficient funds") ||
         err.message?.includes("Insufficient") ||
@@ -329,13 +369,14 @@ export default function MaticDonationButton({
         userFriendlyMessage = "You rejected the transaction signature";
       } else if (err.message?.includes("invalid address")) {
         userFriendlyMessage = "Invalid recipient address";
-      } else if (err.code === -32603 || err.message?.includes("JSON-RPC")) {
-        userFriendlyMessage =
-          "Transaction failed. Please check your wallet and try again.";
+      } else if (err.message?.includes("transaction failed on chain")) {
+        userFriendlyMessage = "Transaction failed on the blockchain";
       }
 
-      toast.error(userFriendlyMessage, {
-        duration: 5000,
+      toast({
+        title: "Error",
+        description: userFriendlyMessage,
+        variant: "destructive",
       });
 
       setError(userFriendlyMessage);
@@ -424,7 +465,7 @@ export default function MaticDonationButton({
             disabled={isDonating}
           />
         </div>
-        <p className="mt-1 text-xs text-gray-500">Using Polygon Mainnet</p>
+        <p className="mt-1 text-xs text-gray-500">Using Polygon Amoy Testnet</p>
       </div>
 
       <button
@@ -449,7 +490,7 @@ export default function MaticDonationButton({
           <p className="mt-1 text-sm">
             Transaction:{" "}
             <a
-              href={`https://polygonscan.com/tx/${txHash}`}
+              href={`https://amoy.polygonscan.com/tx/${txHash}`}
               target="_blank"
               rel="noopener noreferrer"
               className="underline hover:text-green-800"

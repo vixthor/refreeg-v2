@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ConnectWalletButton } from "@/components/crypto-details/ConnectWalletButton";
 import { DisconnectWalletButton } from "@/components/crypto-details/DisconnectWalletButton";
 import { createClient } from "@/lib/supabase/client";
-import { toast } from "sonner";
+import { useToast } from "@/components/ui/use-toast";
 
 interface CryptoWallet {
   id: number;
@@ -17,6 +17,7 @@ export default function CryptoDetailsForm() {
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const supabase = createClient();
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchWallet = async () => {
@@ -45,14 +46,18 @@ export default function CryptoDetailsForm() {
         }
       } catch (error) {
         console.error("Error fetching wallet:", error);
-        toast.error("Failed to load wallet");
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to load wallet",
+        });
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchWallet();
-  }, [supabase]);
+  }, [supabase, toast]);
 
   const handleWalletConnected = async (address: string) => {
     try {
@@ -70,15 +75,26 @@ export default function CryptoDetailsForm() {
       if (error) throw error;
 
       setWalletAddress(address);
-      toast.success("Wallet connected successfully");
+      toast({
+        title: "Success",
+        description: "Wallet connected successfully",
+      });
     } catch (error) {
       console.error("Error handling wallet connection:", error);
-      toast.error("Failed to connect wallet");
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to connect wallet",
+      });
     }
   };
 
   const handleWalletDisconnected = () => {
     setWalletAddress(null);
+    toast({
+      title: "Success",
+      description: "Wallet disconnected successfully",
+    });
   };
 
   if (isLoading) {
