@@ -26,9 +26,9 @@ export default function MaticDonationButton({
   onDonationSuccess,
 }: MaticDonationButtonProps) {
   const [donationAmount, setDonationAmount] = useState<string>("0.1");
-  const [nairaEquivalent, setNairaEquivalent] = useState<string>("30.25");
+  const [nairaEquivalent, setNairaEquivalent] = useState<string>("41.3");
   const [formattedNairaEquivalent, setFormattedNairaEquivalent] =
-    useState<string>("30.25");
+    useState<string>("41.3");
   const [exchangeRate] = useState<number>(DEFAULT_MATIC_TO_NAIRA_RATE);
   const [isDonating, setIsDonating] = useState<boolean>(false);
   const [txHash, setTxHash] = useState<string | null>(null);
@@ -107,7 +107,7 @@ export default function MaticDonationButton({
         // Get creator's profile
         const { data: profile } = await supabase
           .from("profiles")
-          .select("polygon_wallet") // Changed from crypto_wallets to polygon_wallet
+          .select("polygon_wallet")
           .eq("id", cause.user_id)
           .single();
 
@@ -161,7 +161,7 @@ export default function MaticDonationButton({
           user_id: user.id,
           payment_method: "MATIC",
           status: "completed",
-          network: "Polygon Amoy Testnet", // Changed from Mainnet to Amoy Testnet
+          network: "Polygon Mainnet",
           currency: "MATIC",
         });
 
@@ -176,11 +176,11 @@ export default function MaticDonationButton({
     }
   };
 
-  const switchToAmoyTestnet = async () => {
+  const switchToPolygonMainnet = async () => {
     try {
       await window.ethereum?.request({
         method: "wallet_switchEthereumChain",
-        params: [{ chainId: "0x13882" }], // Polygon Amoy Testnet chain ID (80002 in hex)
+        params: [{ chainId: "0x89" }], // Polygon Mainnet chain ID (137 in hex)
       });
     } catch (switchError: any) {
       if (switchError.code === 4902) {
@@ -189,27 +189,25 @@ export default function MaticDonationButton({
             method: "wallet_addEthereumChain",
             params: [
               {
-                chainId: "0x13882", // 80002 in hex
-                chainName: "Polygon Amoy Testnet",
+                chainId: "0x89", // 137 in hex
+                chainName: "Polygon Mainnet",
                 nativeCurrency: {
                   name: "MATIC",
                   symbol: "MATIC",
                   decimals: 18,
                 },
-                rpcUrls: ["https://rpc-amoy.polygon.technology/"],
-                blockExplorerUrls: ["https://www.oklink.com/amoy/"],
+                rpcUrls: ["https://polygon-rpc.com/"],
+                blockExplorerUrls: ["https://polygonscan.com/"],
               },
             ],
           });
         } catch (addError) {
-          console.error("Failed to add Polygon Amoy network:", addError);
-          throw new Error(
-            "Please add Polygon Amoy Testnet to MetaMask manually"
-          );
+          console.error("Failed to add Polygon network:", addError);
+          throw new Error("Please add Polygon Mainnet to MetaMask manually");
         }
       } else {
-        console.error("Failed to switch to Polygon Amoy network:", switchError);
-        throw new Error("Failed to switch to Polygon Amoy Testnet");
+        console.error("Failed to switch to Polygon network:", switchError);
+        throw new Error("Failed to switch to Polygon Mainnet");
       }
     }
   };
@@ -240,11 +238,11 @@ export default function MaticDonationButton({
       await window.ethereum.request({ method: "eth_requestAccounts" });
 
       try {
-        await switchToAmoyTestnet();
+        await switchToPolygonMainnet();
       } catch (networkError) {
         console.error("Network error:", networkError);
         throw new Error(
-          "Please switch to Polygon Amoy Testnet in your wallet and try again"
+          "Please switch to Polygon Mainnet in your wallet and try again"
         );
       }
 
@@ -256,7 +254,7 @@ export default function MaticDonationButton({
 
       if (balance < amountInWei) {
         throw new Error(
-          "Insufficient MATIC balance. Please ensure you have enough test MATIC in your wallet"
+          "Insufficient MATIC balance. Please ensure you have enough MATIC in your wallet"
         );
       }
 
@@ -326,7 +324,7 @@ export default function MaticDonationButton({
         err.code === "INSUFFICIENT_FUNDS"
       ) {
         userFriendlyMessage =
-          "Insufficient MATIC balance. You may need to get test MATIC from the Polygon Amoy faucet";
+          "Insufficient MATIC balance. Please ensure you have enough MATIC in your wallet";
       } else if (err.message?.includes("user rejected signing")) {
         userFriendlyMessage = "You rejected the transaction signature";
       } else if (err.message?.includes("invalid address")) {
@@ -337,7 +335,7 @@ export default function MaticDonationButton({
       }
 
       toast.error(userFriendlyMessage, {
-        duration: 5000, // duration in milliseconds
+        duration: 5000,
       });
 
       setError(userFriendlyMessage);
@@ -358,7 +356,7 @@ export default function MaticDonationButton({
     return (
       <div className="max-w-md mx-auto p-6 bg-white rounded-lg shadow-md">
         <h2 className="text-xl font-semibold text-gray-800 mb-4">
-          Donate with MATIC (Testnet)
+          Donate with MATIC
         </h2>
         <div className="mt-4 p-3 bg-yellow-50 text-yellow-700 rounded-md">
           <p>The creator hasn&apos;t set up a Polygon wallet address.</p>
@@ -379,24 +377,8 @@ export default function MaticDonationButton({
   return (
     <div className="max-w-md mx-auto p-6 bg-white rounded-lg shadow-md">
       <h2 className="text-xl font-semibold text-gray-800 mb-4">
-        Donate with MATIC (Testnet)
+        Donate with MATIC
       </h2>
-
-      <div className="mb-4 p-3 bg-blue-50 text-blue-700 rounded-md">
-        <p className="text-sm">
-          <strong>Note:</strong> This uses the Polygon Amoy Testnet. You'll need
-          test MATIC from the{" "}
-          <a
-            href="https://www.oklink.com/amoy/faucet"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline hover:text-blue-800"
-          >
-            Amoy faucet
-          </a>
-          .
-        </p>
-      </div>
 
       <div className="mb-4">
         <label
@@ -442,7 +424,7 @@ export default function MaticDonationButton({
             disabled={isDonating}
           />
         </div>
-        <p className="mt-1 text-xs text-gray-500">Using Polygon Amoy Testnet</p>
+        <p className="mt-1 text-xs text-gray-500">Using Polygon Mainnet</p>
       </div>
 
       <button
@@ -452,7 +434,7 @@ export default function MaticDonationButton({
           isDonating ? "bg-blue-400" : "bg-purple-600 hover:bg-blue-700"
         } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors`}
       >
-        {isDonating ? "Processing..." : "Donate with Test MATIC"}
+        {isDonating ? "Processing..." : "Donate with MATIC"}
       </button>
 
       {error && (
@@ -467,12 +449,12 @@ export default function MaticDonationButton({
           <p className="mt-1 text-sm">
             Transaction:{" "}
             <a
-              href={`https://www.oklink.com/amoy/tx/${txHash}`}
+              href={`https://polygonscan.com/tx/${txHash}`}
               target="_blank"
               rel="noopener noreferrer"
               className="underline hover:text-green-800"
             >
-              View on Oklink Explorer
+              View on Polygonscan
             </a>
           </p>
         </div>
