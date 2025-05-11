@@ -121,34 +121,29 @@ export default function MaticDonationButton({
     fetchRecipientAddress();
   }, [causeId, supabase]);
 
-  const logTransaction = async (
+  const logDonation = async (
     causeId: string,
     txHash: string,
     amountInMatic: number,
     amountInNaira: number,
-    walletAddress: string,
+    donorWalletAddress: string,
     recipientAddress: string
   ) => {
     try {
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      if (!user) {
-        console.error("User not logged in - transaction not logged");
-        return;
-      }
 
       const { error: insertError } = await supabase
-        .from("transactions")
+        .from("crypto_donations")
         .insert({
           cause_id: causeId,
           tx_hash: txHash,
-          amount_in_matic: amountInMatic,
+          amount_in_crypto: amountInMatic,
           amount_in_naira: amountInNaira,
-          wallet_address: walletAddress,
+          donor_wallet_address: donorWalletAddress,
           recipient_address: recipientAddress,
-          user_id: user.id,
-          payment_method: "MATIC",
+          user_id: user?.id || null,
           status: "completed",
           network: "Polygon Amoy Testnet",
           currency: "MATIC",
@@ -156,8 +151,8 @@ export default function MaticDonationButton({
 
       if (insertError) throw insertError;
     } catch (error) {
-      console.error("Error logging transaction:", error);
-      // Don't surface this error to the user since the donation was successful
+      console.error("Error logging donation:", error);
+      // Don't surface this error to the user since the blockchain transaction was successful
     }
   };
 
@@ -181,7 +176,7 @@ export default function MaticDonationButton({
                   symbol: "MATIC",
                   decimals: 18,
                 },
-                rpcUrls: ["https://rpc-amoy.polygon.technology/"],
+                rpcUrls: ["https://rpc-amoy.polygon.technology"],
                 blockExplorerUrls: ["https://amoy.polygonscan.com/"],
               },
             ],
@@ -286,7 +281,7 @@ export default function MaticDonationButton({
             console.error("Error updating raised amount:", updateError);
           }
 
-          await logTransaction(
+          await logDonation(
             causeId,
             tx.hash,
             maticAmount,
