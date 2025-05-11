@@ -53,23 +53,13 @@ export function UserNav() {
     : "U";
 
   return (
-    <div className="space-x-3">
-      <Link href="/dashboard/causes/create">
-        <Button variant="outline" size="sm" className="hover:bg-[#0070E0]">
-          List a Cause
-        </Button>
-      </Link>
+    <div className=" pt-1.5">
+
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            className="relative h-8 w-8 rounded-full border-[#150aec] border"
-          >
-            <Avatar className="h-8 w-8">
-              <AvatarImage
-                src={profile?.profile_photo || user.user_metadata?.avatar_url}
-                alt={user.email || ""}
-              />
+          <Button variant="ghost" className="relative h-9 w-9 rounded-full border-[#150aec] border">
+            <Avatar className="h-9 w-9">
+              <AvatarImage src={profile?.profile_photo || user.user_metadata?.avatar_url} alt={user.email || ""} />
               <AvatarFallback>{initials}</AvatarFallback>
             </Avatar>
           </Button>
@@ -151,6 +141,6 @@ export function UserNav() {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-    </div>
-  );
+    </div> 
+  )
 }
