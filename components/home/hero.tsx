@@ -27,7 +27,7 @@ const Hero = () => {
         <p className="text-[12px] md:text-[14px] font-semibold text-center text-foreground">
           Building Africa's number 1 crowd funding platform.
         </p>
-        <p className="text-[65px] md:text-[100px] font-bold md:font-semibold text-brand">
+        <p className="text-[65px] md:text-[100px] font-bold md:font-semibold  text-[#10467c]">
           RefreeG
         </p>
         <p className="md:text-[20px] text-[16px] text-foreground font-medium">
@@ -38,7 +38,7 @@ const Hero = () => {
         <Link
           href={"/causes"}
           className="flex gap-[6px] py-[10px] px-[15px] rounded-[8px] text-brand text-[15px] items-center justify-center mx-auto relative z-30 
-            md:mt-16 mt-8 font-semibold cursor-pointer bg-muted hover:bg-secondary hover:text-secondary-foreground transition"
+            md:mt-16 mt-8 font-semibold cursor-pointer bg-muted hover:bg-[#0070E0] hover:text-secondary-foreground transition"
         >
           Explore Causes
           <ArrowRight size={"18"} />
