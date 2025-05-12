@@ -13,7 +13,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useToast } from "@/components/ui/use-toast";
 
-const DEFAULT_SOL_TO_NAIRA_RATE = 208000; // Adjust based on current SOL/NGN rate
+const DEFAULT_SOL_TO_NAIRA_RATE = 282214.38; // Adjust based on current SOL/NGN rate
 
 declare global {
   interface Window {
@@ -32,9 +32,9 @@ export default function SolanaDonationButton({
 }: SolanaDonationButtonProps) {
   const { toast } = useToast();
   const [donationAmount, setDonationAmount] = useState<string>("0.1");
-  const [nairaEquivalent, setNairaEquivalent] = useState<string>("208000");
+  const [nairaEquivalent, setNairaEquivalent] = useState<string>("282214");
   const [formattedNairaEquivalent, setFormattedNairaEquivalent] =
-    useState<string>("208,000");
+    useState<string>("282,214.38");
   const [exchangeRate] = useState<number>(DEFAULT_SOL_TO_NAIRA_RATE);
   const [isDonating, setIsDonating] = useState<boolean>(false);
   const [txHash, setTxHash] = useState<string | null>(null);
