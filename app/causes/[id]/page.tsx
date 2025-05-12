@@ -19,7 +19,7 @@ import {
 import { notFound } from "next/navigation";
 import { ShareModal } from "@/components/share-modal";
 import { getBaseURL } from "@/lib/utils";
-import MaticDonationButton from "@/components/crypto-details/MaticDonationButton";
+import MaticDonationButton from "@/components/crypto-details/Matic[Redacted]/MaticDonationButton";
 import SolanaDonationButton from "@/components/crypto-details/SolanaDonationButton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
