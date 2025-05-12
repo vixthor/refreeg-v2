@@ -22,6 +22,7 @@ import { getBaseURL } from "@/lib/utils";
 import MaticDonationButton from "@/components/crypto-details/MaticDonationButton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
+import Link from "next/link";
 
 // Mock data for a cause
 const mockCause = {
@@ -119,7 +120,7 @@ export default async function CauseDetailPage({
 
   // Check if creator has a wallet
   const creatorProfile = await getProfile(cause.user_id);
-  const hasCreatorWallet = !!creatorProfile?.crypto_wallets?.ethereum;
+  const hasCreatorWallet = !!creatorProfile?.polygon_wallet;
 
   return (
     <div className="container py-10">
@@ -141,7 +142,15 @@ export default async function CauseDetailPage({
             <TabsContent value="about" className="space-y-4">
               <h1 className="text-3xl font-bold">{cause.title}</h1>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <span>Created by {cause.user.name}</span>
+                <span>
+                  Created by{" "}
+                  <Link
+                    href={`/profile/${cause.user_id}`}
+                    className="hover:underline text-blue-600"
+                  >
+                    {cause.user.name}
+                  </Link>
+                </span>
                 <span>•</span>
                 <span>{formattedDate}</span>
                 <span>•</span>

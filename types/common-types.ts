@@ -18,6 +18,7 @@ export interface ProfileFormData {
   phone: string;
   profile_photo?: string | null;
   email: string;
+  bio: string;
 }
 
 export interface BankDetailsFormData {
