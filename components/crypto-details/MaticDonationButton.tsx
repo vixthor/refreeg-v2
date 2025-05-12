@@ -178,7 +178,7 @@ export default function MaticDonationButton({
 
       console.log("Donation logged successfully:", data);
 
-      // 3. Update raised amount (alternative approach)
+      // 3. Update raised amount
       console.log("Updating raised amount...");
       const { data: causeData, error: selectError } = await supabase
         .from("causes")
