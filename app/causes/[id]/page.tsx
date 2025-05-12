@@ -121,7 +121,7 @@ export default async function CauseDetailPage({
 
   // Check if creator has a wallet
   const creatorProfile = await getProfile(cause.user_id);
-  const hasCreatorWallet = !!creatorProfile?.polygon_wallet;
+  const hasCreatorWallet = !!creatorProfile?.solana_wallet;
 
   return (
     <div className="container py-10">
