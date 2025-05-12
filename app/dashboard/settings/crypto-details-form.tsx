@@ -2,18 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ConnectWalletButton } from "@/components/crypto-details/ConnectWalletButton";
-import { DisconnectWalletButton } from "@/components/crypto-details/DisconnectWalletButton";
+import { ConnectSolanaWalletButton } from "@/components/crypto-details/ConnectSolanaWalletButton";
+import { DisconnectSolanaWalletButton } from "@/components/crypto-details/DisconnectSolanaWalletButton";
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 
-interface CryptoWallet {
-  id: number;
-  address: string;
-  network: string;
-}
-
-export default function CryptoDetailsForm() {
+export default function SolanaWalletForm() {
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const supabase = createClient();
@@ -30,17 +24,12 @@ export default function CryptoDetailsForm() {
 
         const { data: profile } = await supabase
           .from("profiles")
-          .select("polygon_wallet")
+          .select("solana_wallet")
           .eq("id", user.id)
           .single();
 
-        // Handle both string and object formats
-        if (profile?.polygon_wallet) {
-          const address =
-            typeof profile.polygon_wallet === "string"
-              ? profile.polygon_wallet
-              : Object.values(profile.polygon_wallet).join("");
-          setWalletAddress(address);
+        if (profile?.solana_wallet) {
+          setWalletAddress(profile.solana_wallet);
         } else {
           setWalletAddress(null);
         }
@@ -66,10 +55,9 @@ export default function CryptoDetailsForm() {
       } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
 
-      // Store as a plain string
       const { error } = await supabase
         .from("profiles")
-        .update({ polygon_wallet: address })
+        .update({ solana_wallet: address })
         .eq("id", user.id);
 
       if (error) throw error;
@@ -77,7 +65,7 @@ export default function CryptoDetailsForm() {
       setWalletAddress(address);
       toast({
         title: "Success",
-        description: "Wallet connected successfully",
+        description: "Solana wallet connected successfully",
       });
     } catch (error) {
       console.error("Error handling wallet connection:", error);
@@ -101,7 +89,7 @@ export default function CryptoDetailsForm() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Crypto Wallet</CardTitle>
+          <CardTitle>Solana Wallet</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-center py-4 text-muted-foreground">
@@ -115,7 +103,7 @@ export default function CryptoDetailsForm() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Crypto Wallet</CardTitle>
+        <CardTitle>Solana Wallet</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
@@ -142,15 +130,14 @@ export default function CryptoDetailsForm() {
                   </svg>
                 </div>
                 <div>
-                  <p className="font-medium">Polygon Amoy</p>
+                  <p className="font-medium">Solana</p>
                   <p className="text-sm text-muted-foreground truncate max-w-md">
                     {walletAddress}
                   </p>
                 </div>
               </div>
-              <DisconnectWalletButton
+              <DisconnectSolanaWalletButton
                 walletAddress={walletAddress}
-                walletNetwork="matic-amoy"
                 onSuccess={handleWalletDisconnected}
               />
             </div>
@@ -160,7 +147,7 @@ export default function CryptoDetailsForm() {
             </div>
           )}
 
-          <ConnectWalletButton
+          <ConnectSolanaWalletButton
             onConnected={handleWalletConnected}
             disabled={!!walletAddress}
           />
