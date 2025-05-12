@@ -72,7 +72,7 @@ export default function PublicProfile({
   ];
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
+    <div className="max-w-4xl mr-auto px-4 py-8">
       <BackButton />
 
       {/* Profile Header */}

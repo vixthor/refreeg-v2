@@ -21,8 +21,8 @@ export default async function PublicProfilePage({
   searchParams: SearchParams;
 }) {
   // Properly handle the params as recommended by Next.js
-  const { userId } = params;
-  const { tab: tabParam } = searchParams;
+  const { userId } =await  params;
+  const { tab: tabParam } = await searchParams;
 
   const currentUser = await getCurrentUser();
   const isOwner = currentUser?.id === userId;
