@@ -448,7 +448,7 @@ export default function SolanaDonationButton({
             disabled={isDonating}
           />
         </div>
-        <p className="mt-1 text-xs text-gray-500">Using Solana network</p>
+        <p className="mt-1 text-xs text-gray-500">Using Solana Testnet</p>
       </div>
 
       <button
