@@ -13,11 +13,9 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useToast } from "@/components/ui/use-toast";
 
-const DEFAULT_SOL_TO_NAIRA_RATE = 282214.38; // Adjust based on current SOL/NGN rate
-
 declare global {
   interface Window {
-    solana?: any; // Phantom wallet typings
+    solana?: any;
   }
 }
 
@@ -32,18 +30,72 @@ export default function SolanaDonationButton({
 }: SolanaDonationButtonProps) {
   const { toast } = useToast();
   const [donationAmount, setDonationAmount] = useState<string>("0.1");
-  const [nairaEquivalent, setNairaEquivalent] = useState<string>("282214");
+  const [nairaEquivalent, setNairaEquivalent] = useState<string>("0.00");
   const [formattedNairaEquivalent, setFormattedNairaEquivalent] =
-    useState<string>("282,214.38");
-  const [exchangeRate] = useState<number>(DEFAULT_SOL_TO_NAIRA_RATE);
+    useState<string>("0.00");
+  const [exchangeRate, setExchangeRate] = useState<number | null>(null);
   const [isDonating, setIsDonating] = useState<boolean>(false);
   const [txHash, setTxHash] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [recipientAddress, setRecipientAddress] = useState<string | null>(null);
   const [isLoadingAddress, setIsLoadingAddress] = useState<boolean>(true);
   const [inputMode, setInputMode] = useState<"sol" | "naira">("sol");
+  const [isLoadingRate, setIsLoadingRate] = useState<boolean>(true);
   const params = useParams();
   const supabase = createClient();
+
+  // Fetch exchange rate from CoinGecko API
+  useEffect(() => {
+    const fetchExchangeRate = async () => {
+      try {
+        setIsLoadingRate(true);
+
+        // Option 1: CoinGecko API (direct SOL to NGN)
+        const response = await fetch(
+          "https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=ngn"
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch exchange rate");
+        }
+
+        const data = await response.json();
+        const rate = data.solana.ngn;
+
+        // Option 2: Binance API (SOL to USDT then USDT to NGN)
+        // const solUsdtResponse = await fetch("https://api.binance.com/api/v3/ticker/price?symbol=SOLUSDT");
+        // const usdtNgnResponse = await fetch("https://api.binance.com/api/v3/ticker/price?symbol=USDTNGN");
+        // const solUsdt = await solUsdtResponse.json();
+        // const usdtNgn = await usdtNgnResponse.json();
+        // const rate = parseFloat(solUsdt.price) * parseFloat(usdtNgn.price);
+
+        setExchangeRate(rate);
+        updateNairaEquivalent(rate, donationAmount);
+      } catch (err) {
+        console.error("Error fetching exchange rate:", err);
+        setError("Failed to load current exchange rate. Using default rate.");
+        // Fallback to a reasonable default rate if API fails
+        setExchangeRate(282214.38);
+      } finally {
+        setIsLoadingRate(false);
+      }
+    };
+
+    fetchExchangeRate();
+
+    // Refresh rate every 5 minutes
+    const interval = setInterval(fetchExchangeRate, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [donationAmount]);
+
+  const updateNairaEquivalent = (rate: number, amount: string) => {
+    const solAmount = parseFloat(amount);
+    if (!isNaN(solAmount)) {
+      const nairaValue = (solAmount * rate).toFixed(2);
+      setNairaEquivalent(nairaValue);
+      setFormattedNairaEquivalent(formatNumberWithCommas(nairaValue));
+    }
+  };
 
   const formatNumberWithCommas = (value: string): string => {
     if (!value || isNaN(parseFloat(value))) return value;
@@ -57,7 +109,7 @@ export default function SolanaDonationButton({
   };
 
   useEffect(() => {
-    if (inputMode === "sol") {
+    if (inputMode === "sol" && exchangeRate) {
       const amount = parseFloat(donationAmount);
       if (!isNaN(amount) && amount > 0) {
         const nairaValue = (amount * exchangeRate).toFixed(2);
@@ -71,7 +123,7 @@ export default function SolanaDonationButton({
   }, [donationAmount, exchangeRate, inputMode]);
 
   useEffect(() => {
-    if (inputMode === "naira") {
+    if (inputMode === "naira" && exchangeRate) {
       const amount = parseFloat(removeCommas(nairaEquivalent));
       if (!isNaN(amount) && amount > 0) {
         const solValue = (amount / exchangeRate).toFixed(6);
@@ -404,6 +456,12 @@ export default function SolanaDonationButton({
         Donate with SOL
       </h2>
 
+      {isLoadingRate && (
+        <div className="mb-4 p-2 bg-blue-50 text-blue-700 rounded-md text-sm">
+          Loading current exchange rates...
+        </div>
+      )}
+
       <div className="mb-4">
         <label
           htmlFor="amount"
@@ -423,7 +481,7 @@ export default function SolanaDonationButton({
             value={donationAmount}
             onChange={handleSolChange}
             className="block w-full pl-16 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-            disabled={isDonating}
+            disabled={isDonating || isLoadingRate}
           />
         </div>
       </div>
@@ -445,20 +503,31 @@ export default function SolanaDonationButton({
             value={formattedNairaEquivalent}
             onChange={handleNairaChange}
             className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-            disabled={isDonating}
+            disabled={isDonating || isLoadingRate}
           />
         </div>
+        {exchangeRate && (
+          <p className="mt-1 text-xs text-gray-500">
+            Current rate: 1 SOL = ₦{exchangeRate.toLocaleString()}
+          </p>
+        )}
         <p className="mt-1 text-xs text-gray-500">Using Solana Testnet</p>
       </div>
 
       <button
         onClick={handleDonate}
-        disabled={isDonating}
+        disabled={isDonating || isLoadingRate || isLoadingAddress}
         className={`w-full py-2 px-4 rounded-md text-white font-medium ${
-          isDonating ? "bg-blue-400" : "bg-purple-600 hover:bg-blue-700"
+          isDonating || isLoadingRate || isLoadingAddress
+            ? "bg-blue-400"
+            : "bg-purple-600 hover:bg-blue-700"
         } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors`}
       >
-        {isDonating ? "Processing..." : "Donate with SOL"}
+        {isDonating
+          ? "Processing..."
+          : isLoadingRate || isLoadingAddress
+          ? "Loading..."
+          : "Donate with SOL"}
       </button>
 
       {error && (
