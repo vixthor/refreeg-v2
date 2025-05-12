@@ -135,27 +135,21 @@ export default function MaticDonationButton({
     recipientAddress: string
   ) => {
     try {
-      console.log("Attempting to log donation with:", {
-        causeId,
-        txHash,
-        amountInMatic,
-        amountInNaira,
-        donorWalletAddress,
-        recipientAddress,
-      });
+      console.log("Starting donation logging process...");
 
+      // 1. Verify authentication
       const {
         data: { user },
         error: authError,
       } = await supabase.auth.getUser();
+      console.log("User auth status:", { user, authError });
 
-      if (authError) {
-        console.error("Auth error:", authError);
-        throw authError;
+      if (authError || !user) {
+        throw new Error(authError?.message || "User not authenticated");
       }
 
-      console.log("User session:", user);
-
+      // 2. Log to crypto_donations
+      console.log("Inserting into crypto_donations...");
       const { data, error: insertError } = await supabase
         .from("crypto_donations")
         .insert({
@@ -165,7 +159,7 @@ export default function MaticDonationButton({
           amount_in_naira: amountInNaira,
           donor_wallet_address: donorWalletAddress,
           recipient_address: recipientAddress,
-          user_id: user?.id || null,
+          user_id: user.id,
           status: "completed",
           network: "Polygon Amoy Testnet",
           currency: "MATIC",
@@ -173,29 +167,49 @@ export default function MaticDonationButton({
         .select();
 
       if (insertError) {
-        console.error("Insert error:", insertError);
+        console.error("Insert failed:", {
+          error: insertError,
+          details: insertError.details,
+          hint: insertError.hint,
+          code: insertError.code,
+        });
         throw insertError;
       }
 
       console.log("Donation logged successfully:", data);
 
-      // Update raised amount after successful donation logging
+      // 3. Update raised amount (alternative approach)
+      console.log("Updating raised amount...");
+      const { data: causeData, error: selectError } = await supabase
+        .from("causes")
+        .select("raised")
+        .eq("id", causeId)
+        .single();
+
+      if (selectError) throw selectError;
+
+      const currentRaised = causeData?.raised || 0;
+      const newRaised = currentRaised + amountInNaira;
+
       const { error: updateError } = await supabase
         .from("causes")
-        .update({
-          raised: supabase.rpc("increment", { amount: amountInNaira }),
-        })
+        .update({ raised: newRaised })
         .eq("id", causeId);
 
       if (updateError) {
-        console.error("Update error:", updateError);
+        console.error("Update failed:", {
+          currentRaised,
+          amountInNaira,
+          newRaised,
+          error: updateError,
+        });
         throw updateError;
       }
 
       console.log("Raised amount updated successfully");
       return data;
     } catch (error) {
-      console.error("Error in logDonation:", error);
+      console.error("Complete donation logging error:", error);
       throw error;
     }
   };
