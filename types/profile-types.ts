@@ -24,5 +24,5 @@ export interface Profile {
   causes_count?: number;
   user_type?: "individual" | "organization";
   bio?: string;
-  polygon_wallet?: string | null;
+  solana_wallet?: string | null;
 }
