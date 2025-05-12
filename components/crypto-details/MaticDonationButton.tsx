@@ -183,7 +183,7 @@ export default function MaticDonationButton({
       const { error: updateError } = await supabase
         .from("causes")
         .update({
-          raised_amount: supabase.rpc("increment", { amount: amountInNaira }),
+          raised: supabase.rpc("increment", { amount: amountInNaira }),
         })
         .eq("id", causeId);
 
@@ -344,19 +344,6 @@ export default function MaticDonationButton({
         const maticAmount = parseFloat(donationAmount);
 
         try {
-          // Commented out the raised amount update
-          /*
-          const { error: updateError } = await supabase
-            .from("causes")
-            .update({
-              raised_amount: supabase.rpc("increment", { amount: nairaAmount }),
-            })
-            .eq("id", causeId);
-
-          if (updateError) {
-            console.error("Error updating raised amount:", updateError);
-          }
-          */
           console.log("Logging donation to database...");
           await logDonation(
             causeId,
