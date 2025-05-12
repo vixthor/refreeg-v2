@@ -20,6 +20,7 @@ import { notFound } from "next/navigation";
 import { ShareModal } from "@/components/share-modal";
 import { getBaseURL } from "@/lib/utils";
 import MaticDonationButton from "@/components/crypto-details/MaticDonationButton";
+import SolanaDonationButton from "@/components/crypto-details/SolanaDonationButton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import Link from "next/link";
@@ -157,16 +158,12 @@ export default async function CauseDetailPage({
                 <span className="capitalize">{cause.category}</span>
               </div>
               <p className="whitespace-pre-line">{cause.description}</p>
-              {cause.sections &&
-                cause.sections.length > 0 &&
-                cause.sections.map((section, index) => (
-                  <div key={index} className="mt-4">
-                    <h3 className="text-xl font-semibold">{section.heading}</h3>
-                    <p className="text-muted-foreground">
-                      {section.description}
-                    </p>
-                  </div>
-                ))}
+              {cause.sections && cause.sections.length > 0 && cause.sections.map((section, index) => (
+                <div key={index} className="mt-4">
+                  <h3 className="text-xl font-semibold">{section.heading}</h3>
+                  <p className="text-muted-foreground">{section.description}</p>
+                </div>
+              ))}
             </TabsContent>
             <TabsContent value="donors">
               <DonorsList donors={donors} />
@@ -227,30 +224,41 @@ export default async function CauseDetailPage({
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-4">
-                {/* <MaticDonationButton causeId={cause.id} /> */}
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>
-                    Crypto donations are not available at the moment.
-                  </AlertDescription>
-                </Alert>
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t" />
+              {hasCreatorWallet ? (
+                <div className="space-y-4">
+                  <SolanaDonationButton causeId={cause.id} />
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-background px-2 text-muted-foreground">
+                        Or donate with
+                      </span>
+                    </div>
                   </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-background px-2 text-muted-foreground">
-                      Or donate with
-                    </span>
-                  </div>
+                  <DonationForm
+                    causeId={cause.id}
+                    profile={profile}
+                    status={cause.status}
+                  />
                 </div>
-                <DonationForm
-                  causeId={cause.id}
-                  profile={profile}
-                  status={cause.status}
-                />
-              </div>
+              ) : (
+                <div className="space-y-4">
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      Crypto donations are not available for this cause as the
+                      creator has not connected their wallet.
+                    </AlertDescription>
+                  </Alert>
+                  <DonationForm
+                    causeId={cause.id}
+                    profile={profile}
+                    status={cause.status}
+                  />
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
