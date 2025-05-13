@@ -22,6 +22,7 @@ const categories = [
     { id: "community", name: "Community" },
     { id: "disaster", name: "Disaster Relief" },
     { id: "animals", name: "Animal Welfare" },
+    { id: "creative", name: "Creative" },
 ]
 
 const currencies = [
