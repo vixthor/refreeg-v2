@@ -80,7 +80,7 @@ export default function SettingsPage() {
         <TabsList>
           <TabsTrigger value="profile">Profile</TabsTrigger>
           <TabsTrigger value="bank">Bank Details</TabsTrigger>
-          <TabsTrigger value="crypto">Crypto Wallets</TabsTrigger>
+          {/* <TabsTrigger value="crypto">Crypto Wallets</TabsTrigger> */}
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
         </TabsList>
 
