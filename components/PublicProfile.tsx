@@ -1,15 +1,11 @@
-// components/profile/PublicProfile.tsx
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
 import { ChevronLeft } from "lucide-react";
-import ProfileTabs from "./ProfileTabs";
 import { CauseCard, DonationCard, EmptyState } from "./ProfileCards";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type ProfileProps = {
   profile: any;
@@ -25,63 +21,21 @@ export default function PublicProfile({
   causes,
   donations,
   userId,
-  activeTab,
+  activeTab = "causes", // default value
   isOwner,
 }: ProfileProps) {
   const router = useRouter();
   const donationsCount = donations.length;
+  const causesCount = causes.length;
 
   const handleBack = () => {
     router.back();
   };
 
-  // Tab configuration
-  const tabs = [
-    {
-      id: "causes",
-      label: "Causes",
-      count: causes.length,
-      content:
-        causes.length === 0 ? (
-          <EmptyState
-            title="No Causes Yet"
-            description={`It looks like ${
-              profile.full_name?.split(" ")[0] || "this user"
-            } hasn't started a cause yet. Stay tuned for their first impact story!`}
-            cta="Explore causes on refreeg"
-            ctaLink="/causes"
-          />
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {causes.map((cause) => (
-              <CauseCard key={cause.id} cause={cause} />
-            ))}
-          </div>
-        ),
-    },
-    {
-      id: "donations",
-      label: "Donations",
-      count: donationsCount,
-      content:
-        donationsCount === 0 ? (
-          <EmptyState
-            title="No Donations Yet"
-            description={`${
-              profile.full_name?.split(" ")[0] || "This user"
-            } hasn't donated to any causes yet.`}
-            cta="Explore causes on refreeg"
-            ctaLink="/causes"
-          />
-        ) : (
-          <div className="space-y-4">
-            {donations.map((donation) => (
-              <DonationCard key={donation.id} donation={donation} />
-            ))}
-          </div>
-        ),
-    },
-  ];
+  // Handle tab change
+  const handleTabChange = (value: string) => {
+    router.push(`/profile/${userId}?tab=${value}`, { scroll: false });
+  };
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
@@ -110,18 +64,18 @@ export default function PublicProfile({
             <h1 className="text-2xl font-bold">
               {profile.full_name || "Anonymous"}
             </h1>
-            <div className="flex items-center gap-2 mt-1">
+            {/* <div className="flex items-center gap-2 mt-1">
               <span className="text-sm bg-gray-100 px-2 py-1 rounded-full flex items-center gap-1">
                 📌 Individual
               </span>
-            </div>
+            </div> */}
           </div>
 
           {/* Stats */}
           <div className="flex gap-4 mt-4 text-sm">
             <span className="text-gray-700">
-              <span className="font-semibold">{causes.length}</span>{" "}
-              {causes.length === 1 ? "cause" : "causes"}
+              <span className="font-semibold">{causesCount}</span>{" "}
+              {causesCount === 1 ? "cause" : "causes"}
             </span>
             <span className="text-gray-700">
               <span className="font-semibold">{donationsCount}</span>{" "}
@@ -134,12 +88,78 @@ export default function PublicProfile({
         </div>
       </div>
 
-      {/* Tab Navigation */}
-      <ProfileTabs tabs={tabs} userId={userId} activeTab={activeTab} />
-
-      {/* Tab Content */}
-      <div className="mt-6">
-        {tabs.find((tab) => tab.id === activeTab)?.content}
+      {/* Custom-styled shadcn Tabs */}
+      <div className="border-b mt-8">
+        <Tabs
+          defaultValue={activeTab}
+          onValueChange={handleTabChange}
+          className="w-full"
+        >
+          <div className="flex justify-center">
+            <TabsList className="bg-transparent p-0 gap-0">
+              <TabsTrigger
+                value="causes"
+                className="px-6 py-2 font-medium flex items-center gap-2 data-[state=active]:text-blue-600 data-[state=active]:border-b-2 data-[state=active]:border-blue-600 data-[state=active]:shadow-none text-gray-500 hover:text-gray-700 rounded-none"
+              >
+                Causes
+                {causesCount > 0 && (
+                  <span className="text-xs bg-gray-100 px-2 py-1 rounded-full">
+                    {causesCount}
+                  </span>
+                )}
+              </TabsTrigger>
+              <TabsTrigger
+                value="donations"
+                className="px-6 py-2 font-medium flex items-center gap-2 data-[state=active]:text-blue-600 data-[state=active]:border-b-2 data-[state=active]:border-blue-600 data-[state=active]:shadow-none text-gray-500 hover:text-gray-700 rounded-none"
+              >
+                Donations
+                {donationsCount > 0 && (
+                  <span className="text-xs bg-gray-100 px-2 py-1 rounded-full">
+                    {donationsCount}
+                  </span>
+                )}
+              </TabsTrigger>
+            </TabsList>
+          </div>
+          <div className="mt-6">
+            <TabsContent value="causes">
+              {causesCount === 0 ? (
+                <EmptyState
+                  title="No Causes Yet"
+                  description={`It looks like ${
+                    profile.full_name?.split(" ")[0] || "this user"
+                  } hasn't started a cause yet. Stay tuned for their first impact story!`}
+                  cta="Explore causes on refreeg"
+                  ctaLink="/causes"
+                />
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {causes.map((cause) => (
+                    <CauseCard key={cause.id} cause={cause} />
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+            <TabsContent value="donations">
+              {donationsCount === 0 ? (
+                <EmptyState
+                  title="No Donations Yet"
+                  description={`${
+                    profile.full_name?.split(" ")[0] || "This user"
+                  } hasn't donated to any causes yet.`}
+                  cta="Explore causes on refreeg"
+                  ctaLink="/causes"
+                />
+              ) : (
+                <div className="space-y-4">
+                  {donations.map((donation) => (
+                    <DonationCard key={donation.id} donation={donation} />
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+          </div>
+        </Tabs>
       </div>
     </div>
   );
