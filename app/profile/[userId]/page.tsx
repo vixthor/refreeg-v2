@@ -1,7 +1,6 @@
 // app/profile/[userId]/page.tsx
 import { getProfile, getUserCauses, listUserDonations } from "@/actions";
 import { getCurrentUser } from "@/actions/auth-actions";
-import BackButton from "@/components/ui/BackButton";
 import PublicProfile from "@/components/PublicProfile";
 
 // Type definitions for our parameters
@@ -21,8 +20,8 @@ export default async function PublicProfilePage({
   searchParams: SearchParams;
 }) {
   // Properly handle the params as recommended by Next.js
-  const { userId } =await  params;
-  const { tab: tabParam } = await searchParams;
+  const { userId } = params;
+  const { tab: tabParam } = searchParams;
 
   const currentUser = await getCurrentUser();
   const isOwner = currentUser?.id === userId;
