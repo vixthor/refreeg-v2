@@ -1,10 +1,13 @@
 // components/profile/PublicProfile.tsx
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import BackButton from "@/components/ui/BackButton";
+import { ChevronLeft } from "lucide-react";
 import ProfileTabs from "./ProfileTabs";
 import { CauseCard, DonationCard, EmptyState } from "./ProfileCards";
 
@@ -25,7 +28,12 @@ export default function PublicProfile({
   activeTab,
   isOwner,
 }: ProfileProps) {
+  const router = useRouter();
   const donationsCount = donations.length;
+
+  const handleBack = () => {
+    router.back();
+  };
 
   // Tab configuration
   const tabs = [
@@ -77,7 +85,13 @@ export default function PublicProfile({
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
-      <BackButton />
+      {/* Back Button */}
+      <div className="mb-6">
+        <Button variant="ghost" size="sm" onClick={handleBack}>
+          <ChevronLeft className="h-4 w-4 mr-2" />
+          Back
+        </Button>
+      </div>
 
       {/* Profile Header */}
       <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
