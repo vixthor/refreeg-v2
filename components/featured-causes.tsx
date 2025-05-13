@@ -10,7 +10,8 @@ import {
   Leaf,
   Users,
   AlertTriangle,
-  PawPrint
+  PawPrint,
+  Sparkles
 } from "lucide-react"
 
 
@@ -55,6 +56,7 @@ export async function FeaturedCauses() {
     { id: "community", name: "Community", icon: <Users className="mr-1 h-4 w-4" /> },
     { id: "disaster", name: "Disaster Relief", icon: <AlertTriangle className="mr-1 h-4 w-4" /> },
     { id: "animals", name: "Animal Welfare", icon: <PawPrint className="mr-1 h-4 w-4" /> },
+     { id: "creative", name: "Creative", icon: <Sparkles className="mr-1 h-4 w-4" /> },
   ]
 
   if (!featuredCauses || featuredCauses.length === 0) {
