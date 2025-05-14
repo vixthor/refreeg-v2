@@ -116,7 +116,6 @@ export default async function CauseDetailPage({
   };
 
   const baseUrl = getBaseURL();
-  console.log(cause.user)
   // Check if creator has a wallet
   const creatorProfile = await getProfile(cause.user_id);
   const hasCreatorWallet = !!creatorProfile?.crypto_wallets?.ethereum;
