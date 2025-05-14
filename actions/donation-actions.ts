@@ -21,7 +21,7 @@ export async function createDonation(
       cause_id: causeId,
       user_id: userId,
       amount: typeof donationData.amount === "string" ? Number.parseFloat(donationData.amount) : donationData.amount,
-      name: donationData.isAnonymous ? "Anonymous" : donationData.name,
+      name: Boolean(donationData.isAnonymous) ? "Anonymous" : donationData.name,
       email: donationData.email,
       message: donationData.message || null,
       is_anonymous: donationData.isAnonymous,

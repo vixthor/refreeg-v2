@@ -44,7 +44,7 @@ export function DonationForm({ causeId, profile, status, subaccount }: DonationF
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
   }
-
+  console.log(formData.isAnonymous)
   const handleSwitchChange = (checked: boolean) => {
     setFormData((prev) => ({ ...prev, isAnonymous: checked }))
   }
