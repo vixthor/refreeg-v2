@@ -126,7 +126,7 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
 
         switch (step) {
             case 1:
-                return !currentErrors.title && !currentErrors.description && !currentErrors.category && !currentErrors.goal
+                return !currentErrors.title && !currentErrors.category && !currentErrors.goal
             case 2:
                 return formData.sections.every(section => section.heading.trim() !== "" && section.description.trim() !== "")
             case 3:
@@ -186,7 +186,7 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
                             {errors.title && <p className="text-sm text-red-500">{errors.title}</p>}
                         </div>
 
-                        <div className="space-y-2">
+                        {/* <div className="space-y-2">
                             <Label htmlFor="description">Description</Label>
                             <Textarea
                                 id="description"
@@ -198,7 +198,7 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
                                 className={errors.description ? "border-red-500" : ""}
                             />
                             {errors.description && <p className="text-sm text-red-500">{errors.description}</p>}
-                        </div>
+                        </div> */}
 
                         <div className="space-y-2">
                             <Label htmlFor="category">Category</Label>
@@ -324,10 +324,10 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
                             </p>
                         </div>
 
-                        <div className="space-y-2">
+                        {/* <div className="space-y-2">
                             <h4 className="font-medium">Description</h4>
                             <p className="text-sm">{formData.description}</p>
-                        </div>
+                        </div> */}
 
                         <div className="space-y-2">
                             {formData.sections.map((section, index) => (

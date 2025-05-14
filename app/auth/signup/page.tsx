@@ -92,6 +92,7 @@ export default function SignUpPage() {
                     id="password"
                     type="password"
                     value={password}
+                    placeholder="********"
                     onChange={(e) => setPassword(e.target.value)}
                     required
                   />
@@ -102,6 +103,7 @@ export default function SignUpPage() {
                     id="confirmPassword"
                     type="password"
                     value={confirmPassword}
+                    placeholder="********"
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
                   />
