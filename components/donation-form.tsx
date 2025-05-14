@@ -24,12 +24,12 @@ interface DonationFormProps {
     email?: string
     name?: string
     id?: string
-    subaccount?: string
   }
+  subaccount?: string
   status: "pending" | "rejected" | "approved"
 }
 
-export function DonationForm({ causeId, profile, status }: DonationFormProps) {
+export function DonationForm({ causeId, profile, status, subaccount }: DonationFormProps) {
   const { initializePayment,isLoading } = usePayment()
   const [formData, setFormData] = useState({
     amount: "",
@@ -59,7 +59,7 @@ export function DonationForm({ causeId, profile, status }: DonationFormProps) {
       id: profile.id || "",
       full_name: formData.name,
       serviceFee: serviceFee,
-      subaccounts: [{ subaccount: profile.subaccount || "", share: Number(formData.amount)*100 }],
+      subaccounts: [{ subaccount: subaccount || "", share: Number(formData.amount)*100 }],
       message: formData.message,
       isAnonymous: formData.isAnonymous,
     })

@@ -18,7 +18,8 @@ export async function getCause(causeId: string): Promise<CauseWithUser | null> {
       *,
       profiles!inner (
         full_name,
-        email
+        email,
+        sub_account_code
       ),
       cause_sections (
         id,

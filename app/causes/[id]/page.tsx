@@ -231,6 +231,7 @@ export default async function CauseDetailPage({
                     causeId={cause.id}
                     profile={profile}
                     status={cause.status}
+                    subaccount={cause?.user.sub_account_code}
                   />
                 </div>
               ) : (
@@ -246,6 +247,7 @@ export default async function CauseDetailPage({
                     causeId={cause.id}
                     profile={profile}
                     status={cause.status}
+                    subaccount={cause?.user.sub_account_code}
                   />
                 </div>
               )}
