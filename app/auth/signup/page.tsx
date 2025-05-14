@@ -15,6 +15,7 @@ export default function SignUpPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
+  const [fullName, setFullName] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const { signUp } = useAuth()
 
@@ -25,7 +26,7 @@ export default function SignUpPage() {
       return
     }
     setIsLoading(true)
-    await signUp(email, password)
+    await signUp(email, password, fullName)
     setIsLoading(false)
   }
 
@@ -40,7 +41,7 @@ export default function SignUpPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4">
-            <div className="grid grid-cols-2 gap-6">
+            {/* <div className="grid grid-cols-2 gap-6">
               <Button variant="outline">
                 <Icons.gitHub className="mr-2 h-4 w-4" />
                 GitHub
@@ -49,17 +50,31 @@ export default function SignUpPage() {
                 <Icons.google className="mr-2 h-4 w-4" />
                 Google
               </Button>
-            </div>
-            <div className="relative">
+            </div> */}
+            {/* <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <span className="w-full border-t" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
                 <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
               </div>
-            </div>
+            </div> */}
             <form onSubmit={handleSubmit}>
               <div className="grid gap-2">
+                <div className="grid gap-1">
+                  <Label htmlFor="fullName">Full Name</Label>
+                  <Input
+                    id="fullName"
+                    type="text"
+                    placeholder="John Doe"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    required
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Please use your real name. Accounts with fake or suspicious names will be flagged for review.
+                  </p>
+                </div>
                 <div className="grid gap-1">
                   <Label htmlFor="email">Email</Label>
                   <Input

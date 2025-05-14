@@ -36,7 +36,7 @@ export default function SignInPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4">
-            <div className="grid grid-cols-2 gap-6">
+            {/* <div className="grid grid-cols-2 gap-6">
               <Button variant="outline">
                 <Icons.gitHub className="mr-2 h-4 w-4" />
                 GitHub
@@ -53,7 +53,7 @@ export default function SignInPage() {
               <div className="relative flex justify-center text-xs uppercase">
                 <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
               </div>
-            </div>
+            </div> */}
             <form onSubmit={handleSubmit}>
               <div className="grid gap-2">
                 <div className="grid gap-1">
