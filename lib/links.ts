@@ -49,7 +49,7 @@ export const legalLinks = [
 
 export const socialLinks = {
   twitter: "https://x.com/RefreeG",
-  instagram: "https://www.instagram.com/we_are_refreegerians/",
+  instagram: "https://www.instagram.com/crowdfundwithrefreeg",
   linkedin: "https://www.linkedin.com/company/102040636",
   community: "http://t.me/+d67UCIer8c01ODhk",
   Facebook: "https://www.facebook.com/profile.php?id=61564103093969",
