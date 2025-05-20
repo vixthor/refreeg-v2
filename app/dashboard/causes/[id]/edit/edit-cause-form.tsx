@@ -14,16 +14,7 @@ import { useCause } from "@/hooks/use-cause"
 import { Progress } from "@/components/ui/progress"
 import { ImageUpload } from "@/components/ui/image-upload"
 import type { Cause } from "@/types"
-
-// Mock categories
-const categories = [
-    { id: "education", name: "Education" },
-    { id: "health", name: "Healthcare" },
-    { id: "environment", name: "Environment" },
-    { id: "community", name: "Community" },
-    { id: "disaster", name: "Disaster Relief" },
-    { id: "animals", name: "Animal Welfare" },
-]
+import { categories } from "@/lib/categories"
 
 const currencies = [
     { id: "NGN", name: "Naira (₦)" },

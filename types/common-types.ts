@@ -18,6 +18,13 @@ export interface ProfileFormData {
   phone: string;
   profile_photo?: string | null;
   email: string;
+  bio: string;
+  social_media?: {
+    twitter?: string | null;
+    facebook?: string | null;
+    instagram?: string | null;
+    linkedin?: string | null;
+  } | null;
 }
 
 export interface BankDetailsFormData {
@@ -91,6 +98,7 @@ export interface Cause {
   image: string | null;
   created_at: string;
   updated_at: string;
+  rejection_reason?: string | null;
   sections?: CauseSection[];
 }
 
