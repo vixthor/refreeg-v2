@@ -66,8 +66,9 @@ export async function getCause(causeId: string): Promise<CauseWithUser | null> {
 async function uploadImageToSupabase(file: File, userId: string, type: "cover" | "additional"): Promise<string> {
   const supabase = await createClient()
 
-  // Generate a unique filename
-  const fileName = `${userId}-${Date.now()}-${type}-${file.name}`
+  // Generate a unique filename and sanitize it by removing special characters
+  const sanitizedOriginalName = file.name.replace(/[^\w\s.-]/g, '_')
+  const fileName = `${userId}-${Date.now()}-${type}-${sanitizedOriginalName}`
 
   // Upload the file to Supabase Storage
   const { data: uploadData, error: uploadError } = await supabase.storage

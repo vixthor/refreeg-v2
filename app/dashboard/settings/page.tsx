@@ -39,7 +39,7 @@ export default function SettingsPage() {
           <TabsList>
             <TabsTrigger value="profile">Profile</TabsTrigger>
             <TabsTrigger value="bank">Bank Details</TabsTrigger>
-            <TabsTrigger value="crypto">Crypto Wallets</TabsTrigger>
+            {/* <TabsTrigger value="crypto">Crypto Wallets</TabsTrigger> */}
             <TabsTrigger value="notifications">Notifications</TabsTrigger>
           </TabsList>
 
@@ -51,9 +51,9 @@ export default function SettingsPage() {
             <Skeleton className="h-[400px] w-full" />
           </TabsContent>
 
-          <TabsContent value="crypto">
+          {/* <TabsContent value="crypto">
             <Skeleton className="h-[400px] w-full" />
-          </TabsContent>
+          </TabsContent> */}
 
           <TabsContent value="notifications">
             <Skeleton className="h-[200px] w-full" />
@@ -80,7 +80,7 @@ export default function SettingsPage() {
         <TabsList>
           <TabsTrigger value="profile">Profile</TabsTrigger>
           <TabsTrigger value="bank">Bank Details</TabsTrigger>
-          <TabsTrigger value="crypto">Crypto Wallets</TabsTrigger>
+          {/* <TabsTrigger value="crypto">Crypto Wallets</TabsTrigger> */}
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
         </TabsList>
 
