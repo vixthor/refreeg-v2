@@ -58,11 +58,11 @@ const validateForm = (formData: FormData): FormErrors => {
         errors.title = "Title must be at least 5 characters long"
     }
 
-    // if (!formData.description.trim()) {
-    //     errors.description = "Description is required"
-    // } else if (formData.description.length < 50) {
-    //     errors.description = "Description must be at least 50 characters long"
-    // }
+    if (!formData.description.trim()) {
+        errors.description = "Description is required"
+    } else if (formData.description.length < 50) {
+        errors.description = "Description must be at least 50 characters long"
+    }
 
     if (!formData.category) {
         errors.category = "Category is required"
@@ -253,7 +253,18 @@ export default function CreateCauseForm() {
                             {errors.title && <p className="text-sm text-red-500">{errors.title}</p>}
                         </div>
 
-
+                        <div className="space-y-2">
+                            <Label htmlFor="description">Description</Label>
+                            <Textarea
+                                id="description"
+                                name="description"
+                                placeholder="Describe your cause in detail"
+                                value={formData.description}
+                                onChange={handleChange}
+                                className={errors.description ? "border-red-500" : ""}
+                            />
+                            {errors.description && <p className="text-sm text-red-500">{errors.description}</p>}
+                        </div>
 
                         <div className="space-y-2">
                             <Label htmlFor="category">Category</Label>
