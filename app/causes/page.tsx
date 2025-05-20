@@ -2,18 +2,9 @@ import { Suspense } from "react";
 import { CausesList } from "@/components/causes-list";
 import { CausesFilter } from "@/components/causes-filter";
 import { Skeleton } from "@/components/ui/skeleton";
-
+import { categories } from "@/lib/categories";
 // Mock categories for filtering
-const categories = [
-  { id: "all", name: "All Causes" },
-  { id: "education", name: "Education" },
-  { id: "health", name: "Healthcare" },
-  { id: "environment", name: "Environment" },
-  { id: "community", name: "Community" },
-  { id: "disaster", name: "Disaster Relief" },
-  { id: "animals", name: "Animal Welfare" },
-  { id: "creative", name: "Creative" },
-];
+
 
 export default async function CausesPage({
   searchParams,
