@@ -14,6 +14,7 @@ import { useCause } from "@/hooks/use-cause"
 import { Progress } from "@/components/ui/progress"
 import { ImageUpload } from "@/components/ui/image-upload"
 import { categories } from "@/lib/categories"
+import { sendCauseUnderReviewEmail } from "@/services/mail"
 
 
 const currencies = [
@@ -84,6 +85,7 @@ export default function CreateCauseForm() {
     const { user } = useAuth()
     const { isLoading, createCause } = useCause()
     const [currentStep, setCurrentStep] = useState(1)
+    const [submitting, setSubmitting] = useState(false)
     const [formData, setFormData] = useState<FormData>({
         title: "",
         description: "",
@@ -164,9 +166,12 @@ export default function CreateCauseForm() {
         e.preventDefault()
         if (!user) return
 
+        setSubmitting(true)
+
         const validationErrors = validateForm(formData)
         if (Object.keys(validationErrors).length > 0) {
             setErrors(validationErrors)
+            setSubmitting(false)
             return
         }
 
@@ -189,9 +194,18 @@ export default function CreateCauseForm() {
             coverImage: formData.coverImage,
             sections: formData.sections,
         }
-
-        await createCause(user.id, causeData)
-        localStorage.removeItem("causeDraft")
+        try {
+            await sendCauseUnderReviewEmail({
+                causeName: causeData.title,
+                reviewTimeframe: '3-5 business days'
+            })
+            await createCause(user.id, causeData)
+            localStorage.removeItem("causeDraft")
+        } catch (error) {
+            console.error("Error submitting cause:", error)
+        } finally {
+            setSubmitting(false)
+        }
     }
 
     const prevStep = () => {
@@ -239,7 +253,7 @@ export default function CreateCauseForm() {
                             {errors.title && <p className="text-sm text-red-500">{errors.title}</p>}
                         </div>
 
-                        
+
 
                         <div className="space-y-2">
                             <Label htmlFor="category">Category</Label>
@@ -414,7 +428,7 @@ export default function CreateCauseForm() {
                             </div>
                         </div>
 
-                       
+
                     </div>
                 )
 
@@ -452,8 +466,8 @@ export default function CreateCauseForm() {
                             Next
                         </Button>
                     ) : (
-                        <Button type="submit" disabled={isLoading}>
-                            {isLoading ? (
+                        <Button type="submit" disabled={isLoading || submitting}>
+                            {isLoading || submitting ? (
                                 <>
                                     <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
                                     Submitting...
