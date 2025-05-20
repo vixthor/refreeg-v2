@@ -18,7 +18,8 @@ export async function getCause(causeId: string): Promise<CauseWithUser | null> {
       *,
       profiles!inner (
         full_name,
-        email
+        email,
+        sub_account_code
       ),
       cause_sections (
         id,
@@ -47,6 +48,7 @@ export async function getCause(causeId: string): Promise<CauseWithUser | null> {
     user: {
       name: data.profiles?.full_name || "Anonymous",
       email: data.profiles?.email || "",
+      sub_account_code: data.profiles?.sub_account_code || ""
     },
     sections: data.cause_sections || []
   } as unknown as CauseWithUser
