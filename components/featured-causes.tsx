@@ -49,7 +49,7 @@ import {
 export async function FeaturedCauses() {
   const featuredCauses = await listCauses()
 
-  const categories = [
+  const categoriesWithIcons = [
     { id: "education", name: "Education", icon: <GraduationCap className="mr-1 h-4 w-4" /> },
     { id: "health", name: "Healthcare", icon: <HeartPulse className="mr-1 h-4 w-4" /> },
     { id: "environment", name: "Environment", icon: <Leaf className="mr-1 h-4 w-4" /> },
@@ -93,7 +93,7 @@ export async function FeaturedCauses() {
     <div className="grid gap-6 pt-8 md:grid-cols-2 lg:grid-cols-3">
       {featuredCauses.map((cause) => {
         // Find the category based on the cause's category id
-        const category = categories.find((cat) => cat.id === cause.category)
+        const category = categoriesWithIcons.find((cat) => cat.id === cause.category)
 
         return (
           <Link key={cause.id} href={`/causes/${cause.id}`} className="group">

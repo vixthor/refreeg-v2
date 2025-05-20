@@ -13,17 +13,8 @@ import { useAuth } from "@/hooks/use-auth"
 import { useCause } from "@/hooks/use-cause"
 import { Progress } from "@/components/ui/progress"
 import { ImageUpload } from "@/components/ui/image-upload"
+import { categories } from "@/lib/categories"
 
-// Mock categories
-const categories = [
-    { id: "education", name: "Education" },
-    { id: "health", name: "Healthcare" },
-    { id: "environment", name: "Environment" },
-    { id: "community", name: "Community" },
-    { id: "disaster", name: "Disaster Relief" },
-    { id: "animals", name: "Animal Welfare" },
-    { id: "creative", name: "Creative" },
-]
 
 const currencies = [
     { id: "NGN", name: "Naira (₦)" },
