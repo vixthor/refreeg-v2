@@ -23,6 +23,12 @@ export interface Profile {
   following_count?: number;
   causes_count?: number;
   user_type?: "individual" | "organization";
-  bio?: string;
+  bio: string | null;
   polygon_wallet?: string | null;
+  social_media?: {
+    twitter?: string | null;
+    facebook?: string | null;
+    instagram?: string | null;
+    linkedin?: string | null;
+  } | null;
 }
