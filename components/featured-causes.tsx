@@ -10,7 +10,8 @@ import {
   Leaf,
   Users,
   AlertTriangle,
-  PawPrint
+  PawPrint,
+  Sparkles
 } from "lucide-react"
 
 
@@ -48,13 +49,14 @@ import {
 export async function FeaturedCauses() {
   const featuredCauses = await listCauses()
 
-  const categories = [
+  const categoriesWithIcons = [
     { id: "education", name: "Education", icon: <GraduationCap className="mr-1 h-4 w-4" /> },
     { id: "health", name: "Healthcare", icon: <HeartPulse className="mr-1 h-4 w-4" /> },
     { id: "environment", name: "Environment", icon: <Leaf className="mr-1 h-4 w-4" /> },
     { id: "community", name: "Community", icon: <Users className="mr-1 h-4 w-4" /> },
     { id: "disaster", name: "Disaster Relief", icon: <AlertTriangle className="mr-1 h-4 w-4" /> },
     { id: "animals", name: "Animal Welfare", icon: <PawPrint className="mr-1 h-4 w-4" /> },
+     { id: "creative", name: "Creative", icon: <Sparkles className="mr-1 h-4 w-4" /> },
   ]
 
   if (!featuredCauses || featuredCauses.length === 0) {
@@ -91,7 +93,7 @@ export async function FeaturedCauses() {
     <div className="grid gap-6 pt-8 md:grid-cols-2 lg:grid-cols-3">
       {featuredCauses.map((cause) => {
         // Find the category based on the cause's category id
-        const category = categories.find((cat) => cat.id === cause.category)
+        const category = categoriesWithIcons.find((cat) => cat.id === cause.category)
 
         return (
           <Link key={cause.id} href={`/causes/${cause.id}`} className="group">

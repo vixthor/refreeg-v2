@@ -29,7 +29,7 @@ const Paystack = {
         throw new Error('Missing required fields for transaction initialization');
       }
       const baseUrl = await getBaseURL()
-
+     console.log(data.isAnonymous)
       const requestData = {
         currency: "NGN",
         email: data.email,
@@ -49,10 +49,9 @@ const Paystack = {
         },
       };
 
-      console.log('Sending request to Paystack with data:', requestData);
 
       const response = await this.api.post("/transaction/initialize", requestData);
-      console.log('Paystack response:', response.data);
+
 
       return response.data.data as {
         authorization_url: string;
