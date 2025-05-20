@@ -116,7 +116,6 @@ export default async function CauseDetailPage({
   };
 
   const baseUrl = getBaseURL();
-
   // Check if creator has a wallet
   const creatorProfile = await getProfile(cause.user_id);
   const hasCreatorWallet = !!creatorProfile?.polygon_wallet;
@@ -324,13 +323,31 @@ export default async function CauseDetailPage({
                       Or donate with
                     </span>
                   </div>
+                  <DonationForm
+                    causeId={cause.id}
+                    profile={profile}
+                    status={cause.status}
+                    subaccount={cause?.user.sub_account_code}
+                  />
                 </div>
-                <DonationForm
-                  causeId={cause.id}
-                  profile={profile}
-                  status={cause.status}
-                />
-              </div>
+              ) : (
+                <div className="space-y-4">
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      Crypto donations are not available for this cause as the
+                      creator has not connected their wallet.
+                    </AlertDescription>
+                  </Alert>
+                  <DonationForm
+                    causeId={cause.id}
+                    profile={profile}
+                    status={cause.status}
+                    subaccount={cause?.user.sub_account_code}
+                  />
+                </div>
+              )}
+
             </CardContent>
           </Card>
         </div>

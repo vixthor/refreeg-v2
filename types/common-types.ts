@@ -106,6 +106,7 @@ export interface CauseWithUser extends Cause {
   user: {
     name: string;
     email: string;
+    sub_account_code: string;
   };
   sections: CauseSection[];
 }
