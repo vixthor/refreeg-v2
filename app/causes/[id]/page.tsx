@@ -91,7 +91,7 @@ export default async function CauseDetailPage({
   if (!cause) {
     notFound();
   }
-  
+
   const donors = await listDonationsForCause(cause.id);
 
   // Format the date
@@ -131,10 +131,10 @@ export default async function CauseDetailPage({
   if (creatorProfile?.social_media) {
     try {
       // Handle both string (from DB) and object (already parsed) cases
-      const parsedSocial = typeof creatorProfile.social_media === 'string' 
-        ? JSON.parse(creatorProfile.social_media) 
+      const parsedSocial = typeof creatorProfile.social_media === 'string'
+        ? JSON.parse(creatorProfile.social_media)
         : creatorProfile.social_media;
-      
+
       socialMedia = {
         twitter: parsedSocial.twitter || "",
         facebook: parsedSocial.facebook || "",
@@ -147,8 +147,8 @@ export default async function CauseDetailPage({
   }
 
   // Check if any social media links exist
-  const hasSocialMedia = socialMedia.twitter || socialMedia.facebook || 
-                        socialMedia.instagram || socialMedia.linkedin;
+  const hasSocialMedia = socialMedia.twitter || socialMedia.facebook ||
+    socialMedia.instagram || socialMedia.linkedin;
 
   return (
     <div className="container py-10">
@@ -189,9 +189,9 @@ export default async function CauseDetailPage({
               {hasSocialMedia && (
                 <div className="flex items-center gap-4 pt-2">
                   {socialMedia.twitter && (
-                    <a 
-                      href={socialMedia.twitter} 
-                      target="_blank" 
+                    <a
+                      href={socialMedia.twitter}
+                      target="_blank"
                       rel="noopener noreferrer"
                       className="text-gray-500 hover:text-blue-400 transition-colors"
                       aria-label="Twitter"
@@ -200,9 +200,9 @@ export default async function CauseDetailPage({
                     </a>
                   )}
                   {socialMedia.facebook && (
-                    <a 
-                      href={socialMedia.facebook} 
-                      target="_blank" 
+                    <a
+                      href={socialMedia.facebook}
+                      target="_blank"
                       rel="noopener noreferrer"
                       className="text-gray-500 hover:text-blue-600 transition-colors"
                       aria-label="Facebook"
@@ -211,9 +211,9 @@ export default async function CauseDetailPage({
                     </a>
                   )}
                   {socialMedia.instagram && (
-                    <a 
-                      href={socialMedia.instagram} 
-                      target="_blank" 
+                    <a
+                      href={socialMedia.instagram}
+                      target="_blank"
                       rel="noopener noreferrer"
                       className="text-gray-500 hover:text-pink-600 transition-colors"
                       aria-label="Instagram"
@@ -222,9 +222,9 @@ export default async function CauseDetailPage({
                     </a>
                   )}
                   {socialMedia.linkedin && (
-                    <a 
-                      href={socialMedia.linkedin} 
-                      target="_blank" 
+                    <a
+                      href={socialMedia.linkedin}
+                      target="_blank"
                       rel="noopener noreferrer"
                       className="text-gray-500 hover:text-blue-700 transition-colors"
                       aria-label="LinkedIn"
@@ -306,29 +306,31 @@ export default async function CauseDetailPage({
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-4">
-                {/* <MaticDonationButton causeId={cause.id} /> */}
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>
-                    Crypto donations are not available at the moment.
-                  </AlertDescription>
-                </Alert>
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t" />
+              {hasCreatorWallet ? (
+                <div className="space-y-4">
+                  {/* <MaticDonationButton causeId={cause.id} /> */}
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      Crypto donations are not available at the moment.
+                    </AlertDescription>
+                  </Alert>
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-background px-2 text-muted-foreground">
+                        Or donate with
+                      </span>
+                    </div>
+                    <DonationForm
+                      causeId={cause.id}
+                      profile={profile}
+                      status={cause.status}
+                      subaccount={cause?.user.sub_account_code}
+                    />
                   </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-background px-2 text-muted-foreground">
-                      Or donate with
-                    </span>
-                  </div>
-                  <DonationForm
-                    causeId={cause.id}
-                    profile={profile}
-                    status={cause.status}
-                    subaccount={cause?.user.sub_account_code}
-                  />
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -347,7 +349,6 @@ export default async function CauseDetailPage({
                   />
                 </div>
               )}
-
             </CardContent>
           </Card>
         </div>
