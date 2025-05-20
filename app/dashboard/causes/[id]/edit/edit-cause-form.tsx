@@ -177,7 +177,7 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
                             {errors.title && <p className="text-sm text-red-500">{errors.title}</p>}
                         </div>
 
-                        {/* <div className="space-y-2">
+                        <div className="space-y-2">
                             <Label htmlFor="description">Description</Label>
                             <Textarea
                                 id="description"
@@ -189,7 +189,7 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
                                 className={errors.description ? "border-red-500" : ""}
                             />
                             {errors.description && <p className="text-sm text-red-500">{errors.description}</p>}
-                        </div> */}
+                        </div>
 
                         <div className="space-y-2">
                             <Label htmlFor="category">Category</Label>

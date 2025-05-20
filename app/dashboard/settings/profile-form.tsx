@@ -255,7 +255,7 @@ export function ProfileForm({ profile, user }: ProfileFormProps) {
             </p>
           </div>
 
-          {/* Social Media Section */}
+          {/* Social Media Section
           <div className="space-y-4">
             <h3 className="text-lg font-medium">Social Media</h3>
             <p className="text-sm text-muted-foreground">
@@ -307,7 +307,7 @@ export function ProfileForm({ profile, user }: ProfileFormProps) {
                 />
               </div>
             </div>
-          </div>
+          </div> */}
         </CardContent>
         <CardFooter>
           <Button type="submit" disabled={isSubmitting}>

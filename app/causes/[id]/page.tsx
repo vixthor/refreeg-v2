@@ -185,7 +185,7 @@ export default async function CauseDetailPage({
                 <span className="capitalize">{cause.category}</span>
               </div>
 
-              {/* Social Media Links */}
+              {/* Social Media Links
               {hasSocialMedia && (
                 <div className="flex items-center gap-4 pt-2">
                   {socialMedia.twitter && (
@@ -233,7 +233,7 @@ export default async function CauseDetailPage({
                     </a>
                   )}
                 </div>
-              )}
+              )} */}
 
               <p className="whitespace-pre-line">{cause.description}</p>
               {cause.sections &&
