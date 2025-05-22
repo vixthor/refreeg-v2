@@ -542,7 +542,7 @@ export default function SolanaDonationButton({
           <p className="mt-1 text-sm">
             Transaction:{" "}
             <a
-              href={`https://solscan.io/tx/${txHash}?cluster=testnet`}
+              href={`https://explorer.solana.com/tx/${txHash}?cluster=testnet`}
               target="_blank"
               rel="noopener noreferrer"
               className="underline hover:text-green-800"
