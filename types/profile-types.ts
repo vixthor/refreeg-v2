@@ -30,5 +30,5 @@ export interface Profile {
     facebook?: string | null;
     instagram?: string | null;
     linkedin?: string | null;
-  } | null;
+  };
 }
