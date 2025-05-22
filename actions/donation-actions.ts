@@ -19,9 +19,9 @@ export async function createDonation(
     .from("donations")
     .insert({
       cause_id: causeId,
-      user_id: userId,
+      ...(userId ? { user_id: userId } : {}),
       amount: typeof donationData.amount === "string" ? Number.parseFloat(donationData.amount) : donationData.amount,
-      name: donationData.isAnonymous ? "Anonymous" : donationData.name,
+      name: String(donationData.isAnonymous).toLocaleLowerCase() === "true" ? "Anonymous" : donationData.name,
       email: donationData.email,
       message: donationData.message || null,
       is_anonymous: donationData.isAnonymous,

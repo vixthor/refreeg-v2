@@ -27,6 +27,12 @@ interface ProfileFormProps {
     phone: string | null;
     profile_photo: string | null;
     bio: string | null;
+    social_media?: {
+      twitter?: string | null;
+      facebook?: string | null;
+      instagram?: string | null;
+      linkedin?: string | null;
+    } | null;
   };
   user: {
     id: string;
@@ -41,6 +47,12 @@ export function ProfileForm({ profile, user }: ProfileFormProps) {
     email: profile?.email || user?.email || "",
     phone: profile?.phone || "",
     bio: profile?.bio || "",
+    social_media: {
+      twitter: profile?.social_media?.twitter || "",
+      facebook: profile?.social_media?.facebook || "",
+      instagram: profile?.social_media?.instagram || "",
+      linkedin: profile?.social_media?.linkedin || "",
+    },
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { updateProfile, updateProfilePhoto, isUploading } = useProfile(
@@ -57,16 +69,31 @@ export function ProfileForm({ profile, user }: ProfileFormProps) {
     }));
   };
 
-  const handleProfileSubmit = async (e: React.FormEvent) => {
+  const handleSocialMediaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      social_media: {
+        ...prev.social_media,
+        [name]: value,
+      },
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+
     const updatedProfile: ProfileFormData = {
       name: formData.full_name,
       email: formData.email,
       phone: formData.phone,
       bio: formData.bio,
+      social_media: formData.social_media,
     };
+
     await updateProfile(updatedProfile);
+
     setIsSubmitting(false);
   };
 
@@ -119,7 +146,7 @@ export function ProfileForm({ profile, user }: ProfileFormProps) {
           </Button>
         </div>
       </CardHeader>
-      <form onSubmit={handleProfileSubmit}>
+      <form onSubmit={handleSubmit}>
         <CardContent className="space-y-6">
           {/* Profile Photo */}
           <div className="flex flex-col items-center space-y-4">
@@ -227,6 +254,60 @@ export function ProfileForm({ profile, user }: ProfileFormProps) {
               This will be displayed on your public profile.
             </p>
           </div>
+
+          {/* Social Media Section
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium">Social Media</h3>
+            <p className="text-sm text-muted-foreground">
+              Add links to your social media profiles (optional)
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="twitter">Twitter (X)</Label>
+                <Input
+                  id="twitter"
+                  name="twitter"
+                  placeholder="https://twitter.com/yourusername"
+                  value={formData.social_media.twitter}
+                  onChange={handleSocialMediaChange}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="facebook">Facebook</Label>
+                <Input
+                  id="facebook"
+                  name="facebook"
+                  placeholder="https://facebook.com/yourpage"
+                  value={formData.social_media.facebook}
+                  onChange={handleSocialMediaChange}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="instagram">Instagram</Label>
+                <Input
+                  id="instagram"
+                  name="instagram"
+                  placeholder="https://instagram.com/yourusername"
+                  value={formData.social_media.instagram}
+                  onChange={handleSocialMediaChange}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="linkedin">LinkedIn</Label>
+                <Input
+                  id="linkedin"
+                  name="linkedin"
+                  placeholder="https://linkedin.com/in/yourprofile"
+                  value={formData.social_media.linkedin}
+                  onChange={handleSocialMediaChange}
+                />
+              </div>
+            </div>
+          </div> */}
         </CardContent>
         <CardFooter>
           <Button type="submit" disabled={isSubmitting}>

@@ -13,16 +13,9 @@ import { useAuth } from "@/hooks/use-auth"
 import { useCause } from "@/hooks/use-cause"
 import { Progress } from "@/components/ui/progress"
 import { ImageUpload } from "@/components/ui/image-upload"
+import { categories } from "@/lib/categories"
+import { sendCauseUnderReviewEmail } from "@/services/mail"
 
-// Mock categories
-const categories = [
-    { id: "education", name: "Education" },
-    { id: "health", name: "Healthcare" },
-    { id: "environment", name: "Environment" },
-    { id: "community", name: "Community" },
-    { id: "disaster", name: "Disaster Relief" },
-    { id: "animals", name: "Animal Welfare" },
-]
 
 const currencies = [
     { id: "NGN", name: "Naira (₦)" },
@@ -92,6 +85,7 @@ export default function CreateCauseForm() {
     const { user } = useAuth()
     const { isLoading, createCause } = useCause()
     const [currentStep, setCurrentStep] = useState(1)
+    const [submitting, setSubmitting] = useState(false)
     const [formData, setFormData] = useState<FormData>({
         title: "",
         description: "",
@@ -172,9 +166,12 @@ export default function CreateCauseForm() {
         e.preventDefault()
         if (!user) return
 
+        setSubmitting(true)
+
         const validationErrors = validateForm(formData)
         if (Object.keys(validationErrors).length > 0) {
             setErrors(validationErrors)
+            setSubmitting(false)
             return
         }
 
@@ -197,9 +194,18 @@ export default function CreateCauseForm() {
             coverImage: formData.coverImage,
             sections: formData.sections,
         }
-
-        await createCause(user.id, causeData)
-        localStorage.removeItem("causeDraft")
+        try {
+            await sendCauseUnderReviewEmail({
+                causeName: causeData.title,
+                reviewTimeframe: '3-5 business days'
+            })
+            await createCause(user.id, causeData)
+            localStorage.removeItem("causeDraft")
+        } catch (error) {
+            console.error("Error submitting cause:", error)
+        } finally {
+            setSubmitting(false)
+        }
     }
 
     const prevStep = () => {
@@ -252,8 +258,7 @@ export default function CreateCauseForm() {
                             <Textarea
                                 id="description"
                                 name="description"
-                                placeholder="Describe your cause, why it matters, and how the funds will be used"
-                                rows={5}
+                                placeholder="Describe your cause in detail"
                                 value={formData.description}
                                 onChange={handleChange}
                                 className={errors.description ? "border-red-500" : ""}
@@ -402,11 +407,6 @@ export default function CreateCauseForm() {
                                 {categories.find((c) => c.id === formData.category)?.name}
                             </p>
                         </div>
-
-                        <div className="space-y-2">
-                            <h4 className="font-medium">Description</h4>
-                            <p className="text-sm">{formData.description}</p>
-                        </div>
                         <div className="space-y-2">
                             {formData.sections.map((section, index) => (
                                 <div key={index} className="space-y-2">
@@ -439,7 +439,7 @@ export default function CreateCauseForm() {
                             </div>
                         </div>
 
-                       
+
                     </div>
                 )
 
@@ -477,8 +477,8 @@ export default function CreateCauseForm() {
                             Next
                         </Button>
                     ) : (
-                        <Button type="submit" disabled={isLoading}>
-                            {isLoading ? (
+                        <Button type="submit" disabled={isLoading || submitting}>
+                            {isLoading || submitting ? (
                                 <>
                                     <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
                                     Submitting...

@@ -12,7 +12,7 @@ const BackButton = () => {
 
   return (
     <div className="mb-6">
-      <Button variant="outline" size="sm" onClick={handleBack}>
+      <Button variant="ghost" size="sm" onClick={handleBack}>
         <ChevronLeft className="h-4 w-4 mr-2" />
         Back
       </Button>

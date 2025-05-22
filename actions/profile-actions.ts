@@ -49,8 +49,9 @@ export async function updateProfile(
     full_name: profileData.name,
     email: profileData.email,
     phone: profileData.phone,
-    bio: profileData.bio, // Add this line to include bio in the update
+    bio: profileData.bio,
     profile_photo: profileData.profile_photo,
+    social_media: profileData.social_media || null, // Add this line
     updated_at: new Date().toISOString(),
   };
 
