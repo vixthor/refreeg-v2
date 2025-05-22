@@ -80,7 +80,7 @@ export default function PaymentVerification() {
                                 </Button>
                                 <Button
                                     variant="outline"
-                                    onClick={() => router.push('/cause')}
+                                    onClick={() => router.push('/causes')}
                                     className="w-full border-brand text-brand hover:bg-secondary hover:text-secondary-foreground"
                                 >
                                     Browse More Causes
