@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Connection,
   PublicKey,
@@ -9,93 +9,92 @@ import {
   LAMPORTS_PER_SOL,
 } from "@solana/web3.js";
 import { createClient } from "@/lib/supabase/client";
-import Link from "next/link";
 import { useParams } from "next/navigation";
+import Link from "next/link";
+import { getCurrentUser } from "@/actions";
 import { useToast } from "@/components/ui/use-toast";
+
+const DEFAULT_SOL_TO_NAIRA_RATE = 225814.49;
+const SOLANA_RPC_URL = "https://api.testnet.solana.com";
 
 declare global {
   interface Window {
-    solana?: any;
+    solana?: {
+      isPhantom?: boolean;
+      connect: () => Promise<{ publicKey: PublicKey }>;
+      signAndSendTransaction: (
+        transaction: Transaction
+      ) => Promise<{ signature: string }>;
+    };
   }
 }
 
-interface SolanaDonationButtonProps {
+interface SolDonationButtonProps {
   causeId: string;
   onDonationSuccess?: (amountInNaira: number) => void;
 }
 
-export default function SolanaDonationButton({
+const fetchSolToNairaRate = async (): Promise<number> => {
+  try {
+    const response = await fetch(
+      "https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=ngn"
+    );
+    const data = await response.json();
+    return data.solana.ngn || DEFAULT_SOL_TO_NAIRA_RATE;
+  } catch (error) {
+    console.error("Error fetching SOL rate:", error);
+    return DEFAULT_SOL_TO_NAIRA_RATE;
+  }
+};
+
+export default function SolDonationButton({
   causeId,
   onDonationSuccess,
-}: SolanaDonationButtonProps) {
-  const { toast } = useToast();
-  const [donationAmount, setDonationAmount] = useState<string>("0.1");
-  const [nairaEquivalent, setNairaEquivalent] = useState<string>("0.00");
-  const [formattedNairaEquivalent, setFormattedNairaEquivalent] =
-    useState<string>("0.00");
-  const [exchangeRate, setExchangeRate] = useState<number | null>(null);
-  const [isDonating, setIsDonating] = useState<boolean>(false);
-  const [txHash, setTxHash] = useState<string | null>(null);
+}: SolDonationButtonProps) {
+  const [donationAmount, setDonationAmount] = useState("0.1");
+  const [nairaInput, setNairaInput] = useState("30.25");
+  const [exchangeRate, setExchangeRate] = useState(DEFAULT_SOL_TO_NAIRA_RATE);
+  const [isDonating, setIsDonating] = useState(false);
+  const [txSignature, setTxSignature] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [recipientAddress, setRecipientAddress] = useState<string | null>(null);
-  const [isLoadingAddress, setIsLoadingAddress] = useState<boolean>(true);
+  const [isLoadingAddress, setIsLoadingAddress] = useState(true);
   const [inputMode, setInputMode] = useState<"sol" | "naira">("sol");
-  const [isLoadingRate, setIsLoadingRate] = useState<boolean>(true);
+  const [walletAddress, setWalletAddress] = useState<string | null>(null);
+
+  const nairaInputRef = useRef<HTMLInputElement>(null);
+  const solInputRef = useRef<HTMLInputElement>(null);
+
   const params = useParams();
   const supabase = createClient();
+  const { toast } = useToast();
 
-  // Fetch exchange rate from CoinGecko API
   useEffect(() => {
-    const fetchExchangeRate = async () => {
-      try {
-        setIsLoadingRate(true);
+    const getExchangeRate = async () => {
+      const rate = await fetchSolToNairaRate();
+      setExchangeRate(rate);
 
-        // Option 1: CoinGecko API (direct SOL to NGN)
-        const response = await fetch(
-          "https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=ngn"
-        );
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch exchange rate");
+      // Update the opposite field based on current input mode
+      if (inputMode === "sol") {
+        const amount = parseFloat(donationAmount);
+        if (!isNaN(amount) && amount > 0) {
+          const nairaValue = (amount * rate).toFixed(2);
+          setNairaInput(formatNumberWithCommas(nairaValue));
         }
-
-        const data = await response.json();
-        const rate = data.solana.ngn;
-
-        // Option 2: Binance API (SOL to USDT then USDT to NGN)
-        // const solUsdtResponse = await fetch("https://api.binance.com/api/v3/ticker/price?symbol=SOLUSDT");
-        // const usdtNgnResponse = await fetch("https://api.binance.com/api/v3/ticker/price?symbol=USDTNGN");
-        // const solUsdt = await solUsdtResponse.json();
-        // const usdtNgn = await usdtNgnResponse.json();
-        // const rate = parseFloat(solUsdt.price) * parseFloat(usdtNgn.price);
-
-        setExchangeRate(rate);
-        updateNairaEquivalent(rate, donationAmount);
-      } catch (err) {
-        console.error("Error fetching exchange rate:", err);
-        setError("Failed to load current exchange rate. Using default rate.");
-        // Fallback to a reasonable default rate if API fails
-        setExchangeRate(282214.38);
-      } finally {
-        setIsLoadingRate(false);
+      } else {
+        const cleanNaira = removeCommas(nairaInput);
+        const amount = parseFloat(cleanNaira);
+        if (!isNaN(amount) && amount > 0) {
+          const solValue = (amount / rate).toFixed(6);
+          setDonationAmount(solValue);
+        }
       }
     };
+    getExchangeRate();
 
-    fetchExchangeRate();
-
-    // Refresh rate every 5 minutes
-    const interval = setInterval(fetchExchangeRate, 5 * 60 * 1000);
+    const interval = setInterval(getExchangeRate, 5 * 60 * 1000);
     return () => clearInterval(interval);
-  }, [donationAmount]);
-
-  const updateNairaEquivalent = (rate: number, amount: string) => {
-    const solAmount = parseFloat(amount);
-    if (!isNaN(solAmount)) {
-      const nairaValue = (solAmount * rate).toFixed(2);
-      setNairaEquivalent(nairaValue);
-      setFormattedNairaEquivalent(formatNumberWithCommas(nairaValue));
-    }
-  };
+  }, []);
 
   const formatNumberWithCommas = (value: string): string => {
     if (!value || isNaN(parseFloat(value))) return value;
@@ -104,73 +103,122 @@ export default function SolanaDonationButton({
     return parts.length > 1 ? `${parts[0]}.${parts[1]}` : parts[0];
   };
 
-  const removeCommas = (value: string): string => {
-    return value.replace(/,/g, "");
+  const removeCommas = (value: string): string => value.replace(/,/g, "");
+
+  const formatInputValue = (
+    value: string,
+    cursorPosition: number
+  ): { formattedValue: string; newCursorPosition: number } => {
+    const cleanValue = removeCommas(value);
+    const formattedValue = formatNumberWithCommas(cleanValue);
+
+    // Calculate new cursor position
+    const commasBeforeCursor = (
+      value.substring(0, cursorPosition).match(/,/g) || []
+    ).length;
+    const commasInFormatted = (
+      formattedValue.substring(0, cursorPosition).match(/,/g) || []
+    ).length;
+    const newCursorPosition =
+      cursorPosition + (commasInFormatted - commasBeforeCursor);
+
+    return { formattedValue, newCursorPosition };
   };
 
-  useEffect(() => {
-    if (inputMode === "sol" && exchangeRate) {
-      const amount = parseFloat(donationAmount);
-      if (!isNaN(amount) && amount > 0) {
-        const nairaValue = (amount * exchangeRate).toFixed(2);
-        setNairaEquivalent(nairaValue);
-        setFormattedNairaEquivalent(formatNumberWithCommas(nairaValue));
-      } else {
-        setNairaEquivalent("0.00");
-        setFormattedNairaEquivalent("0.00");
-      }
-    }
-  }, [donationAmount, exchangeRate, inputMode]);
-
-  useEffect(() => {
-    if (inputMode === "naira" && exchangeRate) {
-      const amount = parseFloat(removeCommas(nairaEquivalent));
-      if (!isNaN(amount) && amount > 0) {
-        const solValue = (amount / exchangeRate).toFixed(6);
-        setDonationAmount(solValue);
-      } else {
-        setDonationAmount("0.00");
-      }
-    }
-  }, [nairaEquivalent, exchangeRate, inputMode]);
-
   const handleSolChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
     setInputMode("sol");
-    setDonationAmount(e.target.value);
+    setDonationAmount(value);
+
+    // Update naira equivalent
+    const amount = parseFloat(value);
+    if (!isNaN(amount) && amount > 0) {
+      const nairaValue = (amount * exchangeRate).toFixed(2);
+      setNairaInput(formatNumberWithCommas(nairaValue));
+    } else {
+      setNairaInput("0.00");
+    }
   };
 
   const handleNairaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    const cursorPosition = e.target.selectionStart || 0;
+
     setInputMode("naira");
-    const rawValue = removeCommas(e.target.value);
-    setNairaEquivalent(rawValue);
-    setFormattedNairaEquivalent(formatNumberWithCommas(rawValue));
+
+    // Only allow numbers, commas, and decimal points
+    const sanitizedValue = value.replace(/[^\d,\.]/g, "");
+
+    // Format the value and get new cursor position
+    const { formattedValue, newCursorPosition } = formatInputValue(
+      sanitizedValue,
+      cursorPosition
+    );
+
+    setNairaInput(formattedValue);
+
+    // Set cursor position after state update
+    setTimeout(() => {
+      if (nairaInputRef.current) {
+        nairaInputRef.current.setSelectionRange(
+          newCursorPosition,
+          newCursorPosition
+        );
+      }
+    }, 0);
+
+    // Update SOL equivalent
+    const cleanValue = removeCommas(formattedValue);
+    const amount = parseFloat(cleanValue);
+    if (!isNaN(amount) && amount > 0) {
+      const solValue = (amount / exchangeRate).toFixed(6);
+      setDonationAmount(solValue);
+    } else {
+      setDonationAmount("0.00");
+    }
+  };
+
+  const handleNairaKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    // Allow: backspace, delete, tab, escape, enter, home, end, left, right, decimal point
+    if (
+      [46, 8, 9, 27, 13, 110, 190, 37, 39, 35, 36].indexOf(e.keyCode) !== -1 ||
+      // Allow Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
+      (e.keyCode === 65 && e.ctrlKey === true) ||
+      (e.keyCode === 67 && e.ctrlKey === true) ||
+      (e.keyCode === 86 && e.ctrlKey === true) ||
+      (e.keyCode === 88 && e.ctrlKey === true)
+    ) {
+      return;
+    }
+    // Ensure that it is a number and stop the keypress
+    if (
+      (e.shiftKey || e.keyCode < 48 || e.keyCode > 57) &&
+      (e.keyCode < 96 || e.keyCode > 105)
+    ) {
+      e.preventDefault();
+    }
   };
 
   useEffect(() => {
     const fetchRecipientAddress = async () => {
       try {
-        console.log("Fetching recipient address for cause:", causeId);
-        const { data: cause, error: causeError } = await supabase
+        const { data: causeData, error: causeError } = await supabase
           .from("causes")
           .select("user_id")
           .eq("id", causeId)
           .single();
 
-        if (causeError) throw causeError;
-        if (!cause) throw new Error("Cause not found");
+        if (causeError || !causeData) throw new Error("Cause not found");
 
-        console.log("Found cause, fetching profile for user:", cause.user_id);
-        const { data: profile, error: profileError } = await supabase
+        const { data: userData, error: userError } = await supabase
           .from("profiles")
           .select("solana_wallet")
-          .eq("id", cause.user_id)
+          .eq("id", causeData.user_id)
           .single();
 
-        if (profileError) throw profileError;
-        if (!profile) throw new Error("Creator not found");
+        if (userError || !userData) throw new Error("Creator not found");
 
-        console.log("Recipient wallet address:", profile.solana_wallet);
-        setRecipientAddress(profile.solana_wallet || null);
+        setRecipientAddress(userData.solana_wallet || null);
       } catch (err) {
         console.error("Error fetching recipient address:", err);
         setError("Failed to load recipient wallet information");
@@ -183,99 +231,123 @@ export default function SolanaDonationButton({
     fetchRecipientAddress();
   }, [causeId, supabase]);
 
-  const logDonation = async (
+  const logTransaction = async (
     causeId: string,
-    txHash: string,
+    txSignature: string,
     amountInSol: number,
     amountInNaira: number,
-    donorWalletAddress: string,
+    walletAddress: string,
     recipientAddress: string
   ) => {
     try {
-      console.log("Starting donation logging process...");
-
-      // 1. Verify authentication
-      const {
-        data: { user },
-        error: authError,
-      } = await supabase.auth.getUser();
-      console.log("User auth status:", { user, authError });
-
-      if (authError || !user) {
-        throw new Error(authError?.message || "User not authenticated");
+      console.log("Getting current user...");
+      const user = await getCurrentUser();
+      if (!user) {
+        console.error("User not logged in - transaction not logged");
+        throw new Error("User not authenticated");
       }
 
-      // 2. Log to crypto_donations
-      console.log("Inserting into crypto_donations...");
-      const { data, error: insertError } = await supabase
-        .from("crypto_donations")
-        .insert({
+      console.log("User found:", user.id);
+      console.log("Inserting transaction data:", {
+        cause_id: causeId,
+        tx_signature: txSignature,
+        amount_in_sol: amountInSol,
+        amount_in_naira: amountInNaira,
+        wallet_address: walletAddress,
+        recipient_address: recipientAddress,
+        user_id: user.id,
+        payment_method: "SOL",
+        status: "completed",
+        network: "Solana Testnet",
+        currency: "SOL",
+        wallet_type: "solana",
+      });
+
+      // Log the transaction with timeout
+      const insertResult = (await Promise.race([
+        supabase.from("crypto_donations").insert([
+          {
+            cause_id: causeId,
+            tx_signature: txSignature,
+            amount_in_sol: amountInSol,
+            amount_in_naira: amountInNaira,
+            wallet_address: walletAddress,
+            recipient_address: recipientAddress,
+            user_id: user.id,
+            payment_method: "SOL",
+            status: "completed",
+            network: "Solana Testnet",
+            currency: "SOL",
+            wallet_type: "solana",
+          },
+        ]),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Database insert timeout")), 10000)
+        ),
+      ])) as any;
+
+      if (insertResult.error) {
+        console.error("Insert error:", insertResult.error);
+        throw insertResult.error;
+      }
+
+      console.log(
+        "Transaction inserted successfully, updating cause amount..."
+      );
+
+      // Update the cause's raised amount with timeout
+      const updateResult = (await Promise.race([
+        supabase.rpc("increment_cause_raised", {
           cause_id: causeId,
-          tx_hash: txHash,
-          amount_in_crypto: amountInSol,
-          amount_in_naira: amountInNaira,
-          donor_wallet_address: donorWalletAddress,
-          recipient_address: recipientAddress,
-          user_id: user.id,
-          status: "completed",
-          network: "Solana",
-          currency: "SOL",
-        })
-        .select();
+          amount: amountInNaira,
+        }),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Database update timeout")), 10000)
+        ),
+      ])) as any;
 
-      if (insertError) {
-        console.error("Insert failed:", {
-          error: insertError,
-          details: insertError.details,
-          hint: insertError.hint,
-          code: insertError.code,
-        });
-        throw insertError;
+      if (updateResult.error) {
+        console.error("Update error:", updateResult.error);
+        throw updateResult.error;
       }
 
-      console.log("Donation logged successfully:", data);
-
-      // 3. Update raised amount
-      console.log("Updating raised amount...");
-      const { data: causeData, error: selectError } = await supabase
-        .from("causes")
-        .select("raised")
-        .eq("id", causeId)
-        .single();
-
-      if (selectError) throw selectError;
-
-      const currentRaised = causeData?.raised || 0;
-      const newRaised = currentRaised + amountInNaira;
-
-      const { error: updateError } = await supabase
-        .from("causes")
-        .update({ raised: newRaised })
-        .eq("id", causeId);
-
-      if (updateError) {
-        console.error("Update failed:", {
-          currentRaised,
-          amountInNaira,
-          newRaised,
-          error: updateError,
-        });
-        throw updateError;
-      }
-
-      console.log("Raised amount updated successfully");
-      return data;
+      console.log("Cause amount updated successfully");
     } catch (error) {
-      console.error("Complete donation logging error:", error);
+      console.error("Error logging transaction:", error);
       throw error;
     }
   };
 
-  const handleDonate = useCallback(async () => {
-    setError(null);
-    setTxHash(null);
+  const checkWalletConnection = async () => {
+    if (!window.solana?.isPhantom) {
+      throw new Error("Phantom wallet is not installed");
+    }
+
+    try {
+      const response = await window.solana.connect();
+      const publicKey = response.publicKey.toString();
+      setWalletAddress(publicKey);
+      return publicKey;
+    } catch (err) {
+      console.error("Wallet connection error:", err);
+      throw new Error("Failed to connect wallet");
+    }
+  };
+
+  const handleDonate = async () => {
+    if (!recipientAddress) {
+      toast({
+        title: "Error",
+        description: "Recipient wallet address not available",
+        variant: "destructive",
+      });
+      setError("Recipient wallet address not available");
+      return;
+    }
+
     setIsDonating(true);
-    let needsManualReset = true;
+    setError(null);
+    setTxSignature(null);
 
     try {
       const amount = parseFloat(donationAmount);
@@ -283,115 +355,140 @@ export default function SolanaDonationButton({
         throw new Error("Please enter a valid donation amount");
       }
 
-      if (!window.solana?.isPhantom) {
-        throw new Error("Phantom wallet not installed");
+      console.log("Starting donation process...");
+
+      const senderAddress = await checkWalletConnection();
+      if (!senderAddress) throw new Error("Wallet connection failed");
+
+      console.log("Wallet connected:", senderAddress);
+
+      const connection = new Connection(SOLANA_RPC_URL, "confirmed");
+      const recipientPublicKey = new PublicKey(recipientAddress);
+      const senderPublicKey = new PublicKey(senderAddress);
+      const amountInLamports = Math.round(amount * LAMPORTS_PER_SOL);
+
+      const balance = await connection.getBalance(senderPublicKey);
+      if (balance < amountInLamports) {
+        throw new Error("Insufficient SOL balance");
       }
 
-      if (!recipientAddress) {
-        throw new Error("Recipient wallet address not available");
-      }
+      console.log("Balance check passed");
 
-      console.log("Initiating donation of", amount, "SOL to", recipientAddress);
+      // Get recent blockhash and create transaction
+      const { blockhash } = await connection.getLatestBlockhash();
 
-      // Connect to wallet
-      const response = await window.solana.connect();
-      const publicKey = response.publicKey.toString();
+      const transaction = new Transaction({
+        recentBlockhash: blockhash,
+        feePayer: senderPublicKey,
+      });
 
-      // Validate recipient address
-      let recipientPublicKey;
-      try {
-        recipientPublicKey = new PublicKey(recipientAddress);
-      } catch (e) {
-        throw new Error("Invalid recipient Solana address");
-      }
-
-      // Create connection to Solana cluster
-      const connection = new Connection("https://api.testnet.solana.com"); // Use the testnet endpoint here
-
-      // Create transaction
-      const transaction = new Transaction().add(
+      transaction.add(
         SystemProgram.transfer({
-          fromPubkey: new PublicKey(publicKey),
+          fromPubkey: senderPublicKey,
           toPubkey: recipientPublicKey,
-          lamports: amount * LAMPORTS_PER_SOL,
+          lamports: amountInLamports,
         })
       );
 
-      // Set recent blockhash and fee payer
-      transaction.recentBlockhash = (
-        await connection.getRecentBlockhash()
-      ).blockhash;
-      transaction.feePayer = new PublicKey(publicKey);
+      if (!window.solana) {
+        throw new Error("Wallet is not available");
+      }
 
-      // Sign transaction
-      const signedTransaction = await window.solana.signTransaction(
+      console.log("Sending transaction...");
+
+      const { signature } = await window.solana.signAndSendTransaction(
         transaction
       );
-      const signature = await connection.sendRawTransaction(
-        signedTransaction.serialize()
-      );
+      setTxSignature(signature);
 
-      console.log("Transaction submitted, hash:", signature);
-      setTxHash(signature);
+      console.log("Transaction sent with signature:", signature);
+
       toast({
-        title: "Transaction Submitted",
+        title: "Transaction Sent",
         description: "Waiting for confirmation...",
       });
 
-      // Wait for confirmation
-      const confirmation = await connection.confirmTransaction(
-        signature,
-        "confirmed"
-      );
-
-      if (confirmation.value.err) {
-        throw new Error("Transaction failed");
+      // Wait for confirmation with timeout
+      try {
+        await Promise.race([
+          connection.confirmTransaction(signature, "confirmed"),
+          new Promise((_, reject) =>
+            setTimeout(
+              () => reject(new Error("Transaction confirmation timeout")),
+              30000
+            )
+          ),
+        ]);
+        console.log("Transaction confirmed");
+      } catch (confirmError) {
+        console.log("Confirmation error or timeout:", confirmError);
+        // Even if confirmation times out, the transaction might still be successful
+        // We'll proceed to log it and let the user know
+        toast({
+          title: "Transaction Processing",
+          description:
+            "Transaction may still be processing. Check Solana Explorer for status.",
+        });
       }
 
-      setIsDonating(false);
-      needsManualReset = false;
-
-      console.log("Transaction confirmed:", confirmation);
-      toast({
-        title: "Success",
-        description: "Transaction confirmed! Thank you for your donation.",
-      });
-
-      const nairaAmount = parseFloat(removeCommas(nairaEquivalent));
+      const nairaAmount = parseFloat(removeCommas(nairaInput));
       const solAmount = parseFloat(donationAmount);
 
+      console.log("Logging transaction...");
+
+      // Log transaction and update cause amount
       try {
-        console.log("Logging donation to database...");
-        await logDonation(
+        await logTransaction(
           causeId,
           signature,
           solAmount,
           nairaAmount,
-          publicKey,
+          senderAddress,
           recipientAddress
         );
-
-        console.log("Donation successfully logged");
-        onDonationSuccess?.(nairaAmount);
-      } catch (dbError) {
-        console.error("Database operation error:", dbError);
+        console.log("Transaction logged successfully");
+      } catch (logError) {
+        console.error("Failed to log transaction:", logError);
+        // Don't throw here - the blockchain transaction was successful
         toast({
-          title: "Donation Record Error",
+          title: "Warning",
           description:
-            "Transaction succeeded but we couldn't save the donation record. Please contact support with your transaction hash.",
+            "Transaction completed but failed to update records. Please contact support.",
           variant: "destructive",
         });
       }
+
+      // Call success callback to update parent component
+      onDonationSuccess?.(nairaAmount);
+
+      toast({
+        title: "Success",
+        description: "Thank you for your donation!",
+      });
     } catch (err: any) {
       console.error("Donation error:", err);
 
       let userFriendlyMessage = "Donation failed. Please try again.";
-      if (err.code === 4001 || err.message?.includes("User rejected")) {
-        userFriendlyMessage = "Transaction was rejected by your wallet";
-      } else if (err.message?.includes("insufficient funds")) {
+      const errorMessage = err.message.toLowerCase();
+
+      if (errorMessage.includes("user rejected")) {
+        userFriendlyMessage = "Transaction was rejected";
+      } else if (errorMessage.includes("network")) {
+        userFriendlyMessage = "Network error. Please check your connection";
+      } else if (
+        errorMessage.includes("insufficient") ||
+        errorMessage.includes("balance")
+      ) {
         userFriendlyMessage = "Insufficient SOL balance";
-      } else if (err.message?.includes("invalid address")) {
+      } else if (errorMessage.includes("invalid address")) {
         userFriendlyMessage = "Invalid recipient address";
+      } else if (errorMessage.includes("phantom")) {
+        userFriendlyMessage = "Please install Phantom wallet";
+      } else if (errorMessage.includes("blockhash")) {
+        userFriendlyMessage = "Network issue. Please try again";
+      } else if (errorMessage.includes("timeout")) {
+        userFriendlyMessage =
+          "Transaction is taking longer than expected. Check Solana Explorer.";
       }
 
       toast({
@@ -400,26 +497,11 @@ export default function SolanaDonationButton({
         variant: "destructive",
       });
       setError(userFriendlyMessage);
-
-      if (needsManualReset) {
-        setIsDonating(false);
-      }
     } finally {
-      if (needsManualReset) {
-        setTimeout(() => {
-          setIsDonating(false);
-        }, 100);
-      }
+      console.log("Resetting donation state...");
+      setIsDonating(false);
     }
-  }, [
-    donationAmount,
-    nairaEquivalent,
-    recipientAddress,
-    causeId,
-    supabase,
-    toast,
-    onDonationSuccess,
-  ]);
+  };
 
   if (isLoadingAddress) {
     return (
@@ -456,17 +538,8 @@ export default function SolanaDonationButton({
         Donate with SOL
       </h2>
 
-      {isLoadingRate && (
-        <div className="mb-4 p-2 bg-blue-50 text-blue-700 rounded-md text-sm">
-          Loading current exchange rates...
-        </div>
-      )}
-
       <div className="mb-4">
-        <label
-          htmlFor="amount"
-          className="block text-sm font-medium text-gray-700 mb-1"
-        >
+        <label className="block text-sm font-medium text-gray-700 mb-1">
           Amount (SOL)
         </label>
         <div className="relative rounded-md shadow-sm">
@@ -474,23 +547,20 @@ export default function SolanaDonationButton({
             <span className="text-gray-500 sm:text-sm">SOL</span>
           </div>
           <input
+            ref={solInputRef}
             type="number"
-            id="amount"
             min="0.01"
             step="0.01"
             value={donationAmount}
             onChange={handleSolChange}
             className="block w-full pl-16 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-            disabled={isDonating || isLoadingRate}
+            disabled={isDonating}
           />
         </div>
       </div>
 
       <div className="mb-4">
-        <label
-          htmlFor="nairaAmount"
-          className="block text-sm font-medium text-gray-700 mb-1"
-        >
+        <label className="block text-sm font-medium text-gray-700 mb-1">
           Amount (Naira)
         </label>
         <div className="relative rounded-md shadow-sm">
@@ -498,36 +568,31 @@ export default function SolanaDonationButton({
             <span className="text-gray-500 sm:text-sm">₦</span>
           </div>
           <input
+            ref={nairaInputRef}
             type="text"
-            id="nairaAmount"
-            value={formattedNairaEquivalent}
+            value={nairaInput}
             onChange={handleNairaChange}
+            onKeyDown={handleNairaKeyDown}
             className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-            disabled={isDonating || isLoadingRate}
+            disabled={isDonating}
+            placeholder="0.00"
           />
         </div>
-        {exchangeRate && (
-          <p className="mt-1 text-xs text-gray-500">
-            Current rate: 1 SOL = ₦{exchangeRate.toLocaleString()}
-          </p>
-        )}
-        <p className="mt-1 text-xs text-gray-500">Using Solana Testnet</p>
+        <p className="mt-1 text-xs text-gray-500">
+          Using Solana Testnet (1 SOL ≈ ₦{exchangeRate.toFixed(2)})
+        </p>
       </div>
 
       <button
         onClick={handleDonate}
-        disabled={isDonating || isLoadingRate || isLoadingAddress}
+        disabled={isDonating}
         className={`w-full py-2 px-4 rounded-md text-white font-medium ${
-          isDonating || isLoadingRate || isLoadingAddress
-            ? "bg-blue-400"
+          isDonating
+            ? "bg-blue-400 cursor-not-allowed"
             : "bg-purple-600 hover:bg-blue-700"
         } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors`}
       >
-        {isDonating
-          ? "Processing..."
-          : isLoadingRate || isLoadingAddress
-          ? "Loading..."
-          : "Donate with SOL"}
+        {isDonating ? "Processing..." : "Donate with SOL"}
       </button>
 
       {error && (
@@ -536,18 +601,18 @@ export default function SolanaDonationButton({
         </div>
       )}
 
-      {txHash && (
+      {txSignature && (
         <div className="mt-4 p-3 bg-green-50 text-green-700 rounded-md">
           <p>Thank you for your donation!</p>
           <p className="mt-1 text-sm">
             Transaction:{" "}
             <a
-              href={`https://explorer.solana.com/tx/${txHash}?cluster=testnet`}
+              href={`https://explorer.solana.com/tx/${txSignature}?cluster=testnet`}
               target="_blank"
               rel="noopener noreferrer"
               className="underline hover:text-green-800"
             >
-              View on Solscan
+              View on Solana Explorer
             </a>
           </p>
         </div>
