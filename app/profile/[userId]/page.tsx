@@ -20,10 +20,10 @@ export default async function PublicProfilePage({
   params: PageParams;
   searchParams: SearchParams;
 }) {
-  // Properly handle the params as recommended by Next.js
-  const { userId } = params;
+  // Properly await the params destructuring
+  const { userId } = await params;
 
-  // Destructure searchParams after declaring the component as async
+  // Destructure searchParams
   const tabParam = searchParams.tab;
 
   const currentUser = await getCurrentUser();
@@ -41,7 +41,6 @@ export default async function PublicProfilePage({
 
   return (
     <div className="relative">
-      {/* Original content (still rendered but hidden behind the modal) */}
       <PublicProfile
         profile={profile}
         causes={causes}
