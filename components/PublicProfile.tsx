@@ -1,18 +1,18 @@
 "use client";
 
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft } from "lucide-react";
 import { CauseCard, DonationCard, EmptyState } from "./ProfileCards";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useQueryState } from "nuqs";
 
 type ProfileProps = {
   profile: any;
   causes: any[];
   donations: any[];
   userId: string;
-  activeTab: string;
+  activeTab?: string;
   isOwner: boolean;
 };
 
@@ -24,17 +24,21 @@ export default function PublicProfile({
   activeTab = "causes", // default value
   isOwner,
 }: ProfileProps) {
-  const router = useRouter();
+  const [tab, setTab] = useQueryState("tab", {
+    defaultValue: activeTab,
+    shallow: false,
+  });
+
   const donationsCount = donations.length;
   const causesCount = causes.length;
 
   const handleBack = () => {
-    router.back();
+    window.history.back();
   };
 
   // Handle tab change
   const handleTabChange = (value: string) => {
-    router.push(`/profile/${userId}?tab=${value}`, { scroll: false });
+    setTab(value);
   };
 
   return (
@@ -64,11 +68,6 @@ export default function PublicProfile({
             <h1 className="text-2xl font-bold">
               {profile.full_name || "Anonymous"}
             </h1>
-            {/* <div className="flex items-center gap-2 mt-1">
-              <span className="text-sm bg-gray-100 px-2 py-1 rounded-full flex items-center gap-1">
-                📌 Individual
-              </span>
-            </div> */}
           </div>
 
           {/* Stats */}
@@ -90,11 +89,7 @@ export default function PublicProfile({
 
       {/* Custom-styled shadcn Tabs */}
       <div className="border-b mt-8">
-        <Tabs
-          defaultValue={activeTab}
-          onValueChange={handleTabChange}
-          className="w-full"
-        >
+        <Tabs value={tab} onValueChange={handleTabChange} className="w-full">
           <div className="flex justify-center">
             <TabsList className="bg-transparent p-0 gap-0">
               <TabsTrigger
