@@ -25,10 +25,8 @@ export interface Profile {
   user_type?: "individual" | "organization";
   bio: string | null;
   polygon_wallet?: string | null;
-  social_media?: {
-    twitter?: string | null;
-    facebook?: string | null;
-    instagram?: string | null;
-    linkedin?: string | null;
-  } | null;
+  twitter_url?: string | null;
+  facebook_url?: string | null;
+  instagram_url?: string | null;
+  linkedin_url?: string | null;
 }
