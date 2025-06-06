@@ -41,6 +41,11 @@ export default function PublicProfile({
     setTab(value);
   };
 
+  // Default profile image configuration
+  const defaultProfileImage = "/default-avatar.jpg";
+  const profileImage = profile.profile_photo || defaultProfileImage;
+  const displayName = profile.full_name || "Anonymous";
+
   return (
     <div className="w-full px-4 py-8">
       <div className="max-w-7xl mx-auto">
@@ -54,20 +59,25 @@ export default function PublicProfile({
 
         {/* Profile Header - Full width aligned left */}
         <div className="flex flex-col md:flex-row gap-6 items-start mt-6 w-full">
-          <div className="relative w-24 h-24 rounded-full overflow-hidden border-2 border-gray-200">
+          <div className="relative w-24 h-24 rounded-full overflow-hidden border-2 border-gray-200 bg-gray-100">
             <Image
-              src={profile.profile_photo || "/default-avatar.png"}
-              alt={`${profile.full_name}'s profile`}
+              src={profileImage}
+              alt={`${displayName}'s profile picture`}
               fill
               className="object-cover"
               priority
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.onerror = null;
+                target.src = defaultProfileImage;
+              }}
             />
           </div>
 
           <div className="flex-1 w-full">
             <div>
               <h1 className="text-2xl font-bold">
-                {profile.full_name || "Anonymous"}
+                {displayName}
               </h1>
             </div>
 
@@ -123,7 +133,7 @@ export default function PublicProfile({
                   <EmptyState
                     title="No Causes Yet"
                     description={`It looks like ${
-                      profile.full_name?.split(" ")[0] || "this user"
+                      displayName.split(" ")[0] || "this user"
                     } hasn't started a cause yet. Stay tuned for their first impact story!`}
                     cta="Explore causes on refreeg"
                     ctaLink="/causes"
@@ -141,7 +151,7 @@ export default function PublicProfile({
                   <EmptyState
                     title="No Donations Yet"
                     description={`${
-                      profile.full_name?.split(" ")[0] || "This user"
+                      displayName.split(" ")[0] || "This user"
                     } hasn't donated to any causes yet.`}
                     cta="Explore causes on refreeg"
                     ctaLink="/causes"
