@@ -4,12 +4,14 @@ import { getBaseURL } from "@/lib/utils";
 
 const PAYSTACK_KEY = process.env.NEXT_PUBLIC_PAYSTACK_KEY;
 
+
 // Check if API key exists
 if (!PAYSTACK_KEY) {
   console.warn(
     "WARNING: No Paystack API key found in environment variables. API calls will fail."
   );
 }
+
 
 const Paystack = {
   api: axios.create({
