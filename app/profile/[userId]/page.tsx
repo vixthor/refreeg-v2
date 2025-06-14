@@ -15,20 +15,16 @@ type SearchParams = {
 
 export default async function PublicProfilePage({
   params,
-  searchParams,
 }: {
   params: PageParams;
-  searchParams: SearchParams;
 }) {
   // Properly await the params destructuring
   const { userId } = await params;
 
   // Destructure searchParams
-  const tabParam = searchParams.tab;
 
   const currentUser = await getCurrentUser();
   const isOwner = currentUser?.id === userId;
-  const activeTab = tabParam || "causes";
 
   // Fetch data
   const profile = await getProfile(userId);
@@ -46,7 +42,6 @@ export default async function PublicProfilePage({
         causes={causes}
         donations={donations}
         userId={userId}
-        activeTab={activeTab}
         isOwner={isOwner}
       />
     </div>

@@ -12,7 +12,6 @@ type ProfileProps = {
   causes: any[];
   donations: any[];
   userId: string;
-  activeTab?: string;
   isOwner: boolean;
 };
 
@@ -21,11 +20,10 @@ export default function PublicProfile({
   causes,
   donations,
   userId,
-  activeTab = "causes", // default value
   isOwner,
 }: ProfileProps) {
   const [tab, setTab] = useQueryState("tab", {
-    defaultValue: activeTab,
+    defaultValue: "causes",
     shallow: false,
   });
 
@@ -34,11 +32,6 @@ export default function PublicProfile({
 
   const handleBack = () => {
     window.history.back();
-  };
-
-  // Handle tab change
-  const handleTabChange = (value: string) => {
-    setTab(value);
   };
 
   // Default profile image configuration
@@ -100,7 +93,7 @@ export default function PublicProfile({
 
         {/* Custom-styled shadcn Tabs - Full width */}
         <div className="border-b mt-8 w-full">
-          <Tabs value={tab} onValueChange={handleTabChange} className="w-full">
+          <Tabs value={tab} onValueChange={setTab} className="w-full">
             <div className="flex justify-center">
               <TabsList className="bg-transparent p-0 gap-0">
                 <TabsTrigger
@@ -132,9 +125,8 @@ export default function PublicProfile({
                 {causesCount === 0 ? (
                   <EmptyState
                     title="No Causes Yet"
-                    description={`It looks like ${
-                      displayName.split(" ")[0] || "this user"
-                    } hasn't started a cause yet. Stay tuned for their first impact story!`}
+                    description={`It looks like ${displayName.split(" ")[0] || "this user"
+                      } hasn't started a cause yet. Stay tuned for their first impact story!`}
                     cta="Explore causes on refreeg"
                     ctaLink="/causes"
                   />
@@ -150,9 +142,8 @@ export default function PublicProfile({
                 {donationsCount === 0 ? (
                   <EmptyState
                     title="No Donations Yet"
-                    description={`${
-                      displayName.split(" ")[0] || "This user"
-                    } hasn't donated to any causes yet.`}
+                    description={`${displayName.split(" ")[0] || "This user"
+                      } hasn't donated to any causes yet.`}
                     cta="Explore causes on refreeg"
                     ctaLink="/causes"
                   />
