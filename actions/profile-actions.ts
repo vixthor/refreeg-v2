@@ -51,11 +51,15 @@ export async function updateProfile(
     phone: profileData.phone,
     bio: profileData.bio,
     profile_photo: profileData.profile_photo,
-    social_media: profileData.social_media || null, // Add this line
+    twitter_url: profileData.twitter_url || null,
+    facebook_url: profileData.facebook_url || null,
+    instagram_url: profileData.instagram_url || null,
+    linkedin_url: profileData.linkedin_url || null,
+
     updated_at: new Date().toISOString(),
   };
 
-  console.log("Updating profile with data:", updateData); // Debug log
+  console.log("Updating profile with data:", updateData);
 
   const { data, error } = await supabase
     .from("profiles")
@@ -68,10 +72,9 @@ export async function updateProfile(
     throw error;
   }
 
-  // Revalidate both dashboard and public profile paths
   revalidatePath("/dashboard/settings");
   revalidatePath(`/profile/${userId}`);
-  revalidatePath("/"); // Optional: if profile appears elsewhere
+  revalidatePath("/");
 
   return data as Profile;
 }
