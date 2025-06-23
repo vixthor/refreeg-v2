@@ -19,12 +19,10 @@ export interface ProfileFormData {
   profile_photo?: string | null;
   email: string;
   bio: string;
-  social_media?: {
-    twitter?: string | null;
-    facebook?: string | null;
-    instagram?: string | null;
-    linkedin?: string | null;
-  } | null;
+  twitter_url?: string | null;
+  facebook_url?: string | null;
+  instagram_url?: string | null;
+  linkedin_url?: string | null;
 }
 
 export interface BankDetailsFormData {
