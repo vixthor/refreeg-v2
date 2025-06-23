@@ -11,7 +11,10 @@ const inter = Inter({ subsets: ["latin"] })
 export const metadata: Metadata = {
   title: "Refreeg - Donation Platform",
   description: "Support causes that matter to you",
-  generator: 'v0.dev'
+  generator: 'v0.dev',
+  other: {
+    'google-adsense-account': 'ca-pub-6133323682562865'
+  }
 }
 
 export default function RootLayout({
