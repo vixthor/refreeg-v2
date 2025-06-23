@@ -240,78 +240,40 @@ export default function SolDonationButton({
     recipientAddress: string
   ) => {
     try {
-      console.log("Getting current user...");
       const user = await getCurrentUser();
       if (!user) {
-        console.error("User not logged in - transaction not logged");
         throw new Error("User not authenticated");
       }
 
-      console.log("User found:", user.id);
-      console.log("Inserting transaction data:", {
-        cause_id: causeId,
-        tx_signature: txSignature,
-        amount_in_sol: amountInSol,
-        amount_in_naira: amountInNaira,
-        wallet_address: walletAddress,
-        recipient_address: recipientAddress,
-        user_id: user.id,
-        payment_method: "SOL",
-        status: "completed",
-        network: "Solana Testnet",
-        currency: "SOL",
-        wallet_type: "solana",
-      });
-
-      // Log the transaction with timeout
-      const insertResult = (await Promise.race([
-        supabase.from("crypto_donations").insert([
-          {
-            cause_id: causeId,
-            tx_signature: txSignature,
-            amount_in_sol: amountInSol,
-            amount_in_naira: amountInNaira,
-            wallet_address: walletAddress,
-            recipient_address: recipientAddress,
-            user_id: user.id,
-            payment_method: "SOL",
-            status: "completed",
-            network: "Solana Testnet",
-            currency: "SOL",
-            wallet_type: "solana",
-          },
-        ]),
-        new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("Database insert timeout")), 10000)
-        ),
-      ])) as any;
+      const insertResult = await supabase.from("crypto_donations").insert([
+        {
+          cause_id: causeId,
+          tx_signature: txSignature,
+          amount_in_sol: amountInSol,
+          amount_in_naira: amountInNaira,
+          wallet_address: walletAddress,
+          recipient_address: recipientAddress,
+          user_id: user.id,
+          payment_method: "SOL",
+          status: "completed",
+          network: "Solana Testnet",
+          currency: "SOL",
+          wallet_type: "solana",
+        },
+      ]);
 
       if (insertResult.error) {
-        console.error("Insert error:", insertResult.error);
         throw insertResult.error;
       }
 
-      console.log(
-        "Transaction inserted successfully, updating cause amount..."
-      );
-
-      // Update the cause's raised amount with timeout
-      const updateResult = (await Promise.race([
-        supabase.rpc("increment_cause_raised", {
-          cause_id: causeId,
-          amount: amountInNaira,
-        }),
-        new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("Database update timeout")), 10000)
-        ),
-      ])) as any;
+      const updateResult = await supabase.rpc("increment_cause_raised", {
+        cause_id: causeId,
+        amount: amountInNaira,
+      });
 
       if (updateResult.error) {
-        console.error("Update error:", updateResult.error);
         throw updateResult.error;
       }
-
-      console.log("Cause amount updated successfully");
     } catch (error) {
       console.error("Error logging transaction:", error);
       throw error;
@@ -355,12 +317,8 @@ export default function SolDonationButton({
         throw new Error("Please enter a valid donation amount");
       }
 
-      console.log("Starting donation process...");
-
       const senderAddress = await checkWalletConnection();
       if (!senderAddress) throw new Error("Wallet connection failed");
-
-      console.log("Wallet connected:", senderAddress);
 
       const connection = new Connection(SOLANA_RPC_URL, "confirmed");
       const recipientPublicKey = new PublicKey(recipientAddress);
@@ -369,10 +327,8 @@ export default function SolDonationButton({
 
       const balance = await connection.getBalance(senderPublicKey);
       if (balance < amountInLamports) {
-        throw new Error("Insufficient SOL balance");
+        throw new Error(`Insufficient SOL balance. You have ${(balance / LAMPORTS_PER_SOL).toFixed(6)} SOL, but need ${(amountInLamports / LAMPORTS_PER_SOL).toFixed(6)} SOL`);
       }
-
-      console.log("Balance check passed");
 
       // Get recent blockhash and create transaction
       const { blockhash } = await connection.getLatestBlockhash();
@@ -394,14 +350,10 @@ export default function SolDonationButton({
         throw new Error("Wallet is not available");
       }
 
-      console.log("Sending transaction...");
-
       const { signature } = await window.solana.signAndSendTransaction(
         transaction
       );
       setTxSignature(signature);
-
-      console.log("Transaction sent with signature:", signature);
 
       toast({
         title: "Transaction Sent",
@@ -419,9 +371,7 @@ export default function SolDonationButton({
             )
           ),
         ]);
-        console.log("Transaction confirmed");
       } catch (confirmError) {
-        console.log("Confirmation error or timeout:", confirmError);
         // Even if confirmation times out, the transaction might still be successful
         // We'll proceed to log it and let the user know
         toast({
@@ -434,19 +384,37 @@ export default function SolDonationButton({
       const nairaAmount = parseFloat(removeCommas(nairaInput));
       const solAmount = parseFloat(donationAmount);
 
-      console.log("Logging transaction...");
-
-      // Log transaction and update cause amount
+      // Use server-side API endpoint instead of direct Supabase calls
       try {
-        await logTransaction(
-          causeId,
-          signature,
-          solAmount,
-          nairaAmount,
-          senderAddress,
-          recipientAddress
-        );
-        console.log("Transaction logged successfully");
+        const response = await fetch("/api/crypto-donations", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            cause_id: causeId,
+            tx_signature: signature,
+            amount_in_sol: solAmount,
+            amount_in_naira: nairaAmount,
+            wallet_address: senderAddress,
+            recipient_address: recipientAddress,
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(`API call failed: ${errorData.error}`);
+        }
+
+        const result = await response.json();
+        
+        // Call success callback to update parent component
+        onDonationSuccess?.(nairaAmount);
+
+        toast({
+          title: "Success",
+          description: "Thank you for your donation!",
+        });
       } catch (logError) {
         console.error("Failed to log transaction:", logError);
         // Don't throw here - the blockchain transaction was successful
@@ -457,14 +425,6 @@ export default function SolDonationButton({
           variant: "destructive",
         });
       }
-
-      // Call success callback to update parent component
-      onDonationSuccess?.(nairaAmount);
-
-      toast({
-        title: "Success",
-        description: "Thank you for your donation!",
-      });
     } catch (err: any) {
       console.error("Donation error:", err);
 
@@ -498,7 +458,6 @@ export default function SolDonationButton({
       });
       setError(userFriendlyMessage);
     } finally {
-      console.log("Resetting donation state...");
       setIsDonating(false);
     }
   };
