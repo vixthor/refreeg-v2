@@ -59,10 +59,6 @@ export function BankDetailsForm({ profile, user }: BankDetailsFormProps) {
         accountNumber: formData.accountNumber,
         accountName: formData.accountName,
       });
-      toast({
-        title: "Bank details saved!",
-        description: "We've sent a confirmation to your email.",
-      });
     } catch (error) {
       toast({
         title: "Error",
