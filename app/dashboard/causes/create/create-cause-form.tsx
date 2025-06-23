@@ -134,9 +134,20 @@ export default function CreateCauseForm() {
     }
 
     const handleImageUpload = (files: File[]) => {
-        setFormData((prev) => ({ ...prev, coverImage: files[0] }))
+        const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB in bytes
+        const file = files[0];
+
+        if (file && file.size > MAX_FILE_SIZE) {
+            setErrors(prev => ({
+                ...prev,
+                coverImage: 'Cover image must be less than 100MB'
+            }));
+            return;
+        }
+
+        setFormData((prev) => ({ ...prev, coverImage: file }));
         if (errors.coverImage) {
-            setErrors((prev) => ({ ...prev, coverImage: undefined }))
+            setErrors((prev) => ({ ...prev, coverImage: undefined }));
         }
     }
 
