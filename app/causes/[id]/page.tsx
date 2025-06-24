@@ -19,7 +19,7 @@ import {
 import { notFound } from "next/navigation";
 import { ShareModal } from "@/components/share-modal";
 import { getBaseURL } from "@/lib/utils";
-import SolanaDonationButton from "@/components/crypto-details/SolanaDonationButton";
+import SolanaDonationButtonWrapper from "@/components/crypto-details/SolanaDonationButtonWrapper";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   AlertCircle,
@@ -318,7 +318,7 @@ export default async function CauseDetailPage({
             <CardContent className="space-y-4">
               {hasCreatorWallet ? (
                 <div className="space-y-4">
-                  <SolanaDonationButton causeId={cause.id} />
+                  <SolanaDonationButtonWrapper causeId={cause.id} />
                   {/* <Alert variant="destructive">
                     <AlertCircle className="h-4 w-4" />
                     <AlertDescription>
