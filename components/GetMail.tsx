@@ -1,6 +1,7 @@
 "use client";
 import { Mail } from "lucide-react";
-import React, { useState } from "react";
+import React, { useState } from "react"
+import { Button } from "@/components/ui/button";
 
 
 const GetMail = () => {
@@ -20,9 +21,9 @@ const GetMail = () => {
         />
 
         <Mail className="text-bold size-4 absolute top-[15px] left-6" />
-        <button className="bg-bold bg-[#0070E0] text-white font-medium flex items-center justify-center text-[12px] h-[80%] absolute top-1 right-2 px-5 rounded-3xl cursor-pointer  hover:bg-blue-700 transition">
+        <Button className="text-white font-medium flex items-center justify-center text-[12px] h-[80%] absolute top-1 right-2 px-5 rounded-3xl cursor-pointer" variant="default">
           Subscribe
-        </button>
+        </Button>
       </form>
 
       {message && (
