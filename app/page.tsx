@@ -85,7 +85,7 @@ export default function Home() {
 
       {/* Featured Causes */}
       <section className="w-full py-12 md:py-24 lg:py-20 bg-muted">
-        <div className="container px-4 md:px-6">
+        <div className="px-4 md:px-12">
           <div className="flex flex-col items-center justify-center space-y-4 text-center">
             <div className="space-y-2">
               <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">Featured Causes</h2>
@@ -97,7 +97,7 @@ export default function Home() {
           <FeaturedCauses />
           <div className="flex justify-center mt-8">
             <Link href="/causes">
-              <Button variant="outline" size="lg" className="hover:bg-[#0070E0]">
+              <Button variant="outline" size="lg" className="hover:bg-secondary/90">
                 View All Causes
               </Button>
             </Link>
