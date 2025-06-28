@@ -18,6 +18,13 @@ export interface ProfileFormData {
   phone: string;
   profile_photo?: string | null;
   email: string;
+  bio: string;
+  social_media?: {
+    twitter?: string | null;
+    facebook?: string | null;
+    instagram?: string | null;
+    linkedin?: string | null;
+  } | null;
 }
 
 export interface BankDetailsFormData {
@@ -27,6 +34,11 @@ export interface BankDetailsFormData {
   sub_account_code: string;
 }
 
+export interface CauseSection {
+  heading: string;
+  description: string;
+}
+
 export interface CauseFormData {
   title: string;
   description: string;
@@ -34,6 +46,7 @@ export interface CauseFormData {
   goal: string | number;
   coverImage: File | null;
   image?: string;
+  sections: CauseSection[];
 }
 
 export interface DonationFormData {
@@ -71,4 +84,29 @@ export interface CauseFilterOptions {
   userId?: string;
   limit?: number;
   offset?: number;
+}
+
+export interface Cause {
+  id: string;
+  user_id: string;
+  title: string;
+  description: string;
+  category: string;
+  goal: number;
+  raised: number;
+  status: CauseStatus;
+  image: string | null;
+  created_at: string;
+  updated_at: string;
+  rejection_reason?: string | null;
+  sections?: CauseSection[];
+}
+
+export interface CauseWithUser extends Cause {
+  user: {
+    name: string;
+    email: string;
+    sub_account_code: string;
+  };
+  sections: CauseSection[];
 }

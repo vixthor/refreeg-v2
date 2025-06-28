@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
+    "@metamask/providers": "^22.1.0",
     "@radix-ui/react-accordion": "^1.2.2",
     "@radix-ui/react-alert-dialog": "^1.1.4",
     "@radix-ui/react-aspect-ratio": "^1.1.1",
@@ -40,6 +41,11 @@
     "@supabase/ssr": "^0.6.1",
     "@supabase/supabase-js": "latest",
     "@tanstack/react-query": "^5.71.5",
+<<<<<<< HEAD
+=======
+    "@types/firebase": "^2.4.32",
+    "@types/nodemailer": "^6.4.17",
+>>>>>>> 584ae6a072b1fe7eaba38318942848f8d68cd868
     "autoprefixer": "^10.4.20",
     "axios": "^1.8.4",
     "class-variance-authority": "^0.7.1",
@@ -49,10 +55,12 @@
     "embla-carousel-react": "8.5.1",
     "ethers": "^6.14.0",
     "framer-motion": "^12.7.4",
+    "handlebars": "^4.7.8",
     "input-otp": "1.4.1",
     "lucide-react": "^0.454.0",
     "next": "15.2.4",
     "next-themes": "^0.4.6",
+    "nodemailer": "^7.0.3",
     "nuqs": "^2.4.1",
     "react": "^19",
     "react-day-picker": "8.10.1",
