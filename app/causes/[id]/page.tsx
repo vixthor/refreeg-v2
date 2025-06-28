@@ -21,7 +21,8 @@ import { ShareModal } from "@/components/share-modal";
 import { getBaseURL } from "@/lib/utils";
 import MaticDonationButton from "@/components/crypto-details/MaticDonationButton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Facebook, Instagram, Linkedin, Twitter } from "lucide-react";
+import Link from "next/link";
 
 // Mock data for a cause
 const mockCause = {
@@ -90,8 +91,7 @@ export default async function CauseDetailPage({
   if (!cause) {
     notFound();
   }
-  // Use mock data for now
-  // const cause = mockCause
+
   const donors = await listDonationsForCause(cause.id);
 
   // Format the date
@@ -116,10 +116,39 @@ export default async function CauseDetailPage({
   };
 
   const baseUrl = getBaseURL();
-
   // Check if creator has a wallet
   const creatorProfile = await getProfile(cause.user_id);
-  const hasCreatorWallet = !!creatorProfile?.crypto_wallets?.ethereum;
+  const hasCreatorWallet = !!creatorProfile?.polygon_wallet;
+
+  // Parse social media links from JSON string
+  let socialMedia = {
+    twitter: "",
+    facebook: "",
+    instagram: "",
+    linkedin: ""
+  };
+
+  if (creatorProfile?.social_media) {
+    try {
+      // Handle both string (from DB) and object (already parsed) cases
+      const parsedSocial = typeof creatorProfile.social_media === 'string'
+        ? JSON.parse(creatorProfile.social_media)
+        : creatorProfile.social_media;
+
+      socialMedia = {
+        twitter: parsedSocial.twitter || "",
+        facebook: parsedSocial.facebook || "",
+        instagram: parsedSocial.instagram || "",
+        linkedin: parsedSocial.linkedin || ""
+      };
+    } catch (e) {
+      console.error("Error parsing social media:", e);
+    }
+  }
+
+  // Check if any social media links exist
+  const hasSocialMedia = socialMedia.twitter || socialMedia.facebook ||
+    socialMedia.instagram || socialMedia.linkedin;
 
   return (
     <div className="container py-10">
@@ -141,13 +170,82 @@ export default async function CauseDetailPage({
             <TabsContent value="about" className="space-y-4">
               <h1 className="text-3xl font-bold">{cause.title}</h1>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <span>Created by {cause.user.name}</span>
+                <span>
+                  Created by{" "}
+                  <Link
+                    href={`/profile/${cause.user_id}`}
+                    className="hover:underline text-blue-600"
+                  >
+                    {cause.user.name}
+                  </Link>
+                </span>
                 <span>•</span>
                 <span>{formattedDate}</span>
                 <span>•</span>
                 <span className="capitalize">{cause.category}</span>
               </div>
+
+              {/* Social Media Links
+              {hasSocialMedia && (
+                <div className="flex items-center gap-4 pt-2">
+                  {socialMedia.twitter && (
+                    <a
+                      href={socialMedia.twitter}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-gray-500 hover:text-blue-400 transition-colors"
+                      aria-label="Twitter"
+                    >
+                      <Twitter className="h-5 w-5" />
+                    </a>
+                  )}
+                  {socialMedia.facebook && (
+                    <a
+                      href={socialMedia.facebook}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-gray-500 hover:text-blue-600 transition-colors"
+                      aria-label="Facebook"
+                    >
+                      <Facebook className="h-5 w-5" />
+                    </a>
+                  )}
+                  {socialMedia.instagram && (
+                    <a
+                      href={socialMedia.instagram}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-gray-500 hover:text-pink-600 transition-colors"
+                      aria-label="Instagram"
+                    >
+                      <Instagram className="h-5 w-5" />
+                    </a>
+                  )}
+                  {socialMedia.linkedin && (
+                    <a
+                      href={socialMedia.linkedin}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-gray-500 hover:text-blue-700 transition-colors"
+                      aria-label="LinkedIn"
+                    >
+                      <Linkedin className="h-5 w-5" />
+                    </a>
+                  )}
+                </div>
+              )} */}
+
               <p className="whitespace-pre-line">{cause.description}</p>
+              {cause.sections &&
+                cause.sections.length > 0 &&
+                cause.sections.map((section, index) => (
+                  <div key={index} className="mt-4">
+                    <h3 className="text-xl font-semibold">{section.heading}</h3>
+                    <p className="text-muted-foreground">
+                      {section.description}
+                    </p>
+                  </div>
+                ))}
             </TabsContent>
             <TabsContent value="donors">
               <DonorsList donors={donors} />
@@ -210,7 +308,13 @@ export default async function CauseDetailPage({
             <CardContent className="space-y-4">
               {hasCreatorWallet ? (
                 <div className="space-y-4">
-                  <MaticDonationButton causeId={cause.id} />
+                  {/* <MaticDonationButton causeId={cause.id} /> */}
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      Crypto donations are not available at the moment.
+                    </AlertDescription>
+                  </Alert>
                   <div className="relative">
                     <div className="absolute inset-0 flex items-center">
                       <span className="w-full border-t" />
@@ -220,12 +324,13 @@ export default async function CauseDetailPage({
                         Or donate with
                       </span>
                     </div>
+                    <DonationForm
+                      causeId={cause.id}
+                      profile={profile}
+                      status={cause.status}
+                      subaccount={cause?.user.sub_account_code}
+                    />
                   </div>
-                  <DonationForm
-                    causeId={cause.id}
-                    profile={profile}
-                    status={cause.status}
-                  />
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -240,6 +345,7 @@ export default async function CauseDetailPage({
                     causeId={cause.id}
                     profile={profile}
                     status={cause.status}
+                    subaccount={cause?.user.sub_account_code}
                   />
                 </div>
               )}

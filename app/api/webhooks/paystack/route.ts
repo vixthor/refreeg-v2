@@ -48,19 +48,7 @@ export async function POST(request: Request) {
             }), { status: 400 });
         }
 
-        // Check if the cause exists
-        const supabase = await createClient();
-        const { data: cause, error: causeError } = await supabase
-            .from("causes")
-            .select("id")
-            .eq("id", metadata.cause_id.toString())
-            .single();
-
-        if (causeError || !cause) {
-            return new NextResponse(JSON.stringify({
-                error: "Cause not found"
-            }), { status: 404 });
-        }
+     
 
         const amount = Number(metadata.amount)
         const serviceFee = calculateServiceFee(amount)

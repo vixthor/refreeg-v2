@@ -80,7 +80,7 @@ export function useAuth() {
     }
   }
 
-  const signUp = async (email: string, password: string) => {
+  const signUp = async (email: string, password: string, fullName: string) => {
     try {
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -103,6 +103,7 @@ export function useAuth() {
           .insert({
             id: data.user.id,
             email: data.user.email,
+            full_name: fullName,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           })
