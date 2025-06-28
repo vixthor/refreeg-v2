@@ -24,7 +24,6 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-<<<<<<< HEAD
 } from "@/components/ui/dropdown-menu"
 import { Shield, UserCheck, UserX, MoreHorizontal, Search, UserCog, User } from "lucide-react"
 import { format } from "date-fns"
@@ -36,26 +35,6 @@ import { UserSearch } from "@/components/search"
 import { CopyEmail } from "@/components/copy-email"
 import type { UserWithRole } from "@/types"
 import { getUserRole, listUsersWithRoles } from "@/actions/role-actions"
-=======
-} from "@/components/ui/dropdown-menu";
-import {
-  Shield,
-  UserCheck,
-  UserX,
-  MoreHorizontal,
-  Search,
-  UserCog,
-  User,
-} from "lucide-react";
-import { format } from "date-fns";
-import { createClient } from "@/lib/supabase/server";
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
-import { UserActions } from "./user-actions";
-import { UserSearch } from "@/components/search";
-import type { UserWithRole } from "@/types";
-import { getUserRole, listUsersWithRoles } from "@/actions/role-actions";
->>>>>>> c81ec40d6159c767d030fb9cd742998db81018d7
 
 export default async function AdminUsersPage({
   searchParams,
@@ -145,17 +124,8 @@ export default async function AdminUsersPage({
                     <TableRow key={userItem.id}>
                       <TableCell>
                         <div className="flex flex-col">
-<<<<<<< HEAD
                           <span className="font-medium">{userItem.full_name || "Unnamed User"}</span>
                           <CopyEmail email={userItem.email} />
-=======
-                          <span className="font-medium">
-                            {userItem.full_name || "Unnamed User"}
-                          </span>
-                          <span className="text-sm text-muted-foreground">
-                            {userItem.email}
-                          </span>
->>>>>>> c81ec40d6159c767d030fb9cd742998db81018d7
                         </div>
                       </TableCell>
                       <TableCell>
