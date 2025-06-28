@@ -14,6 +14,7 @@ export interface Cause {
   created_at: string
   updated_at: string
   image?: string | null
+  days_active?: number | null
   profiles?: {
     full_name: string
     email: string
@@ -60,5 +61,8 @@ export interface CauseFormData {
   goal: string | number
   currency: string
   coverImage: File | null
+  sections?: { heading: string; description: string }[]
+  startDate?: Date | undefined
+  endDate?: Date | undefined
 }
 

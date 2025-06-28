@@ -8,6 +8,8 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Calendar } from "@/components/ui/calendar"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Icons } from "@/components/icons"
 import { useAuth } from "@/hooks/use-auth"
 import { useCause } from "@/hooks/use-cause"
@@ -15,6 +17,9 @@ import { Progress } from "@/components/ui/progress"
 import { ImageUpload } from "@/components/ui/image-upload"
 import { categories } from "@/lib/categories"
 import { sendCauseUnderReviewEmail } from "@/services/mail"
+import { format, addDays, isAfter, isBefore, differenceInDays } from "date-fns"
+import { CalendarIcon } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 
 const currencies = [
@@ -29,6 +34,8 @@ type FormData = {
     currency: string
     coverImage: File | null
     sections: { heading: string; description: string }[]
+    startDate: Date | undefined
+    endDate: Date | undefined
 }
 
 type FormErrors = {
@@ -37,6 +44,8 @@ type FormErrors = {
     category?: string
     goal?: string
     coverImage?: string
+    startDate?: string
+    endDate?: string
 }
 
 type CauseFormData = {
@@ -47,6 +56,8 @@ type CauseFormData = {
     currency: string
     coverImage: File | null
     sections: { heading: string; description: string }[]
+    startDate: Date | undefined
+    endDate: Date | undefined
 }
 
 const validateForm = (formData: FormData): FormErrors => {
@@ -78,6 +89,22 @@ const validateForm = (formData: FormData): FormErrors => {
         errors.coverImage = "Cover image is required"
     }
 
+    if (!formData.startDate) {
+        errors.startDate = "Start date is required"
+    }
+
+    if (!formData.endDate) {
+        errors.endDate = "End date is required"
+    } else if (formData.startDate && formData.endDate) {
+        const daysDiff = differenceInDays(formData.endDate, formData.startDate)
+        if (daysDiff > 60) {
+            errors.endDate = "Cause duration cannot exceed 60 days"
+        }
+        if (daysDiff < 1) {
+            errors.endDate = "End date must be after start date"
+        }
+    }
+
     return errors
 }
 
@@ -94,6 +121,8 @@ export default function CreateCauseForm() {
         currency: "NGN",
         coverImage: null,
         sections: [{ heading: "", description: "" }],
+        startDate: undefined,
+        endDate: undefined,
     })
     const [errors, setErrors] = useState<FormErrors>({})
 
@@ -106,14 +135,21 @@ export default function CreateCauseForm() {
             setFormData(prev => ({
                 ...parsedDraft,
                 coverImage: prev.coverImage,
+                startDate: parsedDraft.startDate ? new Date(parsedDraft.startDate) : undefined,
+                endDate: parsedDraft.endDate ? new Date(parsedDraft.endDate) : undefined,
             }))
         }
     }, [])
 
     useEffect(() => {
-        // Don't save files to localStorage
+        // Don't save files to localStorage, and properly serialize dates
         const { coverImage, ...dataToSave } = formData
-        localStorage.setItem("causeDraft", JSON.stringify(dataToSave))
+        const serializedData = {
+            ...dataToSave,
+            startDate: dataToSave.startDate ? dataToSave.startDate.toISOString() : null,
+            endDate: dataToSave.endDate ? dataToSave.endDate.toISOString() : null,
+        }
+        localStorage.setItem("causeDraft", JSON.stringify(serializedData))
     }, [formData])
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -130,6 +166,14 @@ export default function CreateCauseForm() {
         // Clear error when user makes a selection
         if (errors[name as keyof FormErrors]) {
             setErrors((prev) => ({ ...prev, [name]: undefined }))
+        }
+    }
+
+    const handleDateChange = (date: Date | undefined, field: 'startDate' | 'endDate') => {
+        setFormData((prev) => ({ ...prev, [field]: date }))
+        // Clear error when user selects a date
+        if (errors[field]) {
+            setErrors((prev) => ({ ...prev, [field]: undefined }))
         }
     }
 
@@ -161,6 +205,8 @@ export default function CreateCauseForm() {
             case 2:
                 return formData.sections.every(section => section.heading.trim() !== "" && section.description.trim() !== "")
             case 3:
+                return !currentErrors.startDate && !currentErrors.endDate
+            case 4:
                 return !currentErrors.coverImage
             default:
                 return true
@@ -168,7 +214,7 @@ export default function CreateCauseForm() {
     }
 
     const nextStep = () => {
-        if (currentStep < 4 && validateStep(currentStep)) {
+        if (currentStep < 5 && validateStep(currentStep)) {
             setCurrentStep((prev) => prev + 1)
         }
     }
@@ -186,16 +232,6 @@ export default function CreateCauseForm() {
             return
         }
 
-        // Create FormData object for file uploads
-        const formDataToSubmit = new FormData()
-        Object.entries(formData).forEach(([key, value]) => {
-            if (key === "coverImage" && value) {
-                formDataToSubmit.append(key, value as File)
-            } else {
-                formDataToSubmit.append(key, value as string)
-            }
-        })
-
         const causeData: CauseFormData = {
             title: formData.title,
             description: formData.description,
@@ -204,6 +240,8 @@ export default function CreateCauseForm() {
             currency: formData.currency,
             coverImage: formData.coverImage,
             sections: formData.sections,
+            startDate: formData.startDate,
+            endDate: formData.endDate,
         }
         try {
             await sendCauseUnderReviewEmail({
@@ -387,6 +425,94 @@ export default function CreateCauseForm() {
 
             case 3:
                 return (
+                    <div className="space-y-6">
+                        <div className="space-y-2">
+                            <h3 className="text-lg font-medium">Cause Duration</h3>
+                            <p className="text-sm text-muted-foreground">
+                                Select when your cause should start and end. Maximum duration is 60 days.
+                            </p>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-2">
+                                <Label>Start Date</Label>
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                            variant="outline"
+                                            className={cn(
+                                                "w-full justify-start text-left font-normal",
+                                                !formData.startDate && "text-muted-foreground",
+                                                errors.startDate && "border-red-500"
+                                            )}
+                                        >
+                                            <CalendarIcon className="mr-2 h-4 w-4" />
+                                            {formData.startDate ? format(formData.startDate, "PPP") : "Pick a start date"}
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0" align="start">
+                                        <Calendar
+                                            mode="single"
+                                            selected={formData.startDate}
+                                            onSelect={(date) => handleDateChange(date, 'startDate')}
+                                            disabled={(date) => isBefore(date, new Date())}
+                                            initialFocus
+                                        />
+                                    </PopoverContent>
+                                </Popover>
+                                {errors.startDate && <p className="text-sm text-red-500">{errors.startDate}</p>}
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label>End Date</Label>
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                            variant="outline"
+                                            className={cn(
+                                                "w-full justify-start text-left font-normal",
+                                                !formData.endDate && "text-muted-foreground",
+                                                errors.endDate && "border-red-500"
+                                            )}
+                                        >
+                                            <CalendarIcon className="mr-2 h-4 w-4" />
+                                            {formData.endDate ? format(formData.endDate, "PPP") : "Pick an end date"}
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0" align="start">
+                                        <Calendar
+                                            mode="single"
+                                            selected={formData.endDate}
+                                            onSelect={(date) => handleDateChange(date, 'endDate')}
+                                            disabled={(date) => {
+                                                const isPast = isBefore(date, new Date());
+                                                const isBeforeStart = formData.startDate ? isBefore(date, formData.startDate) : false;
+                                                const isOver60Days = formData.startDate ? differenceInDays(date, formData.startDate) > 60 : false;
+                                                return isPast || isBeforeStart || isOver60Days;
+                                            }}
+                                            initialFocus
+                                        />
+                                    </PopoverContent>
+                                </Popover>
+                                {errors.endDate && <p className="text-sm text-red-500">{errors.endDate}</p>}
+                            </div>
+                        </div>
+
+                        {formData.startDate && formData.endDate && (
+                            <div className="p-4 bg-muted rounded-lg">
+                                <p className="text-sm">
+                                    <span className="font-medium">Duration:</span> {differenceInDays(formData.endDate, formData.startDate)} days
+                                </p>
+                                <p className="text-sm text-muted-foreground">
+                                    {format(formData.startDate, "PPP")} - {format(formData.endDate, "PPP")}
+                                </p>
+                            </div>
+                        )}
+                    </div>
+                )
+
+            case 4:
+                return (
                     <div className="space-y-4">
                         <div className="space-y-2">
                             <Label>Cover Image</Label>
@@ -409,7 +535,7 @@ export default function CreateCauseForm() {
                     </div>
                 )
 
-            case 4:
+            case 5:
                 return (
                     <div className="space-y-6">
                         <div className="space-y-2">
@@ -435,6 +561,15 @@ export default function CreateCauseForm() {
                         </div>
 
                         <div className="space-y-2">
+                            <h4 className="font-medium">Duration</h4>
+                            {formData.startDate && formData.endDate && (
+                                <p className="text-sm">
+                                    {differenceInDays(formData.endDate, formData.startDate)} days: {format(formData.startDate, "PPP")} - {format(formData.endDate, "PPP")}
+                                </p>
+                            )}
+                        </div>
+
+                        <div className="space-y-2">
                             <h4 className="font-medium">Images</h4>
                             <div className="grid grid-cols-2 gap-4">
                                 {formData.coverImage && (
@@ -449,8 +584,6 @@ export default function CreateCauseForm() {
                                 )}
                             </div>
                         </div>
-
-
                     </div>
                 )
 
@@ -467,7 +600,7 @@ export default function CreateCauseForm() {
                     Fill out the form below to create a new fundraising cause. All causes require approval before going
                     live.
                 </CardDescription>
-                <Progress value={(currentStep / 4) * 100} className="mt-4" />
+                <Progress value={(currentStep / 5) * 100} className="mt-4" />
             </CardHeader>
             <form onSubmit={handleSubmit} className="space-y-8">
                 <CardContent className="space-y-4">
@@ -483,7 +616,7 @@ export default function CreateCauseForm() {
                     >
                         Back
                     </Button>
-                    {currentStep < 4 ? (
+                    {currentStep < 5 ? (
                         <Button type="button" onClick={nextStep}>
                             Next
                         </Button>

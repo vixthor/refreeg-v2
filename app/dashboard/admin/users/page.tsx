@@ -19,6 +19,7 @@ import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import { UserActions } from "./user-actions"
 import { UserSearch } from "@/components/search"
+import { CopyEmail } from "@/components/copy-email"
 import type { UserWithRole } from "@/types"
 import { getUserRole, listUsersWithRoles } from "@/actions/role-actions"
 
@@ -103,7 +104,7 @@ export default async function AdminUsersPage({
                       <TableCell>
                         <div className="flex flex-col">
                           <span className="font-medium">{userItem.full_name || "Unnamed User"}</span>
-                          <span className="text-sm text-muted-foreground">{userItem.email}</span>
+                          <CopyEmail email={userItem.email} />
                         </div>
                       </TableCell>
                       <TableCell>
