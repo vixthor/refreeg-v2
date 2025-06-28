@@ -153,7 +153,7 @@ export async function setUserRole(
 }
 
 /**
- * List all users with their roles
+ * List all users with their roles and latest KYC status
  */
 export async function listUsersWithRoles(): Promise<UserWithRole[]> {
   const supabase = await createClient();
@@ -202,15 +202,34 @@ export async function listUsersWithRoles(): Promise<UserWithRole[]> {
     console.error("Error listing profiles:", profilesError);
     throw profilesError;
   }
-  // revalidatePath("/dashboard/admin/users")
+
+  // Fetch latest KYC status for all users in parallel
+  const kycResults = await Promise.all(
+    profiles.map(async (profile) => {
+      const { data: kyc, error: kycError } = await supabase
+        .from("kyc_verifications")
+        .select("id, status")
+        .eq("user_id", profile.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      return {
+        kyc_status: kyc?.status || null,
+        kyc_verification_id: kyc?.id || null,
+      };
+    })
+  );
+
   // Map profiles to UserWithRole
-  return profiles.map((profile) => ({
+  return profiles.map((profile, idx) => ({
     id: profile.id,
     email: profile.email || "",
     role: profile.roles?.[0]?.role || "user",
     is_blocked: profile.is_blocked || false,
     full_name: profile.full_name || null,
     created_at: profile.created_at,
+    kyc_status: kycResults[idx].kyc_status,
+    kyc_verification_id: kycResults[idx].kyc_verification_id,
   }));
 }
 

@@ -157,3 +157,33 @@ export async function updateBankDetails(
   revalidatePath("/dashboard/settings");
   return data as Profile;
 }
+
+/**
+ * Check if a user has completed KYC
+ */
+export async function hasKycVerification(userId: string): Promise<boolean> {
+  const profile = await getProfile(userId);
+  return !!(profile && profile.is_verified);
+}
+
+/**
+ * Update KYC verification status
+ */
+export async function updateKycStatus(userId: string, status: boolean): Promise<Profile> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("profiles")
+    .update({ is_verified: status })
+    .eq("id", userId)
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error updating KYC status:", error);
+    throw error;
+  }
+
+  revalidatePath("/dashboard");
+  return data as Profile;
+}

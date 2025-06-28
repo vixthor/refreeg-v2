@@ -16,7 +16,6 @@ import { ImageUpload } from "@/components/ui/image-upload"
 import { categories } from "@/lib/categories"
 import { sendCauseUnderReviewEmail } from "@/services/mail"
 
-
 const currencies = [
     { id: "NGN", name: "Naira (₦)" },
 ]
