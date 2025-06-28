@@ -31,8 +31,7 @@ const Hero = () => {
           RefreeG
         </p>
         <p className="md:text-[20px] text-[16px] text-foreground font-medium">
-          Your go to crowdfunding platform for building a new{" "}
-          <br className="hidden md:block" /> Africa, one community at a time
+          Africa's number 1 crowdfunding platform
         </p>
 
         <Link
