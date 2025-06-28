@@ -100,6 +100,7 @@ export default async function CauseDetailPage({
 
   const donors = await listDonationsForCause(cause.id);
 
+
   // Format the date
   const formattedDate = new Date(cause.created_at).toLocaleDateString("en-US", {
     year: "numeric",
