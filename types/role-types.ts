@@ -18,5 +18,7 @@ export interface UserWithRole {
   is_blocked: boolean
   full_name?: string | null
   created_at: string
+  kyc_status?: "pending" | "approved" | "rejected" | null
+  kyc_verification_id?: string | null
 }
 
