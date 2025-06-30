@@ -53,7 +53,7 @@ export default function Home() {
           </div>
           <div className="mx-auto grid max-w-5xl grid-cols-1 gap-6 py-12 md:grid-cols-3 md:gap-8">
             <div className="flex flex-col items-center space-y-2 rounded-lg border p-6 shadow-sm">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#0070E0] text-secondary-foreground">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#284678] text-secondary-foreground">
                 1
               </div>
               <h3 className="text-xl font-bold">Create a Cause</h3>
@@ -62,7 +62,7 @@ export default function Home() {
               </p>
             </div>
             <div className="flex flex-col items-center space-y-2 rounded-lg border p-6 shadow-sm">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#0070E0] text-secondary-foreground">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#284678] text-secondary-foreground">
                 2
               </div>
               <h3 className="text-xl font-bold">Get Approved</h3>
@@ -71,7 +71,7 @@ export default function Home() {
               </p>
             </div>
             <div className="flex flex-col items-center space-y-2 rounded-lg border p-6 shadow-sm">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#0070E0] text-secondary-foreground">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#284678] text-secondary-foreground">
                 3
               </div>
               <h3 className="text-xl font-bold">Receive Donations</h3>
