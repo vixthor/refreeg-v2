@@ -101,13 +101,7 @@ export async function FeaturedCauses() {
               <div className="aspect-video w-full overflow-hidden">
                 <img src={cause.image || "/placeholder.svg"} alt={cause.title} className="object-cover w-full h-full" />
               </div>
-              <CardHeader>
-                <div className="flex items-center gap-2">
-                  <Badge variant="secondary" className="text-xs px-2 py-1 rounded-full">
-                    {category?.icon}
-                    {category ? category.name.charAt(0).toUpperCase() + category.name.slice(1) : "Unknown"}
-                  </Badge>
-                </div>
+              <CardHeader className="flex flex-col flex-1 p-4">
                 <CardTitle className="font-medium text-base md:text-xl lg:text-2xl">{cause.title}</CardTitle>
                 <CardDescription>
                   {cause.description.split(" ").length > 25
@@ -119,21 +113,30 @@ export async function FeaturedCauses() {
                       )
                     : cause.description}
                 </CardDescription>
+                <div className="flex items-center gap-2 pt-2">
+                  <Badge variant="outline" className="text-xs px-2 py-1 rounded-full">
+                    {category?.icon}
+                    {category ? category.name.charAt(0).toUpperCase() + category.name.slice(1) : "Unknown"}
+                  </Badge>
+                </div>
               </CardHeader>
-              <CardContent className="flex-1">
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="font-medium">₦{cause.raised.toLocaleString()}</span>
-                    <span className="text-muted-foreground">of ₦{cause.goal.toLocaleString()}</span>
+              {/* This div will push itself to the bottom */}
+              <div className="mt-auto w-full">
+                <CardContent className="flex-1">
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="font-medium">₦{cause.raised.toLocaleString()}</span>
+                      <span className="text-muted-foreground">of ₦{cause.goal.toLocaleString()}</span>
+                    </div>
+                    <Progress value={(cause.raised / cause.goal) * 100} className="h-2 bg-muted" />
                   </div>
-                  <Progress value={(cause.raised / cause.goal) * 100} className="h-2 bg-muted" />
-                </div>
-              </CardContent>
-              <CardFooter>
-                <div className="w-full">
-                  <DonateButton />
-                </div>
-              </CardFooter>
+                </CardContent>
+                <CardFooter>
+                  <div className="w-full">
+                    <DonateButton />
+                  </div>
+                </CardFooter>
+              </div>
             </Card>
           </Link>
         )
