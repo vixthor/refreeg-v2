@@ -101,6 +101,8 @@ export default async function CauseDetailPage({
   const donors = await listDonationsForCause(cause.id);
 
 
+
+
   // Format the date
   const formattedDate = new Date(cause.created_at).toLocaleDateString("en-US", {
     year: "numeric",
@@ -295,7 +297,7 @@ export default async function CauseDetailPage({
                 </div>
                 <div className="flex justify-between py-1 border-t">
                   <span>Days active</span>
-                  <span className="font-medium">30</span>
+                  <span className="font-medium">{cause.days_active}</span>
                 </div>
               </div>
 
