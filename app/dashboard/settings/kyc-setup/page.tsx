@@ -118,8 +118,8 @@ export default function KycSetupPage() {
   };
 
   return (
-    <div className="container py-10 flex justify-center">
-      <Card className="w-full max-w-2xl">
+    <div className="py-10 flex justify-center">
+      <Card className="w-full  max-w-5xl border-0">
         <CardHeader>
           <CardTitle>
             {step === 1 && "Upload a proof of your identity"}
@@ -129,7 +129,7 @@ export default function KycSetupPage() {
           </CardTitle>
           <CardDescription>
             {step === 1 &&
-              "This helps us verify who you are and keep the platform safe for everyone."}
+              "This helps to keep the platform safe for everyone"}
             {step === 2 && "Upload a valid document to verify your identity."}
             {step === 3 && "We're reviewing your identity to keep Refreeg safe and secure for everyone."}
             {step === 4 && "Thanks for verifying your identity — you can now fully access all features on Refreeg."}

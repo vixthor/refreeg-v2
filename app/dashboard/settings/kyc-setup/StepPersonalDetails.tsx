@@ -7,7 +7,7 @@ export default function StepPersonalDetails({ formData, setFormData }: {
 }) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div className="space-y-2">
+      <div className="space-y-4">
         <Label htmlFor="fullName">Full Name</Label>
         <Input
           id="fullName"
@@ -18,7 +18,7 @@ export default function StepPersonalDetails({ formData, setFormData }: {
       </div>
       <div className="space-y-2">
         <Label htmlFor="dob">Date of Birth</Label>
-        <Input
+        <Input className="bg-gray-100"
           id="dob"
           type="date"
           value={formData.dob}
