@@ -176,7 +176,7 @@ export function Header() {
           {!isLoading && !user ? (
             <div className="flex items-center gap-2">
               <Link href="/auth/signin">
-                <Button size="sm" className="bg-[#0070E0]">Sign In</Button>
+                <Button size="sm" variant="default">Sign In</Button>
               </Link>
             </div>
           ) : (

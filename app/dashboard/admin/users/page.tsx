@@ -1,3 +1,4 @@
+import type React from "react";
 import {
   Card,
   CardContent,
@@ -41,7 +42,6 @@ import { UserActions } from "./user-actions";
 import { UserSearch } from "@/components/search";
 import type { UserWithRole } from "@/types";
 import { getUserRole, listUsersWithRoles } from "@/actions/role-actions";
-import Link from "next/link";
 
 export default async function AdminUsersPage({
   searchParams,
@@ -79,6 +79,7 @@ export default async function AdminUsersPage({
   const users = await listUsersWithRoles();
 
   // Filter users based on search query if provided
+
   const filteredUsers = params.search
     ? users.filter(
         (user) =>
@@ -130,12 +131,9 @@ export default async function AdminUsersPage({
                     <TableRow key={userItem.id}>
                       <TableCell>
                         <div className="flex flex-col">
-                          <Link
-                            href={`/profile/${userItem.id}`}
-                            className="font-medium hover:underline"
-                          >
+                          <span className="font-medium">
                             {userItem.full_name || "Unnamed User"}
-                          </Link>
+                          </span>
                           <span className="text-sm text-muted-foreground">
                             {userItem.email}
                           </span>

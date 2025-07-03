@@ -17,7 +17,7 @@ export default async function CausesPage({
   const pageSize = 9;
 
   return (
-    <div className="container py-10">
+    <div className="p-10">
       <div className="space-y-6">
         <div className="space-y-2">
           <h1 className="text-3xl font-bold tracking-tight">Explore Causes</h1>
