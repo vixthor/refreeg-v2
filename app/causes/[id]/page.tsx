@@ -19,9 +19,15 @@ import {
 import { notFound } from "next/navigation";
 import { ShareModal } from "@/components/share-modal";
 import { getBaseURL } from "@/lib/utils";
-import MaticDonationButton from "@/components/crypto-details/MaticDonationButton";
+import SolanaDonationButtonWrapper from "@/components/crypto-details/SolanaDonationButtonWrapper";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, Facebook, Instagram, Linkedin, Twitter } from "lucide-react";
+import {
+  AlertCircle,
+  Facebook,
+  Instagram,
+  Linkedin,
+  Twitter,
+} from "lucide-react";
 import Link from "next/link";
 
 // Mock data for a cause
@@ -118,28 +124,29 @@ export default async function CauseDetailPage({
   const baseUrl = getBaseURL();
   // Check if creator has a wallet
   const creatorProfile = await getProfile(cause.user_id);
-  const hasCreatorWallet = !!creatorProfile?.polygon_wallet;
+  const hasCreatorWallet = !!creatorProfile?.solana_wallet;
 
   // Parse social media links from JSON string
   let socialMedia = {
     twitter: "",
     facebook: "",
     instagram: "",
-    linkedin: ""
+    linkedin: "",
   };
 
   if (creatorProfile?.social_media) {
     try {
       // Handle both string (from DB) and object (already parsed) cases
-      const parsedSocial = typeof creatorProfile.social_media === 'string'
-        ? JSON.parse(creatorProfile.social_media)
-        : creatorProfile.social_media;
+      const parsedSocial =
+        typeof creatorProfile.social_media === "string"
+          ? JSON.parse(creatorProfile.social_media)
+          : creatorProfile.social_media;
 
       socialMedia = {
         twitter: parsedSocial.twitter || "",
         facebook: parsedSocial.facebook || "",
         instagram: parsedSocial.instagram || "",
-        linkedin: parsedSocial.linkedin || ""
+        linkedin: parsedSocial.linkedin || "",
       };
     } catch (e) {
       console.error("Error parsing social media:", e);
@@ -147,8 +154,11 @@ export default async function CauseDetailPage({
   }
 
   // Check if any social media links exist
-  const hasSocialMedia = socialMedia.twitter || socialMedia.facebook ||
-    socialMedia.instagram || socialMedia.linkedin;
+  const hasSocialMedia =
+    socialMedia.twitter ||
+    socialMedia.facebook ||
+    socialMedia.instagram ||
+    socialMedia.linkedin;
 
   return (
     <div className="container py-10">
@@ -185,7 +195,7 @@ export default async function CauseDetailPage({
                 <span className="capitalize">{cause.category}</span>
               </div>
 
-              {/* Social Media Links
+              {/* Social Media Links */}
               {hasSocialMedia && (
                 <div className="flex items-center gap-4 pt-2">
                   {socialMedia.twitter && (
@@ -233,7 +243,7 @@ export default async function CauseDetailPage({
                     </a>
                   )}
                 </div>
-              )} */}
+              )}
 
               <p className="whitespace-pre-line">{cause.description}</p>
               {cause.sections &&
@@ -308,13 +318,13 @@ export default async function CauseDetailPage({
             <CardContent className="space-y-4">
               {hasCreatorWallet ? (
                 <div className="space-y-4">
-                  {/* <MaticDonationButton causeId={cause.id} /> */}
-                  <Alert variant="destructive">
+                  <SolanaDonationButtonWrapper causeId={cause.id} />
+                  {/* <Alert variant="destructive">
                     <AlertCircle className="h-4 w-4" />
                     <AlertDescription>
                       Crypto donations are not available at the moment.
                     </AlertDescription>
-                  </Alert>
+                  </Alert> */}
                   <div className="relative">
                     <div className="absolute inset-0 flex items-center">
                       <span className="w-full border-t" />
