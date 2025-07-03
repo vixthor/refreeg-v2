@@ -42,6 +42,7 @@ import { UserActions } from "./user-actions";
 import { UserSearch } from "@/components/search";
 import type { UserWithRole } from "@/types";
 import { getUserRole, listUsersWithRoles } from "@/actions/role-actions";
+import Link from "next/link";
 
 export default async function AdminUsersPage({
   searchParams,
@@ -131,9 +132,12 @@ export default async function AdminUsersPage({
                     <TableRow key={userItem.id}>
                       <TableCell>
                         <div className="flex flex-col">
-                          <span className="font-medium">
+                            <Link
+                            href={`/profile/${userItem.id}`}
+                            className="font-medium hover:underline"
+                          >
                             {userItem.full_name || "Unnamed User"}
-                          </span>
+                          </Link>
                           <span className="text-sm text-muted-foreground">
                             {userItem.email}
                           </span>
