@@ -20,8 +20,10 @@ export default function StepProgress({ onComplete }: { onComplete: () => void })
 
   return (
     <div className="flex flex-col items-center space-y-6">
+      <span className=" font-bold">Checking Your Documents...</span>
+      <span className="font-light">We're reviewing your identity to keep Refreeg safe and secure for everyone.</span>
       <Progress value={progress} className="w-full" />
-      <span className="text-purple-700 font-medium">Sending your data for verification...</span>
+      
     </div>
   );
 } 
