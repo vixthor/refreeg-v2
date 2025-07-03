@@ -53,7 +53,12 @@ export default function KycSetupPage() {
 
   // Validation for identity details
   const validateIdentityDetails = () => {
-    if (!formData.firstName || !formData.lastName || !formData.dob || !formData.phone) {
+    if (
+      !formData.firstName ||
+      !formData.lastName ||
+      !formData.dob ||
+      !formData.phone
+    ) {
       setError("Please fill in all identity details.");
       return false;
     }
@@ -63,7 +68,13 @@ export default function KycSetupPage() {
 
   // Validation for address details
   const validateAddressDetails = () => {
-    if (!formData.address || !formData.city || !formData.state || !formData.postal || !formData.country) {
+    if (
+      !formData.address ||
+      !formData.city ||
+      !formData.state ||
+      !formData.postal ||
+      !formData.country
+    ) {
       setError("Please fill in all address details.");
       return false;
     }
@@ -144,11 +155,15 @@ export default function KycSetupPage() {
               {step === 4 && "All done!"}
             </CardTitle>
             <CardDescription className=" font-montserrat">
-              {step === 0 && "This helps us verify who you are and keep the platform safe for everyone."}
-              {step === 1 && "Enter your address details as they appear on your document."}
+              {step === 0 &&
+                "This helps us verify who you are and keep the platform safe for everyone."}
+              {step === 1 &&
+                "Enter your address details as they appear on your document."}
               {step === 2 && "Upload a valid document to verify your identity."}
-              {step === 3 && "We're reviewing your identity to keep Refreeg safe and secure for everyone."}
-              {step === 4 && "Thanks for verifying your identity — you can now fully access all features on Refreeg."}
+              {step === 3 &&
+                "We're reviewing your identity to keep Refreeg safe and secure for everyone."}
+              {step === 4 &&
+                "Thanks for verifying your identity — you can now fully access all features on Refreeg."}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -159,10 +174,16 @@ export default function KycSetupPage() {
               </Alert>
             )}
             {step === 0 && (
-              <StepPersonalDetails formData={formData} setFormData={setFormData} />
+              <StepPersonalDetails
+                formData={formData}
+                setFormData={setFormData}
+              />
             )}
             {step === 1 && (
-              <StepAddressDetails formData={formData} setFormData={setFormData} />
+              <StepAddressDetails
+                formData={formData}
+                setFormData={setFormData}
+              />
             )}
             {step === 2 && (
               <StepDocumentUpload
@@ -172,9 +193,7 @@ export default function KycSetupPage() {
                 setFile={setFile}
               />
             )}
-            {step === 3 && (
-              <StepProgress onComplete={handleUpload} />
-            )}
+            {step === 3 && <StepProgress onComplete={handleUpload} />}
             {step === 4 && (
               <>
                 <StepSuccess />
