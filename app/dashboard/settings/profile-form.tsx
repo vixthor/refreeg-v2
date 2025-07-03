@@ -1,3 +1,4 @@
+// components/profile-form.tsx
 "use client";
 
 import { useRef, useState } from "react";
@@ -16,6 +17,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Camera, Upload, Eye } from "lucide-react";
 import { Icons } from "@/components/icons";
+import { SocialMedia } from "@/components/social-media";
 import type { ProfileFormData } from "@/types";
 import { useProfile } from "@/hooks/use-profile";
 import Link from "next/link";
@@ -27,12 +29,10 @@ interface ProfileFormProps {
     phone: string | null;
     profile_photo: string | null;
     bio: string | null;
-    social_media?: {
-      twitter?: string | null;
-      facebook?: string | null;
-      instagram?: string | null;
-      linkedin?: string | null;
-    } | null;
+    twitter_url?: string | null;
+    facebook_url?: string | null;
+    instagram_url?: string | null;
+    linkedin_url?: string | null;
   };
   user: {
     id: string;
@@ -47,19 +47,18 @@ export function ProfileForm({ profile, user }: ProfileFormProps) {
     email: profile?.email || user?.email || "",
     phone: profile?.phone || "",
     bio: profile?.bio || "",
-    social_media: {
-      twitter: profile?.social_media?.twitter || "",
-      facebook: profile?.social_media?.facebook || "",
-      instagram: profile?.social_media?.instagram || "",
-      linkedin: profile?.social_media?.linkedin || "",
-    },
+    twitter_url: profile?.twitter_url || "",
+    facebook_url: profile?.facebook_url || "",
+    instagram_url: profile?.instagram_url || "",
+    linkedin_url: profile?.linkedin_url || "",
   });
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { updateProfile, updateProfilePhoto, isUploading } = useProfile(
     user?.id
   );
 
-  const handleProfileChange = (
+  const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
@@ -69,14 +68,10 @@ export function ProfileForm({ profile, user }: ProfileFormProps) {
     }));
   };
 
-  const handleSocialMediaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
+  const handleSocialMediaChange = (platform: string, value: string) => {
     setFormData((prev) => ({
       ...prev,
-      social_media: {
-        ...prev.social_media,
-        [name]: value,
-      },
+      [`${platform}_url`]: value,
     }));
   };
 
@@ -89,11 +84,13 @@ export function ProfileForm({ profile, user }: ProfileFormProps) {
       email: formData.email,
       phone: formData.phone,
       bio: formData.bio,
-      social_media: formData.social_media,
+      twitter_url: formData.twitter_url,
+      facebook_url: formData.facebook_url,
+      instagram_url: formData.instagram_url,
+      linkedin_url: formData.linkedin_url,
     };
 
     await updateProfile(updatedProfile);
-
     setIsSubmitting(false);
   };
 
@@ -200,13 +197,13 @@ export function ProfileForm({ profile, user }: ProfileFormProps) {
 
           {/* Full Name */}
           <div className="space-y-2">
-            <Label htmlFor="name">Full Name</Label>
+            <Label htmlFor="full_name">Full Name</Label>
             <Input
-              id="name"
+              id="full_name"
               name="full_name"
               placeholder="Your full name"
               value={formData.full_name}
-              onChange={handleProfileChange}
+              onChange={handleChange}
             />
           </div>
 
@@ -234,7 +231,7 @@ export function ProfileForm({ profile, user }: ProfileFormProps) {
               name="phone"
               placeholder="Your phone number"
               value={formData.phone}
-              onChange={handleProfileChange}
+              onChange={handleChange}
             />
           </div>
 
@@ -246,7 +243,7 @@ export function ProfileForm({ profile, user }: ProfileFormProps) {
               name="bio"
               placeholder="Tell others about yourself and your causes"
               value={formData.bio}
-              onChange={handleProfileChange}
+              onChange={handleChange}
               rows={4}
               className="min-h-[100px]"
             />
@@ -255,59 +252,22 @@ export function ProfileForm({ profile, user }: ProfileFormProps) {
             </p>
           </div>
 
-          {/* Social Media Section
+          {/* Social Media Section */}
           <div className="space-y-4">
             <h3 className="text-lg font-medium">Social Media</h3>
             <p className="text-sm text-muted-foreground">
               Add links to your social media profiles (optional)
             </p>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="twitter">Twitter (X)</Label>
-                <Input
-                  id="twitter"
-                  name="twitter"
-                  placeholder="https://twitter.com/yourusername"
-                  value={formData.social_media.twitter}
-                  onChange={handleSocialMediaChange}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="facebook">Facebook</Label>
-                <Input
-                  id="facebook"
-                  name="facebook"
-                  placeholder="https://facebook.com/yourpage"
-                  value={formData.social_media.facebook}
-                  onChange={handleSocialMediaChange}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="instagram">Instagram</Label>
-                <Input
-                  id="instagram"
-                  name="instagram"
-                  placeholder="https://instagram.com/yourusername"
-                  value={formData.social_media.instagram}
-                  onChange={handleSocialMediaChange}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="linkedin">LinkedIn</Label>
-                <Input
-                  id="linkedin"
-                  name="linkedin"
-                  placeholder="https://linkedin.com/in/yourprofile"
-                  value={formData.social_media.linkedin}
-                  onChange={handleSocialMediaChange}
-                />
-              </div>
-            </div>
-          </div> */}
+            <SocialMedia
+              mode="edit"
+              twitter={formData.twitter_url}
+              facebook={formData.facebook_url}
+              instagram={formData.instagram_url}
+              linkedin={formData.linkedin_url}
+              onChange={handleSocialMediaChange}
+            />
+          </div>
         </CardContent>
         <CardFooter>
           <Button type="submit" disabled={isSubmitting}>

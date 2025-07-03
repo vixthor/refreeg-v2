@@ -1,9 +1,22 @@
-import type React from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
+import type React from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,64 +24,78 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Shield, UserCheck, UserX, MoreHorizontal, Search, UserCog, User } from "lucide-react"
-import { format } from "date-fns"
-import { createClient } from "@/lib/supabase/server"
-import { cookies } from "next/headers"
-import { redirect } from "next/navigation"
-import { UserActions } from "./user-actions"
-import { UserSearch } from "@/components/search"
-import type { UserWithRole } from "@/types"
-import { getUserRole, listUsersWithRoles } from "@/actions/role-actions"
+} from "@/components/ui/dropdown-menu";
+import {
+  Shield,
+  UserCheck,
+  UserX,
+  MoreHorizontal,
+  Search,
+  UserCog,
+  User,
+} from "lucide-react";
+import { format } from "date-fns";
+import { createClient } from "@/lib/supabase/server";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+import { UserActions } from "./user-actions";
+import { UserSearch } from "@/components/search";
+import type { UserWithRole } from "@/types";
+import { getUserRole, listUsersWithRoles } from "@/actions/role-actions";
+import Link from "next/link";
 
 export default async function AdminUsersPage({
   searchParams,
 }: {
-  searchParams: { search?: string }
+  searchParams: { search?: string };
 }) {
+  const supabase = await createClient();
+  const params = await searchParams;
 
-  const supabase = await createClient()
-  const params = await searchParams
-
-  const { data: { user: currentuser } } = await supabase.auth.getUser()
+  const {
+    data: { user: currentuser },
+  } = await supabase.auth.getUser();
 
   if (!currentuser) {
-    redirect("/signin")
+    redirect("/signin");
   }
 
   // Check if user is admin or manager
-  const user = await getUserRole(currentuser.id)
+  const user = await getUserRole(currentuser.id);
 
   if (!user || (user !== "admin" && user !== "manager")) {
     return (
       <Card>
         <CardHeader>
           <CardTitle>Access Denied</CardTitle>
-          <CardDescription>You do not have permission to access this page.</CardDescription>
+          <CardDescription>
+            You do not have permission to access this page.
+          </CardDescription>
         </CardHeader>
       </Card>
-    )
+    );
   }
 
   // Fetch users using server action
-  const users = await listUsersWithRoles()
+  const users = await listUsersWithRoles();
 
   // Filter users based on search query if provided
 
   const filteredUsers = params.search
     ? users.filter(
-      (user) =>
-        user.email.toLowerCase().includes(params.search!.toLowerCase()) ||
-        user.full_name?.toLowerCase().includes(params.search!.toLowerCase())
-    )
-    : users
+        (user) =>
+          user.email.toLowerCase().includes(params.search!.toLowerCase()) ||
+          user.full_name?.toLowerCase().includes(params.search!.toLowerCase())
+      )
+    : users;
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Manage Users</h1>
-        <p className="text-muted-foreground">View and manage user accounts and permissions.</p>
+        <p className="text-muted-foreground">
+          View and manage user accounts and permissions.
+        </p>
       </div>
 
       <Card>
@@ -94,7 +121,10 @@ export default async function AdminUsersPage({
               <TableBody>
                 {filteredUsers.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                    <TableCell
+                      colSpan={6}
+                      className="text-center py-8 text-muted-foreground"
+                    >
                       No users found
                     </TableCell>
                   </TableRow>
@@ -103,8 +133,15 @@ export default async function AdminUsersPage({
                     <TableRow key={userItem.id}>
                       <TableCell>
                         <div className="flex flex-col">
-                          <span className="font-medium">{userItem.full_name || "Unnamed User"}</span>
-                          <span className="text-sm text-muted-foreground">{userItem.email}</span>
+                          <Link
+                            href={`/profile/${userItem.id}`}
+                            className="font-medium hover:underline"
+                          >
+                            {userItem.full_name || "Unnamed User"}
+                          </Link>
+                          <span className="text-sm text-muted-foreground">
+                            {userItem.email}
+                          </span>
                         </div>
                       </TableCell>
                       <TableCell>
@@ -129,15 +166,24 @@ export default async function AdminUsersPage({
                         {userItem.is_blocked ? (
                           <Badge variant="destructive">Blocked</Badge>
                         ) : (
-                          <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/20">
+                          <Badge
+                            variant="outline"
+                            className="bg-green-500/10 text-green-500 border-green-500/20"
+                          >
                             Active
                           </Badge>
                         )}
                       </TableCell>
-                      <TableCell>{format(new Date(userItem.created_at), "MMM d, yyyy")}</TableCell>
+                      <TableCell>
+                        {format(new Date(userItem.created_at), "MMM d, yyyy")}
+                      </TableCell>
                       <TableCell>
                         {/* KYC Shield Icon with color and dot overlay */}
-                        <a href={`/dashboard/admin/users/kyc/${userItem.id}`} className="inline-block relative group" title="Review KYC">
+                        <a
+                          href={`/dashboard/admin/users/kyc/${userItem.id}`}
+                          className="inline-block relative group"
+                          title="Review KYC"
+                        >
                           {/* Shield color logic */}
                           {userItem.kyc_status === "approved" ? (
                             <Shield className="h-6 w-6 text-green-500" />
@@ -155,10 +201,7 @@ export default async function AdminUsersPage({
                         </a>
                       </TableCell>
                       <TableCell className="text-right">
-                        <UserActions
-                          user={userItem}
-                          currentUserRole={user}
-                        />
+                        <UserActions user={userItem} currentUserRole={user} />
                       </TableCell>
                     </TableRow>
                   ))
@@ -169,6 +212,5 @@ export default async function AdminUsersPage({
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
-

@@ -1,16 +1,16 @@
-"use client"
+"use client";
 
 import { useState } from "react";
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { ThemeToggle } from "@/components/theme-toggle"
-import { UserNav } from "@/components/user-nav"
-import { useAuth } from "@/hooks/use-auth"
-import { Logo } from "@/components/logo"
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { UserNav } from "@/components/user-nav";
+import { useAuth } from "@/hooks/use-auth";
+import { Logo } from "@/components/logo";
 // Import the useAdmin hook
-import { useAdmin } from "@/hooks/use-admin"
-import { LayoutDashboard, ShieldAlert } from "lucide-react"
+import { useAdmin } from "@/hooks/use-admin";
+import { LayoutDashboard, ShieldAlert } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -49,10 +49,9 @@ const MenuLink = ({
 );
 
 export function Header() {
-  const pathname = usePathname()
-  const { user, isLoading } = useAuth()
+  const pathname = usePathname();
+  const { user, isLoading } = useAuth();
   const [aboutUsOpen, setAboutUsOpen] = useState(false);
-
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -62,15 +61,21 @@ export function Header() {
           <nav className="hidden gap-6 md:flex">
             <Link
               href="/causes"
-              className={`text-sm font-medium transition-colors hover:text-secondary ${pathname === "/causes" ? "text-foreground" : "text-muted-foreground"
-                }`}
+              className={`text-sm font-medium transition-colors hover:text-secondary ${
+                pathname === "/causes"
+                  ? "text-foreground"
+                  : "text-muted-foreground"
+              }`}
             >
               Causes
             </Link>
             <Link
               href="/how-it-works"
-              className={`text-sm font-medium transition-colors hover:text-secondary ${pathname === "/how-it-works" ? "text-foreground" : "text-muted-foreground"
-                }`}
+              className={`text-sm font-medium transition-colors hover:text-secondary ${
+                pathname === "/how-it-works"
+                  ? "text-foreground"
+                  : "text-muted-foreground"
+              }`}
             >
               How It Works
             </Link>
@@ -163,7 +168,6 @@ export function Header() {
                 Dashboard
               </Link>
             )} */}
-
           </nav>
         </div>
         <div className="flex items-center gap-5">
@@ -176,7 +180,9 @@ export function Header() {
           {!isLoading && !user ? (
             <div className="flex items-center gap-2">
               <Link href="/auth/signin">
-                <Button size="sm" className="bg-[#0070E0]">Sign In</Button>
+                <Button size="sm" variant="default">
+                  Sign In
+                </Button>
               </Link>
             </div>
           ) : (
@@ -185,6 +191,5 @@ export function Header() {
         </div>
       </div>
     </header>
-  )
+  );
 }
-
