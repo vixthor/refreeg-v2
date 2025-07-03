@@ -1,61 +1,92 @@
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-export default function StepAddressDetails({ formData, setFormData }: {
-  formData: any,
-  setFormData: (data: any) => void
+export const inputBoxClass =
+  "w-[530px] h-20 px-2.5 pt-[6px] text-neutral-700 text-sm font-normal font-montserrat rounded-[10px] outline outline-1 outline-neutral-200 resize-none";
+
+export default function StepAddressDetails({
+  formData,
+  setFormData,
+  error,
+}: {
+  formData: any;
+  setFormData: (data: any) => void;
+  error?: string | null;
 }) {
   return (
-    <div className="space-y-4">
-      <div className="self-stretch text-Neutrals-Neutrals700 text-sm font-normal font-montserrat">
-        <Label htmlFor="address">Address Line</Label>
-        <Input
-          id="address"
-          placeholder="e.g., 12 Adewole Crescent"
-          value={formData.address}
-          onChange={e => setFormData({ ...formData, address: e.target.value })}
-        />
-      </div>
-      <div className="flex gap-4">
-        <div className="flex-1">
+    <div className="space-y-4 ">
+      {error && (
+        <div className="text-red-600 text-sm font-montserrat mb-2">{error}</div>
+      )}
+      <div className="flex flex-col gap-4">
+        {/* Address Line */}
+        <div className="flex flex-col gap-1.5 flex-1">
+          <Label htmlFor="address">Address Line</Label>
+          <textarea
+            id="address"
+            placeholder="e.g., 12 Adewole Crescent"
+            value={formData.address}
+            onChange={(e) =>
+              setFormData({ ...formData, address: e.target.value })
+            }
+            rows={1}
+            className={inputBoxClass}
+          />
+        </div>
+        {/* City */}
+        <div className="flex flex-col gap-1.5 flex-1">
           <Label htmlFor="city">City</Label>
-          <Input
+          <textarea
             id="city"
             placeholder="e.g., Abuja"
             value={formData.city}
-            onChange={e => setFormData({ ...formData, city: e.target.value })}
+            onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+            rows={1}
+            className={inputBoxClass}
           />
         </div>
-        <div className="flex-1">
+        {/* State */}
+        <div className="flex flex-col gap-1.5 flex-1">
           <Label htmlFor="state">State</Label>
-          <Input
+          <textarea
             id="state"
             placeholder="e.g., FCT"
             value={formData.state}
-            onChange={e => setFormData({ ...formData, state: e.target.value })}
+            onChange={(e) =>
+              setFormData({ ...formData, state: e.target.value })
+            }
+            rows={1}
+            className={inputBoxClass}
           />
         </div>
-      </div>
-      <div className="flex gap-4">
-        <div className="flex-1">
+        {/* Postal Code */}
+        <div className="flex flex-col gap-1.5 flex-1">
           <Label htmlFor="postal">Postal Code</Label>
-          <Input
+          <textarea
             id="postal"
             placeholder="e.g., 900211"
             value={formData.postal}
-            onChange={e => setFormData({ ...formData, postal: e.target.value })}
+            onChange={(e) =>
+              setFormData({ ...formData, postal: e.target.value })
+            }
+            rows={1}
+            className={inputBoxClass}
           />
         </div>
-        <div className="flex-1">
+        {/* Country */}
+        <div className="flex flex-col gap-1.5 flex-1">
           <Label htmlFor="country">Country</Label>
-          <Input
+          <textarea
             id="country"
             placeholder="Select a country"
             value={formData.country}
-            onChange={e => setFormData({ ...formData, country: e.target.value })}
+            onChange={(e) =>
+              setFormData({ ...formData, country: e.target.value })
+            }
+            rows={1}
+            className={inputBoxClass}
           />
         </div>
       </div>
     </div>
   );
-} 
+}

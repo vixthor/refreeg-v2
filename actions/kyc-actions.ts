@@ -2,8 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
-import { KycVerification } from "@/types/kyc-types";
-
+import { KycVerification, KycStatus } from "@/types/kyc-types";
 
 export async function uploadKycDocument(
   userId: string,
@@ -32,56 +31,55 @@ export async function uploadKycDocument(
       .limit(1)
       .maybeSingle();
 
-    if (existingKyc && existingKyc.status === "approved") {
-      return { documentUrl: "", error: "You are already verified." };
-    }
+    if (existingKyc) {
+      if (existingKyc.status === "approved") {
+        return { documentUrl: "", error: "You are already verified." };
+      }
+      // Update the existing record (for pending or rejected)
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${userId}/${Date.now()}.${fileExt}`;
+      const bucket = "kyc-documents";
 
-    const fileExt = file.name.split(".").pop();
-    const fileName = `${userId}/${Date.now()}.${fileExt}`;
-    const bucket = "kyc-documents";
+      // Validate file type
+      const allowedTypes = ["image/jpeg", "image/png", "application/pdf"];
+      if (!allowedTypes.includes(file.type)) {
+        return {
+          documentUrl: "",
+          error: "Invalid file type. Please upload a JPEG, PNG, or PDF file.",
+        };
+      }
 
-    // Validate file type
-    const allowedTypes = ["image/jpeg", "image/png", "application/pdf"];
-    if (!allowedTypes.includes(file.type)) {
-      return {
-        documentUrl: "",
-        error: "Invalid file type. Please upload a JPEG, PNG, or PDF file.",
-      };
-    }
+      // Validate file size (max 5MB)
+      const maxSize = 5 * 1024 * 1024; // 5MB
+      if (file.size > maxSize) {
+        return {
+          documentUrl: "",
+          error: "File size too large. Maximum size is 5MB.",
+        };
+      }
 
-    // Validate file size (max 5MB)
-    const maxSize = 5 * 1024 * 1024; // 5MB
-    if (file.size > maxSize) {
-      return {
-        documentUrl: "",
-        error: "File size too large. Maximum size is 5MB.",
-      };
-    }
+      // Upload to Supabase Storage
+      const { data, error: uploadError } = await supabase.storage
+        .from(bucket)
+        .upload(fileName, file, {
+          cacheControl: "3600",
+          upsert: false,
+        });
 
-    // Upload to Supabase Storage
-    const { data, error: uploadError } = await supabase.storage
-      .from(bucket)
-      .upload(fileName, file, {
-        cacheControl: "3600",
-        upsert: false,
-      });
+      if (uploadError) {
+        console.error("Error uploading document:", uploadError);
+        return { documentUrl: "", error: uploadError.message };
+      }
 
-    if (uploadError) {
-      console.error("Error uploading document:", uploadError);
-      return { documentUrl: "", error: uploadError.message };
-    }
+      // Get signed URL (valid for 1 hour)
+      const { data: signedUrlData } = await supabase.storage
+        .from(bucket)
+        .createSignedUrl(fileName, 3600);
 
-    // Get signed URL (valid for 1 hour)
-    const { data: signedUrlData } = await supabase.storage
-      .from(bucket)
-      .createSignedUrl(fileName, 3600);
+      if (!signedUrlData?.signedUrl) {
+        return { documentUrl: "", error: "Failed to generate signed URL" };
+      }
 
-    if (!signedUrlData?.signedUrl) {
-      return { documentUrl: "", error: "Failed to generate signed URL" };
-    }
-
-    if (existingKyc && existingKyc.status === "rejected") {
-      // Update the rejected record to pending and update all fields
       const { error: updateError } = await supabase
         .from("kyc_verifications")
         .update({
@@ -107,6 +105,50 @@ export async function uploadKycDocument(
       return { documentUrl: signedUrlData.signedUrl, error: null };
     } else {
       // Insert new record
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${userId}/${Date.now()}.${fileExt}`;
+      const bucket = "kyc-documents";
+
+      // Validate file type
+      const allowedTypes = ["image/jpeg", "image/png", "application/pdf"];
+      if (!allowedTypes.includes(file.type)) {
+        return {
+          documentUrl: "",
+          error: "Invalid file type. Please upload a JPEG, PNG, or PDF file.",
+        };
+      }
+
+      // Validate file size (max 5MB)
+      const maxSize = 5 * 1024 * 1024; // 5MB
+      if (file.size > maxSize) {
+        return {
+          documentUrl: "",
+          error: "File size too large. Maximum size is 5MB.",
+        };
+      }
+
+      // Upload to Supabase Storage
+      const { data, error: uploadError } = await supabase.storage
+        .from(bucket)
+        .upload(fileName, file, {
+          cacheControl: "3600",
+          upsert: false,
+        });
+
+      if (uploadError) {
+        console.error("Error uploading document:", uploadError);
+        return { documentUrl: "", error: uploadError.message };
+      }
+
+      // Get signed URL (valid for 1 hour)
+      const { data: signedUrlData } = await supabase.storage
+        .from(bucket)
+        .createSignedUrl(fileName, 3600);
+
+      if (!signedUrlData?.signedUrl) {
+        return { documentUrl: "", error: "Failed to generate signed URL" };
+      }
+
       const { error: insertError } = await supabase
         .from("kyc_verifications")
         .insert({
@@ -143,13 +185,12 @@ export async function getVerificationStatus(
     const supabase = await createClient();
     console.log("Fetching KYC for user:", userId);
     const { data, error } = await supabase
-    .from("kyc_verifications")
-    .select("*")
-    .eq("user_id", userId)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle(); // ✅ Handles 0 or 1 result gracefully
-  
+      .from("kyc_verifications")
+      .select("*")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(); // ✅ Handles 0 or 1 result gracefully
 
     if (error) {
       throw error;
@@ -160,9 +201,10 @@ export async function getVerificationStatus(
     console.error("Error getting verification status:", JSON.stringify(error));
     return {
       status: null,
-      error: error instanceof Error
-        ? error.message
-        : typeof error === "string"
+      error:
+        error instanceof Error
+          ? error.message
+          : typeof error === "string"
           ? error
           : JSON.stringify(error) || "Failed to get status",
     };
@@ -177,20 +219,27 @@ export async function updateVerificationStatus(
 ): Promise<{ error: string | null }> {
   try {
     const supabase = await createClient();
-    
+    console.log(
+      "[KYC] Updating status for verificationId:",
+      verificationId,
+      "to status:",
+      status
+    );
     // Update KYC status
     const { error: updateError } = await supabase
       .from("kyc_verifications")
       .update({
         status: status,
-        verification_notes: notes || (status === "approved" ? "Approved by admin" : "Rejected by admin"),
+        verification_notes:
+          notes ||
+          (status === "approved" ? "Approved by admin" : "Rejected by admin"),
         updated_at: new Date().toISOString(),
       })
       .eq("id", verificationId);
 
     if (updateError) {
-      console.error("Error updating KYC status:", updateError);
-      throw updateError;
+      console.error("[KYC] Error updating KYC status:", updateError);
+      return { error: updateError.message || JSON.stringify(updateError) };
     }
 
     // Get the user_id from the verification record
@@ -201,8 +250,11 @@ export async function updateVerificationStatus(
       .single();
 
     if (fetchError) {
-      console.error("Error fetching verification record:", fetchError);
-      throw fetchError;
+      console.error(
+        "[KYC] Error fetching verification record after update:",
+        fetchError
+      );
+      return { error: fetchError.message || JSON.stringify(fetchError) };
     }
 
     if (verification) {
@@ -214,8 +266,13 @@ export async function updateVerificationStatus(
           .eq("id", verification.user_id);
 
         if (profileError) {
-          console.error("Error updating user profile:", profileError);
-          throw profileError;
+          console.error(
+            "[KYC] Error updating user profile to verified:",
+            profileError
+          );
+          return {
+            error: profileError.message || JSON.stringify(profileError),
+          };
         }
       } else if (status === "rejected") {
         // Remove verified status from user profile
@@ -225,19 +282,33 @@ export async function updateVerificationStatus(
           .eq("id", verification.user_id);
 
         if (profileError) {
-          console.error("Error updating user profile:", profileError);
-          throw profileError;
+          console.error(
+            "[KYC] Error updating user profile to unverified:",
+            profileError
+          );
+          return {
+            error: profileError.message || JSON.stringify(profileError),
+          };
         }
       }
+    } else {
+      console.error(
+        "[KYC] No verification record found for id:",
+        verificationId
+      );
+      return { error: "No verification record found for this id." };
     }
 
     revalidatePath("/dashboard/admin/users");
     revalidatePath("/dashboard/settings");
     return { error: null };
   } catch (error) {
-    console.error("Error in updateVerificationStatus:", error);
+    console.error("[KYC] Unhandled error in updateVerificationStatus:", error);
     return {
-      error: error instanceof Error ? error.message : "Failed to update status",
+      error:
+        error instanceof Error
+          ? error.message
+          : JSON.stringify(error) || "Failed to update status",
     };
   }
-} 
+}
