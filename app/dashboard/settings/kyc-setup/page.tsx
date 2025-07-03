@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, ArrowLeft, ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import StepPersonalDetails from "./StepPersonalDetails";
 import StepDocumentUpload from "./StepDocumentUpload";
@@ -22,6 +22,7 @@ import { uploadKycDocument } from "@/actions/kyc-actions";
 import { useAuth } from "@/hooks/use-auth";
 import ProgressNav from "./components/ProgressNav";
 import StepAddressDetails from "./StepAddressDetails";
+import Image from "next/image";
 
 const documentTypes = [
   "NIN",
@@ -40,7 +41,9 @@ export default function KycSetupPage() {
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
-    dob: "",
+    dobDay: "",
+    dobMonth: "",
+    dobYear: "",
     phone: "",
     address: "",
     city: "",
@@ -56,10 +59,12 @@ export default function KycSetupPage() {
     if (
       !formData.firstName ||
       !formData.lastName ||
-      !formData.dob ||
+      !formData.dobDay ||
+      !formData.dobMonth ||
+      !formData.dobYear ||
       !formData.phone
     ) {
-      setError("Please fill in all identity details.");
+      setError("Please fill in all identity details, including date of birth.");
       return false;
     }
     setError(null);
@@ -104,6 +109,14 @@ export default function KycSetupPage() {
       setStep(4);
       return;
     }
+    // Combine dob fields into YYYY-MM-DD
+    const dob =
+      formData.dobYear && formData.dobMonth && formData.dobDay
+        ? `${formData.dobYear}-${String(formData.dobMonth).padStart(
+            2,
+            "0"
+          )}-${String(formData.dobDay).padStart(2, "0")}`
+        : "";
     try {
       const { documentUrl, error: uploadError } = await uploadKycDocument(
         user.id,
@@ -111,7 +124,7 @@ export default function KycSetupPage() {
         selectedDoc,
         {
           fullName: formData.firstName + " " + formData.lastName,
-          dob: formData.dob,
+          dob: dob,
           phone: formData.phone,
           address: formData.address,
           city: formData.city,
@@ -138,41 +151,37 @@ export default function KycSetupPage() {
   const completedSteps = Array.from({ length: Math.min(step, 3) }, (_, i) => i);
 
   return (
-    <div className="px-10 w-full flex flex-col md:flex-row min-h-[80vh]">
+    <div className="px-10 w-full flex flex-col md:flex-row min-h-screen">
       {showProgressNav && (
         <div className="w-full md:w-[340px] flex-shrink-0">
           <ProgressNav currentStep={step} completedSteps={completedSteps} />
         </div>
       )}
       <div className="flex-1 flex items-start ">
-        <Card className="w-full h-full border-none shadow-none">
+        <Card className="w-full border-none shadow-none flex flex-col">
           <CardHeader>
             <CardTitle className="text-neutral-950 text-4xl font-bold font-montserrat">
               {step === 0 && "Upload a proof of your identity"}
               {step === 1 && "Address Information"}
               {step === 2 && "Upload your document"}
-              {step === 3 && "Checking Your Documents..."}
-              {step === 4 && "All done!"}
             </CardTitle>
-            <CardDescription className=" font-montserrat">
+            <CardDescription className="font-montserrat">
               {step === 0 &&
                 "This helps us verify who you are and keep the platform safe for everyone."}
               {step === 1 &&
                 "Enter your address details as they appear on your document."}
               {step === 2 && "Upload a valid document to verify your identity."}
-              {step === 3 &&
-                "We're reviewing your identity to keep Refreeg safe and secure for everyone."}
-              {step === 4 &&
-                "Thanks for verifying your identity — you can now fully access all features on Refreeg."}
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
+
+          <CardContent className="flex-grow space-y-6 pb-32 overflow-auto">
             {error && (
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
+
             {step === 0 && (
               <StepPersonalDetails
                 formData={formData}
@@ -204,24 +213,45 @@ export default function KycSetupPage() {
                 )}
               </>
             )}
-            <div className="flex justify-end gap-2">
-              {step === 0 && (
-                <Button onClick={() => validateIdentityDetails() && setStep(1)}>
-                  Next
-                </Button>
-              )}
-              {step === 1 && (
-                <Button onClick={() => validateAddressDetails() && setStep(2)}>
-                  Next
-                </Button>
-              )}
-              {step === 2 && (
-                <Button onClick={() => validateDocument() && setStep(3)}>
-                  Next
-                </Button>
-              )}
-            </div>
           </CardContent>
+
+          {/* BOTTOM RIGHT BUTTONS - sticky to bottom of card */}
+          <div className="mt-auto flex justify-end px-6 pb-8 gap-4 sticky bottom-0 bg-white z-10 border-t border-neutral-100">
+            {step > 0 && step < 4 && (
+              <Button
+                variant="outline"
+                className="w-64 h-16 px-10 font-montserrat text-md flex items-center gap-2"
+                onClick={() => setStep(step - 1)}
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Back
+              </Button>
+            )}
+            {step === 0 && (
+              <Button
+                className="w-64 h-16 px-10 bg-primaryShades-700 text-white font-semibold font-montserrat text-md flex items-center gap-2"
+                onClick={() => validateIdentityDetails() && setStep(1)}
+              >
+                Next <ArrowRight className="w-4 h-4" />
+              </Button>
+            )}
+            {step === 1 && (
+              <Button
+                className="w-64 h-16 px-10 bg-primaryShades-700 text-white font-semibold font-montserrat text-md flex items-center gap-2"
+                onClick={() => validateAddressDetails() && setStep(2)}
+              >
+                Next <ArrowRight className="w-4 h-4" />
+              </Button>
+            )}
+            {step === 2 && (
+              <Button
+                className="w-64 h-16 px-10 bg-primaryShades-700 text-white font-semibold font-montserrat text-md flex items-center gap-2"
+                onClick={() => validateDocument() && setStep(3)}
+              >
+                Next <ArrowRight className="w-4 h-4" />
+              </Button>
+            )}
+          </div>
         </Card>
       </div>
     </div>

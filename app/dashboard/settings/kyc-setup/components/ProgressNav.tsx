@@ -14,7 +14,7 @@ export default function ProgressNav({
   completedSteps: number[];
 }) {
   return (
-    <aside className="relative hidden md:flex flex-col items-start justify-start bg-[#0A3871] text-white w-[320px] min-h-[600px] p-8 pt-14">
+    <aside className="relative hidden md:flex flex-col items-start justify-start bg-[#0A3871] text-white w-[320px] h-full p-8 pt-14">
       {/* Curvy SVG lines as background */}
       <svg
         className="absolute left-0 bottom-0 w-full h-1/2 pointer-events-none"

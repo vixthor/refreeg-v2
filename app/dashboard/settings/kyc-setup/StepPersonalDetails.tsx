@@ -1,7 +1,7 @@
 import { Label } from "@/components/ui/label";
 
-const inputBoxClass =
-  "w-[530px] h-20 px-2.5 pt-[6px] text-neutral-700 text-sm font-normal font-montserrat rounded-[10px] outline outline-1 outline-offset-[-1px] outline-neutral-200 resize-none";
+export const inputBoxClass =
+  "w-[530px] h-20 px-2.5 pt-[6px] text-neutral-700 text-sm font-normal font-montserrat rounded-[10px] outline outline-1 outline-neutral-200 resize-none";
 
 export default function StepPersonalDetails({
   formData,
@@ -54,12 +54,12 @@ export default function StepPersonalDetails({
           <Label htmlFor="phone" className="font-montserrat">
             Phone Number
           </Label>
-          <input
+          <textarea
             id="phone"
-            type="tel"
             placeholder="e.g. +234 801 234 5678"
             value={formData.phone || ""}
             onChange={(e) => updateField("phone", e.target.value)}
+            rows={1}
             className={inputBoxClass}
           />
         </div>

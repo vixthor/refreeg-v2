@@ -1,7 +1,11 @@
 import { Progress } from "@/components/ui/progress";
 import { useEffect, useState } from "react";
 
-export default function StepProgress({ onComplete }: { onComplete: () => void }) {
+export default function StepProgress({
+  onComplete,
+}: {
+  onComplete: () => void;
+}) {
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
@@ -20,10 +24,14 @@ export default function StepProgress({ onComplete }: { onComplete: () => void })
 
   return (
     <div className="flex flex-col items-center space-y-6">
-      <span className=" font-bold">Checking Your Documents...</span>
-      <span className="font-light">We're reviewing your identity to keep Refreeg safe and secure for everyone.</span>
+      <span className="self-stretch text-center justify-start text-black text-2xl font-bold font-montserrat">
+        Checking Your Documents...
+      </span>
+      <span className="self-stretch text-center justify-start text-black/60 text-base font-medium font-ontserrat leading-snug">
+        We're reviewing your identity to keep Refreeg safe and secure for
+        everyone.
+      </span>
       <Progress value={progress} className="w-full" />
-      
     </div>
   );
-} 
+}
