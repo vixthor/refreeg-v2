@@ -1,84 +1,132 @@
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-export default function StepPersonalDetails({ formData, setFormData }: {
-  formData: any,
-  setFormData: (f: any) => void
+const inputBoxClass =
+  "w-[530px] h-20 px-2.5 pt-[6px] text-neutral-700 text-sm font-normal font-montserrat rounded-[10px] outline outline-1 outline-offset-[-1px] outline-neutral-200 resize-none";
+
+export default function StepPersonalDetails({
+  formData,
+  setFormData,
+}: {
+  formData: any;
+  setFormData: (data: any) => void;
 }) {
+  const updateField = (key: string, value: string) => {
+    setFormData({ ...formData, [key]: value });
+  };
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div className="space-y-2">
-        <Label htmlFor="fullName">Full Name</Label>
-        <Input
-          id="fullName"
-          placeholder="e.g. Alex"
-          value={formData.fullName}
-          onChange={(e) => setFormData((f: any) => ({ ...f, fullName: e.target.value }))}
-        />
+    <div className="space-y-4">
+      <div className="flex flex-col gap-4">
+        {/* First Name */}
+        <div className="flex flex-col gap-1.5 flex-1">
+          <Label htmlFor="firstName" className="font-montserrat">
+            First Name
+          </Label>
+          <textarea
+            id="firstName"
+            placeholder="e.g. John"
+            value={formData.firstName || ""}
+            onChange={(e) => updateField("firstName", e.target.value)}
+            rows={1}
+            className={inputBoxClass}
+          />
+        </div>
+
+        {/* Last Name */}
+        <div className="flex flex-col gap-1.5 flex-1">
+          <Label htmlFor="lastName" className="font-montserrat">
+            Last Name
+          </Label>
+          <textarea
+            id="lastName"
+            placeholder="e.g. Doe"
+            value={formData.lastName || ""}
+            onChange={(e) => updateField("lastName", e.target.value)}
+            rows={1}
+            className={inputBoxClass}
+          />
+        </div>
       </div>
-      <div className="space-y-2">
-        <Label htmlFor="dob">Date of Birth</Label>
-        <Input
-          id="dob"
-          type="date"
-          value={formData.dob}
-          onChange={(e) => setFormData((f: any) => ({ ...f, dob: e.target.value }))}
-        />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="phone">Phone Number</Label>
-        <Input
-          id="phone"
-          placeholder="e.g. +234 907 737 3738"
-          value={formData.phone}
-          onChange={(e) => setFormData((f: any) => ({ ...f, phone: e.target.value }))}
-        />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="address">Address Line</Label>
-        <Input
-          id="address"
-          placeholder="e.g. Address Line"
-          value={formData.address}
-          onChange={(e) => setFormData((f: any) => ({ ...f, address: e.target.value }))}
-        />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="city">City</Label>
-        <Input
-          id="city"
-          placeholder="City"
-          value={formData.city}
-          onChange={(e) => setFormData((f: any) => ({ ...f, city: e.target.value }))}
-        />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="state">State</Label>
-        <Input
-          id="state"
-          placeholder="State"
-          value={formData.state}
-          onChange={(e) => setFormData((f: any) => ({ ...f, state: e.target.value }))}
-        />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="postal">Postal Code</Label>
-        <Input
-          id="postal"
-          placeholder="Postal code"
-          value={formData.postal}
-          onChange={(e) => setFormData((f: any) => ({ ...f, postal: e.target.value }))}
-        />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="country">Country</Label>
-        <Input
-          id="country"
-          placeholder="Country"
-          value={formData.country}
-          onChange={(e) => setFormData((f: any) => ({ ...f, country: e.target.value }))}
-        />
+
+      {/* Phone Number & DOB */}
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-1.5 flex-1">
+          <Label htmlFor="phone" className="font-montserrat">
+            Phone Number
+          </Label>
+          <input
+            id="phone"
+            type="tel"
+            placeholder="e.g. +234 801 234 5678"
+            value={formData.phone || ""}
+            onChange={(e) => updateField("phone", e.target.value)}
+            className={inputBoxClass}
+          />
+        </div>
+
+        <div className="flex flex-col gap-1.5 flex-1 w-[530px]">
+          <Label className="font-montserrat">Date of Birth</Label>
+          <div className="flex gap-2">
+            {/* Day */}
+            <select
+              value={formData.dobDay || ""}
+              onChange={(e) => updateField("dobDay", e.target.value)}
+              className="flex-1 h-20 px-2.5 pt-[6px] rounded-[10px] outline outline-1 outline-neutral-200 text-sm font-montserrat"
+            >
+              <option value="">Day</option>
+              {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
+                <option key={day} value={day}>
+                  {day}
+                </option>
+              ))}
+            </select>
+
+            {/* Month */}
+            <select
+              value={formData.dobMonth || ""}
+              onChange={(e) => updateField("dobMonth", e.target.value)}
+              className="flex-1 h-20 px-2.5 pt-[6px] rounded-[10px] outline outline-1 outline-neutral-200 text-sm font-montserrat"
+            >
+              <option value="">Month</option>
+              {[
+                "January",
+                "February",
+                "March",
+                "April",
+                "May",
+                "June",
+                "July",
+                "August",
+                "September",
+                "October",
+                "November",
+                "December",
+              ].map((month, i) => (
+                <option key={i + 1} value={i + 1}>
+                  {month}
+                </option>
+              ))}
+            </select>
+
+            {/* Year */}
+            <select
+              value={formData.dobYear || ""}
+              onChange={(e) => updateField("dobYear", e.target.value)}
+              className="flex-1 h-20 px-2.5 pt-[6px] rounded-[10px] outline outline-1 outline-neutral-200 text-sm font-montserrat"
+            >
+              <option value="">Year</option>
+              {Array.from(
+                { length: 100 },
+                (_, i) => new Date().getFullYear() - i
+              ).map((year) => (
+                <option key={year} value={year}>
+                  {year}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
       </div>
     </div>
   );
-} 
+}

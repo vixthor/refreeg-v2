@@ -6,7 +6,6 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { getVerificationStatus, updateVerificationStatus } from "@/actions/kyc-actions";
 import { getProfile, updateProfile } from "@/actions/profile-actions";
-import { createClient } from "@/lib/supabase/server";
 import { Shield, User, Mail, Phone, MapPin, Calendar, FileText, CheckCircle, XCircle } from "lucide-react";
 
 export default async function KycReviewPage({ params, searchParams }: { params: { userId: string }, searchParams: { kyc_alert?: string } }) {
