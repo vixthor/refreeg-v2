@@ -24,17 +24,26 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Shield, UserCheck, UserX, MoreHorizontal, Search, UserCog, User } from "lucide-react"
-import { format } from "date-fns"
-import { createClient } from "@/lib/supabase/server"
-import { cookies } from "next/headers"
-import { redirect } from "next/navigation"
-import { UserActions } from "./user-actions"
-import { UserSearch } from "@/components/search"
-import { CopyEmail } from "@/components/copy-email"
-import type { UserWithRole } from "@/types"
-import { getUserRole, listUsersWithRoles } from "@/actions/role-actions"
+} from "@/components/ui/dropdown-menu";
+import {
+  Shield,
+  UserCheck,
+  UserX,
+  MoreHorizontal,
+  Search,
+  UserCog,
+  User,
+} from "lucide-react";
+import { format } from "date-fns";
+import { createClient } from "@/lib/supabase/server";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+import { UserActions } from "./user-actions";
+import { UserSearch } from "@/components/search";
+import { CopyEmail } from "@/components/copy-email";
+import type { UserWithRole } from "@/types";
+import { getUserRole, listUsersWithRoles } from "@/actions/role-actions";
+import Link from "next/link";
 
 export default async function AdminUsersPage({
   searchParams,
@@ -124,7 +133,12 @@ export default async function AdminUsersPage({
                     <TableRow key={userItem.id}>
                       <TableCell>
                         <div className="flex flex-col">
-                          <span className="font-medium">{userItem.full_name || "Unnamed User"}</span>
+                          <Link
+                            href={`/profile/${userItem.id}`}
+                            className="font-medium hover:underline"
+                          >
+                            {userItem.full_name || "Unnamed User"}
+                          </Link>
                           <CopyEmail email={userItem.email} />
                         </div>
                       </TableCell>
