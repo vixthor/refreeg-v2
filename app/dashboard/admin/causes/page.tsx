@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -21,6 +21,7 @@ import { useAdmin } from "@/hooks/use-admin"
 import type { Cause, CauseStatus } from "@/types"
 import Image from "next/image"
 import { useQueryState } from "nuqs"
+import Link from "next/link"
 
 export default function AdminCausesPage() {
   const router = useRouter()
@@ -43,8 +44,6 @@ export default function AdminCausesPage() {
     title: "",
     reason: "",
   })
-
-
 
   const handleApprove = async (causeId: string) => {
     await approveCause(causeId)
@@ -157,27 +156,31 @@ export default function AdminCausesPage() {
                       )}
                     </div>
                   </CardContent>
-                  {(activeTab === "pending" ) && (
-                    <CardFooter className="flex justify-end gap-2">
-                      <Button variant="destructive" onClick={() => openRejectDialog(cause.id, cause.title)}>
-                        Reject
-                      </Button>
-                      <Button onClick={() => handleApprove(cause.id)}>Approve</Button>
-                    </CardFooter>
-                  )}
-                  {(activeTab === "rejected" ) && (
-                    <CardFooter className="flex justify-end gap-2">
-                      <Button onClick={() => handleApprove(cause.id)}>Approve</Button>
-                    </CardFooter>
-                  )}
-                 
-                  {activeTab === "approved" && (
-                    <CardFooter className="flex justify-end gap-2">
-                      <Button variant="destructive" onClick={() => openRejectDialog(cause.id, cause.title)}>
-                        Take Down
-                      </Button>
-                    </CardFooter>
-                  )}
+                  <CardFooter className="flex justify-between gap-2">
+                    <Button asChild variant="outline">
+                      <Link href={`/causes/${cause.id}`} target="_blank">
+                        Preview
+                      </Link>
+                    </Button>
+                    <div className="flex gap-2">
+                      {(activeTab === "pending") && (
+                        <>
+                          <Button variant="destructive" onClick={() => openRejectDialog(cause.id, cause.title)}>
+                            Reject
+                          </Button>
+                          <Button onClick={() => handleApprove(cause.id)}>Approve</Button>
+                        </>
+                      )}
+                      {(activeTab === "rejected") && (
+                        <Button onClick={() => handleApprove(cause.id)}>Approve</Button>
+                      )}
+                      {activeTab === "approved" && (
+                        <Button variant="destructive" onClick={() => openRejectDialog(cause.id, cause.title)}>
+                          Take Down
+                        </Button>
+                      )}
+                    </div>
+                  </CardFooter>
                 </Card>
               ))}
             </div>
@@ -213,4 +216,3 @@ export default function AdminCausesPage() {
     </div>
   )
 }
-
