@@ -22,6 +22,7 @@ import type { Cause, CauseStatus } from "@/types"
 import Image from "next/image"
 import { useQueryState } from "nuqs"
 import Link from "next/link"
+import { Progress } from "@/components/ui/progress"
 
 export default function AdminCausesPage() {
   const router = useRouter()
@@ -45,6 +46,14 @@ export default function AdminCausesPage() {
     reason: "",
   })
 
+  const [previewDialog, setPreviewDialog] = useState<{
+    open: boolean
+    cause: Cause | null
+  }>({
+    open: false,
+    cause: null,
+  })
+
   const handleApprove = async (causeId: string) => {
     await approveCause(causeId)
   }
@@ -55,6 +64,13 @@ export default function AdminCausesPage() {
       causeId,
       title,
       reason: "",
+    })
+  }
+
+  const openPreviewDialog = (cause: Cause) => {
+    setPreviewDialog({
+      open: true,
+      cause,
     })
   }
 
@@ -157,10 +173,8 @@ export default function AdminCausesPage() {
                     </div>
                   </CardContent>
                   <CardFooter className="flex justify-between gap-2">
-                    <Button asChild variant="outline">
-                      <Link href={`/causes/${cause.id}`} target="_blank">
-                        Preview
-                      </Link>
+                    <Button variant="outline" onClick={() => openPreviewDialog(cause)}>
+                      Preview
                     </Button>
                     <div className="flex gap-2">
                       {(activeTab === "pending") && (
@@ -211,6 +225,118 @@ export default function AdminCausesPage() {
               Reject Cause
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Preview Dialog */}
+      <Dialog 
+        open={previewDialog.open} 
+        onOpenChange={(open) => setPreviewDialog(prev => ({ ...prev, open }))}
+      >
+        <DialogContent className="max-w-4xl h-[90vh] overflow-y-auto">
+          {previewDialog.cause && (
+            <div className="grid gap-6 lg:grid-cols-3">
+              <div className="lg:col-span-2 space-y-6">
+                <div className="aspect-video w-full overflow-hidden rounded-lg">
+                  <Image
+                    src={previewDialog.cause.image || "/placeholder.svg"}
+                    alt={previewDialog.cause.title}
+                    className="object-cover w-full h-full"
+                    width={800}
+                    height={450}
+                  />
+                </div>
+
+                <Tabs defaultValue="about">
+                  <TabsList>
+                    <TabsTrigger value="about">About</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="about" className="space-y-4">
+                    <h1 className="text-3xl font-bold">{previewDialog.cause.title}</h1>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <span>
+                        Created by {previewDialog.cause.profiles?.full_name || "Anonymous"}
+                      </span>
+                      <span>•</span>
+                      <span>
+                        {new Date(previewDialog.cause.created_at).toLocaleDateString("en-US", {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                        })}
+                      </span>
+                      <span>•</span>
+                      <span className="capitalize">{previewDialog.cause.category}</span>
+                    </div>
+
+                    <p className="whitespace-pre-line">{previewDialog.cause.description}</p>
+                    
+                    {/* Render sections if they exist */}
+                    {previewDialog.cause.sections && previewDialog.cause.sections.length > 0 && (
+                      <div className="space-y-6">
+                        {previewDialog.cause.sections.map((section, index) => (
+                          <div key={index} className="mt-4">
+                            <h3 className="text-xl font-semibold">{section.heading}</h3>
+                            <p className="text-muted-foreground whitespace-pre-line">
+                              {section.description}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </TabsContent>
+                </Tabs>
+              </div>
+
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Donation Details</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="font-medium">
+                          ₦{previewDialog.cause.raised?.toLocaleString() || "0"}
+                        </span>
+                        <span className="text-muted-foreground">
+                          of ₦{previewDialog.cause.goal.toLocaleString()}
+                        </span>
+                      </div>
+                      <Progress 
+                        value={Math.min(
+                          Math.round(((previewDialog.cause.raised || 0) / previewDialog.cause.goal) * 100),
+                          100
+                        )} 
+                      />
+                    </div>
+
+                    <div className="text-sm">
+                      <div className="flex justify-between py-1">
+                        <span>Status</span>
+                        <Badge
+                          variant={
+                            previewDialog.cause.status === "approved"
+                              ? "default"
+                              : previewDialog.cause.status === "pending"
+                                ? "secondary"
+                                : "destructive"
+                          }
+                        >
+                          {previewDialog.cause.status.charAt(0).toUpperCase() + 
+                          previewDialog.cause.status.slice(1)}
+                        </Badge>
+                      </div>
+                      <div className="flex justify-between py-1 border-t">
+                        <span>Goal</span>
+                        <span className="font-medium">₦{previewDialog.cause.goal.toLocaleString()}</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
