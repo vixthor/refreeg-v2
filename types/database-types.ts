@@ -47,6 +47,7 @@ export interface Database {
           created_at: string
           updated_at: string
           image: string | null
+          days_active: number | null
         }
         Insert: {
           id?: string
@@ -61,6 +62,7 @@ export interface Database {
           created_at?: string
           updated_at?: string
           image?: string | null
+          days_active?: number | null
         }
         Update: {
           id?: string
@@ -75,6 +77,7 @@ export interface Database {
           created_at?: string
           updated_at?: string
           image?: string | null
+          days_active?: number | null
         }
       }
       donations: {
