@@ -3,8 +3,8 @@ import { CausesList } from "@/components/causes-list";
 import { CausesFilter } from "@/components/causes-filter";
 import { Skeleton } from "@/components/ui/skeleton";
 import { categories } from "@/lib/categories";
+import AdBanner from "@/components/AdBanner";
 // Mock categories for filtering
-
 
 export default async function CausesPage({
   searchParams,
@@ -48,6 +48,8 @@ export default async function CausesPage({
           <CausesList category={category} page={page} pageSize={pageSize} />
         </Suspense>
       </div>
+
+      <AdBanner />
     </div>
   );
 }

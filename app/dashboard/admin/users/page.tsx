@@ -40,6 +40,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { UserActions } from "./user-actions";
 import { UserSearch } from "@/components/search";
+import { CopyEmail } from "@/components/copy-email";
 import type { UserWithRole } from "@/types";
 import { getUserRole, listUsersWithRoles } from "@/actions/role-actions";
 import Link from "next/link";
@@ -132,15 +133,13 @@ export default async function AdminUsersPage({
                     <TableRow key={userItem.id}>
                       <TableCell>
                         <div className="flex flex-col">
-                            <Link
+                          <Link
                             href={`/profile/${userItem.id}`}
                             className="font-medium hover:underline"
                           >
                             {userItem.full_name || "Unnamed User"}
                           </Link>
-                          <span className="text-sm text-muted-foreground">
-                            {userItem.email}
-                          </span>
+                          <CopyEmail email={userItem.email} />
                         </div>
                       </TableCell>
                       <TableCell>
