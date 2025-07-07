@@ -100,6 +100,21 @@ export async function createCause(userId: string, causeData: CauseFormData): Pro
     coverImageUrl = await uploadImageToSupabase(causeData.coverImage, userId, "cover")
   }
 
+  // Calculate days_active from start and end dates
+  let daysActive = null
+  if (causeData.startDate && causeData.endDate) {
+    // Ensure we have valid Date objects
+    const startDate = causeData.startDate instanceof Date ? causeData.startDate : new Date(causeData.startDate)
+    const endDate = causeData.endDate instanceof Date ? causeData.endDate : new Date(causeData.endDate)
+    
+    // Validate that the dates are valid
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+      throw new Error("Invalid date format provided")
+    }
+    
+    daysActive = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))
+  }
+
   // Start a transaction
   const { data: cause, error: causeError } = await supabase
     .from("causes")
@@ -111,6 +126,7 @@ export async function createCause(userId: string, causeData: CauseFormData): Pro
       goal: typeof causeData.goal === "string" ? Number.parseFloat(causeData.goal) : causeData.goal,
       status: "pending", // All causes start as pending
       image: coverImageUrl, // Store the cover image URL
+      days_active: daysActive, // Store the calculated days active
     })
     .select()
     .single()
@@ -149,8 +165,23 @@ export async function updateCause(causeId: string, userId: string, causeData: Pa
   const supabase = await createClient()
 
   let coverImageUrl = causeData.coverImage ? await uploadImageToSupabase(causeData.coverImage, userId, "cover") : causeData.image
-  // Prepare the update data
+  
+  // Calculate days_active from start and end dates
+  let daysActive = null
+  if (causeData.startDate && causeData.endDate) {
+    // Ensure we have valid Date objects
+    const startDate = causeData.startDate instanceof Date ? causeData.startDate : new Date(causeData.startDate)
+    const endDate = causeData.endDate instanceof Date ? causeData.endDate : new Date(causeData.endDate)
+    
+    // Validate that the dates are valid
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+      throw new Error("Invalid date format provided")
+    }
+    
+    daysActive = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))
+  }
 
+  // Prepare the update data
   const updateData: any = {
     title: causeData.title,
     description: causeData.description,
@@ -158,6 +189,7 @@ export async function updateCause(causeId: string, userId: string, causeData: Pa
     goal: causeData.goal,
     status: "pending",
     image: coverImageUrl,
+    days_active: daysActive,
     updated_at: new Date().toISOString(),
   }
 
@@ -211,9 +243,7 @@ export async function updateCause(causeId: string, userId: string, causeData: Pa
     }
   }
 
-  revalidatePath(`/dashboard/causes/${causeId}`)
   revalidatePath("/dashboard/causes")
-
   return data as Cause
 }
 
@@ -310,7 +340,6 @@ export async function updateCauseStatus(
 ): Promise<Cause> {
   const supabase = await createClient()
 
-
   const updateData: any = {
     status,
     updated_at: new Date().toISOString(),
@@ -318,6 +347,29 @@ export async function updateCauseStatus(
 
   if (status === "rejected" && rejectionReason) {
     updateData.rejection_reason = rejectionReason
+  }
+
+  // If approving, we need to get the original days_active and set updated_at to now
+  if (status === "approved") {
+    // Get the cause to access the original days_active
+    const { data: causeData, error: fetchError } = await supabase
+      .from("causes")
+      .select("days_active")
+      .eq("id", causeId)
+      .single()
+
+    if (fetchError) {
+      console.error("Error fetching cause for approval:", fetchError)
+      throw fetchError
+    }
+
+    // Set the updated_at to now so the cron job can start counting from this moment
+    updateData.updated_at = new Date().toISOString()
+    
+    // Keep the original days_active value - the cron job will decrement it
+    if (causeData.days_active) {
+      updateData.days_active = causeData.days_active
+    }
   }
 
   const { data, error } = await supabase.from("causes").update(updateData).eq("id", causeId).select().single()

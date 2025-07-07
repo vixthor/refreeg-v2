@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { getUserRoleInfo, setUserRole, listUsersWithRoles } from "@/actions/role-actions"
 import { blockUser, unblockUser } from "@/actions/user-actions"
 import { updateCauseStatus, listCauses } from "@/actions/cause-actions"
+import { logAdminActivity } from "@/actions/database-actions"
 import { toast } from "@/components/ui/use-toast"
 import type { CauseStatus, UserRole, UserWithRole } from "@/types"
 
@@ -23,6 +24,7 @@ export function useAdmin(userId: string | undefined, status?: CauseStatus) {
   const appointManagerMutation = useMutation({
     mutationFn: (targetUserId: string) => setUserRole(targetUserId, "manager"),
     onSuccess: (_, targetUserId) => {
+      logAdminActivity("appoint-manager", userId!)
       queryClient.invalidateQueries({ queryKey: ["userRole", targetUserId] })
       toast({
         title: "Manager appointed",
@@ -41,6 +43,7 @@ export function useAdmin(userId: string | undefined, status?: CauseStatus) {
   const removeManagerMutation = useMutation({
     mutationFn: (targetUserId: string) => setUserRole(targetUserId, "user"),
     onSuccess: (_, targetUserId) => {
+      logAdminActivity("remove-manager", userId!)
       queryClient.invalidateQueries({ queryKey: ["userRole", targetUserId] })
       toast({
         title: "Manager removed",
@@ -59,6 +62,7 @@ export function useAdmin(userId: string | undefined, status?: CauseStatus) {
   const blockUserMutation = useMutation({
     mutationFn: blockUser,
     onSuccess: () => {
+      logAdminActivity("block-user", userId!)
       toast({
         title: "User blocked",
         description: "User has been blocked successfully",
@@ -76,6 +80,7 @@ export function useAdmin(userId: string | undefined, status?: CauseStatus) {
   const unblockUserMutation = useMutation({
     mutationFn: unblockUser,
     onSuccess: () => {
+      logAdminActivity("unblock-user", userId!)
       toast({
         title: "User unblocked",
         description: "User has been unblocked successfully",
@@ -96,6 +101,7 @@ export function useAdmin(userId: string | undefined, status?: CauseStatus) {
       return true
     },
     onSuccess: () => {
+      logAdminActivity("approve-cause", userId!)
       toast({
         title: "Cause approved",
         description: "The cause has been approved successfully",
@@ -116,6 +122,7 @@ export function useAdmin(userId: string | undefined, status?: CauseStatus) {
       return true
     },
     onSuccess: () => {
+      logAdminActivity("reject-cause", userId!)
       toast({
         title: "Cause rejected",
         description: "The cause has been rejected",
