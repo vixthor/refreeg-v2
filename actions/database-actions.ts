@@ -3,6 +3,8 @@
 import { createClient } from "@/lib/supabase/server"
 import { ensureDefaultAdmin } from "./role-actions"
 
+type Action = "approve-cause" | "reject-cause" | "block-user" | "unblock-user" | "appoint-manager" | "remove-manager"
+
 /**
  * Check if a database table exists
  */
@@ -50,3 +52,40 @@ export async function checkDatabaseSetup(): Promise<{
   }
 }
 
+
+
+/**
+ * Log admin activity
+ */
+export const logAdminActivity = async (action: Action, adminId: string) => {
+  const supabase = await createClient()
+
+  await supabase.from("logs").insert({
+    action,
+    admin_id: adminId,
+    created_at: new Date().toISOString(),
+  })
+}
+
+/**
+ * List admin logs with admin email, action, and timestamp
+ */
+export async function listAdminLogs() {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('logs')
+    .select('id, action, created_at, profiles:admin_id(email)')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching admin logs:', error);
+    throw error;
+  }
+
+  // Return logs with admin email, action, and timestamp
+  return (data || []).map((log: any) => ({
+    email: log.profiles?.email || '',
+    action: log.action,
+    created_at: log.created_at,
+  }));
+}

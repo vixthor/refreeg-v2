@@ -42,9 +42,12 @@ export interface CauseFormData {
   description: string;
   category: string;
   goal: string | number;
+  currency: string;
   coverImage: File | null;
   image?: string;
   sections: CauseSection[];
+  startDate?: Date | undefined;
+  endDate?: Date | undefined;
 }
 
 export interface DonationFormData {
@@ -97,6 +100,7 @@ export interface Cause {
   created_at: string;
   updated_at: string;
   rejection_reason?: string | null;
+  days_active?: number | null;
   sections?: CauseSection[];
 }
 

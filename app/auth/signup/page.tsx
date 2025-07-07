@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import Link from "next/link"
 import { useAuth } from "@/hooks/use-auth"
@@ -15,18 +14,26 @@ export default function SignUpPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
-  const [fullName, setFullName] = useState("")
+  const [firstName, setFirstName] = useState("")
+  const [lastName, setLastName] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const { signUp } = useAuth()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (!firstName.trim() || !lastName.trim()) {
+      alert("Please enter both first name and last name")
+      return
+    }
+    
     if (password !== confirmPassword) {
       alert("Passwords do not match")
       return
     }
+    
     setIsLoading(true)
-    await signUp(email, password, fullName)
+    await signUp(email, password, `${firstName} ${lastName}`)
     setIsLoading(false)
   }
 
@@ -41,34 +48,27 @@ export default function SignUpPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4">
-            {/* <div className="grid grid-cols-2 gap-6">
-              <Button variant="outline">
-                <Icons.gitHub className="mr-2 h-4 w-4" />
-                GitHub
-              </Button>
-              <Button variant="outline">
-                <Icons.google className="mr-2 h-4 w-4" />
-                Google
-              </Button>
-            </div> */}
-            {/* <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
-              </div>
-            </div> */}
             <form onSubmit={handleSubmit}>
               <div className="grid gap-2">
                 <div className="grid gap-1">
-                  <Label htmlFor="fullName">Full Name</Label>
+                  <Label htmlFor="firstName">First Name</Label>
                   <Input
-                    id="fullName"
+                    id="firstName"
                     type="text"
-                    placeholder="John Doe"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
+                    placeholder="John"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="grid gap-1">
+                  <Label htmlFor="lastName">Last Name</Label>
+                  <Input
+                    id="lastName"
+                    type="text"
+                    placeholder="Doe"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
                     required
                   />
                   <p className="text-xs text-muted-foreground mt-1">
@@ -134,4 +134,3 @@ export default function SignUpPage() {
     </div>
   )
 }
-
