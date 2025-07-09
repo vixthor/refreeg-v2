@@ -1,11 +1,18 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
@@ -13,53 +20,59 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
-import { Textarea } from "@/components/ui/textarea"
-import { Icons } from "@/components/icons"
-import { useAuth } from "@/hooks/use-auth"
-import { useAdmin } from "@/hooks/use-admin"
-import type { Cause, CauseStatus, CauseWithUser } from "@/types"
-import Image from "next/image"
-import { useQueryState } from "nuqs"
-import { getCause } from "@/actions/cause-actions"
-import { format } from "date-fns"
-import { categories } from "@/lib/categories"
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Icons } from "@/components/icons";
+import { useAuth } from "@/hooks/use-auth";
+import { useAdmin } from "@/hooks/use-admin";
+import type { Cause, CauseStatus, CauseWithUser } from "@/types";
+import Image from "next/image";
+import { useQueryState } from "nuqs";
+import { getCause } from "@/actions/cause-actions";
+import { format } from "date-fns";
+import { categories } from "@/lib/categories";
 
 export default function ManageCauses() {
-  const router = useRouter()
-  const { user } = useAuth()
+  const router = useRouter();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useQueryState("tab", {
     defaultValue: "pending",
     parse: (value) => value,
     serialize: (value) => value,
-  })
-  const { isAdminOrManager, isLoading: adminLoading, approveCause, rejectCause, causes } = useAdmin(user?.id, activeTab as CauseStatus)
+  });
+  const {
+    isAdminOrManager,
+    isLoading: adminLoading,
+    approveCause,
+    rejectCause,
+    causes,
+  } = useAdmin(user?.id, activeTab as CauseStatus);
 
   const [rejectDialog, setRejectDialog] = useState<{
-    open: boolean
-    causeId: string
-    title: string
-    reason: string
+    open: boolean;
+    causeId: string;
+    title: string;
+    reason: string;
   }>({
     open: false,
     causeId: "",
     title: "",
     reason: "",
-  })
+  });
 
   const [detailDialog, setDetailDialog] = useState<{
-    open: boolean
-    cause: CauseWithUser | null
-    isLoading: boolean
+    open: boolean;
+    cause: CauseWithUser | null;
+    isLoading: boolean;
   }>({
     open: false,
     cause: null,
     isLoading: false,
-  })
+  });
 
   const handleApprove = async (causeId: string) => {
-    await approveCause(causeId)
-  }
+    await approveCause(causeId);
+  };
 
   const openRejectDialog = (causeId: string, title: string) => {
     setRejectDialog({
@@ -67,40 +80,40 @@ export default function ManageCauses() {
       causeId,
       title,
       reason: "",
-    })
-  }
+    });
+  };
 
   const handleReject = async () => {
-    await rejectCause(rejectDialog.causeId, rejectDialog.reason)
-    setRejectDialog((prev) => ({ ...prev, open: false }))
-  }
+    await rejectCause(rejectDialog.causeId, rejectDialog.reason);
+    setRejectDialog((prev) => ({ ...prev, open: false }));
+  };
 
   const openDetailDialog = async (causeId: string) => {
-    setDetailDialog(prev => ({ ...prev, open: true, isLoading: true }))
-    
+    setDetailDialog((prev) => ({ ...prev, open: true, isLoading: true }));
+
     try {
-      const detailedCause = await getCause(causeId)
-      setDetailDialog(prev => ({ 
-        ...prev, 
-        cause: detailedCause, 
-        isLoading: false 
-      }))
+      const detailedCause = await getCause(causeId);
+      setDetailDialog((prev) => ({
+        ...prev,
+        cause: detailedCause,
+        isLoading: false,
+      }));
     } catch (error) {
-      console.error("Error fetching cause details:", error)
-      setDetailDialog(prev => ({ 
-        ...prev, 
-        cause: null, 
-        isLoading: false 
-      }))
+      console.error("Error fetching cause details:", error);
+      setDetailDialog((prev) => ({
+        ...prev,
+        cause: null,
+        isLoading: false,
+      }));
     }
-  }
+  };
 
   const closeDetailDialog = () => {
-    setDetailDialog(prev => ({ ...prev, open: false, cause: null }))
-  }
+    setDetailDialog((prev) => ({ ...prev, open: false, cause: null }));
+  };
 
   if (adminLoading) {
-    return <div className="flex justify-center p-8">Loading...</div>
+    return <div className="flex justify-center p-8">Loading...</div>;
   }
 
   if (!isAdminOrManager) {
@@ -108,20 +121,28 @@ export default function ManageCauses() {
       <Card>
         <CardHeader>
           <CardTitle>Access Denied</CardTitle>
-          <CardDescription>You do not have permission to access this page.</CardDescription>
+          <CardDescription>
+            You do not have permission to access this page.
+          </CardDescription>
         </CardHeader>
       </Card>
-    )
+    );
   }
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Manage Causes</h1>
-        <p className="text-muted-foreground">Review and approve causes submitted by users.</p>
+        <p className="text-muted-foreground">
+          Review and approve causes submitted by users.
+        </p>
       </div>
 
-      <Tabs defaultValue={activeTab} className="space-y-4" onValueChange={setActiveTab}>
+      <Tabs
+        defaultValue={activeTab}
+        className="space-y-4"
+        onValueChange={setActiveTab}
+      >
         <TabsList>
           <TabsTrigger value="pending">Pending</TabsTrigger>
           <TabsTrigger value="approved">Approved</TabsTrigger>
@@ -129,7 +150,9 @@ export default function ManageCauses() {
         </TabsList>
         <TabsContent value={activeTab} className="space-y-4">
           {causes.length === 0 ? (
-            <p className="text-muted-foreground text-center py-8">No {activeTab} causes to display.</p>
+            <p className="text-muted-foreground text-center py-8">
+              No {activeTab} causes to display.
+            </p>
           ) : (
             <div className="grid gap-4">
               {causes.map((cause) => (
@@ -149,18 +172,21 @@ export default function ManageCauses() {
                     )}
                     <div className="flex justify-between items-start">
                       <div>
-                        <CardTitle 
+                        <CardTitle
                           className="cursor-pointer hover:text-primary transition-colors"
                           onClick={() => openDetailDialog(cause.id)}
                         >
                           {cause.title}
                         </CardTitle>
                         <CardDescription>
-                          {new Date(cause.created_at).toLocaleDateString("en-US", {
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                          })}
+                          {new Date(cause.created_at).toLocaleDateString(
+                            "en-US",
+                            {
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                            }
+                          )}
                         </CardDescription>
                         <div className="mt-1 text-sm text-muted-foreground">
                           Created by: {cause.profiles?.full_name || "Anonymous"}
@@ -171,11 +197,12 @@ export default function ManageCauses() {
                           cause.status === "approved"
                             ? "default"
                             : cause.status === "pending"
-                              ? "secondary"
-                              : "destructive"
+                            ? "secondary"
+                            : "destructive"
                         }
                       >
-                        {cause.status.charAt(0).toUpperCase() + cause.status.slice(1)}
+                        {cause.status.charAt(0).toUpperCase() +
+                          cause.status.slice(1)}
                       </Badge>
                     </div>
                   </CardHeader>
@@ -188,43 +215,72 @@ export default function ManageCauses() {
                       </div>
                       <div className="flex justify-between py-1 border-t">
                         <span>Goal</span>
-                        <span className="font-medium">₦{cause.goal.toLocaleString()}</span>
+                        <span className="font-medium">
+                          ₦{cause.goal.toLocaleString()}
+                        </span>
                       </div>
-                      {cause.days_active !== null && cause.days_active !== undefined && (
-                        <div className="flex justify-between py-1 border-t">
-                          <span>Days Active</span>
-                          <span className="font-medium">{cause.days_active} days</span>
-                        </div>
-                      )}
-                      {cause.status === "rejected" && cause.rejection_reason && (
-                        <div className="mt-2 p-2 bg-destructive/10 text-destructive text-sm rounded">
-                          <strong>Rejection Reason:</strong> {cause.rejection_reason}
-                        </div>
-                      )}
+                      {cause.days_active !== null &&
+                        cause.days_active !== undefined && (
+                          <div className="flex justify-between py-1 border-t">
+                            <span>Days Active</span>
+                            <span className="font-medium">
+                              {cause.days_active} days
+                            </span>
+                          </div>
+                        )}
+                      {cause.status === "rejected" &&
+                        cause.rejection_reason && (
+                          <div className="mt-2 p-2 bg-destructive/10 text-destructive text-sm rounded">
+                            <strong>Rejection Reason:</strong>{" "}
+                            {cause.rejection_reason}
+                          </div>
+                        )}
                     </div>
                   </CardContent>
                   <CardFooter className="flex justify-between">
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       size="sm"
                       onClick={() => openDetailDialog(cause.id)}
                     >
                       View Details
                     </Button>
                     <div className="flex gap-2">
-                      {(activeTab === "pending") && (
+                      {activeTab === "pending" && (
                         <>
-                          <Button variant="destructive" size="sm" onClick={() => openRejectDialog(cause.id, cause.title)}>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() =>
+                              openRejectDialog(cause.id, cause.title)
+                            }
+                          >
                             Reject
                           </Button>
-                          <Button size="sm" onClick={() => handleApprove(cause.id)}>Approve</Button>
+                          <Button
+                            size="sm"
+                            onClick={() => handleApprove(cause.id)}
+                          >
+                            Approve
+                          </Button>
                         </>
                       )}
-                      {(activeTab === "rejected") && (
-                        <Button size="sm" onClick={() => handleApprove(cause.id)}>Approve</Button>
+                      {activeTab === "rejected" && (
+                        <Button
+                          size="sm"
+                          onClick={() => handleApprove(cause.id)}
+                        >
+                          Approve
+                        </Button>
                       )}
                       {activeTab === "approved" && (
-                        <Button variant="destructive" size="sm" onClick={() => openRejectDialog(cause.id, cause.title)}>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() =>
+                            openRejectDialog(cause.id, cause.title)
+                          }
+                        >
                           Take Down
                         </Button>
                       )}
@@ -238,25 +294,40 @@ export default function ManageCauses() {
       </Tabs>
 
       {/* Reject Dialog */}
-      <Dialog open={rejectDialog.open} onOpenChange={(open) => setRejectDialog((prev) => ({ ...prev, open }))}>
+      <Dialog
+        open={rejectDialog.open}
+        onOpenChange={(open) => setRejectDialog((prev) => ({ ...prev, open }))}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Reject Cause</DialogTitle>
             <DialogDescription>
-              Please provide a reason for rejecting "{rejectDialog.title}". This will be shown to the user.
+              Please provide a reason for rejecting "{rejectDialog.title}". This
+              will be shown to the user.
             </DialogDescription>
           </DialogHeader>
           <Textarea
             placeholder="Rejection reason..."
             value={rejectDialog.reason}
-            onChange={(e) => setRejectDialog((prev) => ({ ...prev, reason: e.target.value }))}
+            onChange={(e) =>
+              setRejectDialog((prev) => ({ ...prev, reason: e.target.value }))
+            }
             className="min-h-[100px]"
           />
           <DialogFooter>
-            <Button variant="outline" onClick={() => setRejectDialog((prev) => ({ ...prev, open: false }))}>
+            <Button
+              variant="outline"
+              onClick={() =>
+                setRejectDialog((prev) => ({ ...prev, open: false }))
+              }
+            >
               Cancel
             </Button>
-            <Button variant="destructive" onClick={handleReject} disabled={!rejectDialog.reason.trim()}>
+            <Button
+              variant="destructive"
+              onClick={handleReject}
+              disabled={!rejectDialog.reason.trim()}
+            >
               Reject Cause
             </Button>
           </DialogFooter>
@@ -272,7 +343,7 @@ export default function ManageCauses() {
               Full details of the cause for review
             </DialogDescription>
           </DialogHeader>
-          
+
           {detailDialog.isLoading ? (
             <div className="flex justify-center items-center py-8">
               <Icons.spinner className="h-8 w-8 animate-spin" />
@@ -283,9 +354,15 @@ export default function ManageCauses() {
               <div className="space-y-4">
                 <div className="flex justify-between items-start">
                   <div>
-                    <h2 className="text-2xl font-bold">{detailDialog.cause.title}</h2>
+                    <h2 className="text-2xl font-bold">
+                      {detailDialog.cause.title}
+                    </h2>
                     <p className="text-muted-foreground">
-                      {categories.find((c) => c.id === detailDialog.cause.category)?.name}
+                      {
+                        categories.find(
+                          (c) => c.id === detailDialog.cause.category
+                        )?.name
+                      }
                     </p>
                   </div>
                   <Badge
@@ -293,23 +370,36 @@ export default function ManageCauses() {
                       detailDialog.cause.status === "approved"
                         ? "default"
                         : detailDialog.cause.status === "pending"
-                          ? "secondary"
-                          : "destructive"
+                        ? "secondary"
+                        : "destructive"
                     }
                   >
-                    {detailDialog.cause.status.charAt(0).toUpperCase() + detailDialog.cause.status.slice(1)}
+                    {detailDialog.cause.status.charAt(0).toUpperCase() +
+                      detailDialog.cause.status.slice(1)}
                   </Badge>
                 </div>
-                
+
                 {/* Creator Info */}
                 <div className="p-4 bg-muted rounded-lg">
                   <h3 className="font-medium mb-2">Creator Information</h3>
                   <div className="text-sm space-y-1">
-                    <p><span className="font-medium">Name:</span> {detailDialog.cause.user.name}</p>
-                    <p><span className="font-medium">Email:</span> {detailDialog.cause.user.email}</p>
-                    <p><span className="font-medium">Created:</span> {format(new Date(detailDialog.cause.created_at), "PPP")}</p>
+                    <p>
+                      <span className="font-medium">Name:</span>{" "}
+                      {detailDialog.cause.user.name}
+                    </p>
+                    <p>
+                      <span className="font-medium">Email:</span>{" "}
+                      {detailDialog.cause.user.email}
+                    </p>
+                    <p>
+                      <span className="font-medium">Created:</span>{" "}
+                      {format(new Date(detailDialog.cause.created_at), "PPP")}
+                    </p>
                     {detailDialog.cause.status === "approved" && (
-                      <p><span className="font-medium">Approved:</span> {format(new Date(detailDialog.cause.updated_at), "PPP")}</p>
+                      <p>
+                        <span className="font-medium">Approved:</span>{" "}
+                        {format(new Date(detailDialog.cause.updated_at), "PPP")}
+                      </p>
                     )}
                   </div>
                 </div>
@@ -331,40 +421,86 @@ export default function ManageCauses() {
                 </div>
               )}
 
+              {/* Multimedia Gallery */}
+              {detailDialog.cause.multimedia &&
+                detailDialog.cause.multimedia.length > 0 && (
+                  <div className="space-y-2">
+                    <h3 className="font-medium">Multimedia Gallery</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      {detailDialog.cause.multimedia.map((url, index) => (
+                        <div
+                          key={index}
+                          className="relative w-full h-32 rounded-lg overflow-hidden"
+                        >
+                          <Image
+                            src={url}
+                            alt={`Multimedia ${index + 1}`}
+                            className="object-cover w-full h-full"
+                            width={400}
+                            height={200}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
               {/* Description */}
               <div className="space-y-2">
                 <h3 className="font-medium">Description</h3>
-                <p className="text-sm whitespace-pre-line">{detailDialog.cause.description}</p>
+                <p className="text-sm whitespace-pre-line">
+                  {detailDialog.cause.description}
+                </p>
               </div>
 
               {/* Additional Sections */}
-              {detailDialog.cause.sections && detailDialog.cause.sections.length > 0 && (
-                <div className="space-y-4">
-                  <h3 className="font-medium">Additional Sections</h3>
-                  {detailDialog.cause.sections.map((section, index) => (
-                    <div key={index} className="p-4 border rounded-lg">
-                      <h4 className="font-medium mb-2">{section.heading}</h4>
-                      <p className="text-sm text-muted-foreground">{section.description}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
+              {detailDialog.cause.sections &&
+                detailDialog.cause.sections.length > 0 && (
+                  <div className="space-y-4">
+                    <h3 className="font-medium">Additional Sections</h3>
+                    {detailDialog.cause.sections.map((section, index) => (
+                      <div key={index} className="p-4 border rounded-lg">
+                        <h4 className="font-medium mb-2">{section.heading}</h4>
+                        <p className="text-sm text-muted-foreground">
+                          {section.description}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
 
               {/* Financial Information */}
               <div className="grid grid-cols-2 gap-4 p-4 bg-muted rounded-lg">
                 <div>
                   <h3 className="font-medium mb-2">Financial Details</h3>
                   <div className="space-y-1 text-sm">
-                    <p><span className="font-medium">Goal:</span> ₦{detailDialog.cause.goal.toLocaleString()}</p>
-                    <p><span className="font-medium">Raised:</span> ₦{detailDialog.cause.raised.toLocaleString()}</p>
-                    <p><span className="font-medium">Progress:</span> {((detailDialog.cause.raised / detailDialog.cause.goal) * 100).toFixed(1)}%</p>
+                    <p>
+                      <span className="font-medium">Goal:</span> ₦
+                      {detailDialog.cause.goal.toLocaleString()}
+                    </p>
+                    <p>
+                      <span className="font-medium">Raised:</span> ₦
+                      {detailDialog.cause.raised.toLocaleString()}
+                    </p>
+                    <p>
+                      <span className="font-medium">Progress:</span>{" "}
+                      {(
+                        (detailDialog.cause.raised / detailDialog.cause.goal) *
+                        100
+                      ).toFixed(1)}
+                      %
+                    </p>
                   </div>
                 </div>
                 <div>
                   <h3 className="font-medium mb-2">Duration</h3>
                   <div className="space-y-1 text-sm">
-                    {detailDialog.cause.days_active !== null && detailDialog.cause.days_active !== undefined ? (
-                      <p><span className="font-medium">Days Active:</span> {detailDialog.cause.days_active} days</p>
+                    {detailDialog.cause.days_active !== null &&
+                    detailDialog.cause.days_active !== undefined ? (
+                      <p>
+                        <span className="font-medium">Days Active:</span>{" "}
+                        {detailDialog.cause.days_active} days
+                      </p>
                     ) : (
                       <p className="text-muted-foreground">Duration not set</p>
                     )}
@@ -373,12 +509,17 @@ export default function ManageCauses() {
               </div>
 
               {/* Rejection Reason */}
-              {detailDialog.cause.status === "rejected" && detailDialog.cause.rejection_reason && (
-                <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
-                  <h3 className="font-medium text-destructive mb-2">Rejection Reason</h3>
-                  <p className="text-sm text-destructive">{detailDialog.cause.rejection_reason}</p>
-                </div>
-              )}
+              {detailDialog.cause.status === "rejected" &&
+                detailDialog.cause.rejection_reason && (
+                  <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
+                    <h3 className="font-medium text-destructive mb-2">
+                      Rejection Reason
+                    </h3>
+                    <p className="text-sm text-destructive">
+                      {detailDialog.cause.rejection_reason}
+                    </p>
+                  </div>
+                )}
             </div>
           ) : (
             <div className="text-center py-8 text-muted-foreground">
@@ -394,33 +535,49 @@ export default function ManageCauses() {
               <div className="flex gap-2">
                 {detailDialog.cause.status === "pending" && (
                   <>
-                    <Button variant="destructive" onClick={() => {
-                      closeDetailDialog()
-                      openRejectDialog(detailDialog.cause!.id, detailDialog.cause!.title)
-                    }}>
+                    <Button
+                      variant="destructive"
+                      onClick={() => {
+                        closeDetailDialog();
+                        openRejectDialog(
+                          detailDialog.cause!.id,
+                          detailDialog.cause!.title
+                        );
+                      }}
+                    >
                       Reject
                     </Button>
-                    <Button onClick={() => {
-                      closeDetailDialog()
-                      handleApprove(detailDialog.cause!.id)
-                    }}>
+                    <Button
+                      onClick={() => {
+                        closeDetailDialog();
+                        handleApprove(detailDialog.cause!.id);
+                      }}
+                    >
                       Approve
                     </Button>
                   </>
                 )}
                 {detailDialog.cause.status === "rejected" && (
-                  <Button onClick={() => {
-                    closeDetailDialog()
-                    handleApprove(detailDialog.cause!.id)
-                  }}>
+                  <Button
+                    onClick={() => {
+                      closeDetailDialog();
+                      handleApprove(detailDialog.cause!.id);
+                    }}
+                  >
                     Approve
                   </Button>
                 )}
                 {detailDialog.cause.status === "approved" && (
-                  <Button variant="destructive" onClick={() => {
-                    closeDetailDialog()
-                    openRejectDialog(detailDialog.cause!.id, detailDialog.cause!.title)
-                  }}>
+                  <Button
+                    variant="destructive"
+                    onClick={() => {
+                      closeDetailDialog();
+                      openRejectDialog(
+                        detailDialog.cause!.id,
+                        detailDialog.cause!.title
+                      );
+                    }}
+                  >
                     Take Down
                   </Button>
                 )}
@@ -430,6 +587,5 @@ export default function ManageCauses() {
         </DialogContent>
       </Dialog>
     </div>
-  )
+  );
 }
-
