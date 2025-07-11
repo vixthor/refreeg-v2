@@ -22,7 +22,7 @@ export interface Profile {
   followers_count?: number;
   following_count?: number;
   causes_count?: number;
-  user_type?: "individual" | "organization";
+  account_type?: "individual" | "organization";
   bio: string | null;
   solana_wallet?: string | null;
   social_media?: {
