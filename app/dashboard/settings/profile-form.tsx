@@ -1,4 +1,3 @@
-// components/profile-form.tsx
 "use client";
 
 import { useRef, useState } from "react";
@@ -29,6 +28,7 @@ interface ProfileFormProps {
     phone: string | null;
     profile_photo: string | null;
     bio: string | null;
+    account_type?: "individual" | "organization" | null;
     twitter_url?: string | null;
     facebook_url?: string | null;
     instagram_url?: string | null;
@@ -45,6 +45,7 @@ export function ProfileForm({ profile, user }: ProfileFormProps) {
   const [formData, setFormData] = useState({
     full_name: profile?.full_name || "",
     email: profile?.email || user?.email || "",
+    account_type: profile?.account_type || "",
     phone: profile?.phone || "",
     bio: profile?.bio || "",
     twitter_url: profile?.twitter_url || "",
@@ -120,6 +121,10 @@ export function ProfileForm({ profile, user }: ProfileFormProps) {
           .join("")
           .toUpperCase()
       : "U";
+  };
+
+  const formatAccountType = (type: string) => {
+    return type === "individual" ? "Individual" : "Organization";
   };
 
   return (
@@ -218,6 +223,21 @@ export function ProfileForm({ profile, user }: ProfileFormProps) {
             />
             <p className="text-xs text-muted-foreground">
               Your email cannot be changed.
+            </p>
+          </div>
+
+          {/* Account Type */}
+          <div className="space-y-2">
+            <Label htmlFor="account_type">Account Type</Label>
+            <Input
+              id="account_type"
+              name="account_type"
+              value={formatAccountType(formData.account_type)}
+              disabled
+              className="bg-muted"
+            />
+            <p className="text-xs text-muted-foreground">
+              Your account type cannot be changed.
             </p>
           </div>
 
