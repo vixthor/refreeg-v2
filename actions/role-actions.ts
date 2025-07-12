@@ -183,7 +183,7 @@ export async function listUsersWithRoles(): Promise<UserWithRole[]> {
     throw new Error("Only admins or managers can list users");
   }
 
-  // Get all profiles with their roles using left join to include users without roles
+  // Get profiles with roles (simplified query to avoid join issues)
   const { data: profiles, error: profilesError } = await supabase
     .from("profiles")
     .select(
@@ -192,8 +192,7 @@ export async function listUsersWithRoles(): Promise<UserWithRole[]> {
       full_name,
       email,
       is_blocked,
-      created_at,
-      roles:roles!left ( role )
+      created_at
     `
     )
     .order("created_at", { ascending: false });
@@ -202,16 +201,68 @@ export async function listUsersWithRoles(): Promise<UserWithRole[]> {
     console.error("Error listing profiles:", profilesError);
     throw profilesError;
   }
-  // revalidatePath("/dashboard/admin/users")
+
+  // Get roles separately to avoid join issues
+  let rolesData: any[] = [];
+  try {
+    const { data: roles, error: rolesError } = await supabase
+      .from("roles")
+      .select("user_id, role");
+
+    if (!rolesError && roles) {
+      rolesData = roles;
+    }
+  } catch (rolesError) {
+    console.warn("Error fetching roles:", rolesError);
+  }
+
+  // Get KYC data separately
+  let kycData: any[] = [];
+  try {
+    const { data: kyc, error: kycError } = await supabase
+      .from("kyc_verifications")
+      .select("user_id, status, id")
+      .order("created_at", { ascending: false });
+
+    if (!kycError && kyc) {
+      kycData = kyc;
+    }
+  } catch (kycError) {
+    console.warn("Error fetching KYC data:", kycError);
+  }
+
+  // Create maps for efficient lookup
+  const rolesMap = new Map();
+  rolesData.forEach((role) => {
+    rolesMap.set(role.user_id, role.role);
+  });
+
+  const kycMap = new Map();
+  kycData.forEach((kyc) => {
+    if (!kycMap.has(kyc.user_id)) {
+      kycMap.set(kyc.user_id, { status: kyc.status, id: kyc.id });
+    }
+  });
+
   // Map profiles to UserWithRole
-  return profiles.map((profile) => ({
-    id: profile.id,
-    email: profile.email || "",
-    role: profile.roles?.[0]?.role || "user",
-    is_blocked: profile.is_blocked || false,
-    full_name: profile.full_name || null,
-    created_at: profile.created_at,
-  }));
+  return (
+    profiles?.map((profile) => {
+      // Get role and KYC data from the maps
+      const userRole = rolesMap.get(profile.id) || "user";
+      const kycData = kycMap.get(profile.id);
+
+      return {
+        id: profile.id,
+        email: profile.email || "",
+        role: userRole,
+        is_blocked: profile.is_blocked || false,
+        full_name: profile.full_name || null,
+        created_at: profile.created_at,
+        kyc_status: kycData?.status || null,
+        kyc_verification_id: kycData?.id || null,
+      };
+    }) || []
+  );
 }
 
 /**
