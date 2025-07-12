@@ -1,32 +1,44 @@
-import { type NextRequest } from 'next/server'
-import { updateSession } from '@/lib/supabase/middleware'
-import { createClient } from '@/lib/supabase/server'
-import { NextResponse } from 'next/server'
+import { type NextRequest } from "next/server";
+import { updateSession } from "@/lib/supabase/middleware";
+import { createClient } from "@/lib/supabase/server";
+import { NextResponse } from "next/server";
+import { isProfileComplete } from "@/actions/profile-actions";
 
 export async function middleware(request: NextRequest) {
-  const response = await updateSession(request)
+  const response = await updateSession(request);
 
-  // Check KYC verification for cause creation
+  // Check KYC verification and profile completion for cause creation
   if (request.nextUrl.pathname.startsWith("/dashboard/causes/create")) {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
     if (user) {
       const { data: profile } = await supabase
         .from("profiles")
-        .select("is_verified")
+        .select("is_verified, full_name, bio, profile_photo")
         .eq("id", user.id)
-        .single()
+        .single();
 
+      // Check if KYC is verified
       if (!profile?.is_verified) {
         return NextResponse.redirect(
           new URL("/dashboard/settings?error=kyc_required", request.url)
-        )
+        );
+      }
+
+      // Check if profile is complete (has full name, bio, and avatar)
+      const { isComplete } = await isProfileComplete(user.id);
+      if (!isComplete) {
+        return NextResponse.redirect(
+          new URL("/dashboard/settings?error=profile_incomplete", request.url)
+        );
       }
     }
   }
 
-  return response
+  return response;
 }
 
 export const config = {
@@ -38,6 +50,6 @@ export const config = {
      * - favicon.ico (favicon file)
      * Feel free to modify this pattern to include more paths.
      */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
-}
+};

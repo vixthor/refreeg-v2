@@ -16,6 +16,8 @@ import { useRouter } from "next/navigation";
 import { KycTab } from "./kyc-tab";
 import { useEffect, useState } from "react";
 import { getVerificationStatus } from "@/actions/kyc-actions";
+import { DeleteAccountButton } from "@/app/dashboard/settings/delete-account-button";
+import { isProfileComplete } from "@/actions/profile-actions";
 
 export default function SettingsPage() {
   const { user } = useAuth();
@@ -28,6 +30,7 @@ export default function SettingsPage() {
   } = useProfile(user?.id);
   const { isVerified, isLoading: isKycLoading } = useKyc(user?.id);
   const [hasKyc, setHasKyc] = useState<boolean | null>(null);
+  const [profileComplete, setProfileComplete] = useState<boolean | null>(null);
 
   const [activeTab, setActiveTab] = useQueryState("tab", {
     defaultValue: "profile",
@@ -36,13 +39,16 @@ export default function SettingsPage() {
   });
 
   useEffect(() => {
-    async function checkKyc() {
+    async function checkRequirements() {
       if (user?.id) {
         const { status } = await getVerificationStatus(user.id);
         setHasKyc(!!status);
+
+        const { isComplete } = await isProfileComplete(user.id);
+        setProfileComplete(isComplete);
       }
     }
-    checkKyc();
+    checkRequirements();
   }, [user?.id]);
 
   // Show skeleton while either auth or profile is loading
@@ -72,16 +78,19 @@ export default function SettingsPage() {
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Error</AlertTitle>
-          <AlertDescription>
-            {profileError}
-          </AlertDescription>
+          <AlertDescription>{profileError}</AlertDescription>
         </Alert>
       </div>
     );
   }
 
   // Show KYC alert only if user has never submitted KYC
-  const showKycAlert = hasKyc === false || searchParams.get("error") === "kyc_required";
+  const showKycAlert =
+    hasKyc === false || searchParams.get("error") === "kyc_required";
+
+  // Show profile incomplete alert
+  const showProfileIncompleteAlert =
+    searchParams.get("error") === "profile_incomplete";
 
   return (
     <div className="space-y-6">
@@ -113,6 +122,52 @@ export default function SettingsPage() {
         </Alert>
       )}
 
+      {showProfileIncompleteAlert && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Profile Incomplete</AlertTitle>
+          <AlertDescription className="flex items-center justify-between">
+            <span>
+              You need to complete your profile (full name, bio, and profile
+              picture) to list causes.
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setActiveTab("profile")}
+            >
+              Complete Profile
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Profile Completion Status */}
+      {profileComplete !== null && (
+        <Alert variant={profileComplete ? "default" : "destructive"}>
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>
+            {profileComplete ? "Profile Complete" : "Profile Incomplete"}
+          </AlertTitle>
+          <AlertDescription className="flex items-center justify-between">
+            <span>
+              {profileComplete
+                ? "Your profile is complete and you can list causes."
+                : "Complete your profile to list causes."}
+            </span>
+            {!profileComplete && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setActiveTab("profile")}
+              >
+                Complete Profile
+              </Button>
+            )}
+          </AlertDescription>
+        </Alert>
+      )}
+
       <Tabs
         defaultValue={activeTab}
         className="space-y-4"
@@ -123,6 +178,7 @@ export default function SettingsPage() {
           <TabsTrigger value="bank">Bank Details</TabsTrigger>
           <TabsTrigger value="kyc">KYC Verification</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
+          <TabsTrigger value="danger">Account Management</TabsTrigger>
         </TabsList>
 
         <TabsContent value="profile">
@@ -146,6 +202,10 @@ export default function SettingsPage() {
               </p>
             </div>
           </div>
+        </TabsContent>
+
+        <TabsContent value="danger">
+          {user && <DeleteAccountButton userId={user.id} />}
         </TabsContent>
       </Tabs>
     </div>
