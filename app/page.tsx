@@ -8,6 +8,7 @@ import YouTubeEmbed from "@/components/YoutubeEmbed";
 import TransparencyEnsurance from "@/components/home/transparencyEnsurance";
 import CausesSupported from "@/components/home/causesWeSupport";
 import FAQ from "@/components/home/frequentlyAskedQuestions";
+import AdBanner from "@/components/AdBanner";
 
 export default function Home() {
   return (
@@ -39,6 +40,8 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      <AdBanner />
 
       {/* How It Works */}
       <section className="w-full py-12 md:py-24 lg:py-32">
