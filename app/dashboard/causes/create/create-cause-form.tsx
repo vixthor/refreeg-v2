@@ -21,6 +21,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Icons } from "@/components/icons";
 import { useAuth } from "@/hooks/use-auth";
 import { useCause } from "@/hooks/use-cause";
@@ -28,14 +34,8 @@ import { Progress } from "@/components/ui/progress";
 import { ImageUpload } from "@/components/ui/image-upload";
 import { categories } from "@/lib/categories";
 import { sendCauseUnderReviewEmail } from "@/services/mail";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { format, addDays, isAfter, isBefore, differenceInDays } from "date-fns";
 import { CalendarIcon } from "lucide-react";
-import { format, isBefore, differenceInDays } from "date-fns";
 import { cn } from "@/lib/utils";
 
 const currencies = [{ id: "NGN", name: "Naira (₦)" }];
@@ -50,6 +50,7 @@ type FormData = {
   sections: { heading: string; description: string }[];
   startDate: Date | undefined;
   endDate: Date | undefined;
+  multimedia: File[];
 };
 
 type FormErrors = {
@@ -60,6 +61,7 @@ type FormErrors = {
   coverImage?: string;
   startDate?: string;
   endDate?: string;
+  multimedia?: string;
 };
 
 type CauseFormData = {
@@ -72,6 +74,7 @@ type CauseFormData = {
   sections: { heading: string; description: string }[];
   startDate: Date | undefined;
   endDate: Date | undefined;
+  multimedia: File[];
 };
 
 const validateForm = (formData: FormData): FormErrors => {
@@ -105,22 +108,28 @@ const validateForm = (formData: FormData): FormErrors => {
 
   if (!formData.startDate) {
     errors.startDate = "Start date is required";
-  } else if (isBefore(formData.startDate, new Date())) {
-    errors.startDate = "Start date must be in the future";
   }
 
   if (!formData.endDate) {
     errors.endDate = "End date is required";
-  } else if (
-    formData.startDate &&
-    isBefore(formData.endDate, formData.startDate)
-  ) {
-    errors.endDate = "End date must be after start date";
   } else if (formData.startDate && formData.endDate) {
     const daysDiff = differenceInDays(formData.endDate, formData.startDate);
+    if (daysDiff > 60) {
+      errors.endDate = "Cause duration cannot exceed 60 days";
+    }
     if (daysDiff < 1) {
       errors.endDate = "End date must be after start date";
     }
+  }
+
+  // Check total multimedia size
+  const MAX_TOTAL_SIZE = 100 * 1024 * 1024; // 100MB in bytes
+  const totalSize =
+    formData.multimedia && formData.multimedia.length > 0
+      ? formData.multimedia.reduce((acc, file) => acc + file.size, 0)
+      : 0;
+  if (totalSize > MAX_TOTAL_SIZE) {
+    errors.multimedia = "Total multimedia size must be less than 100MB";
   }
 
   return errors;
@@ -141,6 +150,7 @@ export default function CreateCauseForm() {
     sections: [{ heading: "", description: "" }],
     startDate: undefined,
     endDate: undefined,
+    multimedia: [],
   });
   const [errors, setErrors] = useState<FormErrors>({});
 
@@ -159,13 +169,14 @@ export default function CreateCauseForm() {
         endDate: parsedDraft.endDate
           ? new Date(parsedDraft.endDate)
           : undefined,
+        multimedia: [], // Initialize as empty array since files aren't stored in localStorage
       }));
     }
   }, []);
 
   useEffect(() => {
     // Don't save files to localStorage, and properly serialize dates
-    const { coverImage, ...dataToSave } = formData;
+    const { coverImage, multimedia, ...dataToSave } = formData;
     const serializedData = {
       ...dataToSave,
       startDate: dataToSave.startDate
@@ -224,6 +235,43 @@ export default function CreateCauseForm() {
     }
   };
 
+  const handleMultimediaUpload = (files: File[]) => {
+    const MAX_TOTAL_SIZE = 100 * 1024 * 1024; // 100MB in bytes
+    const currentSize =
+      formData.multimedia && formData.multimedia.length > 0
+        ? formData.multimedia.reduce((acc, file) => acc + file.size, 0)
+        : 0;
+    const newFilesSize = files.reduce((acc, file) => acc + file.size, 0);
+
+    if (currentSize + newFilesSize > MAX_TOTAL_SIZE) {
+      setErrors((prev) => ({
+        ...prev,
+        multimedia: "Total multimedia size must be less than 100MB",
+      }));
+      return;
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      multimedia: Array.isArray(prev.multimedia)
+        ? [...prev.multimedia, ...files]
+        : [...files],
+    }));
+
+    if (errors.multimedia) {
+      setErrors((prev) => ({ ...prev, multimedia: undefined }));
+    }
+  };
+
+  const removeMultimedia = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      multimedia: Array.isArray(prev.multimedia)
+        ? prev.multimedia.filter((_, i) => i !== index)
+        : [],
+    }));
+  };
+
   const validateStep = (step: number): boolean => {
     const currentErrors = validateForm(formData);
     setErrors(currentErrors);
@@ -244,6 +292,7 @@ export default function CreateCauseForm() {
       case 3:
         return !currentErrors.startDate && !currentErrors.endDate;
       case 4:
+        // We don't need to validate multimedia, just the cover image
         return !currentErrors.coverImage;
       default:
         return true;
@@ -279,8 +328,8 @@ export default function CreateCauseForm() {
       sections: formData.sections,
       startDate: formData.startDate,
       endDate: formData.endDate,
+      multimedia: formData.multimedia,
     };
-
     try {
       await sendCauseUnderReviewEmail({
         causeName: causeData.title,
@@ -451,24 +500,32 @@ export default function CreateCauseForm() {
                       </Button>
                     )}
                   </div>
+
                   <div className="space-y-2">
-                    <Label>Heading</Label>
+                    <Label htmlFor={`section-heading-${index}`}>
+                      Sub-heading
+                    </Label>
                     <Input
-                      placeholder="Section heading"
+                      id={`section-heading-${index}`}
                       value={section.heading}
                       onChange={(e) =>
                         updateSection(index, "heading", e.target.value)
                       }
+                      placeholder="Enter sub-heading"
                     />
                   </div>
+
                   <div className="space-y-2">
-                    <Label>Description</Label>
+                    <Label htmlFor={`section-description-${index}`}>
+                      Sub-description
+                    </Label>
                     <Textarea
-                      placeholder="Section description"
+                      id={`section-description-${index}`}
                       value={section.description}
                       onChange={(e) =>
                         updateSection(index, "description", e.target.value)
                       }
+                      placeholder="Enter sub-description"
                     />
                   </div>
                 </div>
@@ -479,8 +536,16 @@ export default function CreateCauseForm() {
 
       case 3:
         return (
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-6">
+            <div className="space-y-2">
+              <h3 className="text-lg font-medium">Cause Duration</h3>
+              <p className="text-sm text-muted-foreground">
+                Select when your cause should start and end. Maximum duration is
+                60 days.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label>Start Date</Label>
                 <Popover>
@@ -595,6 +660,101 @@ export default function CreateCauseForm() {
                 </div>
               )}
             </div>
+
+            <div className="mt-8 space-y-4">
+              <div className="space-y-2">
+                <Label>Additional Multimedia</Label>
+                <p className="text-sm text-muted-foreground">
+                  Enhance your cause with images and videos. Total size must not
+                  exceed 100MB.
+                </p>
+                <ImageUpload
+                  onUpload={(files) => handleMultimediaUpload(files)}
+                  maxFiles={10}
+                  accept="image/*,video/*"
+                  //   multiple={true}
+                />
+                {errors.multimedia && (
+                  <p className="text-sm text-red-500">{errors.multimedia}</p>
+                )}
+              </div>
+
+              {formData.multimedia &&
+                Array.isArray(formData.multimedia) &&
+                formData.multimedia.length > 0 && (
+                  <div className="space-y-4">
+                    <h4 className="text-sm font-medium">
+                      Uploaded Files ({formData.multimedia.length})
+                    </h4>
+                    <p className="text-xs text-muted-foreground">
+                      Total Size:{" "}
+                      {(
+                        (formData.multimedia && formData.multimedia.length > 0
+                          ? formData.multimedia.reduce(
+                              (acc, file) => acc + file.size,
+                              0
+                            )
+                          : 0) /
+                        (1024 * 1024)
+                      ).toFixed(2)}
+                      MB of 100MB
+                    </p>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      {formData.multimedia.map((file, index) => (
+                        <div key={index} className="relative group">
+                          {file.type.startsWith("image/") ? (
+                            <img
+                              src={URL.createObjectURL(file)}
+                              alt={`Multimedia ${index + 1}`}
+                              className="h-32 w-full object-cover rounded-md"
+                            />
+                          ) : (
+                            <div className="h-32 w-full bg-muted rounded-md flex items-center justify-center">
+                              <div className="text-center">
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  className="h-8 w-8 mx-auto mb-2"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
+                                  />
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                  />
+                                </svg>
+                                <p className="text-xs truncate max-w-[90%] mx-auto">
+                                  {file.name}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  {(file.size / (1024 * 1024)).toFixed(2)}MB
+                                </p>
+                              </div>
+                            </div>
+                          )}
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="sm"
+                            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => removeMultimedia(index)}
+                          >
+                            Remove
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+            </div>
           </div>
         );
 
@@ -635,7 +795,7 @@ export default function CreateCauseForm() {
             </div>
 
             <div className="space-y-2">
-              <h4 className="font-medium">Images</h4>
+              <h4 className="font-medium">Media</h4>
               <div className="grid grid-cols-2 gap-4">
                 {formData.coverImage && (
                   <div>
@@ -647,8 +807,70 @@ export default function CreateCauseForm() {
                     />
                   </div>
                 )}
+                {formData.multimedia &&
+                  Array.isArray(formData.multimedia) &&
+                  formData.multimedia.length > 0 && (
+                    <div>
+                      <p className="text-sm font-medium mb-2">
+                        Additional Media ({formData.multimedia.length})
+                      </p>
+                      <div className="bg-muted h-48 rounded-md flex items-center justify-center">
+                        <div className="text-center">
+                          <p className="text-sm">
+                            {
+                              formData.multimedia.filter((f) =>
+                                f.type.startsWith("image/")
+                              ).length
+                            }{" "}
+                            images,{" "}
+                            {
+                              formData.multimedia.filter((f) =>
+                                f.type.startsWith("video/")
+                              ).length
+                            }{" "}
+                            videos
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Total size:{" "}
+                            {(
+                              (formData.multimedia &&
+                              formData.multimedia.length > 0
+                                ? formData.multimedia.reduce(
+                                    (acc, file) => acc + file.size,
+                                    0
+                                  )
+                                : 0) /
+                              (1024 * 1024)
+                            ).toFixed(2)}
+                            MB
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
               </div>
             </div>
+
+            {formData.multimedia &&
+              Array.isArray(formData.multimedia) &&
+              formData.multimedia.length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="font-medium">Multimedia Files</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    {formData.multimedia.map((file, index) => (
+                      <div key={index} className="flex flex-col">
+                        <p className="text-sm font-medium">{file.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {file.type.startsWith("image/")
+                            ? "Image file"
+                            : "Video file"}{" "}
+                          - {Math.round(file.size / 1024)} KB
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
           </div>
         );
 
