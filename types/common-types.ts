@@ -45,6 +45,7 @@ export interface CauseFormData {
   currency: string;
   coverImage: File | null;
   image?: string;
+  multimedia?: File[];
   sections: CauseSection[];
   startDate?: Date | undefined;
   endDate?: Date | undefined;
