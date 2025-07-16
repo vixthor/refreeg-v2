@@ -103,6 +103,10 @@ export interface Cause {
   rejection_reason?: string | null;
   days_active?: number | null;
   sections?: CauseSection[];
+  profiles?: {
+    name: string;
+    email: string;
+  };
 }
 
 export interface CauseWithUser extends Cause {
@@ -111,5 +115,6 @@ export interface CauseWithUser extends Cause {
     email: string;
     sub_account_code: string;
   };
+  
   sections: CauseSection[];
 }
