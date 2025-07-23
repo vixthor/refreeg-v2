@@ -2,6 +2,7 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 
 type SocialMediaPlatform = "twitter" | "facebook" | "instagram" | "linkedin";
 
@@ -19,18 +20,22 @@ const platformConfig = {
   twitter: {
     label: "Twitter",
     placeholder: "https://twitter.com/username",
+    domain: "twitter.com"
   },
   facebook: {
     label: "Facebook",
     placeholder: "https://facebook.com/username",
+    domain: "facebook.com"
   },
   instagram: {
     label: "Instagram",
     placeholder: "https://instagram.com/username",
+    domain: "instagram.com"
   },
   linkedin: {
     label: "LinkedIn",
     placeholder: "https://linkedin.com/in/username",
+    domain: "linkedin.com"
   },
 } as const;
 
@@ -43,9 +48,56 @@ export function SocialMedia({
   mode = "display",
   onChange,
 }: SocialMediaProps) {
+  const [errors, setErrors] = useState<Record<SocialMediaPlatform, string>>({
+    twitter: "",
+    facebook: "",
+    instagram: "",
+    linkedin: ""
+  });
+
   if (mode === "edit" && !onChange) {
     throw new Error("onChange is required when mode is 'edit'");
   }
+
+  const validateUrl = (platform: SocialMediaPlatform, value: string): boolean => {
+    if (!value) return true;
+    
+    try {
+      // Check if URL starts with http:// or https://
+      if (!/^https?:\/\//i.test(value)) {
+        setErrors(prev => ({
+          ...prev,
+          [platform]: "URL must start with http:// or https://"
+        }));
+        return false;
+      }
+
+      // Check if URL contains the correct domain
+      const url = new URL(value);
+      if (!url.hostname.includes(platformConfig[platform].domain)) {
+        setErrors(prev => ({
+          ...prev,
+          [platform]: `URL must contain ${platformConfig[platform].domain}`
+        }));
+        return false;
+      }
+
+      setErrors(prev => ({ ...prev, [platform]: "" }));
+      return true;
+    } catch (err) {
+      setErrors(prev => ({
+        ...prev,
+        [platform]: "Please enter a valid URL"
+      }));
+      return false;
+    }
+  };
+
+  const handleChange = (platform: SocialMediaPlatform, value: string) => {
+    if (validateUrl(platform, value)) {
+      onChange?.(platform, value);
+    }
+  };
 
   const platforms = [
     { name: "twitter", value: twitter },
@@ -90,9 +142,12 @@ export function SocialMedia({
               type="url"
               placeholder={config.placeholder}
               value={platform.value || ""}
-              onChange={(e) => onChange?.(platform.name, e.target.value)}
+              onChange={(e) => handleChange(platform.name, e.target.value)}
               className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             />
+            {errors[platform.name] && (
+              <p className="text-sm text-red-500">{errors[platform.name]}</p>
+            )}
           </div>
         );
       })}
