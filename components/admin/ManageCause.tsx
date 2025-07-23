@@ -213,8 +213,8 @@ export default function ManageCauses() {
                           cause.status === "approved"
                             ? "default"
                             : cause.status === "pending"
-                              ? "secondary"
-                              : "destructive"
+                            ? "secondary"
+                            : "destructive"
                         }
                       >
                         {cause.status.charAt(0).toUpperCase() +
@@ -223,7 +223,7 @@ export default function ManageCauses() {
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-2">
-                    <p className="line-clamp-3">{cause.description}</p>
+                    {/* <p className="line-clamp-3">{cause.description}</p> */}
                     <div className="text-sm">
                       <div className="flex justify-between py-1">
                         <span>Category</span>
@@ -386,8 +386,8 @@ export default function ManageCauses() {
                       detailDialog.cause.status === "approved"
                         ? "default"
                         : detailDialog.cause.status === "pending"
-                          ? "secondary"
-                          : "destructive"
+                        ? "secondary"
+                        : "destructive"
                     }
                   >
                     {detailDialog.cause.status.charAt(0).toUpperCase() +
@@ -462,12 +462,12 @@ export default function ManageCauses() {
                 )}
 
               {/* Description */}
-              <div className="space-y-2">
+              {/* <div className="space-y-2">
                 <h3 className="font-medium">Description</h3>
                 <p className="text-sm whitespace-pre-line">
                   {detailDialog.cause.description}
                 </p>
-              </div>
+              </div> */}
 
               {/* Additional Sections */}
               {detailDialog.cause.sections &&
@@ -512,7 +512,7 @@ export default function ManageCauses() {
                   <h3 className="font-medium mb-2">Duration</h3>
                   <div className="space-y-1 text-sm">
                     {detailDialog.cause.days_active !== null &&
-                      detailDialog.cause.days_active !== undefined ? (
+                    detailDialog.cause.days_active !== undefined ? (
                       <p>
                         <span className="font-medium">Days Active:</span>{" "}
                         {detailDialog.cause.days_active} days
