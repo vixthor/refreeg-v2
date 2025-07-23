@@ -52,6 +52,12 @@ export function ProfileForm({ profile, user }: ProfileFormProps) {
     instagram_url: profile?.instagram_url || "",
     linkedin_url: profile?.linkedin_url || "",
   });
+  const [socialErrors, setSocialErrors] = useState({
+    twitter: false,
+    facebook: false,
+    instagram: false,
+    linkedin: false,
+  });
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { updateProfile, updateProfilePhoto, isUploading } = useProfile(user?.id);
@@ -71,10 +77,28 @@ export function ProfileForm({ profile, user }: ProfileFormProps) {
       ...prev,
       [`${platform}_url`]: value,
     }));
+
+    // Validate the URL
+    try {
+      if (value && !/^https?:\/\//i.test(value)) {
+        setSocialErrors((prev) => ({ ...prev, [platform]: true }));
+      } else {
+        setSocialErrors((prev) => ({ ...prev, [platform]: false }));
+      }
+    } catch {
+      setSocialErrors((prev) => ({ ...prev, [platform]: true }));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Check if any social media URLs are invalid
+    const hasErrors = Object.values(socialErrors).some((error) => error);
+    if (hasErrors) {
+      return;
+    }
+
     setIsSubmitting(true);
 
     const updatedProfile: ProfileFormData = {
@@ -254,7 +278,7 @@ export function ProfileForm({ profile, user }: ProfileFormProps) {
           <div className="space-y-4">
             <h3 className="text-lg font-medium">Social Media</h3>
             <p className="text-sm text-muted-foreground">
-              Add links to your social media profiles (optional)
+              Add links to your social media profiles (must start with http:// or https://)
             </p>
 
             <SocialMedia
@@ -268,7 +292,7 @@ export function ProfileForm({ profile, user }: ProfileFormProps) {
           </div>
         </CardContent>
         <CardFooter>
-          <Button type="submit" disabled={isSubmitting}>
+          <Button type="submit" disabled={isSubmitting || Object.values(socialErrors).some(error => error)}>
             {isSubmitting ? (
               <>
                 <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
