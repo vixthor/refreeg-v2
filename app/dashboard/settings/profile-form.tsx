@@ -42,6 +42,7 @@ interface ProfileFormProps {
 
 export function ProfileForm({ profile, user }: ProfileFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formErrors, setFormErrors] = useState<{ phone?: string }>({});
   const [formData, setFormData] = useState({
     full_name: profile?.full_name || "",
     email: profile?.email || user?.email || "",
@@ -90,6 +91,11 @@ export function ProfileForm({ profile, user }: ProfileFormProps) {
     }
   };
 
+  const isValidNigerianPhone = (phone: string) => {
+    const nigerianPattern = /^(?:070|080|081|090|091|071)\d{8}$/;
+    return nigerianPattern.test(phone);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -98,6 +104,19 @@ export function ProfileForm({ profile, user }: ProfileFormProps) {
     if (hasErrors) {
       return;
     }
+
+    const phoneIsValid = isValidNigerianPhone(formData.phone);
+
+    // Check phone number
+    if (!phoneIsValid) {
+      setFormErrors({ phone: "Enter a valid Nigerian phone number (e.g. 08012345678)" });
+      setIsSubmitting(false);
+      return;
+    }
+
+    // Clear previous errors
+    setFormErrors({});
+
 
     setIsSubmitting(true);
 
@@ -253,8 +272,20 @@ export function ProfileForm({ profile, user }: ProfileFormProps) {
               name="phone"
               placeholder="Your phone number"
               value={formData.phone}
-              onChange={handleChange}
+              inputMode="numeric"
+              onChange={(e) => {
+                const onlyNumbers = e.target.value.replace(/\D/g, "");
+                setFormData({ ...formData, phone: onlyNumbers });
+
+                // Clear phone error while typing
+                if (formErrors.phone) {
+                  setFormErrors((prev) => ({ ...prev, phone: undefined }));
+                }
+              }}
             />
+            {formErrors.phone && (
+              <p className="text-sm text-red-500">{formErrors.phone}</p>
+            )}
           </div>
 
           {/* Bio */}
