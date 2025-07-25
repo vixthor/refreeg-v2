@@ -1,89 +1,146 @@
-import React from "react";
+"use client";
+import React, { useEffect } from "react";
 import Image from "next/image";
 import { H1, P } from "@/components/typograpy";
 import { Button } from "../ui/button";
 import Link from "next/link";
+import { motion, useAnimation, AnimationControls } from "framer-motion";
 
+// --- CONFIGURATION ---
+const HERO_IMAGES = ["/hero1.png", "/hero2.jpg", "/hero3.png", "/hero4.png"];
+const SLIDER_SPEED = 50; // seconds for infinite loop
+const IMAGE_SIZE = { width: 300, height: 200 };
+const SLIDE_UP_DURATION = 0.6;
+
+// --- ANIMATION VARIANTS ---
+const slideUp = (delay = 0) => ({
+  initial: { opacity: 0, y: 30 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: SLIDE_UP_DURATION, delay },
+});
+
+const slideFrom = (x: number, delay = 0) => ({
+  initial: { opacity: 0, x },
+  animate: { opacity: 1, x: 0 },
+  transition: { duration: SLIDE_UP_DURATION, delay },
+});
+
+// --- HERO COMPONENT ---
 const Hero = () => {
+  const sliderControls = useAnimation();
+  const imageControls: AnimationControls[] = HERO_IMAGES.map(() =>
+    useAnimation()
+  );
+
+  // Sequential image slide-up, then start horizontal slider
+  useEffect(() => {
+    const runAnimation = async () => {
+      for (let control of imageControls) {
+        await control.start({
+          opacity: 1,
+          y: 0,
+          transition: { duration: SLIDE_UP_DURATION, ease: "easeOut" },
+        });
+      }
+
+      sliderControls.start({
+        x: ["0%", "-50%"],
+        transition: {
+          repeat: Infinity,
+          repeatType: "loop",
+          duration: SLIDER_SPEED,
+          ease: "linear",
+        },
+      });
+    };
+
+    runAnimation();
+  }, [imageControls, sliderControls]);
+
   return (
     <section
       className="w-full min-h-[90vh] bg-background px-4 md:px-[50px] py-[15px] md:py-[25px] flex flex-col items-center justify-center"
       id="home"
     >
+      {/* HERO TEXT */}
       <div className="flex flex-col gap-4 max-w-[925px] w-full justify-center items-center text-center">
-        <div className="flex gap-2 items-center">
+        <motion.div className="flex gap-2 items-center" {...slideUp(0.1)}>
           <Image
-            src={"/Users.svg"}
+            src="/Users.svg"
             alt="Group of users icon"
             width={20}
             height={20}
           />
           <P>Join thousands already fundraising on RefreeG</P>
-        </div>
+        </motion.div>
 
-        <H1 className="font-bold">
-          Empower Communities, Build a Better Africa
-        </H1>
+        <motion.div {...slideUp(0.2)}>
+          <H1 className="font-bold">
+            Empower Communities, Build a Better Africa
+          </H1>
+        </motion.div>
 
-        <P className="font-light">
-          Support causes that foster socioeconomic growth through transparent
-          and secure crowdfunding
-        </P>
+        <motion.div {...slideUp(0.3)}>
+          <P className="font-light">
+            Support causes that foster socioeconomic growth through transparent
+            and secure crowdfunding
+          </P>
+        </motion.div>
 
         <div className="flex gap-4">
-          <Button asChild className="px-3.5 py-2 bg-blue-700 text-white">
-            <Link href="/causes">Explore Causes</Link>
-          </Button>
+          <motion.div {...slideFrom(-20, 0.4)}>
+            <Button asChild className="px-3.5 py-2 bg-blue-700 text-white">
+              <Link href="/causes">Explore Causes</Link>
+            </Button>
+          </motion.div>
 
-          <Button
-            asChild
-            className="px-3.5 py-2 bg-white text-[#003366] border border-[#003366] hover:bg-white hover:text-[#003366] hover:border-[#003366]"
-          >
-            <Link href="/causes">
-              <span className="flex items-center gap-2">
-                Join the change
-                <Image
-                  src="/images/arrow-up-right 1.svg"
-                  alt="Join the change"
-                  width={20}
-                  height={20}
-                />
-              </span>
-            </Link>
-          </Button>
+          <motion.div {...slideFrom(20, 0.4)}>
+            <Button
+              asChild
+              className="px-3.5 py-2 bg-white text-[#003366] border border-[#003366] hover:bg-white hover:text-[#003366] hover:border-[#003366]"
+            >
+              <Link href="/auth/signin">
+                <span className="flex items-center gap-2">
+                  Join the change
+                  <Image
+                    src="/images/arrow-up-right 1.svg"
+                    alt="Join the change"
+                    width={20}
+                    height={20}
+                  />
+                </span>
+              </Link>
+            </Button>
+          </motion.div>
         </div>
       </div>
-      <div>
-        <div className="relative w-full bg-white overflow-hidden py-24">
-          {/* Top Ellipse (pushing into the section from above) */}
-          <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-[1728px] h-36 bg-white rounded-full z-30"></div>
 
-          {/* Bottom Ellipse (pushing into the section from below) */}
-          <div className="absolute -bottom-20 left-1/2 -translate-x-1/2 w-[1728px] h-36 bg-white rounded-full z-30"></div>
-
-          {/* Image Row */}
-          <div className="relative z-10 flex justify-center gap-6 px-4">
-            <img
-              src="/hero1.png"
-              alt="img1"
-              className="w-[300px] h-[200px] object-cover rounded-xl shadow-lg"
-            />
-            <img
-              src="/hero2.jpg"
-              alt="img2"
-              className="w-[300px] h-[200px] object-cover rounded-xl shadow-lg"
-            />
-            <img
-              src="/hero3.png"
-              alt="img3"
-              className="w-[300px] h-[200px] object-cover rounded-xl shadow-lg"
-            />
-            <img
-              src="/hero4.png"
-              alt="img4"
-              className="w-[300px] h-[200px] object-cover rounded-xl shadow-lg"
-            />
-          </div>
+      {/* SLIDER SECTION */}
+      <div className="relative w-full bg-white overflow-hidden py-12">
+        {/* Infinite Scrolling Images */}
+        <div className="relative z-10 w-full overflow-hidden">
+          <motion.div
+            className="flex gap-6 w-max"
+            animate={sliderControls}
+            initial={{ x: 0 }}
+          >
+            {[...HERO_IMAGES, ...HERO_IMAGES].map((src, index) => (
+              <motion.div
+                key={index}
+                className="flex-shrink-0 flex justify-center items-center"
+                style={{ width: IMAGE_SIZE.width, height: IMAGE_SIZE.height }}
+                initial={{ opacity: 0, y: 40 }}
+                animate={imageControls[index % HERO_IMAGES.length]}
+              >
+                <img
+                  src={src}
+                  alt={`img${index + 1}`}
+                  className="object-cover rounded-xl shadow-lg"
+                  style={IMAGE_SIZE}
+                />
+              </motion.div>
+            ))}
+          </motion.div>
         </div>
       </div>
     </section>
