@@ -59,7 +59,7 @@ const Hero = () => {
 
   return (
     <section
-      className="w-full min-h-[90vh] bg-background px-4 md:px-[50px] py-[15px] md:py-[25px] flex flex-col items-center justify-center"
+      className="w-full bg-background flex flex-col items-center justify-center"
       id="home"
     >
       {/* HERO TEXT */}
