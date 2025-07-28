@@ -39,7 +39,7 @@ export interface CauseSection {
 
 export interface CauseFormData {
   title: string;
-  description: string;
+  // description: string;
   category: string;
   goal: string | number;
   currency: string;
@@ -115,6 +115,6 @@ export interface CauseWithUser extends Cause {
     email: string;
     sub_account_code: string;
   };
-  
+
   sections: CauseSection[];
 }
