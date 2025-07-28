@@ -1,25 +1,21 @@
+"use client";
+
 import Link from "next/link";
 import { FaFacebookF, FaInstagram, FaXTwitter } from "react-icons/fa6";
 import { Linkedin, Youtube } from "lucide-react";
-import React, { ReactNode } from "react";
+import React, { ReactNode, useRef } from "react";
+import { motion } from "framer-motion";
 import GetMail from "./GetMail";
-import {
-  contactLinks,
-  legalLinks,
-  quickLinks,
-  socialLinks,
-} from "@/lib/links";
+import { useAnimateInView } from "@/hooks/use-animate-In-view";
+import { contactLinks, legalLinks, quickLinks, socialLinks } from "@/lib/links";
 
 const Icon = ({ href, children }: { href: string; children: ReactNode }) => {
   return (
     <Link
       href={href}
-      className="bg-secondary-9 dark:bg-
-      secondary-7 rounded-full flex items-center 
-      justify-center size-[30px] text-black 
-      dark:text-white transition-all duration-300 transform 
-      hover:scale-110 hover:bg-secondary-7 
-      dark:hover:bg-secondary-9"
+      className="bg-secondary-9 dark:bg-secondary-7 rounded-full flex items-center 
+      justify-center size-[30px] text-black dark:text-white transition-all duration-300 transform 
+      hover:scale-110 hover:bg-secondary-7 dark:hover:bg-secondary-9"
     >
       {children}
     </Link>
@@ -27,9 +23,22 @@ const Icon = ({ href, children }: { href: string; children: ReactNode }) => {
 };
 
 export function Footer() {
+  const { ref, isInView } = useAnimateInView({
+    once: true,
+    margin: "-100px",
+  });
+
   return (
-    <div className=" pt-8 bg-muted">
-      <div className="flex flex-col items-center w-10/12 lg:w-8/12 mx-auto rounded-3xl text-secondary-foreground dark:text-secondary-foreground bg-secondary dark:bg-secondary-8 px-10 py-10 mb-16">
+    <div className="pt-8 bg-muted">
+      {/* Top CTA Section */}
+      <motion.div
+        ref={ref}
+        initial={{ opacity: 0, y: 30 }}
+        animate={isInView ? { opacity: 1, y: 0 } : {}}
+        transition={{ ease: [0.6, -0.05, 0.01, 0.99], duration: 0.8 }}
+        className="flex flex-col items-center w-10/12 lg:w-8/12 mx-auto rounded-3xl 
+        text-secondary-foreground dark:text-secondary-foreground bg-secondary dark:bg-secondary-8 px-10 py-10 mb-16"
+      >
         <div className="text-lg lg:text-3xl font-semibold mb-6">
           Ready to be part of the solution?
         </div>
@@ -45,24 +54,36 @@ export function Footer() {
           target="_blank"
           rel="noopener noreferrer"
         >
-          <button className="flex border rounded-md bg-white dark:bg-muted px-3 py-3 text-blue-900 dark:text-white font-semibold hover:bg-gray-300 dark:hover:bg-gray-700 transition delay-150">
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            className="flex border rounded-md bg-white dark:bg-muted px-3 py-3 text-blue-900 dark:text-white font-semibold hover:bg-gray-300 dark:hover:bg-gray-700 transition delay-150"
+          >
             Join our community
-          </button>
+          </motion.button>
         </Link>
-      </div>
+      </motion.div>
+
+      {/* Footer Links Section */}
       <section className="w-full h-full px-[10px] md:px-[50px] py-[25px] mt-[30px] bg-muted">
-        <div className="md:flex md:justify-between md:space-x-3 space-y-4 md:space-y-0">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ ease: "easeOut", duration: 0.8 }}
+          className="md:flex md:justify-between md:space-x-3 space-y-4 md:space-y-0"
+        >
+          {/* Subscribe */}
           <div className="w-full md:w-4/12">
-            <p className="font-semibold text-[18px] mb-2 dark:text-white">Subscribe</p>
+            <p className="font-semibold text-[18px] mb-2 dark:text-white">
+              Subscribe
+            </p>
             <p className="text-[15px] font-light dark:text-gray-300">
               Join our newsletter to stay up to date on features <br />
               and releases
             </p>
-
             <div className="w-full">
               <GetMail />
             </div>
-
             <p className="text-[10px] mt-3 dark:text-gray-400">
               By Subscribing you agree with our{" "}
               <Link
@@ -70,58 +91,78 @@ export function Footer() {
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                <span className="font-medium underline dark:text-gray-300">Privacy policy</span>
+                <span className="font-medium underline dark:text-gray-300">
+                  Privacy policy
+                </span>
               </Link>
             </p>
           </div>
 
+          {/* Quick Links */}
           <div className="w-full md:w-2/12">
-            <p className="font-medium text-[15px] dark:text-white">Quick Links</p>
+            <p className="font-medium text-[15px] dark:text-white">
+              Quick Links
+            </p>
             <div className="flex flex-col space-y-3 pt-4">
               {quickLinks.map((link) => (
-                <a
-                  className="underline font-light text-[15px] text-dark dark:text-gray-300 cursor-pointer hover:text-secondary-7 dark:hover:text-secondary-5 transition-colors duration-300"
-                  href={link.route}
+                <motion.a
                   key={link.key}
+                  href={link.route}
+                  whileHover={{ x: 4 }}
+                  className="underline font-light text-[15px] text-dark dark:text-gray-300 cursor-pointer hover:text-secondary-7 dark:hover:text-secondary-5 transition-colors duration-300"
                 >
                   {link.label}
-                </a>
+                </motion.a>
               ))}
             </div>
           </div>
 
+          {/* Contact Links */}
           <div className="w-full md:w-2/12">
-            <p className="font-medium text-[15px] dark:text-white">Contact Us</p>
+            <p className="font-medium text-[15px] dark:text-white">
+              Contact Us
+            </p>
             <div className="flex flex-col space-y-3 pt-4">
               {contactLinks.map((link) => (
-                <a
-                  className="underline font-light text-[15px] text-dark dark:text-gray-300 cursor-pointer hover:text-secondary-7 dark:hover:text-secondary-5 transition-colors duration-300"
-                  href={link.route}
+                <motion.a
                   key={link.key}
+                  href={link.route}
+                  whileHover={{ x: 4 }}
+                  className="underline font-light text-[15px] text-dark dark:text-gray-300 cursor-pointer hover:text-secondary-7 dark:hover:text-secondary-5 transition-colors duration-300"
                 >
                   {link.label}
-                </a>
+                </motion.a>
               ))}
             </div>
           </div>
 
+          {/* Legal Links */}
           <div className="w-full md:w-2/12">
             <p className="font-medium text-[15px] dark:text-white">Legal</p>
             <div className="flex flex-col space-y-3 pt-4">
               {legalLinks.map((link) => (
-                <a
-                  className="underline font-light text-[15px] text-dark dark:text-gray-300 cursor-pointer hover:text-secondary-7 dark:hover:text-secondary-5 transition-colors duration-300"
-                  href={link.route}
+                <motion.a
                   key={link.key}
+                  href={link.route}
+                  whileHover={{ x: 4 }}
+                  className="underline font-light text-[15px] text-dark dark:text-gray-300 cursor-pointer hover:text-secondary-7 dark:hover:text-secondary-5 transition-colors duration-300"
                 >
                   {link.label}
-                </a>
+                </motion.a>
               ))}
             </div>
           </div>
-        </div>
+        </motion.div>
+
+        {/* Bottom Bar */}
         <hr className="border-[#A6A6A6] dark:border-gray-700 my-[30px]" />
-        <div className="md:flex md:justify-between w-full">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.7 }}
+          className="md:flex md:justify-between w-full"
+        >
           <p className="text-[13px] text-center md:text-left mb-2 md:mb-0 dark:text-gray-400">
             Copyright © 2024{" "}
             <span className="text-bold font-medium underline dark:text-gray-300">
@@ -147,7 +188,7 @@ export function Footer() {
               <Youtube width={15} height={15} />
             </Icon>
           </div>
-        </div>
+        </motion.div>
       </section>
     </div>
   );

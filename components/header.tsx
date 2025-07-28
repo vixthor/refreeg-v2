@@ -1,16 +1,16 @@
-"use client"
+"use client";
 
 import { useState } from "react";
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { ThemeToggle } from "@/components/theme-toggle"
-import { UserNav } from "@/components/user-nav"
-import { useAuth } from "@/hooks/use-auth"
-import { Logo } from "@/components/logo"
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { UserNav } from "@/components/user-nav";
+import { useAuth } from "@/hooks/use-auth";
+import { Logo } from "@/components/logo";
 // Import the useAdmin hook
-import { useAdmin } from "@/hooks/use-admin"
-import { LayoutDashboard, ShieldAlert } from "lucide-react"
+import { useAdmin } from "@/hooks/use-admin";
+import { LayoutDashboard, ShieldAlert } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -49,10 +49,9 @@ const MenuLink = ({
 );
 
 export function Header() {
-  const pathname = usePathname()
-  const { user, isLoading } = useAuth()
+  const pathname = usePathname();
+  const { user, isLoading } = useAuth();
   const [aboutUsOpen, setAboutUsOpen] = useState(false);
-
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -62,15 +61,21 @@ export function Header() {
           <nav className="hidden gap-6 md:flex">
             <Link
               href="/causes"
-              className={`text-sm font-medium transition-colors hover:text-secondary ${pathname === "/causes" ? "text-foreground" : "text-muted-foreground"
-                }`}
+              className={`text-sm font-medium transition-colors hover:text-secondary ${
+                pathname === "/causes"
+                  ? "text-foreground"
+                  : "text-muted-foreground"
+              }`}
             >
               Causes
             </Link>
             <Link
               href="/how-it-works"
-              className={`text-sm font-medium transition-colors hover:text-secondary ${pathname === "/how-it-works" ? "text-foreground" : "text-muted-foreground"
-                }`}
+              className={`text-sm font-medium transition-colors hover:text-secondary ${
+                pathname === "/how-it-works"
+                  ? "text-foreground"
+                  : "text-muted-foreground"
+              }`}
             >
               How It Works
             </Link>
@@ -96,57 +101,53 @@ export function Header() {
               </DropdownMenuTrigger>
 
               <DropdownMenuContent
-                className="absolute mt-2 py-4 bg-white shadow-lg rounded-md hidden lg:block"
+                className="mt-2 bg-white shadow-lg rounded-md w-max min-w-[12rem] px-1 py-2"
                 align="start"
               >
-                <div className="">
-                  <div className="flex">
-                    <DropdownMenuItem asChild>
-                      <Link
-                        href="/about-us/OurMission"
-                        className="whitespace-nowrap hover:underline hover:bg-[#D6EBFF] px-4 py-2 block"
-                      >
-                        Our Mission
-                      </Link>
-                    </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link
+                    href="/about-us/OurMission"
+                    className="whitespace-nowrap hover:underline hover:bg-[#D6EBFF] px-4 py-2 block"
+                  >
+                    Our Mission
+                  </Link>
+                </DropdownMenuItem>
 
-                    <DropdownMenuItem asChild>
-                      <Link
-                        href="/about-us/OurStory"
-                        className="whitespace-nowrap hover:underline hover:bg-[#D6EBFF] px-4 py-2 block"
-                      >
-                        Our Story (The &quot;Why&quot; Behind RefreeG)
-                      </Link>
-                    </DropdownMenuItem>
-                  </div>
-                  <div className="flex">
-                    <DropdownMenuItem asChild>
-                      <Link
-                        href="/about-us/OurImpact"
-                        className="whitespace-nowrap hover:underline hover:bg-[#D6EBFF] px-4 py-2 block"
-                      >
-                        Our Impact
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link
-                        href="/about-us/WhatWeDo"
-                        className="whitespace-nowrap hover:underline hover:bg-[#D6EBFF] px-4 py-2 block"
-                      >
-                        Who are we made by?
-                      </Link>
-                    </DropdownMenuItem>
-                  </div>
+                <DropdownMenuItem asChild>
+                  <Link
+                    href="/about-us/OurStory"
+                    className="whitespace-nowrap hover:underline hover:bg-[#D6EBFF] px-4 py-2 block"
+                  >
+                    Our Story (The "Why" Behind RefreeG)
+                  </Link>
+                </DropdownMenuItem>
 
-                  <DropdownMenuItem asChild>
-                    <Link
-                      href="/about-us/WhatWeDo"
-                      className="whitespace-nowrap hover:underline hover:bg-[#D6EBFF] px-4 py-2 block"
-                    >
-                      What We Do
-                    </Link>
-                  </DropdownMenuItem>
-                </div>
+                <DropdownMenuItem asChild>
+                  <Link
+                    href="/about-us/OurImpact"
+                    className="whitespace-nowrap hover:underline hover:bg-[#D6EBFF] px-4 py-2 block"
+                  >
+                    Our Impact
+                  </Link>
+                </DropdownMenuItem>
+
+                <DropdownMenuItem asChild>
+                  <Link
+                    href="/about-us/WhatWeDo"
+                    className="whitespace-nowrap hover:underline hover:bg-[#D6EBFF] px-4 py-2 block"
+                  >
+                    Who are we made by?
+                  </Link>
+                </DropdownMenuItem>
+
+                <DropdownMenuItem asChild>
+                  <Link
+                    href="/about-us/WhatWeDo"
+                    className="whitespace-nowrap hover:underline hover:bg-[#D6EBFF] px-4 py-2 block"
+                  >
+                    What We Do
+                  </Link>
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
 
@@ -163,7 +164,6 @@ export function Header() {
                 Dashboard
               </Link>
             )} */}
-
           </nav>
         </div>
         <div className="flex items-center gap-5">
@@ -176,7 +176,9 @@ export function Header() {
           {!isLoading && !user ? (
             <div className="flex items-center gap-2">
               <Link href="/auth/signin">
-                <Button size="sm" variant="default">Sign In</Button>
+                <Button size="sm" variant="default">
+                  Sign In
+                </Button>
               </Link>
             </div>
           ) : (
@@ -185,6 +187,5 @@ export function Header() {
         </div>
       </div>
     </header>
-  )
+  );
 }
-
