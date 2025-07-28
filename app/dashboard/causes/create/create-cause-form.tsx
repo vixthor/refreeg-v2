@@ -42,7 +42,6 @@ const currencies = [{ id: "NGN", name: "Naira (₦)" }];
 
 type FormData = {
   title: string;
-  description: string;
   category: string;
   goal: string;
   currency: string;
@@ -55,18 +54,17 @@ type FormData = {
 
 type FormErrors = {
   title?: string;
-  description?: string;
   category?: string;
   goal?: string;
   coverImage?: string;
   startDate?: string;
   endDate?: string;
   multimedia?: string;
+  sections?: { heading?: string; description?: string }[];
 };
 
 type CauseFormData = {
   title: string;
-  description: string;
   category: string;
   goal: string;
   currency: string;
@@ -84,12 +82,6 @@ const validateForm = (formData: FormData): FormErrors => {
     errors.title = "Title is required";
   } else if (formData.title.length < 5) {
     errors.title = "Title must be at least 5 characters long";
-  }
-
-  if (!formData.description.trim()) {
-    errors.description = "Description is required";
-  } else if (formData.description.length < 50) {
-    errors.description = "Description must be at least 50 characters long";
   }
 
   if (!formData.category) {
@@ -122,6 +114,23 @@ const validateForm = (formData: FormData): FormErrors => {
     }
   }
 
+  // Validate sections
+  if (formData.sections && formData.sections.length > 0) {
+    const sectionErrorsArray = formData.sections.map((section) => {
+      const sectionErrors: { heading?: string; description?: string } = {};
+      if (!section.heading.trim())
+        sectionErrors.heading = "Heading is required";
+      if (!section.description || !section.description.trim())
+        sectionErrors.description = "Sub-description is required";
+      return sectionErrors;
+    });
+
+    // Only add sections errors if there are actual errors
+    if (sectionErrorsArray.some((err) => Object.keys(err).length > 0)) {
+      errors.sections = sectionErrorsArray;
+    }
+  }
+
   // Check total multimedia size
   const MAX_TOTAL_SIZE = 100 * 1024 * 1024; // 100MB in bytes
   const totalSize =
@@ -142,7 +151,6 @@ export default function CreateCauseForm() {
   const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     title: "",
-    description: "",
     category: "",
     goal: "",
     currency: "NGN",
@@ -159,7 +167,6 @@ export default function CreateCauseForm() {
     const savedDraft = localStorage.getItem("causeDraft");
     if (savedDraft) {
       const parsedDraft = JSON.parse(savedDraft);
-      // Don't restore files from localStorage
       setFormData((prev) => ({
         ...parsedDraft,
         coverImage: prev.coverImage,
@@ -169,7 +176,7 @@ export default function CreateCauseForm() {
         endDate: parsedDraft.endDate
           ? new Date(parsedDraft.endDate)
           : undefined,
-        multimedia: [], // Initialize as empty array since files aren't stored in localStorage
+        multimedia: [],
       }));
     }
   }, []);
@@ -187,9 +194,7 @@ export default function CreateCauseForm() {
     localStorage.setItem("causeDraft", JSON.stringify(serializedData));
   }, [formData]);
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     // Clear error when user starts typing
@@ -279,12 +284,17 @@ export default function CreateCauseForm() {
     switch (step) {
       case 1:
         return (
-          !currentErrors.title &&
-          !currentErrors.description &&
-          !currentErrors.category &&
-          !currentErrors.goal
+          !currentErrors.title && !currentErrors.category && !currentErrors.goal
         );
       case 2:
+        // Check for section errors
+        if (currentErrors.sections) {
+          // If there are section errors, check if any sections have errors
+          return !currentErrors.sections.some(
+            (err) => err.heading || err.description
+          );
+        }
+        // If there are no section errors in the currentErrors object, validate directly
         return formData.sections.every(
           (section) =>
             section.heading.trim() !== "" && section.description.trim() !== ""
@@ -292,7 +302,6 @@ export default function CreateCauseForm() {
       case 3:
         return !currentErrors.startDate && !currentErrors.endDate;
       case 4:
-        // We don't need to validate multimedia, just the cover image
         return !currentErrors.coverImage;
       default:
         return true;
@@ -307,20 +316,37 @@ export default function CreateCauseForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     if (!user) return;
+    // Only allow submit on last step
+
+    if (currentStep < 5) {
+      nextStep();
+      return;
+    }
 
     setSubmitting(true);
-
     const validationErrors = validateForm(formData);
-    if (Object.keys(validationErrors).length > 0) {
+
+    // Check if there are any validation errors
+    const hasErrors = Object.keys(validationErrors).some((key) => {
+      if (key === "sections" && validationErrors.sections) {
+        // For sections, check if any section has actual errors
+        return validationErrors.sections.some(
+          (section) => Object.keys(section).length > 0
+        );
+      }
+      return validationErrors[key as keyof FormErrors] !== undefined;
+    });
+
+    if (hasErrors) {
+      console.log("Found validation errors:", validationErrors);
       setErrors(validationErrors);
       setSubmitting(false);
       return;
     }
-
     const causeData: CauseFormData = {
       title: formData.title,
-      description: formData.description,
       category: formData.category,
       goal: formData.goal,
       currency: formData.currency,
@@ -392,21 +418,6 @@ export default function CreateCauseForm() {
               />
               {errors.title && (
                 <p className="text-sm text-red-500">{errors.title}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                name="description"
-                placeholder="Describe your cause in detail"
-                value={formData.description}
-                onChange={handleChange}
-                className={errors.description ? "border-red-500" : ""}
-              />
-              {errors.description && (
-                <p className="text-sm text-red-500">{errors.description}</p>
               )}
             </div>
 
@@ -483,7 +494,6 @@ export default function CreateCauseForm() {
                 Add Section
               </Button>
             </div>
-
             {formData.sections.map((section, index) => (
               <Card key={index} className="p-4">
                 <div className="space-y-4">
@@ -500,7 +510,6 @@ export default function CreateCauseForm() {
                       </Button>
                     )}
                   </div>
-
                   <div className="space-y-2">
                     <Label htmlFor={`section-heading-${index}`}>
                       Sub-heading
@@ -512,9 +521,18 @@ export default function CreateCauseForm() {
                         updateSection(index, "heading", e.target.value)
                       }
                       placeholder="Enter sub-heading"
+                      className={
+                        errors.sections && errors.sections[index]?.heading
+                          ? "border-red-500"
+                          : ""
+                      }
                     />
+                    {errors.sections && errors.sections[index]?.heading && (
+                      <p className="text-sm text-red-500">
+                        {errors.sections[index]?.heading}
+                      </p>
+                    )}
                   </div>
-
                   <div className="space-y-2">
                     <Label htmlFor={`section-description-${index}`}>
                       Sub-description
@@ -526,7 +544,17 @@ export default function CreateCauseForm() {
                         updateSection(index, "description", e.target.value)
                       }
                       placeholder="Enter sub-description"
+                      className={
+                        errors.sections && errors.sections[index]?.description
+                          ? "border-red-500"
+                          : ""
+                      }
                     />
+                    {errors.sections && errors.sections[index]?.description && (
+                      <p className="text-sm text-red-500">
+                        {errors.sections[index]?.description}
+                      </p>
+                    )}
                   </div>
                 </div>
               </Card>
@@ -771,7 +799,9 @@ export default function CreateCauseForm() {
               {formData.sections.map((section, index) => (
                 <div key={index} className="space-y-2">
                   <h5 className="font-medium">{section.heading}</h5>
-                  <p className="text-sm">{section.description}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {section.description}
+                  </p>
                 </div>
               ))}
             </div>
@@ -889,7 +919,7 @@ export default function CreateCauseForm() {
         </CardDescription>
         <Progress value={(currentStep / 5) * 100} className="mt-4" />
       </CardHeader>
-      <form onSubmit={handleSubmit} className="space-y-8">
+      <form onSubmit={handleSubmit} className="space-y-8" autoComplete="off">
         <CardContent className="space-y-4">{renderStep()}</CardContent>
 
         <CardFooter className="flex justify-between">

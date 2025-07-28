@@ -48,8 +48,6 @@ export default async function CausesPage({
           <CausesList category={category} page={page} pageSize={pageSize} />
         </Suspense>
       </div>
-
-      <AdBanner />
     </div>
   );
 }
