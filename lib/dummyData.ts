@@ -1,6 +1,21 @@
 import React from "react";
 import { FaHeartbeat, FaMapMarkerAlt } from "react-icons/fa";
 import { CauseTable, DonationHistory, SignedPetitions } from "@/lib/type";
+import {
+  Info,
+  ShieldCheck,
+  User,
+  Users,
+  HeartHandshake,
+  CreditCard,
+  FileText,
+  BadgeCheck,
+  HelpCircle,
+  MessageSquare,
+  Bug,
+  KeyRound,
+  PhoneCall,
+} from "lucide-react";
 export const causesData = [
   {
     id: 1,
@@ -266,93 +281,129 @@ export const stories = [
 ];
 
 export const faqs = [
+  // FEATURES
   {
+    category: "features",
+    icon: Info,
     question: "What is RefreeG?",
     answer:
       "RefreeG is a crowdfunding platform dedicated to supporting various causes with a strong focus on fostering socio-economic growth in African communities through blockchain transparency.",
   },
   {
+    category: "features",
+    icon: ShieldCheck,
     question: "How does RefreeG ensure transparency?",
     answer:
       "RefreeG uses blockchain technology to log and track donations. This ensures that each transaction is immutable and can be traced for accountability and transparency.",
   },
   {
+    category: "features",
+    icon: User,
     question: "How do I create an account on RefreeG?",
     answer:
       "To create an account, click on the 'Sign Up' button on the homepage and follow the on-screen instructions to register.",
   },
   {
+    category: "features",
+    icon: User,
     question: "How can I set up my profile after signing up?",
     answer:
       "After signing up, go to your profile settings and fill out your personal and cause-related details to complete your profile.",
   },
   {
+    category: "features",
+    icon: Users,
     question: "What is RefreeG’s mission?",
     answer:
       "RefreeG aims to provide transparent, secure, and efficient crowdfunding solutions for education and other verified causes across Africa.",
   },
   {
+    category: "features",
+    icon: HeartHandshake,
     question: "How do I make a donation on RefreeG?",
     answer:
       "To donate, browse through active causes, select one, and choose your preferred payment method such as Paystack (Naira) or cryptocurrency (like MATIC).",
   },
   {
+    category: "features",
+    icon: CreditCard,
     question: "How can I list a cause on RefreeG?",
     answer:
       "To list a cause, click on 'Start a Cause', fill in the required details, upload supporting documents, and submit it for review by our moderation team.",
   },
   {
+    category: "features",
+    icon: CreditCard,
     question: "What is the withdrawal process like?",
     answer:
       "For Naira donations, funds are transferred instantly to the recipient's bank account. For crypto donations, the timeline depends on blockchain network confirmations.",
   },
   {
+    category: "features",
+    icon: KeyRound,
     question: "How do I reset my RefreeG password?",
     answer:
       "Click on 'Forgot Password?' at the login screen, enter your registered email address, and follow the link sent to your inbox to reset your password.",
   },
   {
+    category: "features",
+    icon: ShieldCheck,
     question: "Does RefreeG support two-factor authentication (2FA)?",
     answer:
       "Yes, you can enable 2FA in your account settings. It adds an extra layer of security by sending a verification code to your registered email.",
   },
+
+  // RESOURCES
   {
+    category: "resources",
+    icon: HelpCircle,
     question: "How can I avoid scams on RefreeG?",
     answer:
       "Only donate to verified causes with clear documentation. If you notice any suspicious activity, report it immediately through our support channels.",
   },
   {
+    category: "resources",
+    icon: FileText,
     question: "Where can I find RefreeG’s terms of service?",
     answer:
       "You can review our terms of service in the 'Policy & Compliance' section. It outlines the rules of usage and types of content prohibited on the platform.",
   },
   {
+    category: "resources",
+    icon: BadgeCheck,
     question: "What is RefreeG’s cause verification process?",
     answer:
       "Every submitted cause undergoes a thorough review process, where documents are checked and authenticity is verified before public listing.",
   },
   {
+    category: "resources",
+    icon: FileText,
     question: "What is RefreeG’s refund policy?",
     answer:
       "All donations made on RefreeG are final and non-refundable. We encourage donors to review cause details thoroughly before donating.",
   },
   {
+    category: "resources",
+    icon: PhoneCall,
     question: "How do I contact RefreeG support?",
     answer:
       "You can reach us via live chat on the platform or send us an email. Our support team is available to assist you with any issues or questions.",
   },
   {
+    category: "resources",
+    icon: Bug,
     question: "How can I report a problem on RefreeG?",
     answer:
       "If you encounter a bug or suspicious activity, use the 'Report a Problem' option in the support section, and our team will look into it promptly.",
   },
   {
+    category: "resources",
+    icon: MessageSquare,
     question: "Is there a RefreeG community forum?",
     answer:
       "Yes, our community forum allows users to engage, ask questions, and get help from other community members and moderators.",
   },
 ];
-
 
 export const DonationHistoryData: DonationHistory[] = [
   {
