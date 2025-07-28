@@ -7,6 +7,7 @@ import { useQueryState } from "nuqs";
 import { ProfileForm } from "./profile-form";
 import { BankDetailsForm } from "./bank-details-form";
 import CryptoDetailsForm from "./crypto-details-form";
+import { NotificationsForm } from "./notifications-form";
 
 export default function SettingsPage() {
   const { user } = useAuth();
@@ -98,11 +99,9 @@ export default function SettingsPage() {
 
         <TabsContent value="notifications">
           <div className="rounded-lg border bg-card text-card-foreground shadow-sm">
-            <div className="p-6">
+            <div className="p-6 space-y-4">
               <h2 className="text-lg font-semibold">Notifications</h2>
-              <p className="text-sm text-muted-foreground mt-2">
-                Notification settings will be available soon.
-              </p>
+              <NotificationsForm />
             </div>
           </div>
         </TabsContent>
