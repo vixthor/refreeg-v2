@@ -53,6 +53,10 @@ export async function sendMail({
     const template = loadTemplate(templateName);
     const html = template(context);
 
+    console.log("Email template loaded:", html);
+
+    console.log("Sending email with context:", context);
+
     // Send email
     const info = await transporter.sendMail({
       from,
