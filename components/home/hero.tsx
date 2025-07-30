@@ -8,9 +8,10 @@ import { motion, useAnimation, AnimationControls } from "framer-motion";
 
 // --- CONFIGURATION ---
 const HERO_IMAGES = ["/hero1.png", "/hero2.jpg", "/hero3.png", "/hero4.png"];
-const SLIDER_SPEED = 50; // seconds for infinite loop
+const SLIDER_SPEED = 70; // seconds for infinite loop
 const IMAGE_SIZE = { width: 300, height: 200 };
 const SLIDE_UP_DURATION = 0.6;
+const IMAGE_GAP = 24; // 6 * 4px (gap-6 in Tailwind)
 
 // --- ANIMATION VARIANTS ---
 const slideUp = (delay = 0) => ({
@@ -35,6 +36,7 @@ const Hero = () => {
   // Sequential image slide-up, then start horizontal slider
   useEffect(() => {
     const runAnimation = async () => {
+      // First, animate images sliding up
       for (let control of imageControls) {
         await control.start({
           opacity: 1,
@@ -43,8 +45,12 @@ const Hero = () => {
         });
       }
 
+      // Calculate the total width of one set of images
+      const totalWidth = HERO_IMAGES.length * (IMAGE_SIZE.width + IMAGE_GAP);
+
+      // Start infinite horizontal scroll
       sliderControls.start({
-        x: ["0%", "-50%"],
+        x: -totalWidth,
         transition: {
           repeat: Infinity,
           repeatType: "loop",
@@ -124,22 +130,25 @@ const Hero = () => {
             animate={sliderControls}
             initial={{ x: 0 }}
           >
-            {[...HERO_IMAGES, ...HERO_IMAGES].map((src, index) => (
-              <motion.div
-                key={index}
-                className="flex-shrink-0 flex justify-center items-center"
-                style={{ width: IMAGE_SIZE.width, height: IMAGE_SIZE.height }}
-                initial={{ opacity: 0, y: 40 }}
-                animate={imageControls[index % HERO_IMAGES.length]}
-              >
-                <img
-                  src={src}
-                  alt={`img${index + 1}`}
-                  className="object-cover rounded-xl shadow-lg"
-                  style={IMAGE_SIZE}
-                />
-              </motion.div>
-            ))}
+            {/* Triple the images for seamless looping */}
+            {[...HERO_IMAGES, ...HERO_IMAGES, ...HERO_IMAGES].map(
+              (src, index) => (
+                <motion.div
+                  key={index}
+                  className="flex-shrink-0 flex justify-center items-center"
+                  style={{ width: IMAGE_SIZE.width, height: IMAGE_SIZE.height }}
+                  initial={{ opacity: 0, y: 40 }}
+                  animate={imageControls[index % HERO_IMAGES.length]}
+                >
+                  <img
+                    src={src}
+                    alt={`Hero image ${(index % HERO_IMAGES.length) + 1}`}
+                    className="object-cover rounded-xl shadow-lg"
+                    style={IMAGE_SIZE}
+                  />
+                </motion.div>
+              )
+            )}
           </motion.div>
         </div>
       </div>
