@@ -1,9 +1,16 @@
-import Link from "next/link"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Progress } from "@/components/ui/progress"
-import { Badge } from "@/components/ui/badge"
-import { listCauses } from "@/actions"
-import { DonateButton } from "@/components/donate-button"
+import Link from "next/link";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
+import { listCauses } from "@/actions";
+import { DonateButton } from "@/components/donate-button";
 import {
   GraduationCap,
   HeartPulse,
@@ -11,9 +18,8 @@ import {
   Users,
   AlertTriangle,
   PawPrint,
-  Sparkles
-} from "lucide-react"
-
+  Sparkles,
+} from "lucide-react";
 
 // Mock data for featured causes
 // const featuredCauses = [
@@ -47,17 +53,45 @@ import {
 // ]
 
 export async function FeaturedCauses() {
-  const featuredCauses = await listCauses()
+  const featuredCauses = await listCauses();
 
   const categoriesWithIcons = [
-    { id: "education", name: "Education", icon: <GraduationCap className="mr-1 h-4 w-4" /> },
-    { id: "health", name: "Healthcare", icon: <HeartPulse className="mr-1 h-4 w-4" /> },
-    { id: "environment", name: "Environment", icon: <Leaf className="mr-1 h-4 w-4" /> },
-    { id: "community", name: "Community", icon: <Users className="mr-1 h-4 w-4" /> },
-    { id: "disaster", name: "Disaster Relief", icon: <AlertTriangle className="mr-1 h-4 w-4" /> },
-    { id: "animals", name: "Animal Welfare", icon: <PawPrint className="mr-1 h-4 w-4" /> },
-     { id: "creative", name: "Creative", icon: <Sparkles className="mr-1 h-4 w-4" /> },
-  ]
+    {
+      id: "education",
+      name: "Education",
+      icon: <GraduationCap className="mr-1 h-4 w-4" />,
+    },
+    {
+      id: "health",
+      name: "Healthcare",
+      icon: <HeartPulse className="mr-1 h-4 w-4" />,
+    },
+    {
+      id: "environment",
+      name: "Environment",
+      icon: <Leaf className="mr-1 h-4 w-4" />,
+    },
+    {
+      id: "community",
+      name: "Community",
+      icon: <Users className="mr-1 h-4 w-4" />,
+    },
+    {
+      id: "disaster",
+      name: "Disaster Relief",
+      icon: <AlertTriangle className="mr-1 h-4 w-4" />,
+    },
+    {
+      id: "animals",
+      name: "Animal Welfare",
+      icon: <PawPrint className="mr-1 h-4 w-4" />,
+    },
+    {
+      id: "creative",
+      name: "Creative",
+      icon: <Sparkles className="mr-1 h-4 w-4" />,
+    },
+  ];
 
   if (!featuredCauses || featuredCauses.length === 0) {
     return (
@@ -83,27 +117,36 @@ export async function FeaturedCauses() {
         </div>
         <h3 className="text-lg font-semibold">No Causes Found</h3>
         <p className="text-sm text-muted-foreground mt-2">
-          There are currently no causes available. Check back later for new opportunities to make a difference.
+          There are currently no causes available. Check back later for new
+          opportunities to make a difference.
         </p>
       </div>
-    )
+    );
   }
 
   return (
     <div className="grid gap-6 pt-8 md:grid-cols-2 lg:grid-cols-3">
       {featuredCauses.map((cause) => {
         // Find the category based on the cause's category id
-        const category = categoriesWithIcons.find((cat) => cat.id === cause.category)
+        const category = categoriesWithIcons.find(
+          (cat) => cat.id === cause.category,
+        );
 
         return (
           <Link key={cause.id} href={`/causes/${cause.id}`} className="group">
             <Card className="overflow-hidden cursor-pointer transition hover:shadow-lg h-full flex flex-col">
               <div className="aspect-video w-full overflow-hidden">
-                <img src={cause.image || "/placeholder.svg"} alt={cause.title} className="object-cover w-full h-full" />
+                <img
+                  src={cause.image || "/placeholder.svg"}
+                  alt={cause.title}
+                  className="object-cover w-full h-full"
+                />
               </div>
               <CardHeader className="flex flex-col flex-1 p-4">
-                <CardTitle className="font-medium text-base md:text-xl lg:text-2xl">{cause.title}</CardTitle>
-                <CardDescription>
+                <CardTitle className="font-medium text-base md:text-xl lg:text-2xl">
+                  {cause.title}
+                </CardTitle>
+                {/* <CardDescription>
                   {cause.description.split(" ").length > 25
                     ? (
                         <>
@@ -112,11 +155,17 @@ export async function FeaturedCauses() {
                         </>
                       )
                     : cause.description}
-                </CardDescription>
+                </CardDescription> */}
                 <div className="flex items-center gap-2 pt-2">
-                  <Badge variant="outline" className="text-xs px-2 py-1 rounded-full">
+                  <Badge
+                    variant="outline"
+                    className="text-xs px-2 py-1 rounded-full"
+                  >
                     {category?.icon}
-                    {category ? category.name.charAt(0).toUpperCase() + category.name.slice(1) : "Unknown"}
+                    {category
+                      ? category.name.charAt(0).toUpperCase() +
+                        category.name.slice(1)
+                      : "Unknown"}
                   </Badge>
                 </div>
               </CardHeader>
@@ -125,10 +174,17 @@ export async function FeaturedCauses() {
                 <CardContent className="flex-1">
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
-                      <span className="font-medium">₦{cause.raised.toLocaleString()}</span>
-                      <span className="text-muted-foreground">of ₦{cause.goal.toLocaleString()}</span>
+                      <span className="font-medium">
+                        ₦{cause.raised.toLocaleString()}
+                      </span>
+                      <span className="text-muted-foreground">
+                        of ₦{cause.goal.toLocaleString()}
+                      </span>
                     </div>
-                    <Progress value={(cause.raised / cause.goal) * 100} className="h-2 bg-muted" />
+                    <Progress
+                      value={(cause.raised / cause.goal) * 100}
+                      className="h-2 bg-muted"
+                    />
                   </div>
                 </CardContent>
                 <CardFooter>
@@ -139,9 +195,8 @@ export async function FeaturedCauses() {
               </div>
             </Card>
           </Link>
-        )
+        );
       })}
     </div>
-  )
+  );
 }
-
