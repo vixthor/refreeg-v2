@@ -32,6 +32,7 @@ export default function SettingsPage() {
   const { isVerified, isLoading: isKycLoading } = useKyc(user?.id);
   const [hasKyc, setHasKyc] = useState<boolean | null>(null);
   const [profileComplete, setProfileComplete] = useState<boolean | null>(null);
+  const [showProfileCompleteOnce, setShowProfileCompleteOnce] = useState(false);
 
   const [activeTab, setActiveTab] = useQueryState("tab", {
     defaultValue: "profile",
@@ -47,6 +48,12 @@ export default function SettingsPage() {
 
         const { isComplete } = await isProfileComplete(user.id);
         setProfileComplete(isComplete);
+
+        const hasSeen = localStorage.getItem("hasSeenProfileComplete");
+        if (isComplete && !hasSeen) {
+          setShowProfileCompleteOnce(true);
+          localStorage.setItem("hasSeenProfileComplete", "true");
+        }
       }
     }
     checkRequirements();
@@ -144,27 +151,12 @@ export default function SettingsPage() {
       )}
 
       {/* Profile Completion Status */}
-      {profileComplete !== null && (
-        <Alert variant={profileComplete ? "default" : "destructive"}>
+      {showProfileCompleteOnce && (
+        <Alert variant="default">
           <AlertCircle className="h-4 w-4" />
-          <AlertTitle>
-            {profileComplete ? "Profile Complete" : "Profile Incomplete"}
-          </AlertTitle>
+          <AlertTitle>Profile Complete</AlertTitle>
           <AlertDescription className="flex items-center justify-between">
-            <span>
-              {profileComplete
-                ? "Your profile is complete and you can list causes."
-                : "Complete your profile to list causes."}
-            </span>
-            {!profileComplete && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setActiveTab("profile")}
-              >
-                Complete Profile
-              </Button>
-            )}
+            <span>Your profile is complete and you can list causes.</span>
           </AlertDescription>
         </Alert>
       )}
