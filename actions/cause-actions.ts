@@ -199,8 +199,6 @@ export async function createCause(
     throw causeError;
   }
 
-  console.log("Here1");
-
   // Insert sections if they exist
   if (causeData.sections && causeData.sections.length > 0) {
     const sections = causeData.sections.map((section) => ({
@@ -218,8 +216,6 @@ export async function createCause(
       throw sectionsError;
     }
   }
-
-  console.log("Here2");
 
   revalidatePath("/dashboard/causes");
   return cause as Cause;
