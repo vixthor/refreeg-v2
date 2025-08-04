@@ -1,52 +1,156 @@
-import HeroComponent from "@/components/heroComponent";
-import { ArrowRight } from "lucide-react";
+"use client";
+import React, { useEffect } from "react";
 import Image from "next/image";
+import { H1, P } from "@/components/typograpy";
+import { Button } from "../ui/button";
 import Link from "next/link";
-import React from "react";
+import { motion, useAnimation, AnimationControls } from "framer-motion";
 
+// --- CONFIGURATION ---
+const HERO_IMAGES = ["/hero1.png", "/hero2.jpg", "/hero3.png", "/hero4.png"];
+const SLIDER_SPEED = 70; // seconds for infinite loop
+const IMAGE_SIZE = { width: 300, height: 200 };
+const SLIDE_UP_DURATION = 0.6;
+const IMAGE_GAP = 24; // 6 * 4px (gap-6 in Tailwind)
+
+// --- ANIMATION VARIANTS ---
+const slideUp = (delay = 0) => ({
+  initial: { opacity: 0, y: 30 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: SLIDE_UP_DURATION, delay },
+});
+
+const slideFrom = (x: number, delay = 0) => ({
+  initial: { opacity: 0, x },
+  animate: { opacity: 1, x: 0 },
+  transition: { duration: SLIDE_UP_DURATION, delay },
+});
+
+// --- HERO COMPONENT ---
 const Hero = () => {
+  const sliderControls = useAnimation();
+  const imageControls: AnimationControls[] = HERO_IMAGES.map(() =>
+    useAnimation()
+  );
+
+  // Sequential image slide-up, then start horizontal slider
+  useEffect(() => {
+    const runAnimation = async () => {
+      // First, animate images sliding up
+      for (let control of imageControls) {
+        await control.start({
+          opacity: 1,
+          y: 0,
+          transition: { duration: SLIDE_UP_DURATION, ease: "easeOut" },
+        });
+      }
+
+      // Calculate the total width of one set of images
+      const totalWidth = HERO_IMAGES.length * (IMAGE_SIZE.width + IMAGE_GAP);
+
+      // Start infinite horizontal scroll
+      sliderControls.start({
+        x: -totalWidth,
+        transition: {
+          repeat: Infinity,
+          repeatType: "loop",
+          duration: SLIDER_SPEED,
+          ease: "linear",
+        },
+      });
+    };
+
+    runAnimation();
+  }, [imageControls, sliderControls]);
+
   return (
     <section
-      className="w-full md:px-[50px] px-[10px] py-[15px] md:py-[25px] md:flex justify-between relative min-h-[90vh] bg-background"
+      className="w-full bg-background flex flex-col items-center justify-center"
       id="home"
     >
-      {/* african map  */}
-      <Image
-        src={"/map.svg"}
-        alt="African Map"
-        width={100}
-        height={100}
-        className="w-[600px] absolute left-1/2 md:top-0 top-24 transform -translate-x-1/2 dark:opacity-20"
-      />
+      {/* HERO TEXT */}
+      <div className="flex flex-col gap-4 max-w-[925px] w-full justify-center items-center text-center">
+        <motion.div className="flex gap-2 items-center" {...slideUp(0.1)}>
+          <Image
+            src="/Users.svg"
+            alt="Group of users icon"
+            width={20}
+            height={20}
+          />
+          <P>Join thousands already fundraising on RefreeG</P>
+        </motion.div>
 
-      <div className="md:px-0 px-[30px]">
-        <HeroComponent img1={"/heropic1.png"} img2={"/heropic2.png"} />
+        <motion.div {...slideUp(0.2)}>
+          <H1 className="font-bold">
+            Empower Communities, Build a Better Africa
+          </H1>
+        </motion.div>
+
+        <motion.div {...slideUp(0.3)}>
+          <P className="font-light">
+            Support causes that foster socioeconomic growth through transparent
+            and secure crowdfunding
+          </P>
+        </motion.div>
+
+        <div className="flex gap-4">
+          <motion.div {...slideFrom(-20, 0.4)}>
+            <Button asChild className="px-3.5 py-2 bg-blue-700 text-white">
+              <Link href="/causes">Explore Causes</Link>
+            </Button>
+          </motion.div>
+
+          <motion.div {...slideFrom(20, 0.4)}>
+            <Button
+              asChild
+              className="px-3.5 py-2 bg-white text-[#003366] border border-[#003366] hover:bg-white hover:text-[#003366] hover:border-[#003366]"
+            >
+              <Link href="/auth/signin">
+                <span className="flex items-center gap-2">
+                  Join the change
+                  <Image
+                    src="/images/arrow-up-right 1.svg"
+                    alt="Join the change"
+                    width={20}
+                    height={20}
+                  />
+                </span>
+              </Link>
+            </Button>
+          </motion.div>
+        </div>
       </div>
-      {/* hero caption  */}
-      <div className="md:pt-10 mt-12 md:mt-0 text-center">
-        <p className="text-[12px] md:text-[14px] font-semibold text-center text-foreground">
-          Building Africa's number 1 crowd funding platform.
-        </p>
-        <p className="text-[65px] md:text-[100px] font-bold md:font-semibold  text-[#10467c]">
-          RefreeG
-        </p>
-        <p className="md:text-[20px] text-[16px] text-foreground font-medium">
-          Your go to crowdfunding platform for building a new{" "}
-          <br className="hidden md:block" /> Africa, one community at a time
-        </p>
 
-        <Link
-          href={"/causes"}
-          className="flex gap-[6px] py-[10px] px-[15px] rounded-[8px] text-brand text-[15px] items-center justify-center mx-auto relative z-30 
-            md:mt-16 mt-8 font-semibold cursor-pointer bg-muted hover:bg-[#284678] hover:text-secondary-foreground transition"
-        >
-          Explore Causes
-          <ArrowRight size={"18"} />
-        </Link>
-      </div>
-
-      <div className="md:px-0 px-[30px] md:mt-0 mt-6">
-        <HeroComponent img1={"/heropic3.png"} img2={"/heropic4.png"} />
+      {/* SLIDER SECTION */}
+      <div className="relative w-full bg-white overflow-hidden py-12">
+        {/* Infinite Scrolling Images */}
+        <div className="relative z-10 w-full overflow-hidden">
+          <motion.div
+            className="flex gap-6 w-max"
+            animate={sliderControls}
+            initial={{ x: 0 }}
+          >
+            {/* Triple the images for seamless looping */}
+            {[...HERO_IMAGES, ...HERO_IMAGES, ...HERO_IMAGES].map(
+              (src, index) => (
+                <motion.div
+                  key={index}
+                  className="flex-shrink-0 flex justify-center items-center"
+                  style={{ width: IMAGE_SIZE.width, height: IMAGE_SIZE.height }}
+                  initial={{ opacity: 0, y: 40 }}
+                  animate={imageControls[index % HERO_IMAGES.length]}
+                >
+                  <img
+                    src={src}
+                    alt={`Hero image ${(index % HERO_IMAGES.length) + 1}`}
+                    className="object-cover rounded-xl shadow-lg"
+                    style={IMAGE_SIZE}
+                  />
+                </motion.div>
+              )
+            )}
+          </motion.div>
+        </div>
       </div>
     </section>
   );
