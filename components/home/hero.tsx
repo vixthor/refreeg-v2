@@ -63,7 +63,7 @@ const Hero = () => {
       const totalWidth = isMobile
         ? HERO_IMAGES.length * mobileWidth
         : HERO_IMAGES.length * desktopWidth;
-
+        
       sliderControls.start({
         x: -totalWidth,
         transition: {
@@ -139,6 +139,8 @@ const Hero = () => {
             animate={sliderControls}
             initial={{ x: 0 }}
           >
+
+            {/* Triple the images for seamless looping */}
             {[...HERO_IMAGES, ...HERO_IMAGES, ...HERO_IMAGES].map(
               (src, index) => (
                 <motion.div
