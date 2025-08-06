@@ -4,12 +4,13 @@ import Image from "next/image";
 import { H1, P } from "@/components/typograpy";
 import { Button } from "../ui/button";
 import Link from "next/link";
-import { motion, useAnimation, AnimationControls } from "framer-motion";
+import { motion, useAnimation } from "framer-motion";
 
 // --- CONFIGURATION ---
 const HERO_IMAGES = ["/hero1.png", "/hero2.jpg", "/hero3.png", "/hero4.png"];
 const SLIDER_SPEED = 50; // seconds for infinite loop
-const IMAGE_SIZE = { width: 300, height: 200 };
+const IMAGE_SIZE = { width: 325, height: 250 };
+const MOBILE_IMAGE_SIZE = { width: 200, height: 150 };
 const SLIDE_UP_DURATION = 0.6;
 
 // --- ANIMATION VARIANTS ---
@@ -28,19 +29,35 @@ const slideFrom = (x: number, delay = 0) => ({
 // --- HERO COMPONENT ---
 const Hero = () => {
   const sliderControls = useAnimation();
-  const imageControls: AnimationControls[] = HERO_IMAGES.map(() =>
-    useAnimation()
-  );
+  const imageControls = HERO_IMAGES.map(() => useAnimation());
 
-  // Sequential image slide-up, then start horizontal slider
+  // Sequential image slide-up on desktop, simultaneous on mobile
   useEffect(() => {
     const runAnimation = async () => {
-      for (let control of imageControls) {
-        await control.start({
-          opacity: 1,
-          y: 0,
-          transition: { duration: SLIDE_UP_DURATION, ease: "easeOut" },
-        });
+      // Check if we're on mobile using CSS media query approach
+      const mediaQuery = window.matchMedia("(max-width: 767px)");
+      const isMobile = mediaQuery.matches;
+
+      if (isMobile) {
+        // On mobile: all images appear together
+        await Promise.all(
+          imageControls.map((control) =>
+            control.start({
+              opacity: 1,
+              y: 0,
+              transition: { duration: SLIDE_UP_DURATION, ease: "easeOut" },
+            })
+          )
+        );
+      } else {
+        // On desktop: sequential animation
+        for (let control of imageControls) {
+          await control.start({
+            opacity: 1,
+            y: 0,
+            transition: { duration: SLIDE_UP_DURATION, ease: "easeOut" },
+          });
+        }
       }
 
       sliderControls.start({
@@ -59,7 +76,7 @@ const Hero = () => {
 
   return (
     <section
-      className="w-full bg-background flex flex-col items-center justify-center"
+      className="w-full bg-background flex flex-col items-center justify-center mb-10"
       id="home"
     >
       {/* HERO TEXT */}
@@ -76,7 +93,7 @@ const Hero = () => {
 
         <motion.div {...slideUp(0.2)}>
           <H1 className="font-bold">
-            Empower Communities, Build a Better Africa
+            Empower Communities, Build a Better World
           </H1>
         </motion.div>
 
@@ -127,16 +144,14 @@ const Hero = () => {
             {[...HERO_IMAGES, ...HERO_IMAGES].map((src, index) => (
               <motion.div
                 key={index}
-                className="flex-shrink-0 flex justify-center items-center"
-                style={{ width: IMAGE_SIZE.width, height: IMAGE_SIZE.height }}
+                className="flex-shrink-0 flex justify-center items-center w-[200px] h-[150px] md:w-[325px] md:h-[250px]"
                 initial={{ opacity: 0, y: 40 }}
                 animate={imageControls[index % HERO_IMAGES.length]}
               >
                 <img
                   src={src}
                   alt={`img${index + 1}`}
-                  className="object-cover rounded-xl shadow-lg"
-                  style={IMAGE_SIZE}
+                  className="object-cover rounded-xl shadow-lg w-full h-full"
                 />
               </motion.div>
             ))}

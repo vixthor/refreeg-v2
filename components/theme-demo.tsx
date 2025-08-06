@@ -1,10 +1,17 @@
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ThemeToggle } from "@/components/theme-toggle"
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export function ThemeDemo() {
   return (
@@ -13,7 +20,8 @@ export function ThemeDemo() {
         <div className="space-y-2">
           <h2 className="text-3xl font-bold">Refreeg Theme Preview</h2>
           <p className="text-muted-foreground">
-            This page demonstrates the Refreeg theme with white as primary and navy blue (#003366) as secondary.
+            This page demonstrates the Refreeg theme with white as primary and
+            navy blue (#003366) as secondary.
           </p>
         </div>
 
@@ -60,9 +68,12 @@ export function ThemeDemo() {
             <h3 className="text-2xl font-bold">Heading 3</h3>
             <h4 className="text-xl font-bold">Heading 4</h4>
             <p className="text-base">
-              Regular paragraph text. Refreeg is a donation platform that connects donors with meaningful causes.
+              Regular paragraph text. Refreeg is a donation platform that
+              connects donors with meaningful causes.
             </p>
-            <p className="text-sm text-muted-foreground">This is smaller muted text often used for descriptions.</p>
+            <p className="text-sm text-muted-foreground">
+              This is smaller muted text often used for descriptions.
+            </p>
           </div>
         </div>
 
@@ -121,10 +132,16 @@ export function ThemeDemo() {
                   <TabsTrigger value="account">Account</TabsTrigger>
                   <TabsTrigger value="password">Password</TabsTrigger>
                 </TabsList>
-                <TabsContent value="account" className="p-4 border rounded-md mt-2">
+                <TabsContent
+                  value="account"
+                  className="p-4 border rounded-md mt-2"
+                >
                   Account settings
                 </TabsContent>
-                <TabsContent value="password" className="p-4 border rounded-md mt-2">
+                <TabsContent
+                  value="password"
+                  className="p-4 border rounded-md mt-2"
+                >
                   Password settings
                 </TabsContent>
               </Tabs>
@@ -133,6 +150,5 @@ export function ThemeDemo() {
         </div>
       </div>
     </div>
-  )
+  );
 }
-
