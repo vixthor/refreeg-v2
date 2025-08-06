@@ -1,9 +1,16 @@
-import Link from "next/link"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Progress } from "@/components/ui/progress"
-import { PaginationButton } from "@/components/pagination-button"
-import { listCauses } from "@/actions"
+import Link from "next/link";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { PaginationButton } from "@/components/pagination-button";
+import { listCauses } from "@/actions";
 import {
   GraduationCap,
   HeartPulse,
@@ -11,8 +18,8 @@ import {
   Users,
   AlertTriangle,
   PawPrint,
-  Sparkles
-} from "lucide-react"
+  Sparkles,
+} from "lucide-react";
 
 // Mock data for causes
 const mockCauses = [
@@ -136,65 +143,107 @@ const mockCauses = [
     image: "/placeholder.svg?height=200&width=400",
     created_at: "2023-10-20T16:30:00Z",
   },
-]
+];
 
 interface CausesListProps {
-  category: string
-  page: number
-  pageSize: number
+  category: string;
+  page: number;
+  pageSize: number;
 }
 
-export async function CausesList({ category, page, pageSize }: CausesListProps) {
-
+export async function CausesList({
+  category,
+  page,
+  pageSize,
+}: CausesListProps) {
   const categoriesWithIcons = [
-    { id: "education", name: "Education", icon: <GraduationCap className="mr-1 h-4 w-4" /> },
-    { id: "health", name: "Healthcare", icon: <HeartPulse className="mr-1 h-4 w-4" /> },
-    { id: "environment", name: "Environment", icon: <Leaf className="mr-1 h-4 w-4" /> },
-    { id: "community", name: "Community", icon: <Users className="mr-1 h-4 w-4" /> },
-    { id: "disaster", name: "Disaster Relief", icon: <AlertTriangle className="mr-1 h-4 w-4" /> },
-    { id: "animals", name: "Animal Welfare", icon: <PawPrint className="mr-1 h-4 w-4" /> },
-    { id: "creative", name: "Creative", icon: <Sparkles className="mr-1 h-4 w-4" /> },
-  ]
-
+    {
+      id: "education",
+      name: "Education",
+      icon: <GraduationCap className="mr-1 h-4 w-4" />,
+    },
+    {
+      id: "health",
+      name: "Healthcare",
+      icon: <HeartPulse className="mr-1 h-4 w-4" />,
+    },
+    {
+      id: "environment",
+      name: "Environment",
+      icon: <Leaf className="mr-1 h-4 w-4" />,
+    },
+    {
+      id: "community",
+      name: "Community",
+      icon: <Users className="mr-1 h-4 w-4" />,
+    },
+    {
+      id: "disaster",
+      name: "Disaster Relief",
+      icon: <AlertTriangle className="mr-1 h-4 w-4" />,
+    },
+    {
+      id: "animals",
+      name: "Animal Welfare",
+      icon: <PawPrint className="mr-1 h-4 w-4" />,
+    },
+    {
+      id: "creative",
+      name: "Creative",
+      icon: <Sparkles className="mr-1 h-4 w-4" />,
+    },
+  ];
 
   const causes = await listCauses({
     category: category === "all" ? undefined : category,
     limit: pageSize,
-    offset: (page - 1) * pageSize
-  })
-  const filteredCauses = category === "all"
-    ? causes
-    : causes.filter((cause) => cause.category === category)
+    offset: (page - 1) * pageSize,
+  });
+  const filteredCauses =
+    category === "all"
+      ? causes
+      : causes.filter((cause) => cause.category === category);
 
-  const paginatedCauses = filteredCauses.slice((page - 1) * pageSize, page * pageSize)
-  const totalCauses = filteredCauses.length
-  const totalPages = Math.ceil(totalCauses / pageSize)
+  const paginatedCauses = filteredCauses.slice(
+    (page - 1) * pageSize,
+    page * pageSize
+  );
+  const totalCauses = filteredCauses.length;
+  const totalPages = Math.ceil(totalCauses / pageSize);
 
   if (paginatedCauses.length === 0) {
     return (
       <div className="text-center py-10">
         <h3 className="text-lg font-medium">No causes found</h3>
-        <p className="text-muted-foreground">Try selecting a different category or check back later.</p>
+        <p className="text-muted-foreground">
+          Try selecting a different category or check back later.
+        </p>
       </div>
-    )
+    );
   }
 
   return (
     <div className="space-y-6">
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {paginatedCauses.map((cause) => {
-          const categoryData = categoriesWithIcons.find(cat => cat.id === cause.category)
+          const categoryData = categoriesWithIcons.find(
+            (cat) => cat.id === cause.category
+          );
 
           return (
             <Card key={cause.id} className="overflow-hidden">
               <div className="aspect-video w-full overflow-hidden">
-                <img src={cause.image || "/placeholder.svg"} alt={cause.title} className="object-cover w-full h-full" />
+                <img
+                  src={cause.image || "/placeholder.svg"}
+                  alt={cause.title}
+                  className="object-cover w-full h-full"
+                />
               </div>
               <CardHeader className="space-y-2 p-4">
                 <CardTitle className="line-clamp-1">{cause.title}</CardTitle>
-                <CardDescription className="line-clamp-2">
+                {/* <CardDescription className="line-clamp-2">
                   {cause.description}
-                </CardDescription>
+                </CardDescription> */}
                 <div className="flex items-center gap-2">
                   <span className="text-xs bg-muted text-foreground px-2 py-1 rounded-full flex items-center capitalize">
                     {categoryData?.icon}
@@ -205,8 +254,12 @@ export async function CausesList({ category, page, pageSize }: CausesListProps) 
               <CardContent>
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className="font-medium">₦{cause.raised.toLocaleString()}</span>
-                    <span className="text-muted-foreground">of ₦{cause.goal.toLocaleString()}</span>
+                    <span className="font-medium">
+                      ₦{cause.raised.toLocaleString()}
+                    </span>
+                    <span className="text-muted-foreground">
+                      of ₦{cause.goal.toLocaleString()}
+                    </span>
                   </div>
                   <Progress value={(cause.raised / cause.goal) * 100} />
                 </div>
@@ -217,7 +270,7 @@ export async function CausesList({ category, page, pageSize }: CausesListProps) 
                 </Link>
               </CardFooter>
             </Card>
-          )
+          );
         })}
       </div>
 
@@ -227,6 +280,5 @@ export async function CausesList({ category, page, pageSize }: CausesListProps) 
         </div>
       )}
     </div>
-  )
+  );
 }
-
