@@ -1,4 +1,3 @@
-// components/profile-form.tsx
 "use client";
 
 import { useRef, useState } from "react";
@@ -29,6 +28,7 @@ interface ProfileFormProps {
     phone: string | null;
     profile_photo: string | null;
     bio: string | null;
+    account_type?: "individual" | "organization" | null;
     twitter_url?: string | null;
     facebook_url?: string | null;
     instagram_url?: string | null;
@@ -42,15 +42,23 @@ interface ProfileFormProps {
 
 export function ProfileForm({ profile, user }: ProfileFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formErrors, setFormErrors] = useState<{ phone?: string }>({});
   const [formData, setFormData] = useState({
     full_name: profile?.full_name || "",
     email: profile?.email || user?.email || "",
+    account_type: profile?.account_type || "",
     phone: profile?.phone || "",
     bio: profile?.bio || "",
     twitter_url: profile?.twitter_url || "",
     facebook_url: profile?.facebook_url || "",
     instagram_url: profile?.instagram_url || "",
     linkedin_url: profile?.linkedin_url || "",
+  });
+  const [socialErrors, setSocialErrors] = useState({
+    twitter: false,
+    facebook: false,
+    instagram: false,
+    linkedin: false,
   });
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -71,10 +79,46 @@ export function ProfileForm({ profile, user }: ProfileFormProps) {
       ...prev,
       [`${platform}_url`]: value,
     }));
+
+    // Validate the URL
+    try {
+      if (value && !/^https?:\/\//i.test(value)) {
+        setSocialErrors((prev) => ({ ...prev, [platform]: true }));
+      } else {
+        setSocialErrors((prev) => ({ ...prev, [platform]: false }));
+      }
+    } catch {
+      setSocialErrors((prev) => ({ ...prev, [platform]: true }));
+    }
+  };
+
+  const isValidNigerianPhone = (phone: string) => {
+    const nigerianPattern = /^(?:070|080|081|090|091|071)\d{8}$/;
+    return nigerianPattern.test(phone);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Check if any social media URLs are invalid
+    const hasErrors = Object.values(socialErrors).some((error) => error);
+    if (hasErrors) {
+      return;
+    }
+
+    const phoneIsValid = isValidNigerianPhone(formData.phone);
+
+    // Check phone number
+    if (!phoneIsValid) {
+      setFormErrors({ phone: "Enter a valid Nigerian phone number (e.g. 08012345678)" });
+      setIsSubmitting(false);
+      return;
+    }
+
+    // Clear previous errors
+    setFormErrors({});
+
+
     setIsSubmitting(true);
 
     const updatedProfile: ProfileFormData = {
@@ -120,6 +164,10 @@ export function ProfileForm({ profile, user }: ProfileFormProps) {
           .join("")
           .toUpperCase()
       : "U";
+  };
+
+  const formatAccountType = (type: string) => {
+    return type === "individual" ? "Individual" : "Organization";
   };
 
   return (
@@ -221,6 +269,21 @@ export function ProfileForm({ profile, user }: ProfileFormProps) {
             </p>
           </div>
 
+          {/* Account Type */}
+          <div className="space-y-2">
+            <Label htmlFor="account_type">Account Type</Label>
+            <Input
+              id="account_type"
+              name="account_type"
+              value={formatAccountType(formData.account_type)}
+              disabled
+              className="bg-muted"
+            />
+            <p className="text-xs text-muted-foreground">
+              Your account type cannot be changed.
+            </p>
+          </div>
+
           {/* Phone Number */}
           <div className="space-y-2">
             <Label htmlFor="phone">Phone Number</Label>
@@ -229,8 +292,20 @@ export function ProfileForm({ profile, user }: ProfileFormProps) {
               name="phone"
               placeholder="Your phone number"
               value={formData.phone}
-              onChange={handleChange}
+              inputMode="numeric"
+              onChange={(e) => {
+                const onlyNumbers = e.target.value.replace(/\D/g, "");
+                setFormData({ ...formData, phone: onlyNumbers });
+
+                // Clear phone error while typing
+                if (formErrors.phone) {
+                  setFormErrors((prev) => ({ ...prev, phone: undefined }));
+                }
+              }}
             />
+            {formErrors.phone && (
+              <p className="text-sm text-red-500">{formErrors.phone}</p>
+            )}
           </div>
 
           {/* Bio */}
@@ -254,7 +329,7 @@ export function ProfileForm({ profile, user }: ProfileFormProps) {
           <div className="space-y-4">
             <h3 className="text-lg font-medium">Social Media</h3>
             <p className="text-sm text-muted-foreground">
-              Add links to your social media profiles (optional)
+              Add links to your social media profiles (must start with http:// or https://)
             </p>
 
             <SocialMedia
@@ -268,7 +343,7 @@ export function ProfileForm({ profile, user }: ProfileFormProps) {
           </div>
         </CardContent>
         <CardFooter>
-          <Button type="submit" disabled={isSubmitting}>
+          <Button type="submit" disabled={isSubmitting || Object.values(socialErrors).some(error => error)}>
             {isSubmitting ? (
               <>
                 <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
