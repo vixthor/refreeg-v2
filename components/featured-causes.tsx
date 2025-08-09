@@ -146,18 +146,16 @@ export async function FeaturedCauses() {
                 <CardTitle className="font-medium text-base md:text-xl lg:text-2xl">
                   {cause.title}
                 </CardTitle>
-                <CardDescription>
-                  {cause.description.split(" ").length > 25 ? (
-                    <>
-                      {cause.description.split(" ").slice(0, 25).join(" ")}...{" "}
-                      <span className="text-blue-600 group-hover:underline">
-                        see more
-                      </span>
-                    </>
-                  ) : (
-                    cause.description
-                  )}
-                </CardDescription>
+                {/* <CardDescription>
+                  {cause.description.split(" ").length > 25
+                    ? (
+                        <>
+                          {cause.description.split(" ").slice(0, 25).join(" ")}...{" "}
+                          <span className="text-blue-600 group-hover:underline">see more</span>
+                        </>
+                      )
+                    : cause.description}
+                </CardDescription> */}
                 <div className="flex items-center gap-2 pt-2">
                   <Badge
                     variant="outline"

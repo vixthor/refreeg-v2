@@ -42,7 +42,6 @@ const currencies = [{ id: "NGN", name: "Naira (₦)" }];
 
 type FormData = {
   title: string;
-  description: string;
   category: string;
   goal: string;
   currency: string;
@@ -55,12 +54,12 @@ type FormData = {
 
 type FormErrors = {
   title?: string;
-  description?: string;
   category?: string;
   goal?: string;
   coverImage?: string;
   startDate?: string;
   endDate?: string;
+  sections?: { heading?: string; description?: string }[];
 };
 
 type EditCauseFormProps = {
@@ -76,7 +75,6 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<FormData>({
     title: cause.title,
-    description: cause.description,
     category: cause.category,
     goal: cause.goal.toString(),
     currency: "NGN",
@@ -177,12 +175,17 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
     switch (step) {
       case 1:
         return (
-          !currentErrors.title &&
-          !currentErrors.category &&
-          !currentErrors.goal &&
-          !currentErrors.description
+          !currentErrors.title && !currentErrors.category && !currentErrors.goal
         );
       case 2:
+        // Check for section errors
+        if (currentErrors.sections) {
+          // If there are section errors, check if any sections have errors
+          return !currentErrors.sections.some(
+            (err) => err.heading || err.description
+          );
+        }
+        // If there are no section errors in the currentErrors object, validate directly
         return formData.sections.every(
           (section) =>
             section.heading.trim() !== "" && section.description.trim() !== ""
@@ -207,14 +210,25 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
     if (!user) return;
 
     const validationErrors = validateForm(formData);
-    if (Object.keys(validationErrors).length > 0) {
+
+    // Check if there are any validation errors
+    const hasErrors = Object.keys(validationErrors).some((key) => {
+      if (key === "sections" && validationErrors.sections) {
+        // For sections, check if any section has actual errors
+        return validationErrors.sections.some(
+          (section) => Object.keys(section).length > 0
+        );
+      }
+      return validationErrors[key as keyof FormErrors] !== undefined;
+    });
+
+    if (hasErrors) {
       setErrors(validationErrors);
       return;
     }
 
     const causeData: Partial<FormData> = {
       title: formData.title,
-      description: formData.description,
       category: formData.category,
       goal: formData.goal,
       coverImage: formData.coverImage,
@@ -251,22 +265,6 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
               />
               {errors.title && (
                 <p className="text-sm text-red-500">{errors.title}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                name="description"
-                placeholder="Describe your cause, why it matters, and how the funds will be used"
-                rows={5}
-                value={formData.description}
-                onChange={handleChange}
-                className={errors.description ? "border-red-500" : ""}
-              />
-              {errors.description && (
-                <p className="text-sm text-red-500">{errors.description}</p>
               )}
             </div>
 
@@ -605,10 +603,21 @@ function validateForm(formData: FormData): FormErrors {
     errors.title = "Title must be at least 5 characters long";
   }
 
-  if (!formData.description.trim()) {
-    errors.description = "Description is required";
-  } else if (formData.description.length < 50) {
-    errors.description = "Description must be at least 50 characters long";
+  // Validate sections
+  if (formData.sections && formData.sections.length > 0) {
+    const sectionErrorsArray = formData.sections.map((section) => {
+      const sectionErrors: { heading?: string; description?: string } = {};
+      if (!section.heading.trim())
+        sectionErrors.heading = "Heading is required";
+      if (!section.description || !section.description.trim())
+        sectionErrors.description = "Sub-description is required";
+      return sectionErrors;
+    });
+
+    // Only add sections errors if there are actual errors
+    if (sectionErrorsArray.some((err) => Object.keys(err).length > 0)) {
+      errors.sections = sectionErrorsArray;
+    }
   }
 
   if (!formData.category) {
