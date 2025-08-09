@@ -101,57 +101,53 @@ export function Header() {
               </DropdownMenuTrigger>
 
               <DropdownMenuContent
-                className="absolute mt-2 py-4 bg-white shadow-lg rounded-md hidden lg:block"
+                className="mt-2 bg-white shadow-lg rounded-md w-max min-w-[12rem] px-1 py-2"
                 align="start"
               >
-                <div className="">
-                  <div className="flex">
-                    <DropdownMenuItem asChild>
-                      <Link
-                        href="/about-us/OurMission"
-                        className="whitespace-nowrap hover:underline hover:bg-[#D6EBFF] px-4 py-2 block"
-                      >
-                        Our Mission
-                      </Link>
-                    </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link
+                    href="/about-us/OurMission"
+                    className="whitespace-nowrap hover:underline hover:bg-[#D6EBFF] px-4 py-2 block"
+                  >
+                    Our Mission
+                  </Link>
+                </DropdownMenuItem>
 
-                    <DropdownMenuItem asChild>
-                      <Link
-                        href="/about-us/OurStory"
-                        className="whitespace-nowrap hover:underline hover:bg-[#D6EBFF] px-4 py-2 block"
-                      >
-                        Our Story (The &quot;Why&quot; Behind RefreeG)
-                      </Link>
-                    </DropdownMenuItem>
-                  </div>
-                  <div className="flex">
-                    <DropdownMenuItem asChild>
-                      <Link
-                        href="/about-us/OurImpact"
-                        className="whitespace-nowrap hover:underline hover:bg-[#D6EBFF] px-4 py-2 block"
-                      >
-                        Our Impact
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link
-                        href="/about-us/WhatWeDo"
-                        className="whitespace-nowrap hover:underline hover:bg-[#D6EBFF] px-4 py-2 block"
-                      >
-                        Who are we made by?
-                      </Link>
-                    </DropdownMenuItem>
-                  </div>
+                <DropdownMenuItem asChild>
+                  <Link
+                    href="/about-us/OurStory"
+                    className="whitespace-nowrap hover:underline hover:bg-[#D6EBFF] px-4 py-2 block"
+                  >
+                    Our Story (The "Why" Behind RefreeG)
+                  </Link>
+                </DropdownMenuItem>
 
-                  <DropdownMenuItem asChild>
-                    <Link
-                      href="/about-us/WhatWeDo"
-                      className="whitespace-nowrap hover:underline hover:bg-[#D6EBFF] px-4 py-2 block"
-                    >
-                      What We Do
-                    </Link>
-                  </DropdownMenuItem>
-                </div>
+                <DropdownMenuItem asChild>
+                  <Link
+                    href="/about-us/OurImpact"
+                    className="whitespace-nowrap hover:underline hover:bg-[#D6EBFF] px-4 py-2 block"
+                  >
+                    Our Impact
+                  </Link>
+                </DropdownMenuItem>
+
+                <DropdownMenuItem asChild>
+                  <Link
+                    href="/about-us/WhatWeDo"
+                    className="whitespace-nowrap hover:underline hover:bg-[#D6EBFF] px-4 py-2 block"
+                  >
+                    Who are we made by?
+                  </Link>
+                </DropdownMenuItem>
+
+                <DropdownMenuItem asChild>
+                  <Link
+                    href="/about-us/WhatWeDo"
+                    className="whitespace-nowrap hover:underline hover:bg-[#D6EBFF] px-4 py-2 block"
+                  >
+                    What We Do
+                  </Link>
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
 

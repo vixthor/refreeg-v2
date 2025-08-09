@@ -258,7 +258,7 @@ export default async function CauseDetailPage({
                 </div>
               )}
 
-              <p className="whitespace-pre-line">{cause.description}</p>
+              {/* <p className="whitespace-pre-line">{cause.description}</p> */}
               {cause.sections &&
                 cause.sections.length > 0 &&
                 cause.sections.map((section, index) => (
