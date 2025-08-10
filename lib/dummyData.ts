@@ -287,7 +287,35 @@ export const faqs = [
     icon: Info,
     question: "What is RefreeG?",
     answer:
-      "RefreeG is a crowdfunding platform dedicated to supporting various causes with a strong focus on fostering socio-economic growth in African communities through blockchain transparency.",
+      "RefreeG is a blockchain-powered crowdfunding platform designed to help individuals, NGOs, and community-led projects raise funds transparently and efficiently. Whether it's emergency aid, education, or creative work. RefreeG empowers changemakers with tools to create verified causes and receive support.",
+  },
+  {
+    category: "features",
+    icon: Users,
+    question: "Who can use RefreeG?",
+    answer:
+      "Anyone! Whether you're an individual, an organization, a creative, or someone trying to raise money for a friend or family member. RefreeG is for you.",
+  },
+  {
+    category: "features",
+    icon: ShieldCheck,
+    question: "What kind of causes are allowed on RefreeG?",
+    answer:
+      "RefreeG supports a wide range of causes, including education, medical emergencies, GBV support, food drives, creative projects, and more. We do not allow campaigns that promote hate, fraud, or misinformation.",
+  },
+  {
+    category: "features",
+    icon: CreditCard,
+    question: "How do I create a cause on RefreeG?",
+    answer:
+      "Simply sign up, click 'Start a Cause,' and fill in the required details—title, description, goal amount, category, and a banner. Once submitted, our team will review and verify your cause before it goes live.",
+  },
+  {
+    category: "features",
+    icon: BadgeCheck,
+    question: "How do I know a cause is legitimate?",
+    answer:
+      "Every cause is vetted by our moderation team. We also provide a 'Verified' badge for approved causes and use blockchain technology to ensure funds are traceable and secure.",
   },
   {
     category: "features",
@@ -295,6 +323,20 @@ export const faqs = [
     question: "How does RefreeG ensure transparency?",
     answer:
       "RefreeG uses blockchain technology to log and track donations. This ensures that each transaction is immutable and can be traced for accountability and transparency.",
+  },
+  {
+    category: "features",
+    icon: ShieldCheck,
+    question: "What is blockchain transparency?",
+    answer:
+      "Blockchain allows every transaction on RefreeG to be recorded on a secure, tamper-proof ledger. This ensures donations are visible, trackable, and accountable—no middlemen, no funny business.",
+  },
+  {
+    category: "features",
+    icon: HeartHandshake,
+    question: "Can I start a petition on RefreeG?",
+    answer:
+      "Yes! Our petition system allows anyone to start or support petitions around social, political, or community causes—giving users a way to drive both funding and awareness.",
   },
   {
     category: "features",
@@ -313,7 +355,7 @@ export const faqs = [
   {
     category: "features",
     icon: Users,
-    question: "What is RefreeG’s mission?",
+    question: "What is RefreeG's mission?",
     answer:
       "RefreeG aims to provide transparent, secure, and efficient crowdfunding solutions for education and other verified causes across Africa.",
   },
@@ -323,13 +365,6 @@ export const faqs = [
     question: "How do I make a donation on RefreeG?",
     answer:
       "To donate, browse through active causes, select one, and choose your preferred payment method such as Paystack (Naira) or cryptocurrency (like MATIC).",
-  },
-  {
-    category: "features",
-    icon: CreditCard,
-    question: "How can I list a cause on RefreeG?",
-    answer:
-      "To list a cause, click on 'Start a Cause', fill in the required details, upload supporting documents, and submit it for review by our moderation team.",
   },
   {
     category: "features",
@@ -364,21 +399,21 @@ export const faqs = [
   {
     category: "resources",
     icon: FileText,
-    question: "Where can I find RefreeG’s terms of service?",
+    question: "Where can I find RefreeG's terms of service?",
     answer:
       "You can review our terms of service in the 'Policy & Compliance' section. It outlines the rules of usage and types of content prohibited on the platform.",
   },
   {
     category: "resources",
     icon: BadgeCheck,
-    question: "What is RefreeG’s cause verification process?",
+    question: "What is RefreeG's cause verification process?",
     answer:
       "Every submitted cause undergoes a thorough review process, where documents are checked and authenticity is verified before public listing.",
   },
   {
     category: "resources",
     icon: FileText,
-    question: "What is RefreeG’s refund policy?",
+    question: "What is RefreeG's refund policy?",
     answer:
       "All donations made on RefreeG are final and non-refundable. We encourage donors to review cause details thoroughly before donating.",
   },

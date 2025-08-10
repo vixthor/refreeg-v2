@@ -69,9 +69,7 @@ export default function PublicProfile({
 
           <div className="flex-1 w-full">
             <div>
-              <h1 className="text-2xl font-bold">
-                {displayName}
-              </h1>
+              <h1 className="text-2xl font-bold">{displayName}</h1>
             </div>
 
             {/* Stats */}
@@ -125,8 +123,9 @@ export default function PublicProfile({
                 {causesCount === 0 ? (
                   <EmptyState
                     title="No Causes Yet"
-                    description={`It looks like ${displayName.split(" ")[0] || "this user"
-                      } hasn't started a cause yet. Stay tuned for their first impact story!`}
+                    description={`It looks like ${
+                      displayName.split(" ")[0] || "this user"
+                    } hasn't started a cause yet. Stay tuned for their first impact story!`}
                     cta="Explore causes on refreeg"
                     ctaLink="/causes"
                   />
@@ -142,8 +141,9 @@ export default function PublicProfile({
                 {donationsCount === 0 ? (
                   <EmptyState
                     title="No Donations Yet"
-                    description={`${displayName.split(" ")[0] || "This user"
-                      } hasn't donated to any causes yet.`}
+                    description={`${
+                      displayName.split(" ")[0] || "This user"
+                    } hasn't donated to any causes yet.`}
                     cta="Explore causes on refreeg"
                     ctaLink="/causes"
                   />
