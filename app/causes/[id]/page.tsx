@@ -29,6 +29,8 @@ import {
   Twitter,
 } from "lucide-react";
 import Link from "next/link";
+import { useState } from "react";
+import MultimediaCarousel from "@/components/MultimediaCarousel";
 
 // Mock data for a cause
 const mockCause = {
@@ -100,9 +102,6 @@ export default async function CauseDetailPage({
 
   const donors = await listDonationsForCause(cause.id);
 
-
-
-
   // Format the date
   const formattedDate = new Date(cause.created_at).toLocaleDateString("en-US", {
     year: "numeric",
@@ -167,13 +166,24 @@ export default async function CauseDetailPage({
     <div className="container py-10">
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-6">
-          <div className="aspect-video w-full overflow-hidden rounded-lg">
-            <img
-              src={cause.image || "/placeholder.svg"}
-              alt={cause.title}
-              className="object-cover w-full h-full"
+          {/* Multimedia Carousel */}
+          {cause.multimedia &&
+          Array.isArray(cause.multimedia) &&
+          cause.multimedia.length > 0 ? (
+            <MultimediaCarousel
+              media={cause.multimedia}
+              coverImage={cause.image}
+              title={cause.title}
             />
-          </div>
+          ) : (
+            <div className="aspect-video w-full overflow-hidden rounded-lg">
+              <img
+                src={cause.image || "/placeholder.svg"}
+                alt={cause.title}
+                className="object-cover w-full h-full"
+              />
+            </div>
+          )}
 
           <Tabs defaultValue="about">
             <TabsList>
@@ -248,7 +258,7 @@ export default async function CauseDetailPage({
                 </div>
               )}
 
-              <p className="whitespace-pre-line">{cause.description}</p>
+              {/* <p className="whitespace-pre-line">{cause.description}</p> */}
               {cause.sections &&
                 cause.sections.length > 0 &&
                 cause.sections.map((section, index) => (

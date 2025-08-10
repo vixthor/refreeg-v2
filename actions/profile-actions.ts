@@ -160,3 +160,44 @@ export async function updateBankDetails(
   revalidatePath("/dashboard/settings");
   return data as Profile;
 }
+
+export async function isProfileComplete(
+  userId: string
+): Promise<{ isComplete: boolean; missingFields: string[] }> {
+  try {
+    const supabase = await createClient();
+
+    const { data: profile, error } = await supabase
+      .from("profiles")
+      .select("full_name, bio, profile_photo")
+      .eq("id", userId)
+      .single();
+
+    if (error) {
+      console.error("Error fetching profile for completion check:", error);
+      return { isComplete: false, missingFields: ["profile"] };
+    }
+
+    const missingFields: string[] = [];
+
+    if (!profile?.full_name || profile.full_name.trim() === "") {
+      missingFields.push("full name");
+    }
+
+    if (!profile?.bio || profile.bio.trim() === "") {
+      missingFields.push("bio");
+    }
+
+    if (!profile?.profile_photo) {
+      missingFields.push("profile picture");
+    }
+
+    return {
+      isComplete: missingFields.length === 0,
+      missingFields,
+    };
+  } catch (error) {
+    console.error("Error in isProfileComplete:", error);
+    return { isComplete: false, missingFields: ["profile"] };
+  }
+}
