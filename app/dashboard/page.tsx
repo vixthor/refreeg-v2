@@ -8,7 +8,9 @@ export default function DashboardPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground">Manage your causes and view your donation activity.</p>
+        <p className="text-muted-foreground">
+          Welcome to your dashboard. Here you can manage your causes and track your progress.
+        </p>
       </div>
 
       <Tabs defaultValue="overview" className="space-y-4">
