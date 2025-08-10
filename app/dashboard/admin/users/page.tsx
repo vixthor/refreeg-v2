@@ -115,6 +115,7 @@ export default async function AdminUsersPage({
                   <TableHead>Role</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Joined</TableHead>
+                  <TableHead>KYC</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -122,7 +123,7 @@ export default async function AdminUsersPage({
                 {filteredUsers.length === 0 ? (
                   <TableRow>
                     <TableCell
-                      colSpan={5}
+                      colSpan={6}
                       className="text-center py-8 text-muted-foreground"
                     >
                       No users found
@@ -174,6 +175,29 @@ export default async function AdminUsersPage({
                       </TableCell>
                       <TableCell>
                         {format(new Date(userItem.created_at), "MMM d, yyyy")}
+                      </TableCell>
+                      <TableCell>
+                        {/* KYC Shield Icon with color and dot overlay */}
+                        <a
+                          href={`/dashboard/admin/users/kyc/${userItem.id}`}
+                          className="inline-block relative group"
+                          title="Review KYC"
+                        >
+                          {/* Shield color logic */}
+                          {userItem.kyc_status === "approved" ? (
+                            <Shield className="h-6 w-6 text-green-500" />
+                          ) : userItem.kyc_status === "rejected" ? (
+                            <Shield className="h-6 w-6 text-red-500" />
+                          ) : userItem.kyc_status === "pending" ? (
+                            <Shield className="h-6 w-6 text-black" />
+                          ) : (
+                            <Shield className="h-6 w-6 text-gray-400" />
+                          )}
+                          {/* Red dot overlay if pending */}
+                          {userItem.kyc_status === "pending" && (
+                            <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500 border-2 border-white" />
+                          )}
+                        </a>
                       </TableCell>
                       <TableCell className="text-right">
                         <UserActions user={userItem} currentUserRole={user} />
