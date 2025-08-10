@@ -69,12 +69,12 @@ export async function FeaturedCauses() {
               opportunities.
             </P>
           </AnimatedHeader>
-          <div className="pointer-events-none absolute top-1/2 right-12 hidden md:block">
-            <CarouselPrevious className="pointer-events-auto z-10" />
-            <CarouselNext className="pointer-events-auto z-10" />
+          <div className="flex items-center gap-2 ml-4">
+            <CarouselPrevious className="static translate-y-0 translate-x-0" />
+            <CarouselNext className="static translate-y-0 translate-x-0" />
           </div>
         </div>
-        <CarouselContent className="-ml-4 mt-6">
+        <CarouselContent className="mt-6 mb-6 ml-4 mr-4">
           {featuredCauses.map((cause) => {
             return (
               <CarouselItem
