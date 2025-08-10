@@ -16,11 +16,17 @@ export default function SignUpPage() {
   const [confirmPassword, setConfirmPassword] = useState("")
   const [firstName, setFirstName] = useState("")
   const [lastName, setLastName] = useState("")
+  const [accountType, setAccountType] = useState<"individual" | "organization">()
   const [isLoading, setIsLoading] = useState(false)
   const { signUp } = useAuth()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (!accountType) {
+      alert("Please select an account type")
+      return
+    }
     
     if (!firstName.trim() || !lastName.trim()) {
       alert("Please enter both first name and last name")
@@ -33,7 +39,7 @@ export default function SignUpPage() {
     }
     
     setIsLoading(true)
-    await signUp(email, password, `${firstName} ${lastName}`)
+    await signUp(email, password, `${firstName} ${lastName}`, accountType)
     setIsLoading(false)
   }
 
@@ -74,6 +80,34 @@ export default function SignUpPage() {
                   <p className="text-xs text-muted-foreground mt-1">
                     Please use your real name. Accounts with fake or suspicious names will be flagged for review.
                   </p>
+                </div>
+                <div className="grid gap-1">
+                  <Label>Account Type</Label>
+                  <div className="flex items-center space-x-4">
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="radio"
+                        id="individual"
+                        name="accountType"
+                        value="individual"
+                        checked={accountType === "individual"}
+                        onChange={() => setAccountType("individual")}
+                        required
+                      />
+                      <Label htmlFor="individual">Individual</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="radio"
+                        id="organization"
+                        name="accountType"
+                        value="organization"
+                        checked={accountType === "organization"}
+                        onChange={() => setAccountType("organization")}
+                      />
+                      <Label htmlFor="organization">Organization</Label>
+                    </div>
+                  </div>
                 </div>
                 <div className="grid gap-1">
                   <Label htmlFor="email">Email</Label>

@@ -39,12 +39,13 @@ export interface CauseSection {
 
 export interface CauseFormData {
   title: string;
-  description: string;
+  // description: string;
   category: string;
   goal: string | number;
   currency: string;
   coverImage: File | null;
   image?: string;
+  multimedia?: File[];
   sections: CauseSection[];
   startDate?: Date | undefined;
   endDate?: Date | undefined;
@@ -102,6 +103,10 @@ export interface Cause {
   rejection_reason?: string | null;
   days_active?: number | null;
   sections?: CauseSection[];
+  profiles?: {
+    name: string;
+    email: string;
+  };
 }
 
 export interface CauseWithUser extends Cause {
@@ -110,5 +115,6 @@ export interface CauseWithUser extends Cause {
     email: string;
     sub_account_code: string;
   };
+
   sections: CauseSection[];
 }

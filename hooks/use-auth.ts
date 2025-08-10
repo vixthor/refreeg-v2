@@ -80,11 +80,21 @@ export function useAuth() {
     }
   }
 
-  const signUp = async (email: string, password: string, fullName: string) => {
+  const signUp = async (
+    email: string,
+    password: string,
+    fullName: string,
+    accountType: "individual" | "organization"
+  ) => {
     try {
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          data: {
+            full_name: fullName,
+          }
+        }
       })
 
       if (error) {
@@ -104,6 +114,7 @@ export function useAuth() {
             id: data.user.id,
             email: data.user.email,
             full_name: fullName,
+            account_type: accountType,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           })
@@ -150,4 +161,3 @@ export function useAuth() {
     signOut,
   }
 }
-
