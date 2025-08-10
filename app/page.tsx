@@ -6,6 +6,7 @@ import LaunchYourCauseInSeconds from "@/components/home/launchYourCauseInSeconds
 import { TrendingCauses } from "@/components/home/trendingNow";
 import WhyItStandsOut from "@/components/home/whyitStandsOut";
 import HowitWorksYT from "@/components/home/howitWorksYT";
+import { FeaturedPetitions } from "@/components/home/featured-petitions";
 
 export default function Home() {
   return (
@@ -22,6 +23,8 @@ export default function Home() {
 
       {/* Featured Causes */}
       <FeaturedCauses />
+
+      {/* <FeaturedPetitions /> */}
 
       <HowitWorksYT />
 
