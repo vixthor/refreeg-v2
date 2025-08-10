@@ -98,6 +98,29 @@ export async function sendCauseUnderReviewEmail(context: {
   });
 }
 
+// Convenience function for sending "petition under review" emails
+export async function sendPetitionUnderReviewEmail(context: {
+  petitionName: string;
+  reviewTimeframe?: string;
+}) {
+  const user = await getCurrentUser();
+  if (!user) {
+    throw new Error("User not found");
+  }
+  const profile = await getProfile(user.id);
+  return sendMail({
+    to: profile?.email || "",
+    subject: "Your Petition is Under Review",
+    templateName: "petition-under-review",
+    context: {
+      ...context,
+      userName: profile?.full_name || "User",
+      organizationName: "Refreeg",
+      reviewTimeframe: context.reviewTimeframe || "3-5 business days",
+    },
+  });
+}
+
 export async function sendBankAccountAddedEmail(context: {
   bankName: string;
   accountNumber: string;
