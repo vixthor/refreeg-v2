@@ -55,7 +55,7 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center justify-between">
+      <div className="mx-12 flex h-16 items-center justify-between">
         <div className="flex items-center gap-6 md:gap-10">
           <Logo />
           <nav className="hidden gap-6 md:flex">
@@ -68,6 +68,16 @@ export function Header() {
               }`}
             >
               Causes
+            </Link>
+            <Link
+              href="/petitions"
+              className={`text-sm font-medium transition-colors hover:text-secondary ${
+                pathname === "/causes"
+                  ? "text-foreground"
+                  : "text-muted-foreground"
+              }`}
+            >
+              Petitions
             </Link>
             <Link
               href="/how-it-works"
@@ -171,6 +181,11 @@ export function Header() {
           <Link href="/dashboard/causes/create">
             <Button variant="outline" size="sm">
               List a Cause
+            </Button>
+          </Link>
+          <Link href="/dashboard/petitions/create">
+            <Button variant="outline" size="sm">
+              Create a Petition
             </Button>
           </Link>
           {!isLoading && !user ? (
