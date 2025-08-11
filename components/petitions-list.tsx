@@ -266,7 +266,7 @@ export async function PetitionsList({
               </CardContent>
               <CardFooter>
                 <Link href={`/petitions/${petition.id}`} className="w-full">
-                  <Button className="w-full">Donate Now</Button>
+                  <Button className="w-full">Sign Now</Button>
                 </Link>
               </CardFooter>
             </Card>
