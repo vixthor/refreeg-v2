@@ -115,6 +115,6 @@ export interface CauseWithUser extends Cause {
     email: string;
     sub_account_code: string;
   };
-
+  multimedia?: string[];
   sections: CauseSection[];
 }
