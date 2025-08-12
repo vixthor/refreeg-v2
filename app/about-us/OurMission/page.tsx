@@ -15,7 +15,6 @@ export default function Mission() {
       </div>
       <WhatDoWeFocusOn />
       <CreateBetterFuture />
-      <AdBanner />
     </div>
   );
 }
