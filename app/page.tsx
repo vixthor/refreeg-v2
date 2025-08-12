@@ -16,8 +16,6 @@ export default function Home() {
 
       <TrendingCauses />
 
-      <AdBanner />
-
       <WhyItStandsOut />
 
       {/* Featured Causes */}
