@@ -14,7 +14,6 @@ export default function Impact() {
         <HowDoWeAchieveThis />
       </div>
       <ChangeLives />
-      <AdBanner />
     </div>
   );
 }
