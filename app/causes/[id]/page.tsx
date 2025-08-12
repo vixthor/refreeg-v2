@@ -30,8 +30,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import MultimediaCarousel from "@/components/MultimediaCarousel";
-import { listCommentsForCause } from "@/actions/comment-actions";
-import { CommentsSection } from "@/components/comments/comment-section";
+import { MilestoneNotifications } from "@/components/milestone-notifications";
 
 export default async function CauseDetailPage({
   params,
@@ -45,7 +44,6 @@ export default async function CauseDetailPage({
   }
 
   const donors = await listDonationsForCause(cause.id);
-  const comments = await listCommentsForCause(cause.id);
   const formattedDate = new Date(cause.created_at).toLocaleDateString("en-US", {
     year: "numeric",
     month: "long",
@@ -102,6 +100,13 @@ export default async function CauseDetailPage({
 
   return (
     <div className="container py-10">
+      <MilestoneNotifications
+        raised={cause.raised}
+        goal={cause.goal}
+        causeId={cause.id}
+        causeTitle={cause.title}
+        userName={cause.user.name}
+      />
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-6">
@@ -127,7 +132,6 @@ export default async function CauseDetailPage({
             <TabsList>
               <TabsTrigger value="about">About</TabsTrigger>
               <TabsTrigger value="donors">Donors</TabsTrigger>
-              <TabsTrigger value="comments">Comments ({comments.length})</TabsTrigger>
             </TabsList>
             <TabsContent value="about" className="space-y-4">
               <h1 className="text-3xl font-bold">{cause.title}</h1>
@@ -221,13 +225,6 @@ export default async function CauseDetailPage({
                 </Alert>
               </div>
               <DonorsList donors={donors} />
-            </TabsContent>
-            <TabsContent value="comments">
-              <CommentsSection 
-                comments={comments} 
-                causeId={cause.id} 
-                currentUserId={user?.id} 
-              />
             </TabsContent>
           </Tabs>
         </div>
