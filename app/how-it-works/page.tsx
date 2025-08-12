@@ -113,8 +113,6 @@ export default function HowItWorksPage() {
           </CardContent>
         </Card>
       </div>
-
-      <AdBanner />
     </div>
   );
 }
