@@ -59,10 +59,10 @@ export async function TrendingCauses() {
   }
 
   return (
-    <div className="space-y-10 relative">
+    <div className="space-y-10 relative py-12">
       <Carousel className="w-full">
         <div className="flex items-start justify-between w-full relative">
-          <AnimatedHeader>
+          <AnimatedHeader className="flex-1">
             <H2 className="text-black text-4xl font-bold font-['Montserrat'] leading-[48px] mb-2">
               Trending Causes
             </H2>
@@ -71,12 +71,12 @@ export async function TrendingCauses() {
               Support, share, and make a difference!
             </P>
           </AnimatedHeader>
-          <div className="pointer-events-none absolute top-1/2 right-12 hidden md:block">
-            <CarouselPrevious className="pointer-events-auto z-10" />
-            <CarouselNext className="pointer-events-auto z-10" />
+          <div className="flex items-center gap-2 ml-4">
+            <CarouselPrevious className="static translate-y-0 translate-x-0" />
+            <CarouselNext className="static translate-y-0 translate-x-0" />
           </div>
         </div>
-        <CarouselContent className="-ml-4 mt-6 ">
+        <CarouselContent className=" mt-6 mb-6 ml-4 mr-4 ">
           {trendingCauses.map((cause) => {
             return (
               <CarouselItem

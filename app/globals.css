@@ -47,15 +47,16 @@
     --chart-5: 27 87% 67%;
   }
 
+  /* Dark theme commented out
   .dark {
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
 
-    /* Dark mode - keep white as primary but with slight adjustment for dark mode */
+    Dark mode - keep white as primary but with slight adjustment for dark mode
     --primary: 0 0% 90%;
     --primary-foreground: 210 100% 30%;
 
-    /* Dark mode - lighter navy blue for better visibility */
+    Dark mode - lighter navy blue for better visibility
     --secondary: 210 100% 30%;
     --secondary-foreground: 0 0% 100%;
 
@@ -78,7 +79,7 @@
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
 
-    /* Brand color for dark mode */
+    Brand color for dark mode
     --brand: 210 100% 30%;
     --brand-foreground: 0 0% 100%;
     --chart-1: 220 70% 50%;
@@ -87,6 +88,7 @@
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
   }
+  */
 }
 
 @layer base {
