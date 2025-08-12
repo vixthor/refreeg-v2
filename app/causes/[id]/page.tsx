@@ -107,7 +107,7 @@ export default async function CauseDetailPage({
         causeTitle={cause.title}
         userName={cause.user.name}
       />
-      
+
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-6">
           {cause.multimedia &&
@@ -115,7 +115,7 @@ export default async function CauseDetailPage({
           cause.multimedia.length > 0 ? (
             <MultimediaCarousel
               media={cause.multimedia}
-              coverImage={cause.image}
+              coverImage={cause.image || undefined}
               title={cause.title}
             />
           ) : (
@@ -213,10 +213,14 @@ export default async function CauseDetailPage({
             </TabsContent>
             <TabsContent value="donors">
               <div>
-                <Alert variant="destructive" className="mb-4 bg-[#E4626F33] border-0">
+                <Alert
+                  variant="destructive"
+                  className="mb-4 bg-[#E4626F33] border-0"
+                >
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription>
-                    These records are logged on the blockchain and are immutable.
+                    These records are logged on the blockchain and are
+                    immutable.
                   </AlertDescription>
                 </Alert>
               </div>
