@@ -8,7 +8,6 @@ export default function Impact() {
     <div className="w-full">
       <Hero />
       <Stories />
-      <AdBanner />
     </div>
   );
 }

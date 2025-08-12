@@ -212,6 +212,14 @@ export default async function CauseDetailPage({
                 ))}
             </TabsContent>
             <TabsContent value="donors">
+              <div>
+                <Alert variant="destructive" className="mb-4 bg-[#E4626F33] border-0">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    These records are logged on the blockchain and are immutable.
+                  </AlertDescription>
+                </Alert>
+              </div>
               <DonorsList donors={donors} />
             </TabsContent>
           </Tabs>

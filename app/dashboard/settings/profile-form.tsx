@@ -62,7 +62,9 @@ export function ProfileForm({ profile, user }: ProfileFormProps) {
   });
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { updateProfile, updateProfilePhoto, isUploading } = useProfile(user?.id);
+  const { updateProfile, updateProfilePhoto, isUploading } = useProfile(
+    user?.id
+  );
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
