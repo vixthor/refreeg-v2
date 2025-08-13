@@ -121,7 +121,34 @@ export interface Database {
           created_at?: string
         }
       }
+      comments: {
+        Row: {
+          id: string;
+          cause_id: string;
+          user_id: string;
+          content: string;
+          created_at: string;
+          updated_at: string;
+          parent_id: string | null;
+        }
+        Insert: {
+          id?: string;
+          cause_id: string;
+          user_id: string;
+          content: string;
+          created_at?: string;
+          updated_at?: string;
+          parent_id?: string | null;
+        }
+        Update: {
+          id?: string;
+          cause_id?: string;
+          user_id?: string;
+          content?: string;
+          updated_at?: string;
+          parent_id?: string | null;
+        }
+      }
     }
   }
 }
-
