@@ -81,6 +81,7 @@ export interface DonationFormData {
 }
 
 export interface SignatureFormData {
+  amount: string | number;
   name: string;
   email: string;
   message: string;
