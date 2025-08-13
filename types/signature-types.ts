@@ -3,7 +3,7 @@ import type { SignatureStatus } from "./common-types"
 // Signature
 export interface Signature {
   id: string
-  cause_id: string
+  petition_id: string
   user_id: string | null
   amount: number
   name: string
@@ -17,7 +17,7 @@ export interface Signature {
 
 // Signature with cause information
 export interface SignatureWithPetition extends Signature {
-  cause: {
+  petition: {
     title: string
     category: string
   }
