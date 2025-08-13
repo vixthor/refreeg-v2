@@ -30,6 +30,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import MultimediaCarousel from "@/components/MultimediaCarousel";
+import { listCommentsForCause } from "@/actions/comment-actions";
+import { CommentsTabWrapper } from "@/components/comments/comments-tab-wrapper";
 import { MilestoneNotifications } from "@/components/milestone-notifications";
 
 export default async function CauseDetailPage({
@@ -44,6 +46,7 @@ export default async function CauseDetailPage({
   }
 
   const donors = await listDonationsForCause(cause.id);
+  const comments = await listCommentsForCause(cause.id);
   const formattedDate = new Date(cause.created_at).toLocaleDateString("en-US", {
     year: "numeric",
     month: "long",
@@ -132,6 +135,7 @@ export default async function CauseDetailPage({
             <TabsList>
               <TabsTrigger value="about">About</TabsTrigger>
               <TabsTrigger value="donors">Donors</TabsTrigger>
+              <TabsTrigger value="comments">Comments ({comments.length})</TabsTrigger>
             </TabsList>
             <TabsContent value="about" className="space-y-4">
               <h1 className="text-3xl font-bold">{cause.title}</h1>
@@ -226,6 +230,11 @@ export default async function CauseDetailPage({
               </div>
               <DonorsList donors={donors} />
             </TabsContent>
+            <CommentsTabWrapper
+              initialComments={comments}
+              causeId={cause.id}
+              currentUserId={user?.id}
+            />
           </Tabs>
         </div>
 
