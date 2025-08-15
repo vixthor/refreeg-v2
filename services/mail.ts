@@ -44,7 +44,7 @@ export async function sendMail({
   subject,
   templateName,
   context,
-  from = process.env.DEFAULT_FROM_EMAIL || "noreply@example.com",
+  from = process.env.SMTP_USER || process.env.EMAIL_FROM || "noreply@example.com",
   cc,
   bcc,
 }: SendMailOptions) {
@@ -116,6 +116,33 @@ export async function sendBankAccountAddedEmail(context: {
       ...context,
       userName: profile?.full_name || "Refreegerian",
       currentYear: new Date().getFullYear().toString(),
+    },
+  });
+}
+
+
+
+// Convenience function for sending login notification emails
+export async function sendLoginNotificationEmail(context: {
+  ipAddress?: string;
+  device?: string;
+  loginTime?: string;
+}) {
+  const user = await getCurrentUser();
+  if (!user) {
+    throw new Error("User not found");
+  }
+  const profile = await getProfile(user.id);
+  return sendMail({
+    to: profile?.email || "",
+    subject: "New Login Notification",
+    templateName: "login-notification",
+    context: {
+      ...context,
+      userName: profile?.full_name || "User",
+      loginTime: context.loginTime || new Date().toLocaleString(),
+      device: context.device || "Unknown Device",
+      ipAddress: context.ipAddress || "Unknown IP",
     },
   });
 }
