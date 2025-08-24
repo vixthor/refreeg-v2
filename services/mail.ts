@@ -6,9 +6,6 @@ import path from "path";
 import Handlebars from "handlebars";
 import { getCurrentUser, getProfile } from "@/actions";
 
-
-
-
 export async function getDeviceInfo() {
   if (typeof window === "undefined") return "Unknown Device";
   const ua = window.navigator.userAgent;
@@ -57,7 +54,9 @@ export async function sendMail({
   subject,
   templateName,
   context,
-  from = process.env.SMTP_USER || process.env.EMAIL_FROM || "noreply@example.com",
+  from = process.env.SMTP_USER ||
+    process.env.EMAIL_FROM ||
+    "noreply@example.com",
   cc,
   bcc,
 }: SendMailOptions) {
@@ -133,7 +132,54 @@ export async function sendBankAccountAddedEmail(context: {
   });
 }
 
+// KYC Email Notifications
+export async function sendKycSubmittedEmail(
+  userEmail: string,
+  userName: string
+) {
+  return sendMail({
+    to: userEmail,
+    subject: "KYC Verification Submitted - Refreeg",
+    templateName: "kyc-submitted",
+    context: {
+      userName,
+      organizationName: "Refreeg",
+      reviewTimeframe: "3-5 business days",
+    },
+  });
+}
 
+export async function sendKycApprovedEmail(
+  userEmail: string,
+  userName: string
+) {
+  return sendMail({
+    to: userEmail,
+    subject: "KYC Verification Approved - Refreeg",
+    templateName: "kyc-approved",
+    context: {
+      userName,
+      organizationName: "Refreeg",
+    },
+  });
+}
+
+export async function sendKycRejectedEmail(
+  userEmail: string,
+  userName: string,
+  rejectionReason: string
+) {
+  return sendMail({
+    to: userEmail,
+    subject: "KYC Verification Update - Refreeg",
+    templateName: "kyc-rejected",
+    context: {
+      userName,
+      organizationName: "Refreeg",
+      rejectionReason,
+    },
+  });
+}
 
 // Convenience function for sending login notification emails
 export async function sendLoginNotificationEmail(context: {
