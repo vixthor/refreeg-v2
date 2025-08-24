@@ -29,65 +29,10 @@ import {
   Twitter,
 } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
 import MultimediaCarousel from "@/components/MultimediaCarousel";
-
-// Mock data for a cause
-const mockCause = {
-  id: "1",
-  title: "Clean Water Initiative",
-  description:
-    "Providing clean water to communities in rural areas. Access to clean water is a fundamental human right, yet millions of people around the world still lack this basic necessity. This initiative aims to install water purification systems in communities that currently rely on contaminated water sources, reducing waterborne diseases and improving overall health outcomes. Your donation will directly fund the purchase and installation of water filters, the construction of wells, and educational programs on water hygiene and conservation.",
-  category: "Environment",
-  raised: 12500,
-  goal: 20000,
-  image: "/placeholder.svg?height=300&width=600",
-  user: {
-    name: "Environmental Action Group",
-    email: "contact@example.org",
-  },
-  created_at: "2023-05-15T10:30:00Z",
-  status: "approved",
-};
-
-// Mock donors data
-const mockDonors = [
-  {
-    id: "1",
-    name: "John Doe",
-    amount: 500,
-    date: "2023-06-01T14:30:00Z",
-    message: "Keep up the great work!",
-  },
-  {
-    id: "2",
-    name: "Anonymous",
-    amount: 1000,
-    date: "2023-06-02T09:15:00Z",
-    message: null,
-  },
-  {
-    id: "3",
-    name: "Sarah Johnson",
-    amount: 250,
-    date: "2023-06-03T16:45:00Z",
-    message: "Happy to support this cause",
-  },
-  {
-    id: "4",
-    name: "Anonymous",
-    amount: 5000,
-    date: "2023-06-04T11:20:00Z",
-    message: "Water is life",
-  },
-  {
-    id: "5",
-    name: "Michael Brown",
-    amount: 750,
-    date: "2023-06-05T13:10:00Z",
-    message: null,
-  },
-];
+import { listCommentsForCause } from "@/actions/comment-actions";
+import { CommentsTabWrapper } from "@/components/comments/comments-tab-wrapper";
+import { MilestoneNotifications } from "@/components/milestone-notifications";
 
 export default async function CauseDetailPage({
   params,
@@ -101,15 +46,13 @@ export default async function CauseDetailPage({
   }
 
   const donors = await listDonationsForCause(cause.id);
-
-  // Format the date
+  const comments = await listCommentsForCause(cause.id);
   const formattedDate = new Date(cause.created_at).toLocaleDateString("en-US", {
     year: "numeric",
     month: "long",
     day: "numeric",
   });
 
-  // Calculate percentage raised
   const percentRaised = Math.min(
     Math.round((cause.raised / cause.goal) * 100),
     100
@@ -124,11 +67,9 @@ export default async function CauseDetailPage({
   };
 
   const baseUrl = getBaseURL();
-  // Check if creator has a wallet
   const creatorProfile = await getProfile(cause.user_id);
   const hasCreatorWallet = !!creatorProfile?.solana_wallet;
 
-  // Parse social media links from JSON string
   let socialMedia = {
     twitter: "",
     facebook: "",
@@ -138,7 +79,6 @@ export default async function CauseDetailPage({
 
   if (creatorProfile?.social_media) {
     try {
-      // Handle both string (from DB) and object (already parsed) cases
       const parsedSocial =
         typeof creatorProfile.social_media === "string"
           ? JSON.parse(creatorProfile.social_media)
@@ -155,7 +95,6 @@ export default async function CauseDetailPage({
     }
   }
 
-  // Check if any social media links exist
   const hasSocialMedia =
     socialMedia.twitter ||
     socialMedia.facebook ||
@@ -164,31 +103,44 @@ export default async function CauseDetailPage({
 
   return (
     <div className="container py-10">
+      <MilestoneNotifications
+        raised={cause.raised}
+        goal={cause.goal}
+        causeId={cause.id}
+        causeTitle={cause.title}
+        userName={cause.user.name}
+      />
+
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-6">
-          {/* Multimedia Carousel */}
-          {cause.multimedia &&
-          Array.isArray(cause.multimedia) &&
-          cause.multimedia.length > 0 ? (
-            <MultimediaCarousel
-              media={cause.multimedia}
-              coverImage={cause.image}
-              title={cause.title}
-            />
-          ) : (
-            <div className="aspect-video w-full overflow-hidden rounded-lg">
-              <img
-                src={cause.image || "/placeholder.svg"}
-                alt={cause.title}
-                className="object-cover w-full h-full"
+          {(() => {
+            // Combine multimedia (images) and video_links (video URLs)
+            const allMedia = [...(cause.multimedia || [])];
+
+            return allMedia.length > 0 ? (
+              <MultimediaCarousel
+                media={allMedia}
+                coverImage={cause.image || undefined}
+                title={cause.title}
               />
-            </div>
-          )}
+            ) : (
+              <div className="aspect-video w-full overflow-hidden rounded-lg">
+                <img
+                  src={cause.image || "/placeholder.svg"}
+                  alt={cause.title}
+                  className="object-cover w-full h-full"
+                />
+              </div>
+            );
+          })()}
 
           <Tabs defaultValue="about">
             <TabsList>
               <TabsTrigger value="about">About</TabsTrigger>
               <TabsTrigger value="donors">Donors</TabsTrigger>
+              <TabsTrigger value="comments">
+                Comments ({comments.length})
+              </TabsTrigger>
             </TabsList>
             <TabsContent value="about" className="space-y-4">
               <h1 className="text-3xl font-bold">{cause.title}</h1>
@@ -208,7 +160,6 @@ export default async function CauseDetailPage({
                 <span className="capitalize">{cause.category}</span>
               </div>
 
-              {/* Social Media Links */}
               {hasSocialMedia && (
                 <div className="flex items-center gap-4 pt-2">
                   {socialMedia.twitter && (
@@ -258,7 +209,6 @@ export default async function CauseDetailPage({
                 </div>
               )}
 
-              {/* <p className="whitespace-pre-line">{cause.description}</p> */}
               {cause.sections &&
                 cause.sections.length > 0 &&
                 cause.sections.map((section, index) => (
@@ -272,15 +222,24 @@ export default async function CauseDetailPage({
             </TabsContent>
             <TabsContent value="donors">
               <div>
-                <Alert variant="destructive" className="mb-4 bg-[#E4626F33] border-0">
+                <Alert
+                  variant="destructive"
+                  className="mb-4 bg-[#E4626F33] border-0"
+                >
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription>
-                    These records are logged on the blockchain and are immutable.
+                    These records are logged on the blockchain and are
+                    immutable.
                   </AlertDescription>
                 </Alert>
               </div>
               <DonorsList donors={donors} />
             </TabsContent>
+            <CommentsTabWrapper
+              initialComments={comments}
+              causeId={cause.id}
+              currentUserId={user?.id}
+            />
           </Tabs>
         </div>
 
@@ -340,12 +299,6 @@ export default async function CauseDetailPage({
               {hasCreatorWallet ? (
                 <div className="space-y-4">
                   <SolanaDonationButtonWrapper causeId={cause.id} />
-                  {/* <Alert variant="destructive">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription>
-                      Crypto donations are not available at the moment.
-                    </AlertDescription>
-                  </Alert> */}
                   <div className="relative">
                     <div className="absolute inset-0 flex items-center">
                       <span className="w-full border-t" />
