@@ -6,6 +6,16 @@ import path from "path";
 import Handlebars from "handlebars";
 import { getCurrentUser, getProfile } from "@/actions";
 
+export async function getDeviceInfo() {
+  if (typeof window === "undefined") return "Unknown Device";
+  const ua = window.navigator.userAgent;
+  if (/android/i.test(ua)) return "Android";
+  if (/iPad|iPhone|iPod/.test(ua)) return "iOS";
+  if (/Windows NT/.test(ua)) return "Windows";
+  if (/Macintosh/.test(ua)) return "Mac";
+  if (/Linux/.test(ua)) return "Linux";
+  return "Other";
+}
 // Configure mail transporter
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || "smtp.gmail.com",
@@ -44,7 +54,9 @@ export async function sendMail({
   subject,
   templateName,
   context,
-  from = process.env.DEFAULT_FROM_EMAIL || "noreply@example.com",
+  from = process.env.SMTP_USER ||
+    process.env.EMAIL_FROM ||
+    "noreply@example.com",
   cc,
   bcc,
 }: SendMailOptions) {
@@ -165,6 +177,31 @@ export async function sendKycRejectedEmail(
       userName,
       organizationName: "Refreeg",
       rejectionReason,
+    },
+  });
+}
+
+// Convenience function for sending login notification emails
+export async function sendLoginNotificationEmail(context: {
+  ipAddress?: string;
+  device?: string;
+  loginTime?: string;
+}) {
+  const user = await getCurrentUser();
+  if (!user) {
+    throw new Error("User not found");
+  }
+  const profile = await getProfile(user.id);
+  return sendMail({
+    to: profile?.email || "",
+    subject: "New Login Notification",
+    templateName: "login-notification",
+    context: {
+      ...context,
+      userName: profile?.full_name || "User",
+      loginTime: context.loginTime || new Date().toLocaleString(),
+      device: context.device || "Unknown Device",
+      ipAddress: context.ipAddress || "Unknown IP",
     },
   });
 }
