@@ -39,7 +39,6 @@ export interface CauseSection {
 
 export interface CauseFormData {
   title: string;
-  // description: string;
   category: string;
   goal: string | number;
   currency: string;
@@ -115,6 +114,23 @@ export interface CauseWithUser extends Cause {
     email: string;
     sub_account_code: string;
   };
-
+  multimedia?: string[];
   sections: CauseSection[];
+}
+
+export interface Comment {
+  id: string;
+  cause_id: string;
+  user_id: string;
+  content: string;
+  created_at: string;
+  updated_at: string;
+  is_edited: boolean;
+  parent_id: string | null;
+  user: {
+    full_name: string | null;
+    profile_photo: string | null;
+  };
+  replies?: Comment[];
+  replies_count?: number;
 }
