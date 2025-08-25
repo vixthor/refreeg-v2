@@ -80,14 +80,22 @@ async function uploadImageToSupabase(
 ): Promise<string> {
   const supabase = await createClient();
 
+  if (!file) {
+    console.log("No file provided");
+    return "";
+  }
+
   // Generate a unique filename and sanitize it by removing special characters
   const sanitizedOriginalName = file.name.replace(/[^\w\s.-]/g, "_");
   const fileName = `${userId}-${Date.now()}-${type}-${sanitizedOriginalName}`;
 
+  console.log(sanitizedOriginalName);
+  console.log(fileName);
+
   // Choose the appropriate storage bucket based on the file type
   const bucket = file.type.startsWith("video/")
     ? "cause-videos"
-    : "profile-photos";
+    : "cause-images";
 
   console.log("bucket", bucket);
 
@@ -119,6 +127,8 @@ export async function createCause(
   causeData: CauseFormData
 ): Promise<Cause> {
   const supabase = await createClient();
+
+  console.log("Here");
 
   // Upload cover image if provided
   let coverImageUrl = null;
