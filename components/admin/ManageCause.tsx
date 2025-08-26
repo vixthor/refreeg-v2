@@ -47,6 +47,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal } from "lucide-react";
+import NavigationLoader from "../NavigationLoader";
 
 export default function ManageCauses() {
   const router = useRouter();
@@ -159,7 +160,7 @@ export default function ManageCauses() {
   };
 
   if (adminLoading) {
-    return <div className="flex justify-center p-8">Loading...</div>;
+    return <NavigationLoader />;
   }
 
   if (!isAdminOrManager) {

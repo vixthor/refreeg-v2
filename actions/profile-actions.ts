@@ -217,7 +217,19 @@ export async function hasKycVerification(userId: string) {
     .single();
 
   if (error && error.code !== "PGRST116") throw error;
-  return data || null;
+  if (!data) return null;
+
+  // Map storage path in document_url to public URL for consumers
+  if (data.document_url) {
+    const { data: urlData } = supabase.storage
+      .from("kyc-documents")
+      .getPublicUrl(data.document_url);
+    if (urlData?.publicUrl) {
+      (data as any).document_url = urlData.publicUrl;
+    }
+  }
+
+  return data;
 }
 
 /**
