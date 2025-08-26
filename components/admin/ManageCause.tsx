@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,7 +28,6 @@ import { useAdmin } from "@/hooks/use-admin";
 import type { Cause, CauseStatus, CauseWithUser } from "@/types";
 import Image from "next/image";
 import { useQueryState } from "nuqs";
-import { getCause } from "@/actions/cause-actions";
 import { format } from "date-fns";
 import { categories } from "@/lib/categories";
 import { useNotifications } from "@/hooks/use-notification";
@@ -47,6 +46,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 import NavigationLoader from "../NavigationLoader";
 
 export default function ManageCauses() {
@@ -77,11 +77,10 @@ export default function ManageCauses() {
     reason: "",
   });
 
-  const [detailDialog, setDetailDialog] = useState<{
+  const [previewDialog, setPreviewDialog] = useState<{
     open: boolean;
     cause: CauseWithUser | null;
     isLoading: boolean;
-    error?: string;
   }>({
     open: false,
     cause: null,
@@ -93,15 +92,10 @@ export default function ManageCauses() {
   const handleApprove = async (causeId: string) => {
     try {
       await approveCause(causeId);
-
-      // Show notification
       showNotification("Cause Approved", {
         body: "A new cause has been approved and is now live!",
         icon: "/icons/icon-192x192.png",
       });
-
-      // Optional: You could also send this to all subscribed users
-      // await sendPushNotificationToAll(causeId)
     } catch (error) {
       console.error("Error approving cause:", error);
     }
@@ -121,42 +115,32 @@ export default function ManageCauses() {
     setRejectDialog((prev) => ({ ...prev, open: false }));
   };
 
-  const openDetailDialog = async (causeId: string) => {
-    setDetailDialog((prev) => ({
-      ...prev,
+  const openPreviewDialog = (cause: Cause | CauseWithUser) => {
+    // For preview, we'll use the basic cause data and handle missing user info
+    const previewCause: CauseWithUser = {
+      ...cause,
+      user: (cause as CauseWithUser).user || {
+        name: cause.profiles?.name || "Anonymous",
+        email: "",
+        sub_account_code: "",
+      },
+      sections: (cause as CauseWithUser).sections || [],
+      multimedia: (cause as CauseWithUser).multimedia || [],
+    };
+
+    setPreviewDialog({
       open: true,
-      isLoading: true,
-      error: undefined,
-    }));
-    try {
-      const detailedCause = await getCause(causeId);
-      if (!detailedCause || !detailedCause.id) {
-        setDetailDialog((prev) => ({
-          ...prev,
-          cause: null,
-          isLoading: false,
-          error: "Cause details not found or incomplete.",
-        }));
-        return;
-      }
-      setDetailDialog((prev) => ({
-        ...prev,
-        cause: detailedCause,
-        isLoading: false,
-        error: undefined,
-      }));
-    } catch (error) {
-      setDetailDialog((prev) => ({
-        ...prev,
-        cause: null,
-        isLoading: false,
-        error: "Failed to load cause details. Please try again.",
-      }));
-    }
+      cause: previewCause,
+      isLoading: false,
+    });
   };
 
-  const closeDetailDialog = () => {
-    setDetailDialog((prev) => ({ ...prev, open: false, cause: null }));
+  const closePreviewDialog = () => {
+    setPreviewDialog({
+      open: false,
+      cause: null,
+      isLoading: false,
+    });
   };
 
   if (adminLoading) {
@@ -216,10 +200,7 @@ export default function ManageCauses() {
                 <TableBody>
                   {causes.map((cause) => (
                     <TableRow key={cause.id}>
-                      <TableCell
-                        className="font-medium cursor-pointer hover:text-primary"
-                        onClick={() => openDetailDialog(cause.id)}
-                      >
+                      <TableCell className="font-medium">
                         {cause.title}
                       </TableCell>
                       <TableCell>{cause.category}</TableCell>
@@ -251,9 +232,9 @@ export default function ManageCauses() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem
-                              onClick={() => openDetailDialog(cause.id)}
+                              onClick={() => openPreviewDialog(cause)}
                             >
-                              View
+                              Preview
                             </DropdownMenuItem>
                             {activeTab === "pending" && (
                               <>
@@ -340,355 +321,229 @@ export default function ManageCauses() {
         </DialogContent>
       </Dialog>
 
-      {/* Detail Dialog */}
-      <Dialog open={detailDialog.open} onOpenChange={closeDetailDialog}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Cause Details</DialogTitle>
-            <DialogDescription>
-              Full details of the cause for review
-            </DialogDescription>
-          </DialogHeader>
+      {/* Preview Dialog - Simulates the actual cause page */}
+      <Dialog open={previewDialog.open} onOpenChange={closePreviewDialog}>
+        <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto p-0">
+          {/* DialogTitle for accessibility (visually hidden) */}
+          <DialogTitle className="sr-only">
+            Preview Cause: {previewDialog.cause?.title || "Cause Preview"}
+          </DialogTitle>
 
-          {detailDialog.isLoading ? (
-            <div className="flex justify-center items-center py-8">
+          {previewDialog.isLoading ? (
+            <div className="flex justify-center items-center py-12">
               <Icons.spinner className="h-8 w-8 animate-spin" />
             </div>
-          ) : detailDialog.error ? (
-            <div className="text-center py-8 text-destructive">
-              {detailDialog.error}
-            </div>
-          ) : detailDialog.cause ? (
-            <div className="space-y-6">
-              {/* Header */}
-              <div className="space-y-4">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h2 className="text-2xl font-bold">
-                      {detailDialog.cause.title}
-                    </h2>
-                    <p className="text-muted-foreground">
-                      {categories.find(
-                        (c) => c.id === detailDialog.cause?.category
-                      )?.name || detailDialog.cause.category}
-                    </p>
-                  </div>
-                  <Badge
-                    variant={
-                      detailDialog.cause.status === "approved"
-                        ? "default"
-                        : detailDialog.cause.status === "pending"
-                        ? "secondary"
-                        : "destructive"
-                    }
-                  >
-                    {detailDialog.cause.status.charAt(0).toUpperCase() +
-                      detailDialog.cause.status.slice(1)}
-                  </Badge>
-                </div>
+          ) : previewDialog.cause ? (
+            <div className="container py-6">
+              <div className="grid gap-6 lg:grid-cols-3">
+                <div className="lg:col-span-2 space-y-6">
+                  {/* Cover Image */}
+                  {previewDialog.cause.image && (
+                    <div className="aspect-video w-full overflow-hidden rounded-lg">
+                      <Image
+                        src={previewDialog.cause.image}
+                        alt={previewDialog.cause.title}
+                        className="object-cover w-full h-full"
+                        width={800}
+                        height={450}
+                      />
+                    </div>
+                  )}
 
-                {/* Creator Info */}
-                <div className="p-4 bg-muted rounded-lg">
-                  <h3 className="font-medium mb-2">Creator Information</h3>
-                  <div className="text-sm space-y-1">
-                    <p>
-                      <span className="font-medium">Name:</span>{" "}
-                      {detailDialog.cause.user?.name || "-"}
-                    </p>
-                    <p>
-                      <span className="font-medium">Email:</span>{" "}
-                      {detailDialog.cause.user?.email || "-"}
-                    </p>
-                    <p>
-                      <span className="font-medium">Created:</span>{" "}
-                      {detailDialog.cause.created_at
-                        ? format(new Date(detailDialog.cause.created_at), "PPP")
-                        : "-"}
-                    </p>
-                    {detailDialog.cause.status === "approved" &&
-                      detailDialog.cause.updated_at && (
-                        <p>
-                          <span className="font-medium">Approved:</span>{" "}
-                          {format(
-                            new Date(detailDialog.cause.updated_at),
-                            "PPP"
-                          )}
-                        </p>
+                  {/* Content */}
+                  <div className="space-y-6">
+                    <h1 className="text-3xl font-bold">
+                      {previewDialog.cause.title}
+                    </h1>
+
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <span>
+                        Created by{" "}
+                        {previewDialog.cause.user?.name || "Anonymous"}
+                      </span>
+                      <span>•</span>
+                      <span>
+                        {previewDialog.cause.created_at
+                          ? format(
+                              new Date(previewDialog.cause.created_at),
+                              "PPP"
+                            )
+                          : "-"}
+                      </span>
+                      <span>•</span>
+                      <span className="capitalize">
+                        {previewDialog.cause.category}
+                      </span>
+                    </div>
+
+                    {/* Description */}
+                    <div className="prose max-w-none">
+                      <p className="whitespace-pre-line text-lg">
+                        {previewDialog.cause.description}
+                      </p>
+                    </div>
+
+                    {/* Sections */}
+                    {previewDialog.cause.sections &&
+                      previewDialog.cause.sections.length > 0 &&
+                      previewDialog.cause.sections.map(
+                        (section: any, index: number) => (
+                          <div key={index} className="space-y-3">
+                            <h3 className="text-xl font-semibold">
+                              {section.heading}
+                            </h3>
+                            <p className="text-muted-foreground whitespace-pre-line">
+                              {section.description}
+                            </p>
+                          </div>
+                        )
                       )}
                   </div>
                 </div>
-              </div>
 
-              {/* Cover Image */}
-              {detailDialog.cause.image && (
-                <div className="space-y-2">
-                  <h3 className="font-medium">Cover Image</h3>
-                  <div className="relative w-full h-64 rounded-lg overflow-hidden">
-                    <Image
-                      src={detailDialog.cause.image}
-                      alt={detailDialog.cause.title}
-                      className="object-cover w-full h-full"
-                      width={800}
-                      height={400}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* Multimedia Gallery */}
-              {(() => {
-                const allMedia = [...(detailDialog.cause.multimedia || [])];
-
-                return allMedia.length > 0 ? (
-                  <div className="space-y-2">
-                    <h3 className="font-medium">Multimedia Gallery</h3>
-                    <div className="grid grid-cols-2 gap-4">
-                      {allMedia.map((url: string, index: number) => {
-                        const isVideo = url.match(/\.(mp4|mov|webm)$/i);
-                        const isYouTube =
-                          url.includes("youtube") || url.includes("youtu.be");
-                        const isTikTok = url.includes("tiktok");
-                        const isDrive = url.includes("drive.google");
-
-                        // Extract YouTube video ID for embed
-                        let embedUrl = "";
-                        if (isYouTube) {
-                          const videoIdMatch = url.match(
-                            /(?:youtube\.com.*(?:\?|&)v=|youtu\.be\/)([^&#]+)/
-                          );
-                          const videoId = videoIdMatch ? videoIdMatch[1] : null;
-                          if (videoId) {
-                            embedUrl = `https://www.youtube.com/embed/${videoId}`;
-                          }
-                        }
-
-                        return (
-                          <div
-                            key={index}
-                            className="relative w-full h-48 rounded-lg overflow-hidden"
-                          >
-                            {isVideo ? (
-                              <video
-                                controls
-                                className="w-full h-full object-cover rounded-lg"
-                                src={url}
-                              />
-                            ) : isYouTube && embedUrl ? (
-                              <iframe
-                                src={embedUrl}
-                                title={`YouTube video ${index + 1}`}
-                                className="w-full h-full rounded-lg"
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                allowFullScreen
-                              />
-                            ) : isTikTok ? (
-                              (() => {
-                                const tiktokIdMatch = url.match(/video\/(\d+)/);
-                                const tiktokId = tiktokIdMatch
-                                  ? tiktokIdMatch[1]
-                                  : null;
-                                return tiktokId ? (
-                                  <iframe
-                                    src={`https://www.tiktok.com/embed/${tiktokId}`}
-                                    title={`TikTok video ${index + 1}`}
-                                    className="w-full h-full rounded-lg"
-                                    allow="autoplay; clipboard-write; encrypted-media; picture-in-picture"
-                                    allowFullScreen
-                                  />
-                                ) : (
-                                  <a
-                                    href={url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-blue-600 hover:underline text-sm text-center p-2"
-                                  >
-                                    Open TikTok Video
-                                  </a>
-                                );
-                              })()
-                            ) : isDrive ? (
-                              (() => {
-                                const fileIdMatch = url.match(/\/d\/([^/]+)/);
-                                const fileId = fileIdMatch
-                                  ? fileIdMatch[1]
-                                  : null;
-                                return fileId ? (
-                                  <iframe
-                                    src={`https://drive.google.com/file/d/${fileId}/preview`}
-                                    title={`Google Drive file ${index + 1}`}
-                                    className="w-full h-full rounded-lg"
-                                    allow="autoplay"
-                                    allowFullScreen
-                                  />
-                                ) : (
-                                  <a
-                                    href={url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-blue-600 hover:underline text-sm text-center p-2"
-                                  >
-                                    Open Google Drive File
-                                  </a>
-                                );
-                              })()
-                            ) : (
-                              <Image
-                                src={url}
-                                alt={`Multimedia ${index + 1}`}
-                                className="object-cover w-full h-full"
-                                width={400}
-                                height={200}
-                              />
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ) : null;
-              })()}
-
-              {/* Additional Sections */}
-              {detailDialog.cause.sections &&
-                Array.isArray(detailDialog.cause.sections) &&
-                detailDialog.cause.sections.length > 0 && (
-                  <div className="space-y-4">
-                    <h3 className="font-medium">Additional Sections</h3>
-                    {detailDialog.cause.sections.map(
-                      (section: any, index: number) => (
-                        <div key={index} className="p-4 border rounded-lg">
-                          <h4 className="font-medium mb-2">
-                            {section.heading}
-                          </h4>
-                          <p className="text-sm text-muted-foreground">
-                            {section.description}
-                          </p>
+                {/* Sidebar - Donation Info */}
+                <div className="space-y-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Donation Progress</CardTitle>
+                      <CardDescription>
+                        Help reach the goal of ₦
+                        {previewDialog.cause.goal.toLocaleString()}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span className="font-medium">
+                            ₦
+                            {(previewDialog.cause.raised || 0).toLocaleString()}
+                          </span>
+                          <span className="text-muted-foreground">
+                            of ₦{previewDialog.cause.goal.toLocaleString()}
+                          </span>
                         </div>
-                      )
-                    )}
-                  </div>
-                )}
-
-              {/* Financial Information */}
-              <div className="grid grid-cols-2 gap-4 p-4 bg-muted rounded-lg">
-                <div>
-                  <h3 className="font-medium mb-2">Financial Details</h3>
-                  <div className="space-y-1 text-sm">
-                    <p>
-                      <span className="font-medium">Goal:</span> ₦
-                      {detailDialog.cause.goal?.toLocaleString?.() ||
-                        detailDialog.cause.goal}
-                    </p>
-                    <p>
-                      <span className="font-medium">Raised:</span> ₦
-                      {detailDialog.cause.raised?.toLocaleString?.() ||
-                        detailDialog.cause.raised}
-                    </p>
-                    <p>
-                      <span className="font-medium">Progress:</span>{" "}
-                      {detailDialog.cause.goal && detailDialog.cause.raised
-                        ? (
-                            (detailDialog.cause.raised /
-                              detailDialog.cause.goal) *
+                        <Progress
+                          value={Math.min(
+                            Math.round(
+                              ((previewDialog.cause.raised || 0) /
+                                previewDialog.cause.goal) *
+                                100
+                            ),
                             100
-                          ).toFixed(1)
-                        : "-"}
-                      %
-                    </p>
-                  </div>
-                </div>
-                <div>
-                  <h3 className="font-medium mb-2">Duration</h3>
-                  <div className="space-y-1 text-sm">
-                    {detailDialog.cause.days_active !== null &&
-                    detailDialog.cause.days_active !== undefined ? (
-                      <p>
-                        <span className="font-medium">Days Active:</span>{" "}
-                        {detailDialog.cause.days_active} days
-                      </p>
-                    ) : (
-                      <p className="text-muted-foreground">Duration not set</p>
+                          )}
+                        />
+                        <div className="text-sm text-muted-foreground text-right">
+                          {Math.min(
+                            Math.round(
+                              ((previewDialog.cause.raised || 0) /
+                                previewDialog.cause.goal) *
+                                100
+                            ),
+                            100
+                          )}
+                          % raised
+                        </div>
+                      </div>
+
+                      <div className="text-sm space-y-2">
+                        <div className="flex justify-between">
+                          <span>Status</span>
+                          <Badge
+                            variant={
+                              previewDialog.cause.status === "approved"
+                                ? "default"
+                                : previewDialog.cause.status === "pending"
+                                ? "secondary"
+                                : "destructive"
+                            }
+                          >
+                            {previewDialog.cause.status
+                              .charAt(0)
+                              .toUpperCase() +
+                              previewDialog.cause.status.slice(1)}
+                          </Badge>
+                        </div>
+                        <div className="flex justify-between pt-2 border-t">
+                          <span>Goal Amount</span>
+                          <span className="font-medium">
+                            ₦{previewDialog.cause.goal.toLocaleString()}
+                          </span>
+                        </div>
+                        {previewDialog.cause.days_active && (
+                          <div className="flex justify-between pt-2 border-t">
+                            <span>Duration</span>
+                            <span className="font-medium">
+                              {previewDialog.cause.days_active} days
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Action Buttons */}
+                  <div className="flex gap-2 flex-wrap">
+                    {previewDialog.cause.status === "pending" && (
+                      <>
+                        <Button
+                          variant="destructive"
+                          onClick={() => {
+                            closePreviewDialog();
+                            openRejectDialog(
+                              previewDialog.cause!.id,
+                              previewDialog.cause!.title
+                            );
+                          }}
+                          className="flex-1"
+                        >
+                          Reject
+                        </Button>
+                        <Button
+                          onClick={() => {
+                            closePreviewDialog();
+                            handleApprove(previewDialog.cause!.id);
+                          }}
+                          className="flex-1"
+                        >
+                          Approve
+                        </Button>
+                      </>
+                    )}
+                    {previewDialog.cause.status === "rejected" && (
+                      <Button
+                        onClick={() => {
+                          closePreviewDialog();
+                          handleApprove(previewDialog.cause!.id);
+                        }}
+                        className="w-full"
+                      >
+                        Approve
+                      </Button>
+                    )}
+                    {previewDialog.cause.status === "approved" && (
+                      <Button
+                        variant="destructive"
+                        onClick={() => {
+                          closePreviewDialog();
+                          openRejectDialog(
+                            previewDialog.cause!.id,
+                            previewDialog.cause!.title
+                          );
+                        }}
+                        className="w-full"
+                      >
+                        Take Down
+                      </Button>
                     )}
                   </div>
                 </div>
               </div>
-
-              {/* Rejection Reason */}
-              {detailDialog.cause.status === "rejected" &&
-                detailDialog.cause.rejection_reason && (
-                  <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
-                    <h3 className="font-medium text-destructive mb-2">
-                      Rejection Reason
-                    </h3>
-                    <p className="text-sm text-destructive">
-                      {detailDialog.cause.rejection_reason}
-                    </p>
-                  </div>
-                )}
             </div>
           ) : (
             <div className="text-center py-8 text-muted-foreground">
-              Failed to load cause details
+              No cause data to display
             </div>
           )}
-
-          <DialogFooter>
-            <Button variant="outline" onClick={closeDetailDialog}>
-              Close
-            </Button>
-            {detailDialog.cause && (
-              <div className="flex gap-2">
-                {detailDialog.cause.status === "pending" && (
-                  <>
-                    <Button
-                      variant="destructive"
-                      onClick={() => {
-                        closeDetailDialog();
-                        openRejectDialog(
-                          detailDialog.cause!.id,
-                          detailDialog.cause!.title
-                        );
-                      }}
-                    >
-                      Reject
-                    </Button>
-                    <Button
-                      onClick={() => {
-                        closeDetailDialog();
-                        handleApprove(detailDialog.cause!.id);
-                      }}
-                    >
-                      Approve
-                    </Button>
-                  </>
-                )}
-                {detailDialog.cause.status === "rejected" && (
-                  <Button
-                    onClick={() => {
-                      closeDetailDialog();
-                      handleApprove(detailDialog.cause!.id);
-                    }}
-                  >
-                    Approve
-                  </Button>
-                )}
-                {detailDialog.cause.status === "approved" && (
-                  <Button
-                    variant="destructive"
-                    onClick={() => {
-                      closeDetailDialog();
-                      openRejectDialog(
-                        detailDialog.cause!.id,
-                        detailDialog.cause!.title
-                      );
-                    }}
-                  >
-                    Take Down
-                  </Button>
-                )}
-              </div>
-            )}
-          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
