@@ -47,6 +47,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import NavigationLoader from "../NavigationLoader";
 
 export default function ManageCauses() {
   const router = useRouter();
@@ -121,12 +122,12 @@ export default function ManageCauses() {
       user: (cause as CauseWithUser).user || {
         name: cause.profiles?.name || "Anonymous",
         email: "",
-        sub_account_code: ""
+        sub_account_code: "",
       },
       sections: (cause as CauseWithUser).sections || [],
-      multimedia: (cause as CauseWithUser).multimedia || []
+      multimedia: (cause as CauseWithUser).multimedia || [],
     };
-    
+
     setPreviewDialog({
       open: true,
       cause: previewCause,
@@ -143,7 +144,7 @@ export default function ManageCauses() {
   };
 
   if (adminLoading) {
-    return <div className="flex justify-center p-8">Loading...</div>;
+    return <NavigationLoader />;
   }
 
   if (!isAdminOrManager) {
@@ -354,10 +355,11 @@ export default function ManageCauses() {
                     <h1 className="text-3xl font-bold">
                       {previewDialog.cause.title}
                     </h1>
-                    
+
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <span>
-                        Created by {previewDialog.cause.user?.name || "Anonymous"}
+                        Created by{" "}
+                        {previewDialog.cause.user?.name || "Anonymous"}
                       </span>
                       <span>•</span>
                       <span>
@@ -414,9 +416,7 @@ export default function ManageCauses() {
                         <div className="flex justify-between text-sm">
                           <span className="font-medium">
                             ₦
-                            {(
-                              previewDialog.cause.raised || 0
-                            ).toLocaleString()}
+                            {(previewDialog.cause.raised || 0).toLocaleString()}
                           </span>
                           <span className="text-muted-foreground">
                             of ₦{previewDialog.cause.goal.toLocaleString()}
@@ -457,7 +457,9 @@ export default function ManageCauses() {
                                 : "destructive"
                             }
                           >
-                            {previewDialog.cause.status.charAt(0).toUpperCase() +
+                            {previewDialog.cause.status
+                              .charAt(0)
+                              .toUpperCase() +
                               previewDialog.cause.status.slice(1)}
                           </Badge>
                         </div>
@@ -523,7 +525,7 @@ export default function ManageCauses() {
                         variant="destructive"
                         onClick={() => {
                           closePreviewDialog();
-                            openRejectDialog(
+                          openRejectDialog(
                             previewDialog.cause!.id,
                             previewDialog.cause!.title
                           );
