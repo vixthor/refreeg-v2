@@ -80,27 +80,16 @@ async function uploadImageToSupabase(
 ): Promise<string> {
   const supabase = await createClient();
 
-  if (!file) {
-    console.log("[uploadImageToSupabase] No file provided");
-    return "";
-  }
-
   // Generate a unique filename and sanitize it by removing special characters
   const sanitizedOriginalName = file.name.replace(/[^\w\s.-]/g, "_");
   const fileName = `${userId}-${Date.now()}-${type}-${sanitizedOriginalName}`;
 
-  console.log(
-    "[uploadImageToSupabase] Sanitized original name:",
-    sanitizedOriginalName
-  );
-  console.log("[uploadImageToSupabase] Generated file name:", fileName);
-
   // Choose the appropriate storage bucket based on the file type
   const bucket = file.type.startsWith("video/")
     ? "cause-videos"
-    : "cause-images";
+    : "profile-photos";
 
-  console.log("[uploadImageToSupabase] Selected bucket:", bucket);
+  console.log("bucket", bucket);
 
   // Upload the file to Supabase Storage
   const { data: uploadData, error: uploadError } = await supabase.storage
@@ -111,22 +100,14 @@ async function uploadImageToSupabase(
     });
 
   if (uploadError) {
-    console.error(
-      "[uploadImageToSupabase] Error uploading image:",
-      uploadError
-    );
+    console.error("Error uploading image:", uploadError);
     throw uploadError;
-  } else {
-    console.log("[uploadImageToSupabase] Upload successful:", uploadData);
   }
 
   // Get the public URL
   const { data: urlData } = supabase.storage
     .from(bucket)
     .getPublicUrl(fileName);
-
-  console.log("[uploadImageToSupabase] Public URL:", urlData.publicUrl);
-
   return urlData.publicUrl;
 }
 
@@ -139,27 +120,22 @@ export async function createCause(
 ): Promise<Cause> {
   const supabase = await createClient();
 
-  console.log("[createCause] Called with userId:", userId);
-  console.log("[createCause] causeData:", JSON.stringify(causeData));
-
   // Upload cover image if provided
   let coverImageUrl = null;
   if (causeData.coverImage) {
-    console.log("[createCause] Uploading cover image...");
     coverImageUrl = await uploadImageToSupabase(
       causeData.coverImage,
       userId,
       "cover"
     );
-    console.log("[createCause] Cover image uploaded:", coverImageUrl);
-  } else {
-    console.log("[createCause] No cover image provided.");
   }
+
+  console.log("Uploaded");
 
   // Calculate days_active from start and end dates
   let daysActive = null;
   if (causeData.startDate && causeData.endDate) {
-    console.log("[createCause] Calculating daysActive...");
+    // Ensure we have valid Date objects
     const startDate =
       causeData.startDate instanceof Date
         ? causeData.startDate
@@ -169,19 +145,14 @@ export async function createCause(
         ? causeData.endDate
         : new Date(causeData.endDate);
 
-    console.log("[createCause] startDate:", startDate, "endDate:", endDate);
-
+    // Validate that the dates are valid
     if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-      console.error("[createCause] Invalid date format provided");
       throw new Error("Invalid date format provided");
     }
 
     daysActive = Math.ceil(
       (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
     );
-    console.log("[createCause] daysActive calculated:", daysActive);
-  } else {
-    console.log("[createCause] No startDate or endDate provided.");
   }
 
   // Upload multimedia files if they exist
@@ -191,25 +162,19 @@ export async function createCause(
     Array.isArray(causeData.multimedia) &&
     causeData.multimedia.length > 0
   ) {
-    console.log("[createCause] Uploading multimedia files...");
     try {
       multimediaUrls = await Promise.all(
-        causeData.multimedia.map((file, idx) => {
-          console.log(`[createCause] Uploading multimedia file #${idx + 1}`);
-          return uploadImageToSupabase(file, userId, "additional");
-        })
+        causeData.multimedia.map((file) =>
+          uploadImageToSupabase(file, userId, "additional")
+        )
       );
-      console.log("[createCause] Multimedia files uploaded:", multimediaUrls);
     } catch (error) {
-      console.error("[createCause] Error uploading multimedia:", error);
+      console.error("Error uploading multimedia:", error);
       throw error;
     }
-  } else {
-    console.log("[createCause] No multimedia files provided.");
   }
 
   // Start a transaction
-  console.log("[createCause] Inserting cause into database...");
   const { data: cause, error: causeError } = await supabase
     .from("causes")
     .insert({
@@ -228,40 +193,31 @@ export async function createCause(
     })
     .select()
     .single();
-
+  console.log(cause);
   if (causeError) {
-    console.error("[createCause] Error creating cause:", causeError);
+    console.error("Error creating cause:", causeError);
     throw causeError;
   }
-  console.log("[createCause] Cause created:", cause);
 
   // Insert sections if they exist
   if (causeData.sections && causeData.sections.length > 0) {
-    console.log("[createCause] Inserting sections...");
-    const sections = causeData.sections.map((section, idx) => {
-      console.log(`[createCause] Section #${idx + 1}:`, section);
-      return {
-        cause_id: cause.id,
-        heading: section.heading,
-        description: section.description,
-      };
-    });
+    const sections = causeData.sections.map((section) => ({
+      cause_id: cause.id,
+      heading: section.heading,
+      description: section.description,
+    }));
 
     const { error: sectionsError } = await supabase
       .from("cause_sections")
       .insert(sections);
 
     if (sectionsError) {
-      console.error("[createCause] Error creating sections:", sectionsError);
+      console.error("Error creating sections:", sectionsError);
       throw sectionsError;
     }
-    console.log("[createCause] Sections inserted successfully.");
-  } else {
-    console.log("[createCause] No sections to insert.");
   }
 
   revalidatePath("/dashboard/causes");
-  console.log("[createCause] Path revalidated. Returning cause.");
   return cause as Cause;
 }
 
