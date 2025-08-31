@@ -9,21 +9,34 @@ import HowitWorksYT from "@/components/home/howitWorksYT";
 
 export default function Home() {
   return (
-    <div className="flex flex-col min-h-screen mt-16 mx-6 md:mx-12">
+    <div className="flex flex-col min-h-screen mt-16 ">
       <Hero />
 
-      <LaunchYourCauseInSeconds />
+      <div className="mx-8">
+        <LaunchYourCauseInSeconds />
+      </div>
+      
+      <div className="mx-8">
+        <TrendingCauses />
+      </div>
 
-      <TrendingCauses />
-
-      <WhyItStandsOut />
+      <div className="">
+        <WhyItStandsOut />
+      </div>
 
       {/* Featured Causes */}
-      <FeaturedCauses />
+      <div className="mx-8">
+        <FeaturedCauses />
+      </div>
 
-      <HowitWorksYT />
+      <div className="">
+        <HowitWorksYT />
+      </div>
 
-      <FAQ />
+      <div className="mx-8">
+        <FAQ />
+      </div>
+
     </div>
   );
 }
