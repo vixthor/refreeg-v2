@@ -1,11 +1,21 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  CardDescription,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { getVerificationStatus, updateVerificationStatus } from "@/actions/kyc-actions";
+import {
+  getVerificationStatus,
+  updateVerificationStatus,
+} from "@/actions/kyc-actions";
 import { getProfile } from "@/actions/profile-actions";
+import NavigationLoader from "@/components/NavigationLoader";
 
 export default function KycReviewPage() {
   const router = useRouter();
@@ -55,29 +65,44 @@ export default function KycReviewPage() {
   };
 
   if (loading) {
-    return <div>Loading...</div>;
+    return <NavigationLoader />;
   }
   if (error) {
-    return <Alert variant="destructive"><AlertTitle>Error</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>;
+    return (
+      <Alert variant="destructive">
+        <AlertTitle>Error</AlertTitle>
+        <AlertDescription>{error}</AlertDescription>
+      </Alert>
+    );
   }
   if (!kyc || !profile) {
-    return <Alert variant="destructive"><AlertTitle>No KYC Submission</AlertTitle><AlertDescription>This user has not submitted KYC.</AlertDescription></Alert>;
+    return (
+      <Alert variant="destructive">
+        <AlertTitle>No KYC Submission</AlertTitle>
+        <AlertDescription>This user has not submitted KYC.</AlertDescription>
+      </Alert>
+    );
   }
 
   return (
     <div className="max-w-xl mx-auto mt-8">
       {kycAlert && (
         <Alert variant="default" className="mb-4">
-          <AlertTitle>KYC {kycAlert === "approved" ? "Approved" : "Rejected"}</AlertTitle>
+          <AlertTitle>
+            KYC {kycAlert === "approved" ? "Approved" : "Rejected"}
+          </AlertTitle>
           <AlertDescription>
-            KYC has been {kycAlert === "approved" ? "approved" : "rejected"} successfully.
+            KYC has been {kycAlert === "approved" ? "approved" : "rejected"}{" "}
+            successfully.
           </AlertDescription>
         </Alert>
       )}
       <Card>
         <CardHeader>
           <CardTitle>KYC Review</CardTitle>
-          <CardDescription>Review and approve/reject this user's KYC submission.</CardDescription>
+          <CardDescription>
+            Review and approve/reject this user's KYC submission.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
@@ -95,22 +120,42 @@ export default function KycReviewPage() {
             <div>Status: {kyc.status}</div>
             <div>Notes: {kyc.verification_notes || "-"}</div>
             <div className="mt-2">
-              <span className="font-semibold">Document:</span><br />
+              <span className="font-semibold">Document:</span>
+              <br />
               {kyc.document_url ? (
-                <a href={kyc.document_url} target="_blank" rel="noopener noreferrer">
-                  <img src={kyc.document_url} alt="KYC Document" className="max-w-xs max-h-48 border rounded" />
+                <a
+                  href={kyc.document_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <img
+                    src={kyc.document_url}
+                    alt="KYC Document"
+                    className="max-w-xs max-h-48 border rounded"
+                  />
                 </a>
               ) : (
                 <span>No document uploaded</span>
               )}
             </div>
           </div>
-          {actionError && <Alert variant="destructive"><AlertDescription>{actionError}</AlertDescription></Alert>}
+          {actionError && (
+            <Alert variant="destructive">
+              <AlertDescription>{actionError}</AlertDescription>
+            </Alert>
+          )}
           <div className="flex gap-4 mt-4">
-            <Button disabled={actionLoading || kyc.status === "approved"} onClick={() => handleAction("approved")}>
+            <Button
+              disabled={actionLoading || kyc.status === "approved"}
+              onClick={() => handleAction("approved")}
+            >
               ✅ Approve
             </Button>
-            <Button variant="destructive" disabled={actionLoading || kyc.status === "rejected"} onClick={() => handleAction("rejected")}>
+            <Button
+              variant="destructive"
+              disabled={actionLoading || kyc.status === "rejected"}
+              onClick={() => handleAction("rejected")}
+            >
               ❌ Reject
             </Button>
           </div>
@@ -118,4 +163,4 @@ export default function KycReviewPage() {
       </Card>
     </div>
   );
-} 
+}
