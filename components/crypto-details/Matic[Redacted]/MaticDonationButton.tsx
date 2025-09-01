@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useToast } from "@/components/ui/use-toast";
+import NavigationLoader from "@/components/NavigationLoader";
 
 const DEFAULT_MATIC_TO_NAIRA_RATE = 413;
 
@@ -433,11 +434,7 @@ export default function MaticDonationButton({
   ]);
 
   if (isLoadingAddress) {
-    return (
-      <div className="max-w-md mx-auto p-6 bg-white rounded-lg shadow-md">
-        <p>Loading wallet information...</p>
-      </div>
-    );
+    return <NavigationLoader />;
   }
 
   if (!recipientAddress) {

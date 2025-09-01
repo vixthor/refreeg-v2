@@ -76,20 +76,21 @@ export async function uploadKycDocument(
         return { documentUrl: "", error: uploadError.message };
       }
 
-      // Get signed URL (valid for 1 hour)
-      const { data: signedUrlData } = await supabase.storage
+      // Get permanent public URL
+      const { data: urlData } = supabase.storage
         .from(bucket)
-        .createSignedUrl(fileName, 3600);
+        .getPublicUrl(fileName);
 
-      if (!signedUrlData?.signedUrl) {
-        return { documentUrl: "", error: "Failed to generate signed URL" };
+      if (!urlData?.publicUrl) {
+        return { documentUrl: "", error: "Failed to get public URL" };
       }
 
       const { error: updateError } = await supabase
         .from("kyc_verifications")
         .update({
           document_type: documentType,
-          document_url: signedUrlData.signedUrl,
+          // Store only the storage path; UI will derive public URL
+          document_url: fileName,
           status: "pending",
           verification_notes: "Resubmitted for review",
           full_name: personalData.fullName,
@@ -124,7 +125,7 @@ export async function uploadKycDocument(
         // Don't fail the KYC submission if email fails
       }
 
-      return { documentUrl: signedUrlData.signedUrl, error: null };
+      return { documentUrl: urlData.publicUrl, error: null };
     } else {
       // Insert new record
       const fileExt = file.name.split(".").pop();
@@ -162,13 +163,13 @@ export async function uploadKycDocument(
         return { documentUrl: "", error: uploadError.message };
       }
 
-      // Get signed URL (valid for 1 hour)
-      const { data: signedUrlData } = await supabase.storage
+      // Get permanent public URL
+      const { data: urlData } = supabase.storage
         .from(bucket)
-        .createSignedUrl(fileName, 3600);
+        .getPublicUrl(fileName);
 
-      if (!signedUrlData?.signedUrl) {
-        return { documentUrl: "", error: "Failed to generate signed URL" };
+      if (!urlData?.publicUrl) {
+        return { documentUrl: "", error: "Failed to get public URL" };
       }
 
       const { error: insertError } = await supabase
@@ -176,7 +177,8 @@ export async function uploadKycDocument(
         .insert({
           user_id: userId,
           document_type: documentType,
-          document_url: signedUrlData.signedUrl,
+          // Store only the storage path; UI will derive public URL
+          document_url: fileName,
           status: "pending",
           verification_notes: "Awaiting admin review",
           full_name: personalData.fullName,
@@ -209,7 +211,7 @@ export async function uploadKycDocument(
         // Don't fail the KYC submission if email fails
       }
 
-      return { documentUrl: signedUrlData.signedUrl, error: null };
+      return { documentUrl: urlData.publicUrl, error: null };
     }
   } catch (error) {
     console.error("Error in uploadKycDocument:", error);
@@ -233,6 +235,16 @@ export async function getVerificationStatus(
 
     if (error) {
       throw error;
+    }
+
+    // If we have a record, map storage path to permanent public URL for UI consumption
+    if (data?.document_url) {
+      const { data: publicData } = supabase.storage
+        .from("kyc-documents")
+        .getPublicUrl(data.document_url);
+      if (publicData?.publicUrl) {
+        (data as any).document_url = publicData.publicUrl;
+      }
     }
 
     return { status: data, error: null };
