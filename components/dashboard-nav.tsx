@@ -1,13 +1,22 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
-import { BarChart3, FileText, Home, Settings, Users, Shield, UserCog, ClipboardCheckIcon } from "lucide-react"
-import { useAdmin } from "@/hooks/use-admin"
-import { useAuth } from "@/hooks/use-auth"
-import { Skeleton } from "@/components/ui/skeleton"
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import {
+  BarChart3,
+  FileText,
+  Home,
+  Settings,
+  Users,
+  Shield,
+  UserCog,
+  ClipboardCheckIcon,
+} from "lucide-react";
+import { useAdmin } from "@/hooks/use-admin";
+import { useAuth } from "@/hooks/use-auth";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const userNavItems = [
   {
@@ -21,6 +30,11 @@ const userNavItems = [
     icon: FileText,
   },
   {
+    title: "My Petitions",
+    href: "/dashboard/petitions",
+    icon: FileText,
+  },
+  {
     title: "My Donations",
     href: "/dashboard/donations",
     icon: Users,
@@ -30,13 +44,18 @@ const userNavItems = [
     href: "/dashboard/settings",
     icon: Settings,
   },
-]
+];
 
 // Admin-specific nav items
 const adminNavItems = [
   {
     title: "Manage Causes",
     href: "/dashboard/admin/causes",
+    icon: FileText,
+  },
+  {
+    title: "Manage Petitions",
+    href: "/dashboard/admin/petitions",
     icon: FileText,
   },
   {
@@ -52,14 +71,14 @@ const adminNavItems = [
   {
     title: "Logs",
     href: "/dashboard/admin/logs",
-    icon: ClipboardCheckIcon
-  }
-]
+    icon: ClipboardCheckIcon,
+  },
+];
 
 export function DashboardNav() {
-  const pathname = usePathname()
-  const { user } = useAuth()
-  const { isAdminOrManager, isLoading } = useAdmin(user?.id)
+  const pathname = usePathname();
+  const { user } = useAuth();
+  const { isAdminOrManager, isLoading } = useAdmin(user?.id);
 
   if (isLoading) {
     return (
@@ -77,7 +96,7 @@ export function DashboardNav() {
           ))}
         </div>
       </nav>
-    )
+    );
   }
 
   return (
@@ -86,7 +105,10 @@ export function DashboardNav() {
         <Link key={index} href={item.href}>
           <Button
             variant={pathname === item.href ? "secondary" : "ghost"}
-            className={cn("w-full justify-start", pathname === item.href ? "bg-secondary hover:bg-secondary" : "")}
+            className={cn(
+              "w-full justify-start",
+              pathname === item.href ? "bg-secondary hover:bg-secondary" : ""
+            )}
           >
             <item.icon className="mr-2 h-4 w-4" />
             {item.title}
@@ -104,10 +126,18 @@ export function DashboardNav() {
             {adminNavItems.map((item, index) => (
               <Link key={index} href={item.href}>
                 <Button
-                  variant={pathname === item.href || pathname.startsWith(`${item.href}/`) ? "secondary" : "ghost"}
+                  variant={
+                    pathname === item.href ||
+                    pathname.startsWith(`${item.href}/`)
+                      ? "secondary"
+                      : "ghost"
+                  }
                   className={cn(
                     "w-full justify-start",
-                    pathname === item.href || pathname.startsWith(`${item.href}/`) ? "bg-secondary hover:bg-secondary" : "",
+                    pathname === item.href ||
+                      pathname.startsWith(`${item.href}/`)
+                      ? "bg-secondary hover:bg-secondary"
+                      : ""
                   )}
                 >
                   <item.icon className="mr-2 h-4 w-4" />
@@ -119,6 +149,5 @@ export function DashboardNav() {
         </>
       )}
     </nav>
-  )
+  );
 }
-
