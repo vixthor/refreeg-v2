@@ -38,7 +38,7 @@ import { format, isBefore, differenceInDays } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const currencies = [{ id: "NGN", name: "Naira (₦)" }];
+const currencies = [{ id: "SIGNATURES", name: "Signatures" }];
 
 type FormData = {
   title: string;

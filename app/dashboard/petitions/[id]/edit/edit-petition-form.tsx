@@ -38,7 +38,7 @@ import { format, addDays, isAfter, isBefore, differenceInDays } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const currencies = [{ id: "NGN", name: "Naira (₦)" }];
+const currencies = [{ id: "SIGNATURES", name: "Signatures" }];
 
 type FormData = {
   title: string;
@@ -293,12 +293,12 @@ export default function EditPetitionForm({ petition }: EditPetitionFormProps) {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="goal">Fundraising Goal (₦)</Label>
+              <Label htmlFor="goal">Signature Goal</Label>
               <Input
                 id="goal"
                 name="goal"
                 type="number"
-                placeholder="Enter your fundraising goal"
+                placeholder="Enter your signature goal"
                 value={formData.goal}
                 onChange={handleChange}
                 className={errors.goal ? "border-red-500" : ""}
@@ -376,8 +376,8 @@ export default function EditPetitionForm({ petition }: EditPetitionFormProps) {
             <div className="space-y-2">
               <h3 className="text-lg font-medium">Petition Duration</h3>
               <p className="text-sm text-muted-foreground">
-                Select when your petition should start and end. Maximum duration is
-                60 days.
+                Select when your petition should start and end. Maximum duration
+                is 60 days.
               </p>
             </div>
 
@@ -556,8 +556,8 @@ export default function EditPetitionForm({ petition }: EditPetitionFormProps) {
       <CardHeader>
         <CardTitle>Edit Petition</CardTitle>
         <CardDescription>
-          Update your petition details below. All changes will require re-approval
-          before going live.
+          Update your petition details below. All changes will require
+          re-approval before going live.
         </CardDescription>
         <Progress value={(currentStep / 5) * 100} className="mt-4" />
       </CardHeader>

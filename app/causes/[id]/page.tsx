@@ -282,7 +282,8 @@ export default async function CauseDetailPage({
                 <ShareModal
                   url={`${baseUrl}/causes/${cause.id}`}
                   title={cause.title}
-                  causeId={cause.id}
+                  entityId={cause.id}
+                  entityType="cause"
                 />
               </div>
             </CardContent>

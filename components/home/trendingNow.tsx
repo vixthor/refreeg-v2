@@ -86,7 +86,7 @@ export async function TrendingCauses() {
                 <div className="relative z-0 overflow-visible h-full">
                   <Link href={`/causes/${cause.id}`} className="group block">
                     <AnimatedCard>
-                      <Card className="cursor-pointer transition hover:shadow-2xl shadow-lg h-full flex flex-col border border-gray-300">
+                      <Card className="cursor-pointer transition hover:shadow-2xl shadow-lg h-[420px] flex flex-col border border-gray-300">
                         <div className="aspect-video w-full overflow-hidden rounded-t-lg">
                           <img
                             src={cause.image || "/placeholder.svg"}
@@ -96,9 +96,9 @@ export async function TrendingCauses() {
                         </div>
                         <CardHeader className="flex flex-col flex-1 p-4 ">
                           <CardTitle>
-                            <H4>{cause.title}</H4>
-                            <P className="font-extralight">
-                              {cause.profiles?.full_name || "Unknown"}
+                            <H4 className="line-clamp-2">{cause.title}</H4>
+                            <P className="font-extralight truncate">
+                              {cause.profiles?.name || "Unknown"}
                             </P>
                           </CardTitle>
                           <hr className="border-t-2 border-gray-400" />
@@ -107,8 +107,8 @@ export async function TrendingCauses() {
                             <P>
                               {cause.goal > 0
                                 ? Math.round((cause.raised / cause.goal) * 100)
-                                : 0}
-                              {cause.days_active} days active
+                                : 0}{" "}
+                              {Number(cause.days_active || 0)} days active
                             </P>
                           </div>
                         </CardHeader>

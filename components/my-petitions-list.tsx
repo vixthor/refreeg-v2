@@ -76,7 +76,10 @@ interface MyPetitionsListProps {
   userId: string;
 }
 
-export async function MyPetitionsList({ status, userId }: MyPetitionsListProps) {
+export async function MyPetitionsList({
+  status,
+  userId,
+}: MyPetitionsListProps) {
   const petitions = await getUserPetitionsWithStatus(userId, status);
 
   const filteredPetitions =
@@ -144,22 +147,31 @@ export async function MyPetitionsList({ status, userId }: MyPetitionsListProps) 
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span className="font-medium">
-                  ₦{petition.raised.toLocaleString()}
+                  {petition.signers_count || 0} signatures
                 </span>
                 <span className="text-muted-foreground">
-                  of ₦{petition.goal.toLocaleString()}
+                  of {petition.goal.toLocaleString()}
                 </span>
               </div>
-              <Progress value={(petition.raised / petition.goal) * 100} />
+              <Progress
+                value={Math.min(
+                  ((petition.signers_count || 0) / petition.goal) * 100,
+                  100
+                )}
+              />
             </div>
             <div className="mt-4 text-sm text-muted-foreground">
               <div className="flex justify-between">
                 <span>Created:</span>
-                <span>{new Date(petition.created_at).toLocaleDateString()}</span>
+                <span>
+                  {new Date(petition.created_at).toLocaleDateString()}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span>Last updated:</span>
-                <span>{new Date(petition.updated_at).toLocaleDateString()}</span>
+                <span>
+                  {new Date(petition.updated_at).toLocaleDateString()}
+                </span>
               </div>
             </div>
             {petition.status === "rejected" && petition.rejection_reason && (
