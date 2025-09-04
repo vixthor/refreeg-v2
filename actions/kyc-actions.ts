@@ -3,6 +3,11 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { KycVerification, KycStatus } from "@/types/kyc-types";
+import {
+  sendKycSubmittedEmail,
+  sendKycApprovedEmail,
+  sendKycRejectedEmail,
+} from "@/services/mail";
 
 export async function uploadKycDocument(
   userId: string,
@@ -71,20 +76,21 @@ export async function uploadKycDocument(
         return { documentUrl: "", error: uploadError.message };
       }
 
-      // Get signed URL (valid for 1 hour)
-      const { data: signedUrlData } = await supabase.storage
+      // Get permanent public URL
+      const { data: urlData } = supabase.storage
         .from(bucket)
-        .createSignedUrl(fileName, 3600);
+        .getPublicUrl(fileName);
 
-      if (!signedUrlData?.signedUrl) {
-        return { documentUrl: "", error: "Failed to generate signed URL" };
+      if (!urlData?.publicUrl) {
+        return { documentUrl: "", error: "Failed to get public URL" };
       }
 
       const { error: updateError } = await supabase
         .from("kyc_verifications")
         .update({
           document_type: documentType,
-          document_url: signedUrlData.signedUrl,
+          // Store only the storage path; UI will derive public URL
+          document_url: fileName,
           status: "pending",
           verification_notes: "Resubmitted for review",
           full_name: personalData.fullName,
@@ -102,7 +108,24 @@ export async function uploadKycDocument(
       if (updateError) {
         return { documentUrl: "", error: updateError.message };
       }
-      return { documentUrl: signedUrlData.signedUrl, error: null };
+
+      // Send email notification for resubmission
+      try {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("email")
+          .eq("id", userId)
+          .single();
+
+        if (profile?.email) {
+          await sendKycSubmittedEmail(profile.email, personalData.fullName);
+        }
+      } catch (emailError) {
+        console.error("Error sending KYC submission email:", emailError);
+        // Don't fail the KYC submission if email fails
+      }
+
+      return { documentUrl: urlData.publicUrl, error: null };
     } else {
       // Insert new record
       const fileExt = file.name.split(".").pop();
@@ -140,13 +163,13 @@ export async function uploadKycDocument(
         return { documentUrl: "", error: uploadError.message };
       }
 
-      // Get signed URL (valid for 1 hour)
-      const { data: signedUrlData } = await supabase.storage
+      // Get permanent public URL
+      const { data: urlData } = supabase.storage
         .from(bucket)
-        .createSignedUrl(fileName, 3600);
+        .getPublicUrl(fileName);
 
-      if (!signedUrlData?.signedUrl) {
-        return { documentUrl: "", error: "Failed to generate signed URL" };
+      if (!urlData?.publicUrl) {
+        return { documentUrl: "", error: "Failed to get public URL" };
       }
 
       const { error: insertError } = await supabase
@@ -154,7 +177,8 @@ export async function uploadKycDocument(
         .insert({
           user_id: userId,
           document_type: documentType,
-          document_url: signedUrlData.signedUrl,
+          // Store only the storage path; UI will derive public URL
+          document_url: fileName,
           status: "pending",
           verification_notes: "Awaiting admin review",
           full_name: personalData.fullName,
@@ -170,7 +194,24 @@ export async function uploadKycDocument(
       if (insertError) {
         return { documentUrl: "", error: insertError.message };
       }
-      return { documentUrl: signedUrlData.signedUrl, error: null };
+
+      // Send email notification for new submission
+      try {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("email")
+          .eq("id", userId)
+          .single();
+
+        if (profile?.email) {
+          await sendKycSubmittedEmail(profile.email, personalData.fullName);
+        }
+      } catch (emailError) {
+        console.error("Error sending KYC submission email:", emailError);
+        // Don't fail the KYC submission if email fails
+      }
+
+      return { documentUrl: urlData.publicUrl, error: null };
     }
   } catch (error) {
     console.error("Error in uploadKycDocument:", error);
@@ -194,6 +235,16 @@ export async function getVerificationStatus(
 
     if (error) {
       throw error;
+    }
+
+    // If we have a record, map storage path to permanent public URL for UI consumption
+    if (data?.document_url) {
+      const { data: publicData } = supabase.storage
+        .from("kyc-documents")
+        .getPublicUrl(data.document_url);
+      if (publicData?.publicUrl) {
+        (data as any).document_url = publicData.publicUrl;
+      }
     }
 
     return { status: data, error: null };
@@ -245,7 +296,7 @@ export async function updateVerificationStatus(
     // Get the user_id from the verification record
     const { data: verification, error: fetchError } = await supabase
       .from("kyc_verifications")
-      .select("user_id")
+      .select("user_id, full_name")
       .eq("id", verificationId)
       .single();
 
@@ -258,6 +309,34 @@ export async function updateVerificationStatus(
     }
 
     if (verification) {
+      // Send email notification based on status
+      try {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("email")
+          .eq("id", verification.user_id)
+          .single();
+
+        if (profile?.email) {
+          if (status === "approved") {
+            await sendKycApprovedEmail(
+              profile.email,
+              verification.full_name || "User"
+            );
+          } else if (status === "rejected") {
+            await sendKycRejectedEmail(
+              profile.email,
+              verification.full_name || "User",
+              notes ||
+                "Your KYC verification was rejected. Please review and resubmit."
+            );
+          }
+        }
+      } catch (emailError) {
+        console.error("Error sending KYC status email:", emailError);
+        // Don't fail the status update if email fails
+      }
+
       if (status === "approved") {
         // Update user profile to mark as verified
         const { error: profileError } = await supabase

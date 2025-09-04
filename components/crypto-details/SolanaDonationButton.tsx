@@ -13,6 +13,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { getCurrentUser } from "@/actions";
 import { useToast } from "@/components/ui/use-toast";
+import NavigationLoader from "../NavigationLoader";
 
 const DEFAULT_SOL_TO_NAIRA_RATE = 225814.49;
 const SOLANA_RPC_URL = "https://api.testnet.solana.com";
@@ -469,11 +470,7 @@ export default function SolDonationButton({
   };
 
   if (isLoadingAddress) {
-    return (
-      <div className="max-w-md mx-auto p-6 bg-white rounded-lg shadow-md">
-        <p>Loading wallet information...</p>
-      </div>
-    );
+    return <NavigationLoader />;
   }
 
   if (!recipientAddress) {
