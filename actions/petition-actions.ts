@@ -10,11 +10,17 @@ import type {
 } from "@/types";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "./auth-actions";
+import {
+  sendPetitionApprovedEmailForUser,
+  sendPetitionRejectedEmailForUser,
+} from "@/services/mail";
 
 /**
  * Get a petition by ID
  */
-export async function getPetition(petitionId: string): Promise<PetitionWithUser | null> {
+export async function getPetition(
+  petitionId: string
+): Promise<PetitionWithUser | null> {
   const supabase = await createClient();
   const user = await getCurrentUser();
   const { data, error } = await supabase
@@ -405,7 +411,8 @@ export async function listPetitions(
   const { data, error } = await query;
 
   if (error) {
-    console.error("Error listing petitions:", error);
+    // Log the whole error object, fallback to string if empty
+    console.error("Error listing petitions:", error || "Unknown error");
     throw error;
   }
 
@@ -506,6 +513,25 @@ export async function updatePetitionStatus(
     throw error;
   }
 
+  // Attempt to notify the petition owner by email
+  try {
+    if (data?.user_id) {
+      if (status === "approved") {
+        await sendPetitionApprovedEmailForUser(data.user_id, {
+          petitionName: data.title,
+        });
+      }
+      if (status === "rejected") {
+        await sendPetitionRejectedEmailForUser(data.user_id, {
+          petitionName: data.title,
+          rejectionReason,
+        });
+      }
+    }
+  } catch (mailError) {
+    console.error("Failed to send petition status email:", mailError);
+  }
+
   revalidatePath("/dashboard/admin/petitions");
   return data as Petition;
 }
@@ -560,7 +586,10 @@ export async function getUserPetitionsWithStatus(
 export async function deletePetition(petitionId: string): Promise<void> {
   const supabase = await createClient();
 
-  const { error } = await supabase.from("petitions").delete().eq("id", petitionId);
+  const { error } = await supabase
+    .from("petitions")
+    .delete()
+    .eq("id", petitionId);
 
   if (error) {
     console.error("Error deleting petition:", error);

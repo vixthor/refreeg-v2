@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+  <body style="font-family: Arial, sans-serif; line-height: 1.6">
+    <h2>Hello {{userName}},</h2>
+    <p>
+      We appreciate your submission "{{petitionName}}". After careful review,
+      we’re unable to approve it at this time.
+    </p>
+    {{#if rejectionReason}}
+    <p><strong>Reason:</strong> {{rejectionReason}}</p>
+    {{/if}}
+    <p>
+      If you have questions or want to resubmit after adjustments, please reply
+      to this email.
+    </p>
+    <p>Thank you for understanding,<br />{{organizationName}} Team</p>
+  </body>
+</html>

@@ -54,12 +54,17 @@ export function UserNav() {
 
   return (
     <div className=" pt-1.5">
-
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="relative h-9 w-9 rounded-full border-[#150aec] border">
+          <Button
+            variant="ghost"
+            className="relative h-9 w-9 rounded-full border-[#150aec] border"
+          >
             <Avatar className="h-9 w-9">
-              <AvatarImage src={profile?.profile_photo || user.user_metadata?.avatar_url} alt={user.email || ""} />
+              <AvatarImage
+                src={profile?.profile_photo || user.user_metadata?.avatar_url}
+                alt={user.email || ""}
+              />
               <AvatarFallback>{initials}</AvatarFallback>
             </Avatar>
           </Button>
@@ -103,6 +108,14 @@ export function UserNav() {
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
               <Link
+                href="/dashboard/petitions"
+                className="hover:bg-[#0070E0] focus:bg-[#0070E0] transition-colors"
+              >
+                My Petitions
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link
                 href="/dashboard/settings"
                 className="hover:bg-[#0070E0] focus:bg-[#0070E0] transition-colors"
               >
@@ -124,6 +137,11 @@ export function UserNav() {
                   <Link href="/dashboard/admin/causes">Manage Causes</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
+                  <Link href="/dashboard/admin/petitions">
+                    Manage Petitions
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
                   <Link href="/dashboard/admin/users">Manage Users</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
@@ -141,6 +159,6 @@ export function UserNav() {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-    </div> 
-  )
+    </div>
+  );
 }

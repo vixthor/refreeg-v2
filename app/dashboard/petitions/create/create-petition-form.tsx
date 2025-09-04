@@ -42,7 +42,7 @@ const currencies = [{ id: "NGN", name: "Naira (₦)" }];
 
 type FormData = {
   title: string;
-  description: string,
+  description: string;
   category: string;
   goal: string;
   currency: string;
@@ -66,7 +66,7 @@ type FormErrors = {
 
 type PetitionFormData = {
   title: string;
-  description: string,
+  description: string;
   category: string;
   goal: string;
   currency: string;
@@ -90,10 +90,17 @@ const validateForm = (formData: FormData): FormErrors => {
     errors.category = "Category is required";
   }
 
-  if (!formData.goal) {
-    errors.goal = "Funding goal is required";
-  } else if (isNaN(Number(formData.goal)) || Number(formData.goal) <= 0) {
-    errors.goal = "Please enter a valid amount";
+  if (!formData.goal || !formData.goal.trim()) {
+    errors.goal = "Petition goal is required";
+  } else {
+    const goalValue = Number(formData.goal);
+    if (isNaN(goalValue)) {
+      errors.goal = "Goal must be a valid number";
+    } else if (goalValue <= 0) {
+      errors.goal = "Goal must be greater than zero";
+    } else if (goalValue < 10) {
+      errors.goal = "Goal must be at least 10 signatures";
+    }
   }
 
   if (!formData.coverImage) {
@@ -449,14 +456,14 @@ export default function CreatePetitionForm() {
               )}
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="gap-4">
               <div className="space-y-2">
-                <Label htmlFor="goal">Signature Goal</Label>
+                <Label htmlFor="goal">Petition Goal</Label>
                 <Input
                   id="goal"
                   name="goal"
                   type="number"
-                  placeholder="Enter amount"
+                  placeholder="Enter your petition goal"
                   value={formData.goal}
                   onChange={handleChange}
                   className={errors.goal ? "border-red-500" : ""}
@@ -464,26 +471,6 @@ export default function CreatePetitionForm() {
                 {errors.goal && (
                   <p className="text-sm text-red-500">{errors.goal}</p>
                 )}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="currency">Currency</Label>
-                <Select
-                  value={formData.currency}
-                  onValueChange={(value) =>
-                    handleSelectChange("currency", value)
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select currency" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {currencies.map((currency) => (
-                      <SelectItem key={currency.id} value={currency.id}>
-                        {currency.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
               </div>
             </div>
           </div>
@@ -572,8 +559,8 @@ export default function CreatePetitionForm() {
             <div className="space-y-2">
               <h3 className="text-lg font-medium">Petition Duration</h3>
               <p className="text-sm text-muted-foreground">
-                Select when your petition should start and end. Maximum duration is
-                60 days.
+                Select when your petition should start and end. Maximum duration
+                is 60 days.
               </p>
             </div>
 
@@ -697,8 +684,8 @@ export default function CreatePetitionForm() {
               <div className="space-y-2">
                 <Label>Additional Multimedia</Label>
                 <p className="text-sm text-muted-foreground">
-                  Enhance your petition with images and videos. Total size must not
-                  exceed 100MB.
+                  Enhance your petition with images and videos. Total size must
+                  not exceed 100MB.
                 </p>
                 <ImageUpload
                   onUpload={(files) => handleMultimediaUpload(files)}

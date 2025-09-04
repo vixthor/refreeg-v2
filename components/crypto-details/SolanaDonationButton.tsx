@@ -327,7 +327,13 @@ export default function SolDonationButton({
 
       const balance = await connection.getBalance(senderPublicKey);
       if (balance < amountInLamports) {
-        throw new Error(`Insufficient SOL balance. You have ${(balance / LAMPORTS_PER_SOL).toFixed(6)} SOL, but need ${(amountInLamports / LAMPORTS_PER_SOL).toFixed(6)} SOL`);
+        throw new Error(
+          `Insufficient SOL balance. You have ${(
+            balance / LAMPORTS_PER_SOL
+          ).toFixed(6)} SOL, but need ${(
+            amountInLamports / LAMPORTS_PER_SOL
+          ).toFixed(6)} SOL`
+        );
       }
 
       // Get recent blockhash and create transaction
@@ -407,7 +413,7 @@ export default function SolDonationButton({
         }
 
         const result = await response.json();
-        
+
         // Call success callback to update parent component
         onDonationSuccess?.(nairaAmount);
 
