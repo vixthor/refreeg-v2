@@ -255,13 +255,18 @@ export async function PetitionsList({
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="font-medium">
-                      ₦{petition.raised.toLocaleString()}
+                      {petition.signers_count || 0} signatures
                     </span>
                     <span className="text-muted-foreground">
-                      of ₦{petition.goal.toLocaleString()}
+                      of {petition.goal.toLocaleString()}
                     </span>
                   </div>
-                  <Progress value={(petition.raised / petition.goal) * 100} />
+                  <Progress
+                    value={Math.min(
+                      ((petition.signers_count || 0) / petition.goal) * 100,
+                      100
+                    )}
+                  />
                 </div>
               </CardContent>
               <CardFooter>

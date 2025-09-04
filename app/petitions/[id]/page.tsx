@@ -1,4 +1,3 @@
-import { createClient } from "@/lib/supabase/server";
 import {
   Card,
   CardContent,
@@ -8,7 +7,6 @@ import {
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { SignatureForm } from "@/components/signature-form";
-import { DonorsList } from "@/components/donors-list";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   getPetition,
@@ -32,6 +30,7 @@ import Link from "next/link";
 import { useState } from "react";
 import MultimediaCarousel from "@/components/MultimediaCarousel";
 import { SignersList } from "@/components/signers-list";
+import { CommentsSection } from "@/components/comments/comment-section";
 
 // Mock data for a petition
 const mockPetition = {
@@ -95,24 +94,36 @@ export default async function PetitionDetailPage({
 }: {
   params: { id: string };
 }) {
-  const myparams = await params;
+  const myparams = params;
   const petition = await getPetition(myparams.id);
   if (!petition) {
     notFound();
   }
 
   const signers = await listSignaturesForPetition(petition.id);
+  let comments: any[] = [];
+  try {
+    const { listPetitionComments } = await import(
+      "@/actions/petition-comment-actions"
+    );
+    comments = await listPetitionComments(petition.id);
+  } catch (e) {
+    comments = [];
+  }
 
   // Format the date
-  const formattedDate = new Date(petition.created_at).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
+  const formattedDate = new Date(petition.created_at).toLocaleDateString(
+    "en-US",
+    {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    }
+  );
 
-  // Calculate percentage raised
+  // Calculate signature progress based on number of signers
   const percentRaised = Math.min(
-    Math.round((petition.raised / petition.goal) * 100),
+    Math.round(((signers?.length || 0) / petition.goal) * 100),
     100
   );
   const user = await getCurrentUser();
@@ -168,18 +179,17 @@ export default async function PetitionDetailPage({
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-6">
           {/* Multimedia Carousel */}
-          {petition.multimedia &&
-          Array.isArray(petition.multimedia) &&
-          petition.multimedia.length > 0 ? (
+          {Array.isArray((petition as any).multimedia) &&
+          (petition as any).multimedia.length > 0 ? (
             <MultimediaCarousel
-              media={petition.multimedia}
-              coverImage={petition.image}
+              media={(petition as any).multimedia}
+              coverImage={petition.image || undefined}
               title={petition.title}
             />
           ) : (
             <div className="aspect-video w-full overflow-hidden rounded-lg">
               <img
-                src={petition.image || "/placeholder.svg"}
+                src={petition.image ?? "/placeholder.svg"}
                 alt={petition.title}
                 className="object-cover w-full h-full"
               />
@@ -189,20 +199,27 @@ export default async function PetitionDetailPage({
           <Tabs defaultValue="about">
             <TabsList>
               <TabsTrigger value="about">About</TabsTrigger>
-              <TabsTrigger value="donors">Signers</TabsTrigger>
+              <TabsTrigger value="donors">
+                Signers ({signers.length})
+              </TabsTrigger>
+              <TabsTrigger value="comments">
+                Comments ({comments.length})
+              </TabsTrigger>
             </TabsList>
             <TabsContent value="about" className="space-y-4">
               <h1 className="text-3xl font-bold">{petition.title}</h1>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <span>
-                  Created by{" "}
-                  <Link
-                    href={`/profile/${petition.user_id}`}
-                    className="hover:underline text-blue-600"
-                  >
-                    {petition.user.name}
-                  </Link>
-                </span>
+                {petition.user && (
+                  <span>
+                    Created by{" "}
+                    <Link
+                      href={`/profile/${petition.user_id}`}
+                      className="hover:underline text-blue-600"
+                    >
+                      {petition.user?.name}
+                    </Link>
+                  </span>
+                )}
                 <span>•</span>
                 <span>{formattedDate}</span>
                 <span>•</span>
@@ -274,6 +291,14 @@ export default async function PetitionDetailPage({
             <TabsContent value="donors">
               <SignersList signers={signers} />
             </TabsContent>
+            <TabsContent value="comments" className="space-y-4">
+              <CommentsSection
+                comments={comments as any}
+                causeId={petition.id}
+                currentUserId={user?.id}
+                entityType="petition"
+              />
+            </TabsContent>
           </Tabs>
         </div>
 
@@ -288,16 +313,14 @@ export default async function PetitionDetailPage({
             <CardContent className="space-y-6">
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="font-medium">
-                    {petition.raised.toLocaleString()}
-                  </span>
+                  <span className="font-medium">{signers.length}</span>
                   <span className="text-muted-foreground">
                     of {petition.goal.toLocaleString()}
                   </span>
                 </div>
                 <Progress value={percentRaised} />
                 <div className="text-sm text-muted-foreground text-right">
-                  {percentRaised}% raised
+                  {percentRaised}% of goal
                 </div>
               </div>
 
@@ -316,7 +339,8 @@ export default async function PetitionDetailPage({
                 <ShareModal
                   url={`${baseUrl}/petitions/${petition.id}`}
                   title={petition.title}
-                  causeId={petition.id}
+                  entityId={petition.id}
+                  entityType="petition"
                 />
               </div>
             </CardContent>
@@ -333,7 +357,7 @@ export default async function PetitionDetailPage({
                   petitionId={petition.id}
                   profile={profile}
                   status={petition.status}
-                  subaccount={petition?.user.sub_account_code}
+                  subaccount={petition?.user?.sub_account_code}
                 />
               </div>
             </CardContent>

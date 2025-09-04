@@ -1,73 +1,97 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useEffect, useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Switch } from "@/components/ui/switch"
-import { Icons } from "@/components/icons"
-import { useAuth } from "@/hooks/use-auth"
-import { useSignature } from "@/hooks/use-signature"
-import { useProfile } from "@/hooks/use-profile"
-
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
+import { Icons } from "@/components/icons";
+import { useAuth } from "@/hooks/use-auth";
+import { useSignature } from "@/hooks/use-signature";
+import { useProfile } from "@/hooks/use-profile";
 
 interface SignatureFormProps {
-  petitionId: string
+  petitionId: string;
   profile: {
-    email?: string
-    name?: string
-    id?: string
-  }
-  subaccount?: string
-  status: "pending" | "rejected" | "approved"
+    email?: string;
+    name?: string;
+    id?: string;
+  };
+  subaccount?: string;
+  status: "pending" | "rejected" | "approved";
 }
 
-export function SignatureForm({ petitionId, profile, status, subaccount }: SignatureFormProps) {
-  const { createUserSignature,isLoading } = useSignature()
+export function SignatureForm({
+  petitionId,
+  profile,
+  status,
+  subaccount,
+}: SignatureFormProps) {
+  const { createUserSignature, isLoading } = useSignature();
+  const [friendlyError, setFriendlyError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: profile?.name || "",
     email: profile?.email || "",
     message: "",
     isAnonymous: false,
-  })
+  });
 
-  const isDisabled = status === "pending" || status === "rejected" ? true : false
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
-  }
-  console.log(formData.isAnonymous)
+  const isDisabled =
+    status === "pending" || status === "rejected" ? true : false;
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+  console.log(formData.isAnonymous);
   const handleSwitchChange = (checked: boolean) => {
-    setFormData((prev) => ({ ...prev, isAnonymous: checked }))
-  }
+    setFormData((prev) => ({ ...prev, isAnonymous: checked }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
     if (!profile.id) {
-        throw new Error("Cannot create signature without a user ID");
+      setFriendlyError("Please sign in to sign this petition.");
+      return;
     }
 
-    await createUserSignature(petitionId, profile.id, {
-        email: formData.email,
-        name: formData.name,
-        message: formData.message,
-        isAnonymous: formData.isAnonymous,
-    })
+    const ok = await createUserSignature(petitionId, profile.id, {
+      amount: 1,
+      email: formData.email,
+      name: formData.name,
+      message: formData.message,
+      isAnonymous: formData.isAnonymous,
+    });
 
-  }
+    if (!ok) {
+      setFriendlyError("We couldn't process your signature. Please try again.");
+    } else {
+      setFriendlyError(null);
+    }
+  };
 
-  const signatureAmount = 1
+  const signatureAmount = 1;
 
   return (
     <Card>
       <CardHeader>
         <CardTitle>Sign a petition</CardTitle>
-        <CardDescription>Your contribution helps make a difference</CardDescription>
+        <CardDescription>
+          Your contribution helps make a difference
+        </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">
@@ -109,7 +133,11 @@ export function SignatureForm({ petitionId, profile, status, subaccount }: Signa
           </div>
 
           <div className="flex items-center space-x-2">
-            <Switch id="anonymous" checked={formData.isAnonymous} onCheckedChange={handleSwitchChange} />
+            <Switch
+              id="anonymous"
+              checked={formData.isAnonymous}
+              onCheckedChange={handleSwitchChange}
+            />
             <Label htmlFor="anonymous">Sign anonymously</Label>
           </div>
 
@@ -121,10 +149,13 @@ export function SignatureForm({ petitionId, profile, status, subaccount }: Signa
               </div>
             </div>
           )}
-
         </CardContent>
         <CardFooter>
-          <Button type="submit" disabled={isLoading || isDisabled} className="w-full" >
+          <Button
+            type="submit"
+            disabled={isLoading || isDisabled}
+            className="w-full"
+          >
             {isLoading ? (
               <>
                 <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
@@ -134,9 +165,13 @@ export function SignatureForm({ petitionId, profile, status, subaccount }: Signa
               "Sign Now"
             )}
           </Button>
+          {friendlyError && (
+            <p className="text-sm text-red-600 mt-2 w-full text-center">
+              {friendlyError}
+            </p>
+          )}
         </CardFooter>
       </form>
     </Card>
-  )
+  );
 }
-

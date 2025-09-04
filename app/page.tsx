@@ -22,6 +22,7 @@ export default function Home() {
       {/* Featured Causes */}
       <FeaturedCauses />
 
+      <FeaturedPetitions />
       {/* <FeaturedPetitions /> */}
 
       <HowitWorksYT />

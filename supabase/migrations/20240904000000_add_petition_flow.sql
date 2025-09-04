@@ -70,6 +70,11 @@ create index if not exists idx_signatures_petition_id on public.signatures(petit
 create index if not exists idx_signatures_user_id on public.signatures(user_id);
 create index if not exists idx_signatures_created_at on public.signatures(created_at desc);
 
+-- Ensure one authenticated user can sign a petition only once
+create unique index if not exists uq_signatures_petition_user
+  on public.signatures(petition_id, user_id)
+  where user_id is not null;
+
 -- Row Level Security
 alter table public.petitions enable row level security;
 alter table public.petition_sections enable row level security;
@@ -271,6 +276,62 @@ do $$ begin
       on storage.objects for update to authenticated
       using (bucket_id = 'petition-videos')
       with check (bucket_id = 'petition-videos');
+  end if;
+end $$;
+
+-- Petition comments table
+create table if not exists public.petition_comments (
+  id uuid primary key default gen_random_uuid(),
+  petition_id uuid not null references public.petitions(id) on delete cascade,
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  content text not null,
+  parent_id uuid references public.petition_comments(id) on delete cascade,
+  is_edited boolean not null default false,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_petition_comments_petition on public.petition_comments(petition_id);
+create index if not exists idx_petition_comments_parent on public.petition_comments(parent_id);
+create index if not exists idx_petition_comments_created on public.petition_comments(created_at desc);
+
+alter table public.petition_comments enable row level security;
+
+do $$ begin
+  if not exists (
+    select 1 from pg_policies where schemaname='public' and tablename='petition_comments' and policyname='Select petition comments for approved or own petitions'
+  ) then
+    create policy "Select petition comments for approved or own petitions" on public.petition_comments
+      for select using (
+        exists (
+          select 1 from public.petitions p
+          where p.id = petition_id and (p.status = 'approved' or p.user_id = auth.uid())
+        )
+      );
+  end if;
+
+  if not exists (
+    select 1 from pg_policies where schemaname='public' and tablename='petition_comments' and policyname='Insert petition comments'
+  ) then
+    create policy "Insert petition comments" on public.petition_comments
+      for insert to authenticated
+      with check (true);
+  end if;
+
+  if not exists (
+    select 1 from pg_policies where schemaname='public' and tablename='petition_comments' and policyname='Update own petition comments'
+  ) then
+    create policy "Update own petition comments" on public.petition_comments
+      for update to authenticated
+      using (user_id = auth.uid())
+      with check (user_id = auth.uid());
+  end if;
+
+  if not exists (
+    select 1 from pg_policies where schemaname='public' and tablename='petition_comments' and policyname='Delete own petition comments'
+  ) then
+    create policy "Delete own petition comments" on public.petition_comments
+      for delete to authenticated
+      using (user_id = auth.uid());
   end if;
 end $$;
 

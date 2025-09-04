@@ -35,6 +35,22 @@ import {
 import type { Petition, PetitionStatus, PetitionWithUser } from "@/types";
 import { format } from "date-fns";
 import { categories } from "@/lib/categories";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { MoreHorizontal } from "lucide-react";
+import NavigationLoader from "../NavigationLoader";
 
 export default function ManagePetition() {
   const router = useRouter();
@@ -139,7 +155,7 @@ export default function ManagePetition() {
     setDetailDialog({ open: false, petition: null, isLoading: false });
 
   if (isLoading) {
-    return <div className="flex justify-center p-8">Loading...</div>;
+    return <NavigationLoader />;
   }
 
   return (
@@ -167,124 +183,98 @@ export default function ManagePetition() {
               No {activeTab} petitions to display.
             </p>
           ) : (
-            <div className="grid gap-4">
-              {petitions.map((p) => (
-                <Card key={p.id} className="max-w-sm">
-                  <CardHeader>
-                    {p.image && (
-                      <div className="relative w-full h-48 mb-4 rounded-lg overflow-hidden">
-                        <Image
-                          priority
-                          src={p.image}
-                          alt={p.title}
-                          className="object-cover w-full h-full"
-                          width={1000}
-                          height={1000}
-                        />
-                      </div>
-                    )}
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <CardTitle
-                          className="cursor-pointer hover:text-primary transition-colors"
-                          onClick={() => openDetailDialog(p.id)}
-                        >
-                          {p.title}
-                        </CardTitle>
-                        <CardDescription>
-                          {new Date(p.created_at).toLocaleDateString("en-US", {
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                          })}
-                        </CardDescription>
-                        <div className="mt-1 text-sm text-muted-foreground">
-                          Created by: {p.profiles?.full_name || "Anonymous"}
-                        </div>
-                      </div>
-                      <Badge
-                        variant={
-                          p.status === "approved"
-                            ? "default"
-                            : p.status === "pending"
-                            ? "secondary"
-                            : "destructive"
-                        }
+            <div className="rounded-md border overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Title</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead>Goal</TableHead>
+                    <TableHead>Created By</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {petitions.map((p) => (
+                    <TableRow key={p.id}>
+                      <TableCell
+                        className="font-medium cursor-pointer hover:text-primary"
+                        onClick={() => openDetailDialog(p.id)}
                       >
-                        {p.status.charAt(0).toUpperCase() + p.status.slice(1)}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    <div className="text-sm">
-                      <div className="flex justify-between py-1">
-                        <span>Category</span>
-                        <span className="font-medium">{p.category}</span>
-                      </div>
-                      <div className="flex justify-between py-1 border-t">
-                        <span>Goal</span>
-                        <span className="font-medium">
-                          {p.goal.toLocaleString()} signatures
-                        </span>
-                      </div>
-                      {p.days_active !== null &&
-                        p.days_active !== undefined && (
-                          <div className="flex justify-between py-1 border-t">
-                            <span>Days Active</span>
-                            <span className="font-medium">
-                              {p.days_active} days
-                            </span>
-                          </div>
-                        )}
-                      {p.status === "rejected" && p.rejection_reason && (
-                        <div className="mt-2 p-2 bg-destructive/10 text-destructive text-sm rounded">
-                          <strong>Rejection Reason:</strong>{" "}
-                          {p.rejection_reason}
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                  <CardFooter className="flex justify-between">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => openDetailDialog(p.id)}
-                    >
-                      View Details
-                    </Button>
-                    <div className="flex gap-2">
-                      {activeTab === "pending" && (
-                        <>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => openRejectDialog(p.id, p.title)}
-                          >
-                            Reject
-                          </Button>
-                          <Button size="sm" onClick={() => handleApprove(p.id)}>
-                            Approve
-                          </Button>
-                        </>
-                      )}
-                      {activeTab === "rejected" && (
-                        <Button size="sm" onClick={() => handleApprove(p.id)}>
-                          Approve
-                        </Button>
-                      )}
-                      {activeTab === "approved" && (
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => openRejectDialog(p.id, p.title)}
+                        {p.title}
+                      </TableCell>
+                      <TableCell>{p.category}</TableCell>
+                      <TableCell>
+                        {p.goal.toLocaleString()} signatures
+                      </TableCell>
+                      <TableCell>
+                        {p.profiles?.full_name || "Anonymous"}
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={
+                            p.status === "approved"
+                              ? "default"
+                              : p.status === "pending"
+                              ? "secondary"
+                              : "destructive"
+                          }
                         >
-                          Take Down
-                        </Button>
-                      )}
-                    </div>
-                  </CardFooter>
-                </Card>
-              ))}
+                          {p.status.charAt(0).toUpperCase() + p.status.slice(1)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <MoreHorizontal className="h-4 w-4" />
+                              <span className="sr-only">Actions</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={() => openDetailDialog(p.id)}
+                            >
+                              Preview
+                            </DropdownMenuItem>
+                            {activeTab === "pending" && (
+                              <>
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    openRejectDialog(p.id, p.title)
+                                  }
+                                >
+                                  Reject
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => handleApprove(p.id)}
+                                >
+                                  Approve
+                                </DropdownMenuItem>
+                              </>
+                            )}
+                            {activeTab === "rejected" && (
+                              <DropdownMenuItem
+                                onClick={() => handleApprove(p.id)}
+                              >
+                                Approve
+                              </DropdownMenuItem>
+                            )}
+                            {activeTab === "approved" && (
+                              <DropdownMenuItem
+                                onClick={() => openRejectDialog(p.id, p.title)}
+                              >
+                                Take Down
+                              </DropdownMenuItem>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           )}
         </TabsContent>
@@ -443,8 +433,8 @@ export default function ManagePetition() {
                       {detailDialog.petition.goal.toLocaleString()} signatures
                     </p>
                     <p>
-                      <span className="font-medium">Collected:</span>{" "}
-                      {detailDialog.petition.raised.toLocaleString()}
+                      <span className="font-medium">Signatures:</span>{" "}
+                      {detailDialog.petition.signers_count || 0}
                     </p>
                   </div>
                 </div>

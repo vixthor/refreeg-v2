@@ -11,6 +11,7 @@ import { DonateButton } from "@/components/donate-button";
 import { H2, P, H4 } from "../typograpy";
 import { Button } from "../ui/button";
 import { listPetitions } from "@/actions";
+import { listSignaturesForPetition } from "@/actions/signature-actions";
 import AnimatedCard from "./components/AnimatedCard";
 import AnimatedHeader from "@/components/home/components/AnimatedHeader";
 import { ArrowRight } from "lucide-react";
@@ -69,13 +70,18 @@ export async function FeaturedPetitions() {
               opportunities.
             </P>
           </AnimatedHeader>
-          <div className="pointer-events-none absolute top-1/2 right-12 hidden md:block">
-            <CarouselPrevious className="pointer-events-auto z-10" />
-            <CarouselNext className="pointer-events-auto z-10" />
+          <div className="flex items-center gap-2 ml-4">
+            <CarouselPrevious className="static translate-y-0 translate-x-0" />
+            <CarouselNext className="static translate-y-0 translate-x-0" />
           </div>
         </div>
-        <CarouselContent className="-ml-4 mt-6">
-          {featuredPetitions.map((petition) => {
+        <CarouselContent className="mt-6 mb-6 ml-4 mr-4">
+          {featuredPetitions.map(async (petition) => {
+            const signers = await listSignaturesForPetition(petition.id);
+            const percentSigned = Math.min(
+              Math.round(((signers?.length || 0) / petition.goal) * 100),
+              100
+            );
             return (
               <CarouselItem
                 key={petition.id}
@@ -86,7 +92,7 @@ export async function FeaturedPetitions() {
                   className="group block h-full"
                 >
                   <AnimatedCard>
-                    <Card className="overflow-hidden cursor-pointer transition hover:shadow-2xl shadow-lg h-full flex flex-col border border-gray-300 ">
+                    <Card className="overflow-hidden cursor-pointer transition hover:shadow-2xl shadow-lg h-[420px] flex flex-col border border-gray-300 ">
                       <div className="aspect-video w-full overflow-hidden">
                         <img
                           src={petition.image || "/placeholder.svg"}
@@ -96,19 +102,17 @@ export async function FeaturedPetitions() {
                       </div>
                       <CardHeader className="flex flex-col flex-1 p-4 ">
                         <CardTitle>
-                          <H4>{petition.title}</H4>
+                          <H4 className="line-clamp-2">{petition.title}</H4>
                           <P className="font-extralight">
                             {petition.profiles?.full_name || "Unknown"}
                           </P>
                         </CardTitle>
                         <hr className="border-t-2 border-gray-400" />
                         <div className="flex justify-between items-center pt-2 text-xs">
-                          <P>Raised</P>
+                          <P>Sign Now</P>
                           <P>
-                            {petition.goal > 0
-                              ? Math.round((petition.raised / petition.goal) * 100)
-                              : 0}
-                            {petition.days_active} days active
+                            {percentSigned}% •{" "}
+                            {Number(petition.days_active || 0)} days active
                           </P>
                         </div>
                       </CardHeader>
@@ -116,7 +120,7 @@ export async function FeaturedPetitions() {
                         <CardContent>
                           <div className="space-y-2">
                             <Progress
-                              value={(petition.raised / petition.goal) * 100}
+                              value={percentSigned}
                               className="h-2 bg-muted"
                             />
                           </div>
@@ -124,7 +128,7 @@ export async function FeaturedPetitions() {
                         <CardFooter>
                           <div className="w-full flex justify-between">
                             <span className="flex flex-col">
-                              <H4>{petition.raised?.toLocaleString()}</H4>
+                              <H4>{signers.length}</H4>
                               <P className="font-light">
                                 Signed of {petition.goal?.toLocaleString()}
                               </P>
@@ -143,7 +147,7 @@ export async function FeaturedPetitions() {
           })}
         </CarouselContent>
       </Carousel>
-      {/* View All Petitions Button */}
+      {/* View All Causes Button */}
       <div className="flex justify-center mt-6">
         <Link href="/petitions">
           <Button
