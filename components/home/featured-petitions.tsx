@@ -134,7 +134,7 @@ export async function FeaturedPetitions() {
                               </P>
                             </span>
                             <span>
-                              <DonateButton />
+                              <DonateButton type="petition" />
                             </span>
                           </div>
                         </CardFooter>
