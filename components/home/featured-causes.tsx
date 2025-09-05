@@ -130,7 +130,7 @@ export async function FeaturedCauses() {
                               </P>
                             </span>
                             <span>
-                              <DonateButton />
+                              <DonateButton type="cause" id={cause.id} />
                             </span>
                           </div>
                         </CardFooter>
