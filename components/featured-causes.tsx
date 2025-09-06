@@ -19,6 +19,7 @@ import {
   AlertTriangle,
   PawPrint,
   Sparkles,
+  Briefcase,
 } from "lucide-react";
 
 // Mock data for featured causes
@@ -90,6 +91,11 @@ export async function FeaturedCauses() {
       id: "creative",
       name: "Creative",
       icon: <Sparkles className="mr-1 h-4 w-4" />,
+    },
+    {
+      id: "business",
+      name: "Business",
+      icon: <Briefcase className="mr-1 h-4 w-4" />,
     },
   ];
 
