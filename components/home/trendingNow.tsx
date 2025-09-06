@@ -98,7 +98,7 @@ export async function TrendingCauses() {
                           <CardTitle>
                             <H4 className="line-clamp-2">{cause.title}</H4>
                             <P className="font-extralight truncate">
-                              {cause.profiles?.name || "Unknown"}
+                              {cause.profiles?.full_name || "Unknown"}
                             </P>
                           </CardTitle>
                           <hr className="border-t-2 border-gray-400" />
@@ -106,9 +106,14 @@ export async function TrendingCauses() {
                             <P>Raised</P>
                             <P>
                               {cause.goal > 0
-                                ? Math.round((cause.raised / cause.goal) * 100)
-                                : 0}{" "}
-                              {Number(cause.days_active || 0)} days active
+                                ? Math.min(
+                                    100,
+                                    Math.round(
+                                      (cause.raised / cause.goal) * 100
+                                    )
+                                  )
+                                : 0}
+                              % • {Number(cause.days_active || 0)} days left
                             </P>
                           </div>
                         </CardHeader>
@@ -116,7 +121,10 @@ export async function TrendingCauses() {
                           <CardContent>
                             <div className="space-y-2">
                               <Progress
-                                value={(cause.raised / cause.goal) * 100}
+                                value={Math.min(
+                                  100,
+                                  (cause.raised / cause.goal) * 100
+                                )}
                                 className="h-2 bg-muted"
                               />
                             </div>
@@ -130,7 +138,7 @@ export async function TrendingCauses() {
                                 </P>
                               </span>
                               <span>
-                                <DonateButton type="cause" />
+                                <DonateButton type="cause" disableLink />
                               </span>
                             </div>
                           </CardFooter>

@@ -10,6 +10,7 @@ interface DonateButtonProps {
   href?: string; // optional direct href
   fullWidth?: boolean;
   onClick?: () => void; // fallback for modal usage
+  disableLink?: boolean; // ✅ prevent nested <a>
 }
 
 export function DonateButton({
@@ -18,6 +19,7 @@ export function DonateButton({
   href,
   fullWidth = true,
   onClick,
+  disableLink = false,
 }: DonateButtonProps) {
   const pathname = usePathname();
 
@@ -60,12 +62,8 @@ export function DonateButton({
     </Button>
   );
 
-  // If href exists, render button as link
-  return href || finalHref ? (
-    <Link href={finalHref} passHref legacyBehavior>
-      <a className="block">{button}</a>
-    </Link>
-  ) : (
-    button
-  );
+  // ✅ Prevent nested <a>
+  if (disableLink) return button;
+
+  return href || finalHref ? <Link href={finalHref}>{button}</Link> : button;
 }
