@@ -213,7 +213,9 @@ export default async function CauseDetailPage({
                 cause.sections.length > 0 &&
                 cause.sections.map((section, index) => (
                   <div key={index} className="mt-4">
-                    <h3 className="text-xl font-semibold">{section.heading}</h3>
+                    <h3 className="text-xl font-semibold mb-2">
+                      {section.heading}
+                    </h3>
                     <p className="text-muted-foreground">
                       {section.description}
                     </p>

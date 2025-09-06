@@ -10,6 +10,7 @@ import {
   AlertTriangle,
   PawPrint,
   Sparkles,
+  Briefcase,
 } from "lucide-react";
 import { ExpandableCauseCard } from "./ExpandableCauseCard";
 
@@ -183,6 +184,11 @@ export async function CausesList({
       id: "creative",
       name: "Creative",
       icon: <Sparkles className="mr-1 h-4 w-4" />,
+    },
+    {
+      id: "business",
+      name: "Business",
+      icon: <Briefcase className="mr-1 h-4 w-4" />,
     },
   ];
 
