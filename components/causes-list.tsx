@@ -12,7 +12,7 @@ import {
   Sparkles,
   Briefcase,
 } from "lucide-react";
-import { ExpandableCauseCard } from "./ExpandableCauseCard";
+import { ExpandableCard } from "./ExpandableCard";
 
 // Mock data for causes
 const mockCauses = [
@@ -223,7 +223,15 @@ export async function CausesList({
   return (
     <div className="space-y-6">
       {/* 🔄 swap out old Shadcn cards */}
-      <ExpandableCauseCard causes={paginatedCauses} />
+      <ExpandableCard
+        items={paginatedCauses.map((cause) => ({
+          ...cause,
+          description: cause.description || "",
+          raised: cause.raised,
+          signatures: undefined,
+        }))}
+        type="cause"
+      />
 
       {totalPages > 1 && (
         <div className="flex justify-center pt-6">

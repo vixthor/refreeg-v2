@@ -209,7 +209,28 @@ export default function ManagePetition() {
                         {p.goal.toLocaleString()} signatures
                       </TableCell>
                       <TableCell>
-                        {p.profiles?.full_name || "Anonymous"}
+                        <div className="flex items-center gap-3">
+                          {p.profiles?.profile_photo ? (
+                            <Image
+                              src={p.profiles.profile_photo}
+                              alt={p.profiles.full_name || "User"}
+                              width={32}
+                              height={32}
+                              className="rounded-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+                              <span className="text-xs font-medium text-gray-600">
+                                {(p.profiles?.full_name || "A")
+                                  .charAt(0)
+                                  .toUpperCase()}
+                              </span>
+                            </div>
+                          )}
+                          <span className="font-medium">
+                            {p.profiles?.full_name || "Anonymous"}
+                          </span>
+                        </div>
                       </TableCell>
                       <TableCell>
                         <Badge

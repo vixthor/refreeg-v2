@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { PaginationButton } from "@/components/pagination-button";
 import { listPetitions } from "@/actions";
+import { listSignaturesForPetition } from "@/actions/signature-actions";
 import {
   GraduationCap,
   HeartPulse,
@@ -20,6 +21,7 @@ import {
   PawPrint,
   Sparkles,
 } from "lucide-react";
+import { ExpandableCard } from "./ExpandableCard";
 
 // Mock data for petitions
 const mockPetitions = [
@@ -211,6 +213,17 @@ export async function PetitionsList({
   const totalPetitions = filteredPetitions.length;
   const totalPages = Math.ceil(totalPetitions / pageSize);
 
+  // Fetch signature counts for each petition
+  const petitionsWithSigners = await Promise.all(
+    paginatedPetitions.map(async (petition) => {
+      const signers = await listSignaturesForPetition(petition.id);
+      return {
+        ...petition,
+        signatures: signers.length,
+      };
+    })
+  );
+
   if (paginatedPetitions.length === 0) {
     return (
       <div className="text-center py-10">
@@ -224,60 +237,18 @@ export async function PetitionsList({
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {paginatedPetitions.map((petition) => {
-          const categoryData = categoriesWithIcons.find(
-            (cat) => cat.id === petition.category
-          );
-
-          return (
-            <Card key={petition.id} className="overflow-hidden">
-              <div className="aspect-video w-full overflow-hidden">
-                <img
-                  src={petition.image || "/placeholder.svg"}
-                  alt={petition.title}
-                  className="object-cover w-full h-full"
-                />
-              </div>
-              <CardHeader className="space-y-2 p-4">
-                <CardTitle className="line-clamp-1">{petition.title}</CardTitle>
-                {/* <CardDescription className="line-clamp-2">
-                  {petition.description}
-                </CardDescription> */}
-                <div className="flex items-center gap-2">
-                  <span className="text-xs bg-muted text-foreground px-2 py-1 rounded-full flex items-center capitalize">
-                    {categoryData?.icon}
-                    {categoryData?.name || petition.category}
-                  </span>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="font-medium">
-                      {petition.signers_count || 0} signatures
-                    </span>
-                    <span className="text-muted-foreground">
-                      of {petition.goal.toLocaleString()}
-                    </span>
-                  </div>
-                  <Progress
-                    value={Math.min(
-                      ((petition.signers_count || 0) / petition.goal) * 100,
-                      100
-                    )}
-                  />
-                </div>
-              </CardContent>
-              <CardFooter>
-                <Link href={`/petitions/${petition.id}`} className="w-full">
-                  <Button className="w-full">Sign Now</Button>
-                </Link>
-              </CardFooter>
-            </Card>
-          );
-        })}
-      </div>
+      <ExpandableCard
+        items={petitionsWithSigners.map((petition) => ({
+          id: petition.id,
+          title: petition.title,
+          description: petition.description || "",
+          image: petition.image ?? null,
+          goal: petition.goal,
+          signatures: petition.signatures,
+          category: petition.category,
+        }))}
+        type="petition"
+      />
 
       {totalPages > 1 && (
         <div className="flex justify-center pt-6">

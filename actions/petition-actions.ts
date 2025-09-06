@@ -31,7 +31,8 @@ export async function getPetition(
       profiles!inner (
         full_name,
         email,
-        sub_account_code
+        sub_account_code,
+        profile_photo
       ),
       petition_sections (
         id,
@@ -186,7 +187,7 @@ export async function createPetition(
     .insert({
       user_id: userId,
       title: petitionData.title,
-      // description: petitionData.description,
+      description: petitionData.description, // <-- ensure this is included
       category: petitionData.category,
       goal:
         typeof petitionData.goal === "string"
@@ -267,7 +268,7 @@ export async function updatePetition(
   // Prepare the update data
   const updateData: any = {
     title: petitionData.title,
-    // description: petitionData.description,
+    description: petitionData.description, // <-- ensure this is included
     category: petitionData.category,
     goal: petitionData.goal,
     status: "pending",
@@ -375,7 +376,7 @@ export async function listPetitions(
 
   let query = supabase
     .from("petitions")
-    .select("*,profiles(full_name,email)")
+    .select("*,profiles(full_name,email,profile_photo)")
     .order("created_at", { ascending: false });
 
   // Apply filters

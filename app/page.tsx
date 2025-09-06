@@ -30,6 +30,10 @@ export default function Home() {
         <FeaturedCauses />
       </div>
 
+      <div className="mx-8">
+        <FeaturedPetitions />
+      </div>
+
       <div className="">
         <HowitWorksYT />
       </div>

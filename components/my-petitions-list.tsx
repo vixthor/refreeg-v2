@@ -18,7 +18,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { deletePetition, getUserPetitionsWithStatus } from "@/actions";
+import {
+  deletePetition,
+  getUserPetitionsWithStatus,
+  listSignaturesForPetition,
+} from "@/actions";
 import { PetitionDropdown } from "./petition-dropdown";
 
 // Mock data for user's petitions
@@ -82,12 +86,24 @@ export async function MyPetitionsList({
 }: MyPetitionsListProps) {
   const petitions = await getUserPetitionsWithStatus(userId, status);
 
+  // 1. Filter petitions first
   const filteredPetitions =
     status === "all"
       ? petitions
       : petitions.filter((petition) => petition.status === status);
 
-  if (filteredPetitions.length === 0) {
+  // 2. Then attach signature counts
+  const petitionsWithSigners = await Promise.all(
+    filteredPetitions.map(async (petition) => {
+      const signers = await listSignaturesForPetition(petition.id);
+      return {
+        ...petition,
+        signatures: signers.length,
+      };
+    })
+  );
+
+  if (petitionsWithSigners.length === 0) {
     return (
       <div className="text-center py-10 border rounded-lg bg-muted/20">
         <h3 className="text-lg font-medium mb-2">No petitions found</h3>
@@ -117,7 +133,7 @@ export async function MyPetitionsList({
 
   return (
     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-      {filteredPetitions.map((petition) => (
+      {petitionsWithSigners.map((petition) => (
         <Card key={petition.id}>
           <CardHeader className="pb-2">
             <div className="flex justify-between items-start">
@@ -125,7 +141,6 @@ export async function MyPetitionsList({
                 <CardTitle className="text-lg line-clamp-1">
                   {petition.title}
                 </CardTitle>
-                {/* <CardDescription className="line-clamp-2">{cause.description}</CardDescription> */}
               </div>
               <div className="flex items-center">
                 <Badge
@@ -147,7 +162,7 @@ export async function MyPetitionsList({
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span className="font-medium">
-                  {petition.signers_count || 0} signatures
+                  {petition.signatures} signatures
                 </span>
                 <span className="text-muted-foreground">
                   of {petition.goal.toLocaleString()}
@@ -155,7 +170,7 @@ export async function MyPetitionsList({
               </div>
               <Progress
                 value={Math.min(
-                  ((petition.signers_count || 0) / petition.goal) * 100,
+                  (petition.signatures / petition.goal) * 100,
                   100
                 )}
               />

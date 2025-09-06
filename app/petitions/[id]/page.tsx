@@ -27,10 +27,10 @@ import {
   Twitter,
 } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
 import MultimediaCarousel from "@/components/MultimediaCarousel";
 import { SignersList } from "@/components/signers-list";
 import { CommentsSection } from "@/components/comments/comment-section";
+import { useRouter } from "next/navigation";
 
 // Mock data for a petition
 const mockPetition = {
@@ -174,15 +174,26 @@ export default async function PetitionDetailPage({
     socialMedia.instagram ||
     socialMedia.linkedin;
 
+  const router = useRouter();
+
+  // Multimedia logic (carousel)
+  const allMedia = Array.isArray((petition as any).multimedia)
+    ? (petition as any).multimedia
+    : [];
+  // Video links (if supported)
+  const videoLinks = Array.isArray((petition as any).video_links)
+    ? (petition as any).video_links
+    : [];
+  // Check if current user is the creator
+  const isOwner = user && petition.user_id === user.id;
+
   return (
     <div className="container py-10">
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-6">
-          {/* Multimedia Carousel */}
-          {Array.isArray((petition as any).multimedia) &&
-          (petition as any).multimedia.length > 0 ? (
+          {allMedia.length > 0 ? (
             <MultimediaCarousel
-              media={(petition as any).multimedia}
+              media={allMedia}
               coverImage={petition.image || undefined}
               title={petition.title}
             />
@@ -195,7 +206,19 @@ export default async function PetitionDetailPage({
               />
             </div>
           )}
-
+          {/* Edit button for owner */}
+          {isOwner && (
+            <div className="flex justify-end">
+              <button
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+                onClick={() =>
+                  router.push(`/dashboard/petitions/${petition.id}/edit`)
+                }
+              >
+                Edit Petition
+              </button>
+            </div>
+          )}
           <Tabs defaultValue="about">
             <TabsList>
               <TabsTrigger value="about">About</TabsTrigger>
@@ -225,7 +248,6 @@ export default async function PetitionDetailPage({
                 <span>•</span>
                 <span className="capitalize">{petition.category}</span>
               </div>
-
               {/* Social Media Links */}
               {hasSocialMedia && (
                 <div className="flex items-center gap-4 pt-2">
@@ -275,8 +297,33 @@ export default async function PetitionDetailPage({
                   )}
                 </div>
               )}
-
-              {/* <p className="whitespace-pre-line">{petition.description}</p> */}
+              {/* Main description */}
+              {petition.description && (
+                <p className="whitespace-pre-line text-lg text-neutral-800">
+                  {petition.description}
+                </p>
+              )}
+              {/* Video links (if supported) */}
+              {videoLinks.length > 0 && (
+                <div className="mt-4">
+                  <h3 className="text-xl font-semibold mb-2">Videos</h3>
+                  <ul className="space-y-2">
+                    {videoLinks.map((link: string, idx: number) => (
+                      <li key={idx}>
+                        <a
+                          href={link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 underline"
+                        >
+                          {link}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {/* Sections */}
               {petition.sections &&
                 petition.sections.length > 0 &&
                 petition.sections.map((section, index) => (
