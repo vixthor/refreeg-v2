@@ -81,10 +81,7 @@ export async function FeaturedCauses() {
                 key={cause.id}
                 className="pl-4 basis-[85%] sm:basis-[50%] md:basis-[33.33%]"
               >
-                <Link
-                  href={`/causes/${cause.id}`}
-                  className="group block h-full"
-                >
+                <Link href={`/causes/${cause.id}`} className="group block h-full">
                   <AnimatedCard>
                     <Card className="overflow-hidden cursor-pointer transition hover:shadow-2xl shadow-lg h-full flex flex-col border border-gray-300 ">
                       <div className="aspect-video w-full overflow-hidden">
