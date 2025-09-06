@@ -18,6 +18,8 @@ import {
   UserCog,
   ClipboardCheckIcon,
   Shield,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useAdmin } from "@/hooks/use-admin";
@@ -112,6 +114,13 @@ const adminNavItems = [
   },
 ];
 
+const aboutUsSubroutes = [
+  { title: "Our Mission", href: "/about-us/OurMission" },
+  { title: "Our Impact", href: "/about-us/OurImpact" },
+  { title: "Our Story", href: "/about-us/OurStory" },
+  { title: "What We Do", href: "/about-us/WhatWeDo" },
+];
+
 export function MobileSidebar({
   isOpen,
   onClose,
@@ -120,6 +129,7 @@ export function MobileSidebar({
   const pathname = usePathname();
   const { user } = useAuth();
   const { isAdminOrManager } = useAdmin(user?.id);
+  const [aboutUsOpen, setAboutUsOpen] = useState(false);
 
   // Prevent body scroll when sidebar is open
   useEffect(() => {
@@ -137,20 +147,18 @@ export function MobileSidebar({
     <>
       {/* Backdrop */}
       {isOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 z-40 md:hidden"
-          onClick={onClose}
-        />
+        <div className="fixed inset-0  z-40 md:hidden" onClick={onClose} />
       )}
 
       {/* Sidebar */}
       <div
         className={cn(
-          "fixed top-0 right-0 h-full w-80 bg-white border-l shadow-lg z-50 transform transition-transform duration-300 ease-in-out md:hidden", // force solid white
+          "fixed top-0 right-0 h-full w-80 z-50 border-l shadow-lg transform transition-transform duration-300 ease-in-out md:hidden",
+          "bg-blue-100", // 🔥 force solid background for light/dark
           isOpen ? "translate-x-0" : "translate-x-full"
         )}
       >
-        <div className="flex flex-col bg-white h-full">
+        <div className="flex flex-col h-full">
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b">
             <h2 className="text-lg font-semibold">
@@ -167,7 +175,7 @@ export function MobileSidebar({
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 p-4">
+          <nav className="flex flex-col p-4 gap-4 bg-blue-100 shadow-lg">
             <div className="space-y-2">
               {isDashboard ? (
                 <>
@@ -222,47 +230,97 @@ export function MobileSidebar({
                   )}
                 </>
               ) : (
-                mainNavItems.map((item) => {
-                  const isActive =
-                    pathname === item.href ||
-                    (item.href !== "/dashboard" &&
-                      pathname.startsWith(item.href));
-
-                  return (
-                    <Link key={item.href} href={item.href}>
-                      <Button
-                        variant={isActive ? "secondary" : "ghost"}
-                        className={cn(
-                          "w-full justify-start",
-                          isActive && "bg-secondary"
-                        )}
-                      >
-                        <item.icon className="mr-3 h-4 w-4" />
-                        {item.title}
-                      </Button>
-                    </Link>
-                  );
-                })
+                <>
+                  {mainNavItems.map((item) => {
+                    if (item.title === "About Us") {
+                      const isActive = pathname.startsWith("/about-us");
+                      return (
+                        <div key={item.href}>
+                          <Button
+                            variant={isActive ? "secondary" : "ghost"}
+                            className={cn(
+                              "w-full justify-start flex items-center",
+                              isActive && "bg-secondary"
+                            )}
+                            onClick={() => setAboutUsOpen((v) => !v)}
+                            aria-expanded={aboutUsOpen}
+                            aria-controls="about-us-subnav"
+                          >
+                            <item.icon className="mr-3 h-4 w-4" />
+                            {item.title}
+                            {aboutUsOpen ? (
+                              <ChevronUp className="ml-auto h-4 w-4" />
+                            ) : (
+                              <ChevronDown className="ml-auto h-4 w-4" />
+                            )}
+                          </Button>
+                          {aboutUsOpen && (
+                            <div
+                              id="about-us-subnav"
+                              className="ml-8 mt-1 space-y-1"
+                            >
+                              {aboutUsSubroutes.map((sub) => (
+                                <Link key={sub.href} href={sub.href}>
+                                  <Button
+                                    variant={
+                                      pathname === sub.href
+                                        ? "secondary"
+                                        : "ghost"
+                                    }
+                                    className={cn(
+                                      "w-full justify-start text-sm",
+                                      pathname === sub.href && "bg-secondary"
+                                    )}
+                                    onClick={onClose}
+                                  >
+                                    {sub.title}
+                                  </Button>
+                                </Link>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    }
+                    const isActive =
+                      pathname === item.href ||
+                      (item.href !== "/dashboard" &&
+                        pathname.startsWith(item.href));
+                    return (
+                      <Link key={item.href} href={item.href}>
+                        <Button
+                          variant={isActive ? "secondary" : "ghost"}
+                          className={cn(
+                            "w-full justify-start",
+                            isActive && "bg-secondary"
+                          )}
+                          onClick={onClose}
+                        >
+                          <item.icon className="mr-3 h-4 w-4" />
+                          {item.title}
+                        </Button>
+                      </Link>
+                    );
+                  })}
+                </>
               )}
             </div>
 
             {/* User section */}
             {user && (
-              <div className="mt-8 pt-4 border-t">
-                <div className="space-y-2">
-                  <Link href="/dashboard/causes/create">
-                    <Button variant="outline" className="w-full justify-start">
-                      <FileText className="mr-3 h-4 w-4" />
-                      List a Cause
-                    </Button>
-                  </Link>
-                  <Link href="/dashboard/petitions/create">
-                    <Button variant="outline" className="w-full justify-start">
-                      <Users className="mr-3 h-4 w-4" />
-                      Create a Petition
-                    </Button>
-                  </Link>
-                </div>
+              <div className="flex flex-col gap-2">
+                <Link href="/dashboard/causes/create">
+                  <Button variant="outline" className="w-full justify-start">
+                    <FileText className="mr-3 h-4 w-4" />
+                    List a Cause
+                  </Button>
+                </Link>
+                <Link href="/dashboard/petitions/create">
+                  <Button variant="outline" className="w-full justify-start">
+                    <Users className="mr-3 h-4 w-4" />
+                    Create a Petition
+                  </Button>
+                </Link>
               </div>
             )}
           </nav>

@@ -182,7 +182,7 @@ export async function createCause(
     .insert({
       user_id: userId,
       title: causeData.title,
-      // description: causeData.description,
+      description: causeData.description, // <-- ensure this is included
       category: causeData.category,
       goal:
         typeof causeData.goal === "string"
@@ -263,7 +263,7 @@ export async function updateCause(
   // Prepare the update data
   const updateData: any = {
     title: causeData.title,
-    // description: causeData.description,
+    description: causeData.description, // <-- ensure this is included
     category: causeData.category,
     goal: causeData.goal,
     status: "pending",
