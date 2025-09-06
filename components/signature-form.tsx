@@ -165,11 +165,6 @@ export function SignatureForm({
               "Sign Now"
             )}
           </Button>
-          {friendlyError && (
-            <p className="text-sm text-red-600 mt-2 w-full text-center">
-              {friendlyError}
-            </p>
-          )}
         </CardFooter>
       </form>
     </Card>

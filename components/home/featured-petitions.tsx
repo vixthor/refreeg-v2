@@ -30,6 +30,7 @@ export async function FeaturedPetitions() {
   if (!featuredPetitions || featuredPetitions.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
+        {/* Empty state */}
         <div className="w-16 h-16 mb-4 rounded-full bg-muted flex items-center justify-center">
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -57,6 +58,18 @@ export async function FeaturedPetitions() {
     );
   }
 
+  // ✅ Fetch signers for each petition
+  const petitionsWithSigners = await Promise.all(
+    featuredPetitions.map(async (petition) => {
+      const signers = await listSignaturesForPetition(petition.id);
+      const percentSigned = Math.min(
+        Math.round(((signers?.length || 0) / petition.goal) * 100),
+        100
+      );
+      return { ...petition, signers, percentSigned };
+    })
+  );
+
   return (
     <div className="space-y-10 relative py-12">
       <Carousel className="w-full">
@@ -66,8 +79,7 @@ export async function FeaturedPetitions() {
               Featured Petitions
             </H2>
             <P className="text-lg text-gray-500">
-              Explore petitions raising funds for emergencies, communities, and
-              opportunities.
+              Explore petitions raising awareness and gathering support.
             </P>
           </AnimatedHeader>
           <div className="flex items-center gap-2 ml-4">
@@ -75,79 +87,74 @@ export async function FeaturedPetitions() {
             <CarouselNext className="static translate-y-0 translate-x-0" />
           </div>
         </div>
+
         <CarouselContent className="mt-6 mb-6 ml-4 mr-4">
-          {featuredPetitions.map(async (petition) => {
-            const signers = await listSignaturesForPetition(petition.id);
-            const percentSigned = Math.min(
-              Math.round(((signers?.length || 0) / petition.goal) * 100),
-              100
-            );
-            return (
-              <CarouselItem
-                key={petition.id}
-                className="pl-4 basis-[85%] sm:basis-[50%] md:basis-[33.33%]"
+          {petitionsWithSigners.map((petition) => (
+            <CarouselItem
+              key={petition.id}
+              className="basis-[85%] sm:basis-[50%] md:basis-[33.33%]"
+            >
+              <Link
+                href={`/petitions/${petition.id}`}
+                className="group block h-full"
               >
-                <Link
-                  href={`/petitions/${petition.id}`}
-                  className="group block h-full"
-                >
-                  <AnimatedCard>
-                    <Card className="overflow-hidden cursor-pointer transition hover:shadow-2xl shadow-lg h-[420px] flex flex-col border border-gray-300 ">
-                      <div className="aspect-video w-full overflow-hidden">
-                        <img
-                          src={petition.image || "/placeholder.svg"}
-                          alt={petition.title}
-                          className="object-cover w-full h-full"
-                        />
+                <AnimatedCard>
+                  <Card className="overflow-hidden cursor-pointer transition hover:shadow-2xl shadow-lg h-[420px] flex flex-col border border-gray-300 ">
+                    <div className="aspect-video w-full overflow-hidden">
+                      <img
+                        src={petition.image || "/placeholder.svg"}
+                        alt={petition.title}
+                        className="object-cover w-full h-full"
+                      />
+                    </div>
+                    <CardHeader className="flex flex-col flex-1 p-4 ">
+                      <CardTitle>
+                        <H4 className="line-clamp-2">{petition.title}</H4>
+                        <P className="font-extralight">
+                          {petition.profiles?.full_name || "Unknown"}
+                        </P>
+                      </CardTitle>
+                      <hr className="border-t-2 border-gray-400" />
+                      <div className="flex justify-between items-center pt-2 text-xs">
+                        <P>Sign Now</P>
+                        <P>
+                          {petition.percentSigned}% •{" "}
+                          {Number(petition.days_active || 0)} days left
+                        </P>
                       </div>
-                      <CardHeader className="flex flex-col flex-1 p-4 ">
-                        <CardTitle>
-                          <H4 className="line-clamp-2">{petition.title}</H4>
-                          <P className="font-extralight">
-                            {petition.profiles?.full_name || "Unknown"}
-                          </P>
-                        </CardTitle>
-                        <hr className="border-t-2 border-gray-400" />
-                        <div className="flex justify-between items-center pt-2 text-xs">
-                          <P>Sign Now</P>
-                          <P>
-                            {percentSigned}% •{" "}
-                            {Number(petition.days_active || 0)} days active
-                          </P>
+                    </CardHeader>
+                    <div className="mt-auto w-full">
+                      <CardContent>
+                        <div className="space-y-2">
+                          <Progress
+                            value={petition.percentSigned}
+                            className="h-2 bg-muted"
+                          />
                         </div>
-                      </CardHeader>
-                      <div className="mt-auto w-full">
-                        <CardContent>
-                          <div className="space-y-2">
-                            <Progress
-                              value={percentSigned}
-                              className="h-2 bg-muted"
-                            />
-                          </div>
-                        </CardContent>
-                        <CardFooter>
-                          <div className="w-full flex justify-between">
-                            <span className="flex flex-col">
-                              <H4>{signers.length}</H4>
-                              <P className="font-light">
-                                Signed of {petition.goal?.toLocaleString()}
-                              </P>
-                            </span>
-                            <span>
-                              <DonateButton type="petition" />
-                            </span>
-                          </div>
-                        </CardFooter>
-                      </div>
-                    </Card>
-                  </AnimatedCard>
-                </Link>
-              </CarouselItem>
-            );
-          })}
+                      </CardContent>
+                      <CardFooter>
+                        <div className="w-full flex justify-between">
+                          <span className="flex flex-col">
+                            <H4>{petition.signers.length}</H4>
+                            <P className="font-light">
+                              Signed of {petition.goal?.toLocaleString()}
+                            </P>
+                          </span>
+                          <span>
+                            <DonateButton type="petition" disableLink />
+                          </span>
+                        </div>
+                      </CardFooter>
+                    </div>
+                  </Card>
+                </AnimatedCard>
+              </Link>
+            </CarouselItem>
+          ))}
         </CarouselContent>
       </Carousel>
-      {/* View All Causes Button */}
+
+      {/* View All Button */}
       <div className="flex justify-center mt-6">
         <Link href="/petitions">
           <Button
