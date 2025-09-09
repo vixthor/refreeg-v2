@@ -1,4 +1,5 @@
 import path from "path";
+import MiniCssExtractPlugin from "mini-css-extract-plugin";
 
 let userConfig = undefined;
 try {
@@ -38,7 +39,6 @@ const nextConfig = {
   webpack(config, { dev, isServer }) {
     // Aceternity UI may import CSS that requires MiniCssExtractPlugin in prod
     if (!dev && !isServer) {
-      const MiniCssExtractPlugin = require("mini-css-extract-plugin");
       config.plugins.push(
         new MiniCssExtractPlugin({
           filename: "static/css/[name].[contenthash].css",

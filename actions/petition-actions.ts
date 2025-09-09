@@ -187,7 +187,7 @@ export async function createPetition(
     .insert({
       user_id: userId,
       title: petitionData.title,
-      description: petitionData.description, // <-- ensure this is included
+      // description: petitionData.description,
       category: petitionData.category,
       goal:
         typeof petitionData.goal === "string"
@@ -268,7 +268,7 @@ export async function updatePetition(
   // Prepare the update data
   const updateData: any = {
     title: petitionData.title,
-    description: petitionData.description, // <-- ensure this is included
+    // description: petitionData.description,
     category: petitionData.category,
     goal: petitionData.goal,
     status: "pending",
