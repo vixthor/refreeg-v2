@@ -30,7 +30,6 @@ import Link from "next/link";
 import MultimediaCarousel from "@/components/MultimediaCarousel";
 import { SignersList } from "@/components/signers-list";
 import { CommentsSection } from "@/components/comments/comment-section";
-import { useRouter } from "next/navigation";
 
 // Mock data for a petition
 const mockPetition = {
@@ -174,8 +173,6 @@ export default async function PetitionDetailPage({
     socialMedia.instagram ||
     socialMedia.linkedin;
 
-  const router = useRouter();
-
   // Multimedia logic (carousel)
   const allMedia = Array.isArray((petition as any).multimedia)
     ? (petition as any).multimedia
@@ -209,16 +206,15 @@ export default async function PetitionDetailPage({
           {/* Edit button for owner */}
           {isOwner && (
             <div className="flex justify-end">
-              <button
+              <Link
+                href={`/dashboard/petitions/${petition.id}/edit`}
                 className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
-                onClick={() =>
-                  router.push(`/dashboard/petitions/${petition.id}/edit`)
-                }
               >
                 Edit Petition
-              </button>
+              </Link>
             </div>
           )}
+
           <Tabs defaultValue="about">
             <TabsList>
               <TabsTrigger value="about">About</TabsTrigger>
