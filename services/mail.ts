@@ -205,3 +205,17 @@ export async function sendLoginNotificationEmail(context: {
     },
   });
 }
+
+export const sendTestEmail = async (email: string) => {
+  return sendMail({
+    to: email,
+    subject: "Test Email",
+    templateName: "login-notification",
+    context: {
+      userName: "Test User",
+      loginTime: new Date().toLocaleString(),
+      device: "Test Device",
+      ipAddress: "Test IP",
+    },
+  });
+};
