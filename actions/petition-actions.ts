@@ -197,6 +197,7 @@ export async function createPetition(
       image: coverImageUrl, // Store the cover image URL
       days_active: daysActive, // Store the calculated days active
       multimedia: multimediaUrls, // Store multimedia URLs as JSON array
+      video_links: petitionData.video_links || [],
     })
     .select()
     .single();
@@ -265,77 +266,15 @@ export async function updatePetition(
     );
   }
 
-  // Prepare the update data
-  const updateData: any = {
-    title: petitionData.title,
-    // description: petitionData.description,
-    category: petitionData.category,
-    goal: petitionData.goal,
-    status: "pending",
-    image: coverImageUrl,
-    days_active: daysActive,
-    updated_at: new Date().toISOString(),
-  };
-
-  // Convert goal to number if it's a string
-  if (typeof updateData.goal === "string") {
-    updateData.goal = Number.parseFloat(updateData.goal);
-  }
-
-  const { data, error } = await supabase
-    .from("petitions")
-    .update(updateData)
-    .eq("id", petitionId)
-    .eq("user_id", userId) // Ensure the user owns this petition
-    .select()
-    .single();
-
-  if (error) {
-    console.error("Error updating petition:", error);
-    throw error;
-  }
-
-  // Handle sections update
-  if (petitionData.sections) {
-    // First delete existing sections
-    const { error: deleteError } = await supabase
-      .from("petition_sections")
-      .delete()
-      .eq("petition_id", petitionId);
-
-    if (deleteError) {
-      console.error("Error deleting existing sections:", deleteError);
-      throw deleteError;
-    }
-
-    // Then insert new sections if they exist
-    if (petitionData.sections.length > 0) {
-      const sections = petitionData.sections.map((section) => ({
-        petition_id: petitionId,
-        heading: section.heading,
-        description: section.description,
-      }));
-
-      const { error: sectionsError } = await supabase
-        .from("petition_sections")
-        .insert(sections);
-
-      if (sectionsError) {
-        console.error("Error creating new sections:", sectionsError);
-        throw sectionsError;
-      }
-    }
-  }
-
-  // Handle multimedia update
-  let updatedMultimediaUrls: string[] = [];
+  // Upload multimedia files if they exist
+  let multimediaUrls: string[] = [];
   if (
     petitionData.multimedia &&
     Array.isArray(petitionData.multimedia) &&
     petitionData.multimedia.length > 0
   ) {
     try {
-      updatedMultimediaUrls = await Promise.all(
+      multimediaUrls = await Promise.all(
         petitionData.multimedia.map((file) =>
           uploadImageToSupabase(file, userId, "additional")
         )
@@ -345,25 +284,56 @@ export async function updatePetition(
       throw error;
     }
   }
-  if (updatedMultimediaUrls.length > 0) {
-    updateData.multimedia = updatedMultimediaUrls;
-  }
 
-  const { data: updatedPetition, error: updateError } = await supabase
-    .from("petitions")
-    .update(updateData)
-    .eq("id", petitionId)
-    .eq("user_id", userId) // Ensure the user owns this petition
+  // Prepare the edit row for petition_edits
+  const editData: any = {
+    original_petition_id: petitionId,
+    user_id: userId,
+    title: petitionData.title,
+    description: petitionData.description || "",
+    category: petitionData.category,
+    goal:
+      typeof petitionData.goal === "string"
+        ? Number.parseFloat(petitionData.goal)
+        : petitionData.goal,
+    image: coverImageUrl,
+    days_active: daysActive,
+    multimedia: multimediaUrls.length > 0 ? multimediaUrls : [],
+    video_links: petitionData.video_links || [],
+    status: "pending",
+  };
+
+  const { data, error } = await supabase
+    .from("petition_edits")
+    .insert(editData)
     .select()
     .single();
 
-  if (updateError) {
-    console.error("Error updating petition:", updateError);
-    throw updateError;
+  if (error) {
+    console.error("Error saving petition edit:", error);
+    throw error;
+  }
+
+  // Insert sections if they exist
+  if (petitionData.sections && petitionData.sections.length > 0) {
+    const sections = petitionData.sections.map((section) => ({
+      petition_edit_id: data.id,
+      heading: section.heading,
+      description: section.description,
+    }));
+
+    const { error: sectionsError } = await supabase
+      .from("petition_edit_sections")
+      .insert(sections);
+
+    if (sectionsError) {
+      console.error("Error creating petition edit sections:", sectionsError);
+      throw sectionsError;
+    }
   }
 
   revalidatePath("/dashboard/petitions");
-  return updatedPetition as Petition;
+  return data;
 }
 
 /**
@@ -470,71 +440,145 @@ export async function updatePetitionStatus(
 ): Promise<Petition> {
   const supabase = await createClient();
 
-  const updateData: any = {
-    status,
-    updated_at: new Date().toISOString(),
-  };
-
-  if (status === "rejected" && rejectionReason) {
-    updateData.rejection_reason = rejectionReason;
-  }
-
-  // If approving, we need to get the original days_active and set updated_at to now
+  // If approving, check for a pending edit
   if (status === "approved") {
-    // Get the petition to access the original days_active
-    const { data: petitionData, error: fetchError } = await supabase
-      .from("petitions")
-      .select("days_active")
-      .eq("id", petitionId)
+    // Get the latest pending edit for this petition
+    const { data: edit, error: editError } = await supabase
+      .from("petition_edits")
+      .select("*")
+      .eq("original_petition_id", petitionId)
+      .eq("status", "pending")
+      .order("created_at", { ascending: false })
+      .limit(1)
       .single();
 
-    if (fetchError) {
-      console.error("Error fetching petition for approval:", fetchError);
-      throw fetchError;
+    if (editError && editError.code !== "PGRST116") {
+      console.error("Error fetching petition edit for approval:", editError);
+      throw editError;
     }
 
-    // Set the updated_at to now so the cron job can start counting from this moment
-    updateData.updated_at = new Date().toISOString();
+    if (edit) {
+      // Copy edit fields into petitions
+      const updateData: any = {
+        title: edit.title,
+        category: edit.category,
+        goal: edit.goal,
+        image: edit.image,
+        days_active: edit.days_active,
+        multimedia: edit.multimedia,
+        video_links: edit.video_links,
+        status: "approved",
+        updated_at: new Date().toISOString(),
+      };
+      const { data: updated, error: updateError } = await supabase
+        .from("petitions")
+        .update(updateData)
+        .eq("id", petitionId)
+        .select()
+        .single();
+      if (updateError) {
+        console.error(
+          "Error updating petition with approved edit:",
+          updateError
+        );
+        throw updateError;
+      }
+      // Mark the edit as approved and delete it
+      await supabase.from("petition_edits").delete().eq("id", edit.id);
+      revalidatePath("/dashboard/admin/petitions");
+      return updated as Petition;
+    } else {
+      // No edit found, approve the main petition directly
+      const { data: updated, error: updateError } = await supabase
+        .from("petitions")
+        .update({
+          status: "approved",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", petitionId)
+        .select()
+        .single();
 
-    // Keep the original days_active value - the cron job will decrement it
-    if (petitionData.days_active) {
-      updateData.days_active = petitionData.days_active;
+      if (updateError) {
+        console.error("Error approving petition:", updateError);
+        throw updateError;
+      }
+
+      revalidatePath("/dashboard/admin/petitions");
+      return updated as Petition;
     }
   }
 
+  // If rejecting, mark the latest pending edit as rejected
+  if (status === "rejected") {
+    const { data: edit, error: editError } = await supabase
+      .from("petition_edits")
+      .select("*")
+      .eq("original_petition_id", petitionId)
+      .eq("status", "pending")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .single();
+    if (edit && !editError) {
+      await supabase
+        .from("petition_edits")
+        .update({ status: "rejected", rejection_reason: rejectionReason })
+        .eq("id", edit.id);
+    }
+    // Optionally, update the main petition status to rejected if needed (legacy)
+    const { data, error } = await supabase
+      .from("petitions")
+      .update({
+        status: "rejected",
+        rejection_reason: rejectionReason,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", petitionId)
+      .select()
+      .single();
+    if (error) {
+      console.error("Error updating petition status:", error);
+      throw error;
+    }
+    revalidatePath("/dashboard/admin/petitions");
+    return data as Petition;
+  }
+
+  throw new Error(`Invalid status value: ${status}`);
+}
+
+/**
+ * Get all pending petition edits for admin review
+ */
+export async function getPetitionEdits(): Promise<any[]> {
+  const supabase = await createClient();
+
   const { data, error } = await supabase
-    .from("petitions")
-    .update(updateData)
-    .eq("id", petitionId)
-    .select()
-    .single();
+    .from("petition_edits")
+    .select(
+      `
+      *,
+      profiles!inner (
+        full_name,
+        email,
+        profile_photo
+      ),
+      petition_edit_sections (
+        id,
+        heading,
+        description
+      )
+    `
+    )
+    .eq("status", "pending")
+    .order("created_at", { ascending: false });
 
   if (error) {
-    console.error("Error updating petition status:", error);
+    console.error("Error fetching petition edits:", error);
     throw error;
   }
 
-  // Attempt to notify the petition owner by email
-  try {
-    if (data?.user_id) {
-      if (status === "approved") {
-        await sendPetitionApprovedEmailForUser(data.user_id, {
-          petitionName: data.title,
-        });
-      }
-      if (status === "rejected") {
-        await sendPetitionRejectedEmailForUser(data.user_id, {
-          petitionName: data.title,
-          rejectionReason,
-        });
-      }
-    }
-  } catch (mailError) {
-    console.error("Failed to send petition status email:", mailError);
-  }
-
-  revalidatePath("/dashboard/admin/petitions");
-  return data as Petition;
+  return data || [];
 }
 
 /**

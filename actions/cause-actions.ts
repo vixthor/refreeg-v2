@@ -192,6 +192,7 @@ export async function createCause(
       image: coverImageUrl, // Store the cover image URL
       days_active: daysActive, // Store the calculated days active
       multimedia: multimediaUrls, // Store image URLs as JSON array
+      video_links: causeData.video_links || [],
     })
     .select()
     .single();
@@ -224,23 +225,22 @@ export async function createCause(
 }
 
 /**
- * Update a cause
+ * Submit a cause edit request (goes into cause_edits table)
  */
 export async function updateCause(
   causeId: string,
   userId: string,
   causeData: Partial<CauseFormData>
-): Promise<Cause> {
+): Promise<any> {
   const supabase = await createClient();
 
   let coverImageUrl = causeData.coverImage
     ? await uploadImageToSupabase(causeData.coverImage, userId, "cover")
-    : causeData.image;
+    : causeData.image || null;
 
-  // Calculate days_active from start and end dates
+  // Calculate days_active if dates are provided
   let daysActive = null;
   if (causeData.startDate && causeData.endDate) {
-    // Ensure we have valid Date objects
     const startDate =
       causeData.startDate instanceof Date
         ? causeData.startDate
@@ -250,7 +250,6 @@ export async function updateCause(
         ? causeData.endDate
         : new Date(causeData.endDate);
 
-    // Validate that the dates are valid
     if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
       throw new Error("Invalid date format provided");
     }
@@ -260,77 +259,15 @@ export async function updateCause(
     );
   }
 
-  // Prepare the update data
-  const updateData: any = {
-    title: causeData.title,
-    // description: causeData.description,
-    category: causeData.category,
-    goal: causeData.goal,
-    status: "pending",
-    image: coverImageUrl,
-    days_active: daysActive,
-    updated_at: new Date().toISOString(),
-  };
-
-  // Convert goal to number if it's a string
-  if (typeof updateData.goal === "string") {
-    updateData.goal = Number.parseFloat(updateData.goal);
-  }
-
-  const { data, error } = await supabase
-    .from("causes")
-    .update(updateData)
-    .eq("id", causeId)
-    .eq("user_id", userId) // Ensure the user owns this cause
-    .select()
-    .single();
-
-  if (error) {
-    console.error("Error updating cause:", error);
-    throw error;
-  }
-
-  // Handle sections update
-  if (causeData.sections) {
-    // First delete existing sections
-    const { error: deleteError } = await supabase
-      .from("cause_sections")
-      .delete()
-      .eq("cause_id", causeId);
-
-    if (deleteError) {
-      console.error("Error deleting existing sections:", deleteError);
-      throw deleteError;
-    }
-
-    // Then insert new sections if they exist
-    if (causeData.sections.length > 0) {
-      const sections = causeData.sections.map((section) => ({
-        cause_id: causeId,
-        heading: section.heading,
-        description: section.description,
-      }));
-
-      const { error: sectionsError } = await supabase
-        .from("cause_sections")
-        .insert(sections);
-
-      if (sectionsError) {
-        console.error("Error creating new sections:", sectionsError);
-        throw sectionsError;
-      }
-    }
-  }
-
-  // Handle multimedia update
-  let updatedMultimediaUrls: string[] = [];
+  // Upload multimedia files if they exist
+  let multimediaUrls: string[] = [];
   if (
     causeData.multimedia &&
     Array.isArray(causeData.multimedia) &&
     causeData.multimedia.length > 0
   ) {
     try {
-      updatedMultimediaUrls = await Promise.all(
+      multimediaUrls = await Promise.all(
         causeData.multimedia.map((file) =>
           uploadImageToSupabase(file, userId, "additional")
         )
@@ -340,25 +277,55 @@ export async function updateCause(
       throw error;
     }
   }
-  if (updatedMultimediaUrls.length > 0) {
-    updateData.multimedia = updatedMultimediaUrls;
-  }
 
-  const { data: updatedCause, error: updateError } = await supabase
-    .from("causes")
-    .update(updateData)
-    .eq("id", causeId)
-    .eq("user_id", userId) // Ensure the user owns this cause
+  // Prepare the edit row for cause_edits
+  const editData: any = {
+    original_cause_id: causeId,
+    user_id: userId,
+    title: causeData.title,
+    category: causeData.category,
+    goal:
+      typeof causeData.goal === "string"
+        ? Number.parseFloat(causeData.goal)
+        : causeData.goal,
+    image: coverImageUrl,
+    days_active: daysActive,
+    multimedia: multimediaUrls.length > 0 ? multimediaUrls : [],
+    video_links: causeData.video_links || [],
+    status: "pending",
+  };
+
+  const { data, error } = await supabase
+    .from("cause_edits")
+    .insert(editData)
     .select()
     .single();
 
-  if (updateError) {
-    console.error("Error updating cause:", updateError);
-    throw updateError;
+  if (error) {
+    console.error("Error saving cause edit:", error);
+    throw error;
+  }
+
+  // Insert sections if they exist
+  if (causeData.sections && causeData.sections.length > 0) {
+    const sections = causeData.sections.map((section) => ({
+      cause_edit_id: data.id,
+      heading: section.heading,
+      description: section.description,
+    }));
+
+    const { error: sectionsError } = await supabase
+      .from("cause_edit_sections")
+      .insert(sections);
+
+    if (sectionsError) {
+      console.error("Error creating cause edit sections:", sectionsError);
+      throw sectionsError;
+    }
   }
 
   revalidatePath("/dashboard/causes");
-  return updatedCause as Cause;
+  return data;
 }
 
 /**
@@ -464,52 +431,149 @@ export async function updateCauseStatus(
 ): Promise<Cause> {
   const supabase = await createClient();
 
-  const updateData: any = {
-    status,
-    updated_at: new Date().toISOString(),
-  };
-
-  if (status === "rejected" && rejectionReason) {
-    updateData.rejection_reason = rejectionReason;
-  }
-
-  // If approving, we need to get the original days_active and set updated_at to now
   if (status === "approved") {
-    // Get the cause to access the original days_active
-    const { data: causeData, error: fetchError } = await supabase
-      .from("causes")
-      .select("days_active")
-      .eq("id", causeId)
+    // Get the latest pending edit for this cause
+    const { data: edit, error: editError } = await supabase
+      .from("cause_edits")
+      .select("*")
+      .eq("original_cause_id", causeId)
+      .eq("status", "pending")
+      .order("created_at", { ascending: false })
+      .limit(1)
       .single();
 
-    if (fetchError) {
-      console.error("Error fetching cause for approval:", fetchError);
-      throw fetchError;
+    if (editError && editError.code !== "PGRST116") {
+      console.error("Error fetching cause edit for approval:", editError);
+      throw editError;
     }
 
-    // Set the updated_at to now so the cron job can start counting from this moment
-    updateData.updated_at = new Date().toISOString();
+    if (edit) {
+      // Copy edit fields into causes
+      const updateData: any = {
+        title: edit.title,
+        category: edit.category,
+        goal: edit.goal,
+        image: edit.image,
+        days_active: edit.days_active,
+        multimedia: edit.multimedia,
+        video_links: edit.video_links,
+        status: "approved",
+        updated_at: new Date().toISOString(),
+      };
 
-    // Keep the original days_active value - the cron job will decrement it
-    if (causeData.days_active) {
-      updateData.days_active = causeData.days_active;
+      const { data: updated, error: updateError } = await supabase
+        .from("causes")
+        .update(updateData)
+        .eq("id", causeId)
+        .select()
+        .single();
+
+      if (updateError) {
+        console.error("Error updating cause with approved edit:", updateError);
+        throw updateError;
+      }
+
+      // Remove the approved edit row
+      await supabase.from("cause_edits").delete().eq("id", edit.id);
+
+      revalidatePath("/dashboard/admin/causes");
+      return updated as Cause;
+    } else {
+      // No edit found, approve the main cause directly
+      const { data: updated, error: updateError } = await supabase
+        .from("causes")
+        .update({
+          status: "approved",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", causeId)
+        .select()
+        .single();
+
+      if (updateError) {
+        console.error("Error approving cause:", updateError);
+        throw updateError;
+      }
+
+      revalidatePath("/dashboard/admin/causes");
+      return updated as Cause;
     }
   }
 
+  if (status === "rejected") {
+    // Get the latest pending edit
+    const { data: edit, error: editError } = await supabase
+      .from("cause_edits")
+      .select("*")
+      .eq("original_cause_id", causeId)
+      .eq("status", "pending")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .single();
+
+    if (edit && !editError) {
+      await supabase
+        .from("cause_edits")
+        .update({ status: "rejected", rejection_reason: rejectionReason })
+        .eq("id", edit.id);
+    }
+
+    // Optionally mark the main cause as rejected too
+    const { data, error } = await supabase
+      .from("causes")
+      .update({
+        status: "rejected",
+        rejection_reason: rejectionReason,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", causeId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Error updating cause status:", error);
+      throw error;
+    }
+
+    revalidatePath("/dashboard/admin/causes");
+    return data as Cause;
+  }
+
+  throw new Error(`Invalid status value: ${status}`);
+}
+
+/**
+ * Get all pending cause edits for admin review
+ */
+export async function getCauseEdits(): Promise<any[]> {
+  const supabase = await createClient();
+
   const { data, error } = await supabase
-    .from("causes")
-    .update(updateData)
-    .eq("id", causeId)
-    .select()
-    .single();
+    .from("cause_edits")
+    .select(
+      `
+      *,
+      profiles!inner (
+        full_name,
+        email,
+        profile_photo
+      ),
+      cause_edit_sections (
+        id,
+        heading,
+        description
+      )
+    `
+    )
+    .eq("status", "pending")
+    .order("created_at", { ascending: false });
 
   if (error) {
-    console.error("Error updating cause status:", error);
+    console.error("Error fetching cause edits:", error);
     throw error;
   }
 
-  revalidatePath("/dashboard/admin/causes");
-  return data as Cause;
+  return data || [];
 }
 
 /**

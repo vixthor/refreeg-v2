@@ -85,7 +85,10 @@ export async function FeaturedCauses() {
                 key={cause.id}
                 className="basis-[85%] sm:basis-[50%] md:basis-[33.33%]"
               >
-                <Link href={`/causes/${cause.id}`} className="group block h-full">
+                <Link
+                  href={`/causes/${cause.id}`}
+                  className="group block h-full"
+                >
                   <AnimatedCard>
                     <Card className="overflow-hidden cursor-pointer transition hover:shadow-2xl shadow-lg h-[420px] flex flex-col border border-gray-300">
                       {/* Image */}
@@ -109,8 +112,8 @@ export async function FeaturedCauses() {
                         <div className="flex justify-between items-center pt-2 text-xs">
                           <P>Raised</P>
                           <P>
-                            {percentFunded}% • {Number(cause.days_active || 0)}{" "}
-                            days left
+                            {percentFunded}% •{Number(cause.days_active || 0)}{" "}
+                            Days left
                           </P>
                         </div>
                       </CardHeader>

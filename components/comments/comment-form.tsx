@@ -35,7 +35,9 @@ export function CommentForm({
       });
 
       if (!response.ok) {
-        throw new Error("Failed to post comment");
+        const errorData = await response.json().catch(() => ({}));
+        console.error("Failed to post comment:", errorData);
+        throw new Error(errorData.error || "Failed to post comment");
       }
 
       const newComment = await response.json();

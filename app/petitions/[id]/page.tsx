@@ -110,6 +110,31 @@ export default async function PetitionDetailPage({
     comments = [];
   }
 
+  // Map signer messages to comment shape and merge with petition comments
+  const signerMessages = (signers || [])
+    .filter((s: any) => s.message && String(s.message).trim() !== "")
+    .map((s: any) => ({
+      id: `signer-${s.id}`,
+      cause_id: petition.id,
+      user_id: s.user_id || "anonymous",
+      content: s.message || "",
+      created_at: s.created_at,
+      updated_at: s.created_at,
+      is_edited: false,
+      parent_id: null,
+      user: {
+        full_name: s.name || "Anonymous",
+        profile_photo: null,
+      },
+      replies: [],
+      replies_count: 0,
+    }));
+
+  const mergedComments = [...comments, ...signerMessages].sort(
+    (a, b) =>
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  );
+
   // Format the date
   const formattedDate = new Date(petition.created_at).toLocaleDateString(
     "en-US",
@@ -181,48 +206,40 @@ export default async function PetitionDetailPage({
   const videoLinks = Array.isArray((petition as any).video_links)
     ? (petition as any).video_links
     : [];
-  // Check if current user is the creator
-  const isOwner = user && petition.user_id === user.id;
 
   return (
     <div className="container py-10">
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-6">
-          {allMedia.length > 0 ? (
-            <MultimediaCarousel
-              media={allMedia}
-              coverImage={petition.image || undefined}
-              title={petition.title}
-            />
-          ) : (
-            <div className="aspect-video w-full overflow-hidden rounded-lg">
-              <img
-                src={petition.image ?? "/placeholder.svg"}
-                alt={petition.title}
-                className="object-cover w-full h-full"
+          {(() => {
+            // Combine multimedia (images) and video_links (video URLs)
+            const combinedMedia = [...(allMedia || []), ...(videoLinks || [])];
+
+            return combinedMedia.length > 0 ? (
+              <MultimediaCarousel
+                media={combinedMedia}
+                coverImage={petition.image || undefined}
+                title={petition.title}
               />
-            </div>
-          )}
-          {/* Edit button for owner */}
-          {isOwner && (
-            <div className="flex justify-end">
-              <Link
-                href={`/dashboard/petitions/${petition.id}/edit`}
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
-              >
-                Edit Petition
-              </Link>
-            </div>
-          )}
+            ) : (
+              <div className="aspect-video w-full overflow-hidden rounded-lg">
+                <img
+                  src={petition.image ?? "/placeholder.svg"}
+                  alt={petition.title}
+                  className="object-cover w-full h-full"
+                />
+              </div>
+            );
+          })()}
 
           <Tabs defaultValue="about">
             <TabsList>
               <TabsTrigger value="about">About</TabsTrigger>
-              <TabsTrigger value="donors">
+              <TabsTrigger value="signers">
                 Signers ({signers.length})
               </TabsTrigger>
               <TabsTrigger value="comments">
-                Comments ({comments.length})
+                Comments ({mergedComments.length})
               </TabsTrigger>
             </TabsList>
             <TabsContent value="about" className="space-y-4">
@@ -331,12 +348,12 @@ export default async function PetitionDetailPage({
                   </div>
                 ))}
             </TabsContent>
-            <TabsContent value="donors">
+            <TabsContent value="signers">
               <SignersList signers={signers} />
             </TabsContent>
             <TabsContent value="comments" className="space-y-4">
               <CommentsSection
-                comments={comments as any}
+                comments={mergedComments as any}
                 causeId={petition.id}
                 currentUserId={user?.id}
                 entityType="petition"
@@ -373,7 +390,7 @@ export default async function PetitionDetailPage({
                   <span className="font-medium">{signers.length}</span>
                 </div>
                 <div className="flex justify-between py-1 border-t">
-                  <span>Days active</span>
+                  <span>Days Left</span>
                   <span className="font-medium">{petition.days_active}</span>
                 </div>
               </div>

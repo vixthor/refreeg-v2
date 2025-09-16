@@ -110,7 +110,7 @@ export async function TrendingCauses() {
                             {cause.goal > 0
                               ? Math.round((cause.raised / cause.goal) * 100)
                               : 0}
-                            {cause.days_active} days active
+                            % • {cause.days_active} Days left
                           </P>
                         </div>
                       </CardHeader>

@@ -48,6 +48,7 @@ import {
 import { MoreHorizontal } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import NavigationLoader from "../NavigationLoader";
+import MultimediaCarousel from "../MultimediaCarousel";
 
 export default function ManageCauses() {
   const router = useRouter();
@@ -63,6 +64,7 @@ export default function ManageCauses() {
     approveCause,
     rejectCause,
     causes,
+    causeEdits,
   } = useAdmin(user?.id, activeTab as CauseStatus);
 
   const [rejectDialog, setRejectDialog] = useState<{
@@ -199,19 +201,24 @@ export default function ManageCauses() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {causes.map((cause) => (
-                    <TableRow key={cause.id}>
+                  {causes.map((item) => (
+                    <TableRow key={item.id}>
                       <TableCell className="font-medium">
-                        {cause.title}
+                        {item.title}
+                        {item.type === "edit" && (
+                          <Badge variant="outline" className="ml-2">
+                            Edit Request
+                          </Badge>
+                        )}
                       </TableCell>
-                      <TableCell>{cause.category}</TableCell>
-                      <TableCell>₦{cause.goal.toLocaleString()}</TableCell>
+                      <TableCell>{item.category}</TableCell>
+                      <TableCell>₦{item.goal.toLocaleString()}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-3">
-                          {(cause as any).profiles?.profile_photo ? (
+                          {(item as any).profiles?.profile_photo ? (
                             <Image
-                              src={(cause as any).profiles.profile_photo}
-                              alt={(cause as any).profiles?.full_name || "User"}
+                              src={(item as any).profiles.profile_photo}
+                              alt={(item as any).profiles?.full_name || "User"}
                               width={32}
                               height={32}
                               className="rounded-full object-cover"
@@ -219,29 +226,31 @@ export default function ManageCauses() {
                           ) : (
                             <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
                               <span className="text-xs font-medium text-gray-600">
-                                {((cause as any).profiles?.full_name || "A")
+                                {((item as any).profiles?.full_name || "A")
                                   .charAt(0)
                                   .toUpperCase()}
                               </span>
                             </div>
                           )}
                           <span className="font-medium">
-                            {(cause as any).profiles?.full_name || "Anonymous"}
+                            {(item as any).profiles?.full_name || "Anonymous"}
                           </span>
                         </div>
                       </TableCell>
                       <TableCell>
                         <Badge
                           variant={
-                            cause.status === "approved"
+                            item.status === "approved"
                               ? "default"
-                              : cause.status === "pending"
+                              : item.status === "pending"
                               ? "secondary"
+                              : item.status === "pending edit"
+                              ? "outline"
                               : "destructive"
                           }
                         >
-                          {cause.status.charAt(0).toUpperCase() +
-                            cause.status.slice(1)}
+                          {item.status.charAt(0).toUpperCase() +
+                            item.status.slice(1)}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -254,7 +263,7 @@ export default function ManageCauses() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem
-                              onClick={() => openPreviewDialog(cause)}
+                              onClick={() => openPreviewDialog(item)}
                             >
                               Preview
                             </DropdownMenuItem>
@@ -262,13 +271,24 @@ export default function ManageCauses() {
                               <>
                                 <DropdownMenuItem
                                   onClick={() =>
-                                    openRejectDialog(cause.id, cause.title)
+                                    openRejectDialog(
+                                      item.type === "edit"
+                                        ? item.original_cause_id
+                                        : item.id,
+                                      item.title
+                                    )
                                   }
                                 >
                                   Reject
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
-                                  onClick={() => handleApprove(cause.id)}
+                                  onClick={() =>
+                                    handleApprove(
+                                      item.type === "edit"
+                                        ? item.original_cause_id
+                                        : item.id
+                                    )
+                                  }
                                 >
                                   Approve
                                 </DropdownMenuItem>
@@ -276,7 +296,7 @@ export default function ManageCauses() {
                             )}
                             {activeTab === "rejected" && (
                               <DropdownMenuItem
-                                onClick={() => handleApprove(cause.id)}
+                                onClick={() => handleApprove(item.id)}
                               >
                                 Approve
                               </DropdownMenuItem>
@@ -284,7 +304,7 @@ export default function ManageCauses() {
                             {activeTab === "approved" && (
                               <DropdownMenuItem
                                 onClick={() =>
-                                  openRejectDialog(cause.id, cause.title)
+                                  openRejectDialog(item.id, item.title)
                                 }
                               >
                                 Take Down
@@ -441,6 +461,24 @@ export default function ManageCauses() {
                           </div>
                         )
                       )}
+
+                    {/* Multimedia Preview */}
+                    {((previewDialog.cause as any).multimedia &&
+                      (previewDialog.cause as any).multimedia.length > 0) ||
+                    ((previewDialog.cause as any).video_links &&
+                      (previewDialog.cause as any).video_links.length > 0) ? (
+                      <div className="space-y-4">
+                        <h3 className="text-xl font-semibold">Media</h3>
+                        <MultimediaCarousel
+                          media={[
+                            ...((previewDialog.cause as any).multimedia || []),
+                            ...((previewDialog.cause as any).video_links || []),
+                          ]}
+                          coverImage={previewDialog.cause.image || undefined}
+                          title={previewDialog.cause.title}
+                        />
+                      </div>
+                    ) : null}
                   </div>
                 </div>
 
