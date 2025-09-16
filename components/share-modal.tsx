@@ -33,16 +33,27 @@ export function ShareModal({
   // ✅ entity-specific templates
   const templates = {
     cause: {
-      shareMessage: `🙏 Please support my cause on RefreeG! Every little bit helps: ${url}`,
+      shareMessage: `🌍✨ I’ve started a cause on RefreeG because I believe change begins with us. 
+Your voice, your support, and even the smallest act of kindness can create ripples that touch countless lives. 
+This isn’t just about me—it’s about building hope, restoring dignity, and giving people a chance at a brighter tomorrow.  
+
+Please take a moment to read and support. Together, we can turn compassion into action: ${url}`,
+
       dialogTitle: "Share this cause",
       dialogDescription:
-        "Spread the word! Share this cause with your network using our pre-written message.",
+        "Inspire others to care. Share this heartfelt message with your network and invite them to join the movement.",
     },
+
     petition: {
-      shareMessage: `🖊️ I just signed this petition on RefreeG. Join me in making a difference: ${url}`,
+      shareMessage: `✍️💡 I just signed a petition on RefreeG because staying silent only allows the problem to grow. 
+This petition is about standing up for fairness, for justice, and for voices that are too often ignored.  
+
+Your signature isn’t just a name—it’s a declaration that we care, that we won’t look away, and that we believe change is possible.  
+Please join me and add your voice. Together, we are stronger: ${url}`,
+
       dialogTitle: "Share this petition",
       dialogDescription:
-        "Help gather more support! Share this petition with your network using our pre-written message.",
+        "Help amplify this cause. Share this message and invite others to stand with you for real change.",
     },
   } as const;
 

@@ -3,7 +3,13 @@
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft } from "lucide-react";
-import { CauseCard, DonationCard, EmptyState } from "./ProfileCards";
+import {
+  CauseCard,
+  DonationCard,
+  EmptyState,
+  PetitionCard,
+} from "./ProfileCards";
+import { ExpandableCard } from "./ExpandableCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQueryState } from "nuqs";
 
@@ -11,6 +17,7 @@ type ProfileProps = {
   profile: any;
   causes: any[];
   donations: any[];
+  petitions: any[];
   userId: string;
   isOwner: boolean;
 };
@@ -19,6 +26,7 @@ export default function PublicProfile({
   profile,
   causes,
   donations,
+  petitions,
   userId,
   isOwner,
 }: ProfileProps) {
@@ -29,6 +37,7 @@ export default function PublicProfile({
 
   const donationsCount = donations.length;
   const causesCount = causes.length;
+  const petitionsCount = petitions.length;
 
   const handleBack = () => {
     window.history.back();
@@ -82,6 +91,10 @@ export default function PublicProfile({
                 <span className="font-semibold">{donationsCount}</span>{" "}
                 {donationsCount === 1 ? "donation" : "donations"}
               </span>
+              <span className="text-gray-700">
+                <span className="font-semibold">{petitionsCount}</span>{" "}
+                {petitionsCount === 1 ? "petition" : "petitions"}
+              </span>
             </div>
 
             {/* Bio */}
@@ -116,6 +129,17 @@ export default function PublicProfile({
                     </span>
                   )}
                 </TabsTrigger>
+                <TabsTrigger
+                  value="petitions"
+                  className="px-6 py-2 font-medium flex items-center gap-2 data-[state=active]:text-blue-600 data-[state=active]:border-b-2 data-[state=active]:border-blue-600 data-[state=active]:shadow-none text-gray-500 hover:text-gray-700 rounded-none"
+                >
+                  Petitions
+                  {petitionsCount > 0 && (
+                    <span className="text-xs bg-gray-100 px-2 py-1 rounded-full">
+                      {petitionsCount}
+                    </span>
+                  )}
+                </TabsTrigger>
               </TabsList>
             </div>
             <div className="mt-6 w-full">
@@ -130,11 +154,19 @@ export default function PublicProfile({
                     ctaLink="/causes"
                   />
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
-                    {causes.map((cause) => (
-                      <CauseCard key={cause.id} cause={cause} />
-                    ))}
-                  </div>
+                  <ExpandableCard
+                    items={causes.map((cause) => ({
+                      id: cause.id,
+                      title: cause.title,
+                      description: cause.description,
+                      image: cause.image,
+                      goal: cause.goal || 0,
+                      raised: cause.raised || 0,
+                      category: cause.category || "Cause",
+                      sections: cause.sections || [],
+                    }))}
+                    type="cause"
+                  />
                 )}
               </TabsContent>
               <TabsContent value="donations">
@@ -153,6 +185,32 @@ export default function PublicProfile({
                       <DonationCard key={donation.id} donation={donation} />
                     ))}
                   </div>
+                )}
+              </TabsContent>
+              <TabsContent value="petitions">
+                {petitionsCount === 0 ? (
+                  <EmptyState
+                    title="No Petitions Yet"
+                    description={`${
+                      displayName.split(" ")[0] || "This user"
+                    } hasn't created any petitions yet.`}
+                    cta="Explore petitions on refreeg"
+                    ctaLink="/petitions"
+                  />
+                ) : (
+                  <ExpandableCard
+                    items={petitions.map((petition) => ({
+                      id: petition.id,
+                      title: petition.title,
+                      description: petition.description,
+                      image: petition.image,
+                      goal: petition.goal || 0,
+                      signatures: petition.signatures || 0,
+                      category: petition.category || "Petition",
+                      sections: petition.sections || [],
+                    }))}
+                    type="petition"
+                  />
                 )}
               </TabsContent>
             </div>

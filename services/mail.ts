@@ -266,3 +266,30 @@ export async function sendLoginNotificationEmail(context: {
     },
   });
 }
+
+export async function sendCauseEditedEmail({
+  causeName,
+  reviewTimeframe = "3-5 business days",
+  dashboardUrl = "https://refreeg.com/dashboard",
+}: {
+  causeName: string;
+  reviewTimeframe?: string;
+  dashboardUrl?: string;
+}) {
+  const user = await getCurrentUser();
+  if (!user) {
+    throw new Error("User not found");
+  }
+  const profile = await getProfile(user.id);
+  return sendMail({
+    to: profile?.email || "",
+    subject: "Cause Edited - Under Review",
+    templateName: "cause-edited",
+    context: {
+      userName: profile?.full_name || "User",
+      causeName,
+      reviewTimeframe,
+      dashboardUrl,
+    },
+  });
+}

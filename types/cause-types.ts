@@ -70,5 +70,5 @@ export interface CauseFormData {
   startDate?: Date | undefined;
   endDate?: Date | undefined;
   multimedia: File[]; // Image files only
-  videoLinks: string[]; // Video URLs
+  video_links?: string[]; // Video URLs
 }

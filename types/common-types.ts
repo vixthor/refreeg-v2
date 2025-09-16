@@ -50,6 +50,7 @@ export interface CauseFormData {
   sections: CauseSection[];
   startDate?: Date | undefined;
   endDate?: Date | undefined;
+  video_links?: string[];
 }
 
 export interface PetitionSection {
@@ -69,6 +70,7 @@ export interface PetitionFormData {
   sections?: { heading: string; description: string }[];
   startDate?: Date | undefined;
   endDate?: Date | undefined;
+  video_links?: string[];
 }
 
 export interface DonationFormData {

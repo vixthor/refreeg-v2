@@ -37,6 +37,7 @@ import { sendCauseUnderReviewEmail } from "@/services/mail";
 import { format, addDays, isAfter, isBefore, differenceInDays } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import MultimediaCarousel from "@/components/MultimediaCarousel";
 
 const currencies = [{ id: "NGN", name: "Naira (₦)" }];
 
@@ -74,7 +75,7 @@ type CauseFormData = {
   startDate: Date | undefined;
   endDate: Date | undefined;
   multimedia: File[];
-  videoLinks: string[]; // NEW
+  video_links: string[]; // NEW
 };
 
 const validateForm = (formData: FormData): FormErrors => {
@@ -361,7 +362,7 @@ export default function CreateCauseForm() {
       startDate: formData.startDate,
       endDate: formData.endDate,
       multimedia: formData.multimedia,
-      videoLinks: formData.videoLinks, // NEW
+      video_links: formData.videoLinks, // <-- map to backend
     };
     try {
       await sendCauseUnderReviewEmail({
@@ -854,60 +855,21 @@ export default function CreateCauseForm() {
             </div>
 
             <div className="space-y-2">
-              <h4 className="font-medium">Media</h4>
-              <div className="grid grid-cols-2 gap-4">
-                {formData.coverImage && (
-                  <div>
-                    <p className="text-sm font-medium mb-2">Cover Image</p>
-                    <img
-                      src={URL.createObjectURL(formData.coverImage)}
-                      alt="Cover preview"
-                      className="h-48 w-full object-cover rounded-md"
-                    />
-                  </div>
-                )}
-                {formData.multimedia &&
-                  Array.isArray(formData.multimedia) &&
-                  formData.multimedia.length > 0 && (
-                    <div>
-                      <p className="text-sm font-medium mb-2">
-                        Additional Media ({formData.multimedia.length})
-                      </p>
-                      <div className="bg-muted h-48 rounded-md flex items-center justify-center">
-                        <div className="text-center">
-                          <p className="text-sm">
-                            {
-                              formData.multimedia.filter((f) =>
-                                f.type.startsWith("image/")
-                              ).length
-                            }{" "}
-                            images,{" "}
-                            {
-                              formData.multimedia.filter((f) =>
-                                f.type.startsWith("video/")
-                              ).length
-                            }{" "}
-                            videos
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Total size:{" "}
-                            {(
-                              (formData.multimedia &&
-                              formData.multimedia.length > 0
-                                ? formData.multimedia.reduce(
-                                    (acc, file) => acc + file.size,
-                                    0
-                                  )
-                                : 0) /
-                              (1024 * 1024)
-                            ).toFixed(2)}
-                            MB
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-              </div>
+              <h4 className="font-medium">Media Preview</h4>
+              <MultimediaCarousel
+                media={[
+                  ...formData.multimedia.map((file) =>
+                    URL.createObjectURL(file)
+                  ),
+                  ...formData.videoLinks,
+                ]}
+                coverImage={
+                  formData.coverImage
+                    ? URL.createObjectURL(formData.coverImage)
+                    : undefined
+                }
+                title={formData.title}
+              />
             </div>
 
             {formData.multimedia &&

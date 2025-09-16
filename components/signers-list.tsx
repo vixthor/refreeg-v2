@@ -1,22 +1,31 @@
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Signature } from "@/types"
-
-
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Signature } from "@/types";
 
 interface SignersListProps {
-  signers: Signature[]
+  signers: Signature[];
 }
 
 export function SignersList({ signers }: SignersListProps) {
   // Sort signers by date (most recent first)
-  const sortedSigners = [...signers].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+  const sortedSigners = [...signers].sort(
+    (a, b) =>
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  );
 
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold">Recent Signers</h2>
       {sortedSigners.length === 0 ? (
-        <p className="text-muted-foreground">No signatures yet. Be the first to sign!</p>
+        <p className="text-muted-foreground">
+          No signatures yet. Be the first to sign!
+        </p>
       ) : (
         <div className="space-y-4">
           {sortedSigners.map((signer) => (
@@ -46,13 +55,17 @@ export function SignersList({ signers }: SignersListProps) {
                     </CardDescription>
                   </div>
                   <div className="ml-auto">
-                    <span className="font-bold">₦{signer.amount.toLocaleString()}</span>
+                    <span className="font-bold">
+                      {signer.amount.toLocaleString()}
+                    </span>
                   </div>
                 </div>
               </CardHeader>
               {signer.message && (
                 <CardContent>
-                  <p className="text-sm text-muted-foreground">{signer.message}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {signer.message}
+                  </p>
                 </CardContent>
               )}
             </Card>
@@ -60,6 +73,5 @@ export function SignersList({ signers }: SignersListProps) {
         </div>
       )}
     </div>
-  )
+  );
 }
-

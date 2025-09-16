@@ -9,25 +9,42 @@ export async function DELETE(
   try {
     // First await the params
     const { id: commentId } = params;
-    
+
     const supabase = await createClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
     if (authError || !user) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Verify comment ownership
-    const { data: comment, error: checkError } = await supabase
-      .from("comments")
+    // Check if it's a petition comment or regular comment
+    const { data: petitionComment, error: petitionError } = await supabase
+      .from("petition_comments")
       .select("user_id")
-      .eq('id', commentId)
+      .eq("id", commentId)
       .single();
 
-    if (checkError) throw checkError;
+    const { data: regularComment, error: regularError } = await supabase
+      .from("comments")
+      .select("user_id")
+      .eq("id", commentId)
+      .single();
+
+    let comment;
+    let table;
+    if (petitionComment && !petitionError) {
+      comment = petitionComment;
+      table = "petition_comments";
+    } else if (regularComment && !regularError) {
+      comment = regularComment;
+      table = "comments";
+    } else {
+      return NextResponse.json({ error: "Comment not found" }, { status: 404 });
+    }
+
     if (comment.user_id !== user.id) {
       return NextResponse.json(
         { error: "Unauthorized to delete this comment" },
@@ -36,23 +53,14 @@ export async function DELETE(
     }
 
     // Delete all replies first
-    await supabase
-      .from("comments")
-      .delete()
-      .eq('parent_id', commentId);
+    await supabase.from(table).delete().eq("parent_id", commentId);
 
     // Then delete the comment
-    const { error } = await supabase
-      .from("comments")
-      .delete()
-      .eq('id', commentId);
+    const { error } = await supabase.from(table).delete().eq("id", commentId);
 
     if (error) throw error;
 
-    return NextResponse.json(
-      { success: true },
-      { status: 200 }
-    );
+    return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {
     console.error("Error deleting comment:", error);
     return NextResponse.json(
@@ -69,19 +77,19 @@ export async function PUT(
   try {
     // First await the params
     const { id: commentId } = params;
-    
+
     const supabase = await createClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
     if (authError || !user) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { content } = await request.json();
-    
+
     if (!content) {
       return NextResponse.json(
         { error: "Content is required" },
@@ -89,19 +97,43 @@ export async function PUT(
       );
     }
 
-    const { data: updatedComment, error } = await supabase
+    // Check if it's a petition comment or regular comment
+    const { data: petitionComment, error: petitionError } = await supabase
+      .from("petition_comments")
+      .select("user_id")
+      .eq("id", commentId)
+      .single();
+
+    const { data: regularComment, error: regularError } = await supabase
       .from("comments")
+      .select("user_id")
+      .eq("id", commentId)
+      .single();
+
+    let table;
+    if (petitionComment && !petitionError) {
+      table = "petition_comments";
+    } else if (regularComment && !regularError) {
+      table = "comments";
+    } else {
+      return NextResponse.json({ error: "Comment not found" }, { status: 404 });
+    }
+
+    const { data: updatedComment, error } = await supabase
+      .from(table)
       .update({
         content,
         is_edited: true,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       })
-      .eq('id', commentId)
-      .eq('user_id', user.id)
-      .select(`
+      .eq("id", commentId)
+      .eq("user_id", user.id)
+      .select(
+        `
         *,
         user:profiles(full_name, profile_photo)
-      `)
+      `
+      )
       .single();
 
     if (error) throw error;

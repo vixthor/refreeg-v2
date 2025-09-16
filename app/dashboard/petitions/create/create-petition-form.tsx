@@ -37,6 +37,7 @@ import { sendPetitionUnderReviewEmail } from "@/services/mail";
 import { format, isBefore, differenceInDays } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import MultimediaCarousel from "@/components/MultimediaCarousel";
 
 const currencies = [{ id: "SIGNATURES", name: "Signatures" }];
 
@@ -51,6 +52,7 @@ type FormData = {
   startDate: Date | undefined;
   endDate: Date | undefined;
   multimedia: File[];
+  videoLinks: string[];
 };
 
 type FormErrors = {
@@ -75,6 +77,7 @@ type PetitionFormData = {
   startDate: Date | undefined;
   endDate: Date | undefined;
   multimedia: File[];
+  video_links: string[];
 };
 
 const validateForm = (formData: FormData): FormErrors => {
@@ -169,8 +172,11 @@ export default function CreatePetitionForm() {
     startDate: undefined,
     endDate: undefined,
     multimedia: [],
+    videoLinks: [],
   });
   const [errors, setErrors] = useState<FormErrors>({});
+  const [videoLinkInput, setVideoLinkInput] = useState("");
+  const [videoLinkError, setVideoLinkError] = useState<string | null>(null);
 
   // Auto-save draft to localStorage
   useEffect(() => {
@@ -187,6 +193,7 @@ export default function CreatePetitionForm() {
           ? new Date(parsedDraft.endDate)
           : undefined,
         multimedia: [],
+        videoLinks: parsedDraft.videoLinks || [],
       }));
     }
   }, []);
@@ -366,6 +373,7 @@ export default function CreatePetitionForm() {
       startDate: formData.startDate,
       endDate: formData.endDate,
       multimedia: formData.multimedia,
+      video_links: formData.videoLinks, // <-- map to backend
     };
     try {
       await sendPetitionUnderReviewEmail({
@@ -774,6 +782,76 @@ export default function CreatePetitionForm() {
                   </div>
                 )}
             </div>
+
+            <div className="mt-8 space-y-2">
+              <Label>Video Links (YouTube, TikTok, etc.)</Label>
+              <div className="flex gap-2">
+                <Input
+                  type="url"
+                  placeholder="Paste video link and press Add"
+                  value={videoLinkInput}
+                  onChange={(e) => setVideoLinkInput(e.target.value)}
+                  className="flex-1"
+                />
+                <Button
+                  type="button"
+                  onClick={() => {
+                    try {
+                      const url = new URL(videoLinkInput);
+                      if (!/^https?:\/\//.test(videoLinkInput)) {
+                        setVideoLinkError("Enter a valid URL");
+                        return;
+                      }
+                      setFormData((prev) => ({
+                        ...prev,
+                        videoLinks: [...prev.videoLinks, videoLinkInput],
+                      }));
+                      setVideoLinkInput("");
+                      setVideoLinkError(null);
+                    } catch {
+                      setVideoLinkError("Enter a valid URL");
+                    }
+                  }}
+                  disabled={!videoLinkInput}
+                >
+                  Add
+                </Button>
+              </div>
+              {videoLinkError && (
+                <p className="text-sm text-red-500">{videoLinkError}</p>
+              )}
+              {formData.videoLinks.length > 0 && (
+                <ul className="mt-2 space-y-1">
+                  {formData.videoLinks.map((link, idx) => (
+                    <li key={idx} className="flex items-center gap-2">
+                      <a
+                        href={link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 underline truncate max-w-xs"
+                      >
+                        {link}
+                      </a>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            videoLinks: prev.videoLinks.filter(
+                              (_, i) => i !== idx
+                            ),
+                          }))
+                        }
+                      >
+                        Remove
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </div>
         );
 
@@ -816,82 +894,22 @@ export default function CreatePetitionForm() {
             </div>
 
             <div className="space-y-2">
-              <h4 className="font-medium">Media</h4>
-              <div className="grid grid-cols-2 gap-4">
-                {formData.coverImage && (
-                  <div>
-                    <p className="text-sm font-medium mb-2">Cover Image</p>
-                    <img
-                      src={URL.createObjectURL(formData.coverImage)}
-                      alt="Cover preview"
-                      className="h-48 w-full object-cover rounded-md"
-                    />
-                  </div>
-                )}
-                {formData.multimedia &&
-                  Array.isArray(formData.multimedia) &&
-                  formData.multimedia.length > 0 && (
-                    <div>
-                      <p className="text-sm font-medium mb-2">
-                        Additional Media ({formData.multimedia.length})
-                      </p>
-                      <div className="bg-muted h-48 rounded-md flex items-center justify-center">
-                        <div className="text-center">
-                          <p className="text-sm">
-                            {
-                              formData.multimedia.filter((f) =>
-                                f.type.startsWith("image/")
-                              ).length
-                            }{" "}
-                            images,{" "}
-                            {
-                              formData.multimedia.filter((f) =>
-                                f.type.startsWith("video/")
-                              ).length
-                            }{" "}
-                            videos
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Total size:{" "}
-                            {(
-                              (formData.multimedia &&
-                              formData.multimedia.length > 0
-                                ? formData.multimedia.reduce(
-                                    (acc, file) => acc + file.size,
-                                    0
-                                  )
-                                : 0) /
-                              (1024 * 1024)
-                            ).toFixed(2)}
-                            MB
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-              </div>
+              <h4 className="font-medium">Media Preview</h4>
+              <MultimediaCarousel
+                media={[
+                  ...formData.multimedia.map((file) =>
+                    URL.createObjectURL(file)
+                  ),
+                  ...formData.videoLinks,
+                ]}
+                coverImage={
+                  formData.coverImage
+                    ? URL.createObjectURL(formData.coverImage)
+                    : undefined
+                }
+                title={formData.title}
+              />
             </div>
-
-            {formData.multimedia &&
-              Array.isArray(formData.multimedia) &&
-              formData.multimedia.length > 0 && (
-                <div className="space-y-2">
-                  <h4 className="font-medium">Multimedia Files</h4>
-                  <div className="grid grid-cols-2 gap-4">
-                    {formData.multimedia.map((file, index) => (
-                      <div key={index} className="flex flex-col">
-                        <p className="text-sm font-medium">{file.name}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {file.type.startsWith("image/")
-                            ? "Image file"
-                            : "Video file"}{" "}
-                          - {Math.round(file.size / 1024)} KB
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
           </div>
         );
 

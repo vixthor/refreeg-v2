@@ -24,14 +24,11 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Icons } from "@/components/icons";
 import { useAuth } from "@/hooks/use-auth";
+import { useAdmin } from "@/hooks/use-admin";
 import { toast } from "@/components/ui/use-toast";
 import Image from "next/image";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import {
-  listPetitions,
-  updatePetitionStatus,
-  getPetition,
-} from "@/actions/petition-actions";
+import { useQueryState } from "nuqs";
+import { getPetition } from "@/actions/petition-actions";
 import type { Petition, PetitionStatus, PetitionWithUser } from "@/types";
 import { format } from "date-fns";
 import { categories } from "@/lib/categories";
@@ -51,66 +48,23 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal } from "lucide-react";
 import NavigationLoader from "../NavigationLoader";
+import MultimediaCarousel from "../MultimediaCarousel";
 
 export default function ManagePetition() {
   const router = useRouter();
   const { user } = useAuth();
-  const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<PetitionStatus>("pending");
-
-  const { data: petitions = [], isLoading } = useQuery<Petition[]>({
-    queryKey: ["adminPetitions", activeTab],
-    queryFn: () => listPetitions({ status: activeTab }),
-    enabled: !!user?.id,
+  const [activeTab, setActiveTab] = useQueryState("tab", {
+    defaultValue: "pending",
+    parse: (value) => value,
+    serialize: (value) => value,
   });
-
-  const approveMutation = useMutation({
-    mutationFn: async (petitionId: string) => {
-      await updatePetitionStatus(petitionId, "approved");
-      return true;
-    },
-    onSuccess: () => {
-      toast({
-        title: "Petition approved",
-        description: "The petition has been approved successfully",
-      });
-      queryClient.invalidateQueries({ queryKey: ["adminPetitions"] });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error approving petition",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  const rejectMutation = useMutation({
-    mutationFn: async ({
-      petitionId,
-      reason,
-    }: {
-      petitionId: string;
-      reason: string;
-    }) => {
-      await updatePetitionStatus(petitionId, "rejected", reason);
-      return true;
-    },
-    onSuccess: () => {
-      toast({
-        title: "Petition rejected",
-        description: "The petition has been rejected",
-      });
-      queryClient.invalidateQueries({ queryKey: ["adminPetitions"] });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error rejecting petition",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
+  const {
+    isAdminOrManager,
+    isLoading: adminLoading,
+    approvePetition,
+    rejectPetition,
+    petitions,
+  } = useAdmin(user?.id, activeTab as PetitionStatus);
 
   const [rejectDialog, setRejectDialog] = useState<{
     open: boolean;
@@ -130,15 +84,12 @@ export default function ManagePetition() {
   };
 
   const handleReject = async () => {
-    await rejectMutation.mutateAsync({
-      petitionId: rejectDialog.petitionId,
-      reason: rejectDialog.reason,
-    });
+    await rejectPetition(rejectDialog.petitionId, rejectDialog.reason);
     setRejectDialog((prev) => ({ ...prev, open: false }));
   };
 
   const handleApprove = async (petitionId: string) => {
-    await approveMutation.mutateAsync(petitionId);
+    await approvePetition(petitionId);
   };
 
   const openDetailDialog = async (petitionId: string) => {
@@ -154,8 +105,21 @@ export default function ManagePetition() {
   const closeDetailDialog = () =>
     setDetailDialog({ open: false, petition: null, isLoading: false });
 
-  if (isLoading) {
+  if (adminLoading) {
     return <NavigationLoader />;
+  }
+
+  if (!isAdminOrManager) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Access Denied</CardTitle>
+          <CardDescription>
+            You do not have permission to access this page.
+          </CardDescription>
+        </CardHeader>
+      </Card>
+    );
   }
 
   return (
@@ -196,24 +160,26 @@ export default function ManagePetition() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {petitions.map((p) => (
-                    <TableRow key={p.id}>
-                      <TableCell
-                        className="font-medium cursor-pointer hover:text-primary"
-                        onClick={() => openDetailDialog(p.id)}
-                      >
-                        {p.title}
+                  {petitions.map((item) => (
+                    <TableRow key={item.id}>
+                      <TableCell className="font-medium">
+                        {item.title}
+                        {item.type === "edit" && (
+                          <Badge variant="outline" className="ml-2">
+                            Edit Request
+                          </Badge>
+                        )}
                       </TableCell>
-                      <TableCell>{p.category}</TableCell>
+                      <TableCell>{item.category}</TableCell>
                       <TableCell>
-                        {p.goal.toLocaleString()} signatures
+                        {item.goal.toLocaleString()} signatures
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-3">
-                          {p.profiles?.profile_photo ? (
+                          {(item as any).profiles?.profile_photo ? (
                             <Image
-                              src={p.profiles.profile_photo}
-                              alt={p.profiles.full_name || "User"}
+                              src={(item as any).profiles.profile_photo}
+                              alt={(item as any).profiles?.full_name || "User"}
                               width={32}
                               height={32}
                               className="rounded-full object-cover"
@@ -221,28 +187,31 @@ export default function ManagePetition() {
                           ) : (
                             <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
                               <span className="text-xs font-medium text-gray-600">
-                                {(p.profiles?.full_name || "A")
+                                {((item as any).profiles?.full_name || "A")
                                   .charAt(0)
                                   .toUpperCase()}
                               </span>
                             </div>
                           )}
                           <span className="font-medium">
-                            {p.profiles?.full_name || "Anonymous"}
+                            {(item as any).profiles?.full_name || "Anonymous"}
                           </span>
                         </div>
                       </TableCell>
                       <TableCell>
                         <Badge
                           variant={
-                            p.status === "approved"
+                            item.status === "approved"
                               ? "default"
-                              : p.status === "pending"
+                              : item.status === "pending"
                               ? "secondary"
+                              : item.status === "pending edit"
+                              ? "outline"
                               : "destructive"
                           }
                         >
-                          {p.status.charAt(0).toUpperCase() + p.status.slice(1)}
+                          {item.status.charAt(0).toUpperCase() +
+                            item.status.slice(1)}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -255,7 +224,7 @@ export default function ManagePetition() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem
-                              onClick={() => openDetailDialog(p.id)}
+                              onClick={() => openDetailDialog(item.id)}
                             >
                               Preview
                             </DropdownMenuItem>
@@ -263,13 +232,24 @@ export default function ManagePetition() {
                               <>
                                 <DropdownMenuItem
                                   onClick={() =>
-                                    openRejectDialog(p.id, p.title)
+                                    openRejectDialog(
+                                      item.type === "edit"
+                                        ? item.original_petition_id
+                                        : item.id,
+                                      item.title
+                                    )
                                   }
                                 >
                                   Reject
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
-                                  onClick={() => handleApprove(p.id)}
+                                  onClick={() =>
+                                    handleApprove(
+                                      item.type === "edit"
+                                        ? item.original_petition_id
+                                        : item.id
+                                    )
+                                  }
                                 >
                                   Approve
                                 </DropdownMenuItem>
@@ -277,14 +257,16 @@ export default function ManagePetition() {
                             )}
                             {activeTab === "rejected" && (
                               <DropdownMenuItem
-                                onClick={() => handleApprove(p.id)}
+                                onClick={() => handleApprove(item.id)}
                               >
                                 Approve
                               </DropdownMenuItem>
                             )}
                             {activeTab === "approved" && (
                               <DropdownMenuItem
-                                onClick={() => openRejectDialog(p.id, p.title)}
+                                onClick={() =>
+                                  openRejectDialog(item.id, item.title)
+                                }
                               >
                                 Take Down
                               </DropdownMenuItem>
@@ -445,6 +427,24 @@ export default function ManagePetition() {
                   </div>
                 )}
 
+              {/* Multimedia Preview */}
+              {((detailDialog.petition as any).multimedia &&
+                (detailDialog.petition as any).multimedia.length > 0) ||
+              ((detailDialog.petition as any).video_links &&
+                (detailDialog.petition as any).video_links.length > 0) ? (
+                <div className="space-y-4">
+                  <h3 className="font-medium">Media</h3>
+                  <MultimediaCarousel
+                    media={[
+                      ...((detailDialog.petition as any).multimedia || []),
+                      ...((detailDialog.petition as any).video_links || []),
+                    ]}
+                    coverImage={detailDialog.petition.image || undefined}
+                    title={detailDialog.petition.title}
+                  />
+                </div>
+              ) : null}
+
               <div className="grid grid-cols-2 gap-4 p-4 bg-muted rounded-lg">
                 <div>
                   <h3 className="font-medium mb-2">Goal</h3>
@@ -455,7 +455,7 @@ export default function ManagePetition() {
                     </p>
                     <p>
                       <span className="font-medium">Signatures:</span>{" "}
-                      {detailDialog.petition.signers_count || 0}
+                      {(detailDialog.petition as any).signers_count || 0}
                     </p>
                   </div>
                 </div>
@@ -465,7 +465,7 @@ export default function ManagePetition() {
                     {detailDialog.petition.days_active !== null &&
                     detailDialog.petition.days_active !== undefined ? (
                       <p>
-                        <span className="font-medium">Days Active:</span>{" "}
+                        <span className="font-medium">Days left:</span>{" "}
                         {detailDialog.petition.days_active} days
                       </p>
                     ) : (

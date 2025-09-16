@@ -19,20 +19,21 @@ export async function createSignature(
 ): Promise<Signature> {
   const supabase = await createClient();
 
-  // Ensure an authenticated user signs only once
-  if (userId) {
-    const { count: existingCount, error: existingError } = await supabase
-      .from("signatures")
-      .select("id", { count: "exact", head: true })
-      .eq("petition_id", petitionId)
-      .eq("user_id", userId);
+  // Ensure a user (by name and email) signs only once
+  const { count: existingCount, error: existingError } = await supabase
+    .from("signatures")
+    .select("id", { count: "exact", head: true })
+    .eq("petition_id", petitionId)
+    .eq("email", signatureData.email)
+    .eq("name", signatureData.name);
 
-    if (existingError) {
-      console.error("Error checking existing signature:", existingError);
-    }
-    if ((existingCount || 0) > 0) {
-      throw new Error("You have already signed this petition");
-    }
+  if (existingError) {
+    console.error("Error checking existing signature:", existingError);
+  }
+  if ((existingCount || 0) > 0) {
+    throw new Error(
+      "A signature with this name and email has already been recorded for this petition."
+    );
   }
 
   const { data, error } = await supabase

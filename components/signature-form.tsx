@@ -63,10 +63,7 @@ export function SignatureForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!profile.id) {
-      setFriendlyError("Please sign in to sign this petition.");
-      return;
-    }
+    // Removed sign-in requirement. Anyone can sign now.
 
     const ok = await createUserSignature(petitionId, profile.id, {
       amount: 1,

@@ -119,7 +119,7 @@ export async function FeaturedPetitions() {
                         <P>Sign Now</P>
                         <P>
                           {petition.percentSigned}% •{" "}
-                          {Number(petition.days_active || 0)} days left
+                          {Number(petition.days_active || 0)} Days left
                         </P>
                       </div>
                     </CardHeader>
