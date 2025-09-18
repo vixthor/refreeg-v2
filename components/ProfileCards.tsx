@@ -119,3 +119,64 @@ export function DonationCard({ donation }: { donation: any }) {
     </div>
   );
 }
+
+// Component for petition cards
+export function PetitionCard({ petition }: { petition: any }) {
+  const signatureCount = petition.signatures ?? 0;
+  const goal = petition.goal ?? 0;
+
+  const progressPercentage =
+    goal > 0 ? Math.min(Math.round((signatureCount / goal) * 100), 100) : 0;
+
+  return (
+    <div className="border rounded-lg overflow-hidden hover:shadow-md transition-shadow">
+      <Link href={`/petitions/${petition.id}`}>
+        <div className="aspect-video relative bg-gray-100">
+          <Image
+            src={petition.image || "/placeholder-petition.jpg"}
+            alt={petition.title}
+            fill
+            className="object-cover"
+          />
+        </div>
+        <div className="p-4 space-y-3">
+          <div className="flex items-center gap-2">
+            <Badge
+              variant="secondary"
+              className="text-xs px-2 py-1 rounded-full"
+            >
+              {petition.category || "Petition"}
+            </Badge>
+          </div>
+
+          <h3 className="font-medium line-clamp-2">{petition.title}</h3>
+
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm">
+              <span className="font-medium">
+                {signatureCount.toLocaleString()} signatures
+              </span>
+              {goal > 0 && (
+                <span className="text-gray-500">
+                  of {goal.toLocaleString()}
+                </span>
+              )}
+            </div>
+
+            {goal > 0 && (
+              <>
+                <Progress
+                  value={progressPercentage}
+                  className="h-2 bg-gray-200"
+                />
+                <div className="text-xs text-gray-500 text-right">
+                  {progressPercentage}% reached
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      </Link>
+    </div>
+  );
+}

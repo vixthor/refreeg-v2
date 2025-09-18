@@ -101,6 +101,40 @@ export default async function CauseDetailPage({
     socialMedia.instagram ||
     socialMedia.linkedin;
 
+  const donorsList = donors.map((donor) => ({
+    ...donor,
+    name: donor.name || "Anonymous",
+    amount: donor.amount || 0,
+    created_at: donor.created_at,
+    message: donor.message || "",
+  }));
+
+  // Map donor messages to comment shape
+  const donorMessages = donors
+    .filter((d) => d.message && d.message.trim() !== "")
+    .map((d) => ({
+      id: `donor-${d.id}`,
+      cause_id: d.cause_id,
+      user_id: d.user_id || "anonymous",
+      content: d.message || "", // Ensure string
+      created_at: d.created_at,
+      updated_at: d.created_at,
+      is_edited: false,
+      parent_id: null,
+      user: {
+        full_name: d.name || "Anonymous",
+        profile_photo: null,
+      },
+      replies: [],
+      replies_count: 0,
+    }));
+
+  // Merge and sort
+  const mergedComments = [...comments, ...donorMessages].sort(
+    (a, b) =>
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  );
+
   return (
     <div className="container py-10">
       <MilestoneNotifications
@@ -115,7 +149,10 @@ export default async function CauseDetailPage({
         <div className="lg:col-span-2 space-y-6">
           {(() => {
             // Combine multimedia (images) and video_links (video URLs)
-            const allMedia = [...(cause.multimedia || [])];
+            const allMedia = [
+              ...(cause.multimedia || []),
+              ...(cause.video_links || []),
+            ];
 
             return allMedia.length > 0 ? (
               <MultimediaCarousel
@@ -223,22 +260,10 @@ export default async function CauseDetailPage({
                 ))}
             </TabsContent>
             <TabsContent value="donors">
-              <div>
-                <Alert
-                  variant="destructive"
-                  className="mb-4 bg-[#E4626F33] border-0"
-                >
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>
-                    These records are logged on the blockchain and are
-                    immutable.
-                  </AlertDescription>
-                </Alert>
-              </div>
-              <DonorsList donors={donors} />
+              <DonorsList donors={donorsList} />
             </TabsContent>
             <CommentsTabWrapper
-              initialComments={comments}
+              initialComments={mergedComments}
               causeId={cause.id}
               currentUserId={user?.id}
             />
@@ -275,7 +300,7 @@ export default async function CauseDetailPage({
                   <span className="font-medium">{donors.length}</span>
                 </div>
                 <div className="flex justify-between py-1 border-t">
-                  <span>Days active</span>
+                  <span>Days left</span>
                   <span className="font-medium">{cause.days_active}</span>
                 </div>
               </div>
@@ -284,7 +309,8 @@ export default async function CauseDetailPage({
                 <ShareModal
                   url={`${baseUrl}/causes/${cause.id}`}
                   title={cause.title}
-                  causeId={cause.id}
+                  entityId={cause.id}
+                  entityType="cause"
                 />
               </div>
             </CardContent>

@@ -1,20 +1,8 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import {
-  Share2,
-  MessageSquare,
-  Instagram,
-  Twitter,
-  Linkedin,
-} from "lucide-react";
-import {
-  FaWhatsapp,
-  FaInstagram,
-  FaTwitter,
-  FaLinkedin,
-  FaXing,
-} from "react-icons/fa";
+import { Share2 } from "lucide-react";
+import { FaWhatsapp, FaInstagram, FaTwitter, FaLinkedin } from "react-icons/fa";
 import { useToast } from "@/components/ui/use-toast";
 import {
   Dialog,
@@ -30,17 +18,51 @@ import { saveCauseShare } from "@/actions/cause-actions";
 interface ShareModalProps {
   url: string;
   title: string;
-  causeId: string;
+  entityId: string;
+  entityType: "cause" | "petition"; // 👈 required
 }
 
-export function ShareModal({ url, title, causeId }: ShareModalProps) {
+export function ShareModal({
+  url,
+  title,
+  entityId,
+  entityType,
+}: ShareModalProps) {
   const { toast } = useToast();
 
-  // Pre-built template for sharing
-  const shareMessage = `🙏 Please support my cause on RefreeG! Every little bit helps: ${url}`;
+  // ✅ entity-specific templates
+  const templates = {
+    cause: {
+      shareMessage: `🌍✨ I’ve started a cause on RefreeG because I believe change begins with us. 
+Your voice, your support, and even the smallest act of kindness can create ripples that touch countless lives. 
+This isn’t just about me—it’s about building hope, restoring dignity, and giving people a chance at a brighter tomorrow.  
+
+Please take a moment to read and support. Together, we can turn compassion into action: ${url}`,
+
+      dialogTitle: "Share this cause",
+      dialogDescription:
+        "Inspire others to care. Share this heartfelt message with your network and invite them to join the movement.",
+    },
+
+    petition: {
+      shareMessage: `✍️💡 I just signed a petition on RefreeG because staying silent only allows the problem to grow. 
+This petition is about standing up for fairness, for justice, and for voices that are too often ignored.  
+
+Your signature isn’t just a name—it’s a declaration that we care, that we won’t look away, and that we believe change is possible.  
+Please join me and add your voice. Together, we are stronger: ${url}`,
+
+      dialogTitle: "Share this petition",
+      dialogDescription:
+        "Help amplify this cause. Share this message and invite others to stand with you for real change.",
+    },
+  } as const;
+
+  // ✅ ensure fallback
+  const { shareMessage, dialogTitle, dialogDescription } =
+    templates[entityType] || templates["cause"];
 
   const handleCopyLink = () => {
-    navigator.clipboard.writeText(shareMessage); // Now copies the full message with template
+    navigator.clipboard.writeText(shareMessage);
     toast({
       title: "Copied!",
       description: "The share message has been copied to your clipboard.",
@@ -51,7 +73,6 @@ export function ShareModal({ url, title, causeId }: ShareModalProps) {
     let shareUrl = "";
     const encodedMessage = encodeURIComponent(shareMessage);
     const encodedUrl = encodeURIComponent(url);
-    const encodedTitle = encodeURIComponent(title);
 
     switch (platform) {
       case "whatsapp":
@@ -64,18 +85,17 @@ export function ShareModal({ url, title, causeId }: ShareModalProps) {
         shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`;
         break;
       case "instagram":
-        // Instagram doesn't support direct sharing via URL
         navigator.clipboard.writeText(shareMessage);
         toast({
-          title: "Instagram sharing",
+          title: "Instagram",
           description:
-            "Share message copied! You can now paste it on Instagram.",
+            "Message copied! Paste it into Instagram manually to share.",
         });
         return;
     }
 
     try {
-      await saveCauseShare(causeId);
+      await saveCauseShare(entityId);
       window.open(shareUrl, "_blank");
     } catch (error) {
       console.error("Error saving share:", error);
@@ -97,10 +117,8 @@ export function ShareModal({ url, title, causeId }: ShareModalProps) {
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Share this cause</DialogTitle>
-          <DialogDescription>
-            Share this cause with your network using our pre-written message
-          </DialogDescription>
+          <DialogTitle>{dialogTitle}</DialogTitle>
+          <DialogDescription>{dialogDescription}</DialogDescription>
         </DialogHeader>
         <div className="flex justify-center gap-6 py-4">
           <Button

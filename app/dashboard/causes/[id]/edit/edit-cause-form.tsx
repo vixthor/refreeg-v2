@@ -37,6 +37,8 @@ import { categories } from "@/lib/categories";
 import { format, addDays, isAfter, isBefore, differenceInDays } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import MultimediaCarousel from "@/components/MultimediaCarousel";
+import { sendCauseEditedEmail } from "@/services/mail";
 
 const currencies = [{ id: "NGN", name: "Naira (₦)" }];
 
@@ -50,6 +52,8 @@ type FormData = {
   sections: { heading: string; description: string }[];
   startDate: Date | undefined;
   endDate: Date | undefined;
+  multimedia: File[];
+  videoLinks: string[];
 };
 
 type FormErrors = {
@@ -59,6 +63,7 @@ type FormErrors = {
   coverImage?: string;
   startDate?: string;
   endDate?: string;
+  multimedia?: string;
   sections?: { heading?: string; description?: string }[];
 };
 
@@ -83,8 +88,12 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
     sections: cause.sections || [{ heading: "", description: "" }],
     startDate: cause.startDate ? new Date(cause.startDate) : undefined,
     endDate: cause.endDate ? new Date(cause.endDate) : undefined,
+    multimedia: [],
+    videoLinks: (cause as any).video_links || [],
   });
   const [errors, setErrors] = useState<FormErrors>({});
+  const [videoLinkInput, setVideoLinkInput] = useState("");
+  const [videoLinkError, setVideoLinkError] = useState<string | null>(null);
 
   console.log(cause.startDate, cause.endDate);
 
@@ -168,6 +177,43 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
     }));
   };
 
+  const handleMultimediaUpload = (files: File[]) => {
+    const MAX_TOTAL_SIZE = 100 * 1024 * 1024; // 100MB in bytes
+    const currentSize =
+      formData.multimedia && formData.multimedia.length > 0
+        ? formData.multimedia.reduce((acc, file) => acc + file.size, 0)
+        : 0;
+    const newFilesSize = files.reduce((acc, file) => acc + file.size, 0);
+
+    if (currentSize + newFilesSize > MAX_TOTAL_SIZE) {
+      setErrors((prev) => ({
+        ...prev,
+        multimedia: "Total multimedia size must be less than 100MB",
+      }));
+      return;
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      multimedia: Array.isArray(prev.multimedia)
+        ? [...prev.multimedia, ...files]
+        : [...files],
+    }));
+
+    if (errors.multimedia) {
+      setErrors((prev) => ({ ...prev, multimedia: undefined }));
+    }
+  };
+
+  const removeMultimedia = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      multimedia: Array.isArray(prev.multimedia)
+        ? prev.multimedia.filter((_, i) => i !== index)
+        : [],
+    }));
+  };
+
   const validateStep = (step: number): boolean => {
     const currentErrors = validateForm(formData);
     setErrors(currentErrors);
@@ -235,10 +281,16 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
       sections: formData.sections,
       startDate: formData.startDate,
       endDate: formData.endDate,
+      multimedia: formData.multimedia,
+      videoLinks: formData.videoLinks,
     };
 
     try {
       await updateCause(cause.id, user.id, causeData);
+      await sendCauseEditedEmail({
+        causeName: formData.title,
+        reviewTimeframe: "3-5 business days",
+      });
     } catch (error) {
       console.error("Error updating cause:", error);
     }
@@ -504,6 +556,123 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
                 <p className="text-sm text-red-500">{errors.coverImage}</p>
               )}
             </div>
+            <div className="mt-8 space-y-4">
+              <div className="space-y-2">
+                <Label>Additional Images</Label>
+                <p className="text-sm text-muted-foreground">
+                  Enhance your cause with images. Total size must not exceed
+                  100MB.
+                </p>
+                <ImageUpload
+                  onUpload={(files) => handleMultimediaUpload(files)}
+                  maxFiles={10}
+                  accept="image/*"
+                />
+                {errors.multimedia && (
+                  <p className="text-sm text-red-500">{errors.multimedia}</p>
+                )}
+              </div>
+              {formData.multimedia &&
+                Array.isArray(formData.multimedia) &&
+                formData.multimedia.length > 0 && (
+                  <div className="space-y-4">
+                    <h4 className="text-sm font-medium">
+                      Uploaded Images ({formData.multimedia.length})
+                    </h4>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      {formData.multimedia.map((file, index) => (
+                        <div key={index} className="relative group">
+                          <img
+                            src={URL.createObjectURL(file)}
+                            alt={`Multimedia ${index + 1}`}
+                            className="h-32 w-full object-cover rounded-md"
+                          />
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="sm"
+                            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => removeMultimedia(index)}
+                          >
+                            Remove
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+            </div>
+            {/* Video Links */}
+            <div className="mt-8 space-y-2">
+              <Label>Video Links (YouTube, TikTok, etc.)</Label>
+              <div className="flex gap-2">
+                <Input
+                  type="url"
+                  placeholder="Paste video link and press Add"
+                  value={videoLinkInput}
+                  onChange={(e) => setVideoLinkInput(e.target.value)}
+                  className="flex-1"
+                />
+                <Button
+                  type="button"
+                  onClick={() => {
+                    // Basic URL validation
+                    try {
+                      const url = new URL(videoLinkInput);
+                      if (!/^https?:\/\//.test(videoLinkInput)) {
+                        setVideoLinkError("Enter a valid URL");
+                        return;
+                      }
+                      setFormData((prev) => ({
+                        ...prev,
+                        videoLinks: [...prev.videoLinks, videoLinkInput],
+                      }));
+                      setVideoLinkInput("");
+                      setVideoLinkError(null);
+                    } catch {
+                      setVideoLinkError("Enter a valid URL");
+                    }
+                  }}
+                  disabled={!videoLinkInput}
+                >
+                  Add
+                </Button>
+              </div>
+              {videoLinkError && (
+                <p className="text-sm text-red-500">{videoLinkError}</p>
+              )}
+              {formData.videoLinks.length > 0 && (
+                <ul className="mt-2 space-y-1">
+                  {formData.videoLinks.map((link, idx) => (
+                    <li key={idx} className="flex items-center gap-2">
+                      <a
+                        href={link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 underline truncate max-w-xs"
+                      >
+                        {link}
+                      </a>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            videoLinks: prev.videoLinks.filter(
+                              (_, i) => i !== idx
+                            ),
+                          }))
+                        }
+                      >
+                        Remove
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </div>
         );
 
@@ -543,6 +712,45 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
                 </p>
               )}
             </div>
+
+            <div className="space-y-2">
+              <h4 className="font-medium">Media Preview</h4>
+              <MultimediaCarousel
+                media={[
+                  ...formData.multimedia.map((file) =>
+                    URL.createObjectURL(file)
+                  ),
+                  ...formData.videoLinks,
+                ]}
+                coverImage={
+                  formData.coverImage
+                    ? URL.createObjectURL(formData.coverImage)
+                    : cause.image || undefined
+                }
+                title={formData.title}
+              />
+            </div>
+
+            {formData.multimedia &&
+              Array.isArray(formData.multimedia) &&
+              formData.multimedia.length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="font-medium">Multimedia Files</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    {formData.multimedia.map((file, index) => (
+                      <div key={index} className="flex flex-col">
+                        <p className="text-sm font-medium">{file.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {file.type.startsWith("image/")
+                            ? "Image file"
+                            : "Video file"}{" "}
+                          - {Math.round(file.size / 1024)} KB
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
           </div>
         );
 
