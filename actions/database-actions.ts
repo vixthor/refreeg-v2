@@ -6,6 +6,8 @@ import { ensureDefaultAdmin } from "./role-actions";
 type Action =
   | "approve-cause"
   | "reject-cause"
+  | "approve-petition"
+  | "reject-petition"
   | "block-user"
   | "unblock-user"
   | "appoint-manager"

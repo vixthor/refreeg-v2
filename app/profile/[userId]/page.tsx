@@ -1,8 +1,12 @@
 // app/profile/[userId]/page.tsx
-import { getProfile, getUserCauses, listUserDonations } from "@/actions";
+import {
+  getProfile,
+  getUserCauses,
+  listUserDonations,
+  getUserPetitions,
+} from "@/actions";
 import { getCurrentUser } from "@/actions/auth-actions";
 import PublicProfile from "@/components/PublicProfile";
-import Link from "next/link";
 
 // Type definitions for our parameters
 type PageParams = {
@@ -32,8 +36,17 @@ export default async function PublicProfilePage({
     return <div className="text-center py-12">User not found</div>;
   }
 
-  const causes = await getUserCauses(userId);
-  const donations = await listUserDonations(userId);
+  const causes = await getUserCauses(userId).then((causes) =>
+    causes.filter((cause) => cause.status === "approved")
+  );
+  const donations = await listUserDonations(userId).then((donations) =>
+    donations.filter(
+      (donation) => (donation.cause as any)?.status === "approved"
+    )
+  );
+  const petitions = await getUserPetitions(userId).then((petitions) =>
+    petitions.filter((petition) => petition.status === "approved")
+  );
 
   return (
     <div className="relative">
@@ -41,6 +54,7 @@ export default async function PublicProfilePage({
         profile={profile}
         causes={causes}
         donations={donations}
+        petitions={petitions}
         userId={userId}
         isOwner={isOwner}
       />
