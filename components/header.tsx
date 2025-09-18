@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -21,7 +21,6 @@ import {
 import {
   Navbar,
   NavbarBrand,
-  NavbarContent,
   NavbarItem,
   Dropdown,
   DropdownTrigger,
@@ -32,12 +31,10 @@ import {
 
 export function Header() {
   const pathname = usePathname();
-  const { user, isLoading, signOut } = useAuth(); // assume signOut exists
+  const { user, isLoading, signOut } = useAuth();
   const { isAdminOrManager } = useAdmin(user?.id);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
-  const [showNavbar, setShowNavbar] = useState(true);
-  const [lastScrollY, setLastScrollY] = useState(0);
 
   const navItems = [
     { title: "Causes", href: "/causes", icon: Megaphone },
@@ -55,138 +52,105 @@ export function Header() {
     { title: "What We Do", href: "/about-us/WhatWeDo" },
   ];
 
-  // Scroll behavior for navbar + auto-close mobile menu
-  useEffect(() => {
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-
-      if (currentScrollY > lastScrollY && currentScrollY > 50) {
-        // scrolling down
-        setShowNavbar(false);
-        setIsMenuOpen(false); // auto-close mobile menu
-      } else {
-        // scrolling up
-        setShowNavbar(true);
-      }
-
-      setLastScrollY(currentScrollY);
-    };
-
-    window.addEventListener("scroll", handleScroll);
-
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [lastScrollY]);
-
   return (
     <>
-      {/* Spacer so content isn’t hidden */}
-      <div className="h-16 md:h-20" />
-
-      <div
-        className={`fixed top-0 left-0 right-0 z-50 transition-transform duration-300 ${
-          showNavbar ? "translate-y-0" : "-translate-y-full"
-        }`}
-      >
+      <div className="sticky top-0 left-0 right-0 z-50">
         <Navbar
           isBordered
           className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-2 md:p-4"
-          maxWidth="xl"
         >
-          {/* Brand */}
-          <NavbarBrand>
-            <Logo />
-          </NavbarBrand>
+          <div className="flex items-center justify-between w-full">
+            {/* Left: Logo + Desktop Nav */}
+            <div className="flex items-center gap-6">
+              <NavbarBrand>
+                <Logo />
+              </NavbarBrand>
 
-          {/* Desktop Navigation */}
-          <NavbarContent className="hidden md:flex gap-4" justify="start">
-            {navItems.map((item) => (
-              <NavbarItem key={item.href} isActive={pathname === item.href}>
-                <Link
-                  href={item.href}
-                  className={`text-sm font-medium transition-colors hover:text-secondary ${
-                    pathname === item.href
-                      ? "text-foreground"
-                      : "text-muted-foreground"
-                  }`}
-                >
-                  {item.title}
-                </Link>
-              </NavbarItem>
-            ))}
-
-            <NavbarItem>
-              <Dropdown>
-                <DropdownTrigger>
-                  <HeroButton
-                    variant="light"
-                    className="text-sm font-medium text-muted-foreground hover:text-secondary"
-                    endContent={<ChevronDown className="text-small" />}
-                  >
-                    About Us
-                  </HeroButton>
-                </DropdownTrigger>
-                <DropdownMenu
-                  aria-label="About Us"
-                  className="bg-white shadow-xl rounded-md"
-                >
-                  {aboutUsItems.map((item) => (
-                    <DropdownItem key={item.href} as={Link} href={item.href}>
+              {/* Desktop Navigation */}
+              <div className="hidden md:flex gap-4 items-center">
+                {navItems.map((item) => (
+                  <NavbarItem key={item.href} isActive={pathname === item.href}>
+                    <Link
+                      href={item.href}
+                      className={`text-sm font-medium transition-colors hover:text-secondary ${
+                        pathname === item.href
+                          ? "text-foreground"
+                          : "text-muted-foreground"
+                      }`}
+                    >
                       {item.title}
-                    </DropdownItem>
-                  ))}
-                </DropdownMenu>
-              </Dropdown>
-            </NavbarItem>
-          </NavbarContent>
+                    </Link>
+                  </NavbarItem>
+                ))}
 
-          {/* Right Side */}
-          <NavbarContent justify="end">
-            {/* Desktop buttons */}
-            <NavbarItem className="hidden md:flex">
-              <Link href="/dashboard/causes/create">
-                <Button variant="outline" size="sm">
-                  List a Cause
-                </Button>
-              </Link>
-            </NavbarItem>
-            <NavbarItem className="hidden md:flex">
-              <Link href="/dashboard/petitions/create">
-                <Button variant="outline" size="sm">
-                  Create a Petition
-                </Button>
-              </Link>
-            </NavbarItem>
+                <NavbarItem>
+                  <Dropdown>
+                    <DropdownTrigger>
+                      <HeroButton
+                        variant="light"
+                        className="text-sm items-center font-medium text-muted-foreground hover:text-secondary"
+                        endContent={<ChevronDown className="text-small" />}
+                      >
+                        About Us
+                      </HeroButton>
+                    </DropdownTrigger>
+                    <DropdownMenu
+                      aria-label="About Us"
+                      className="bg-white shadow-xl rounded-md"
+                    >
+                      {aboutUsItems.map((item) => (
+                        <DropdownItem
+                          key={item.href}
+                          as={Link}
+                          href={item.href}
+                        >
+                          {item.title}
+                        </DropdownItem>
+                      ))}
+                    </DropdownMenu>
+                  </Dropdown>
+                </NavbarItem>
+              </div>
+            </div>
 
-            {!isLoading && user && (
-              <NavbarItem className="hidden md:flex">
-                <Link href="/dashboard">
-                  <Button variant="ghost" size="sm">
-                    <LayoutDashboard className="mr-2 h-4 w-4" />
-                    Dashboard
+            {/* Right Side Actions */}
+            <div className="flex items-center gap-2">
+              <div className="hidden md:flex items-center gap-2">
+                <Link href="/dashboard/causes/create">
+                  <Button variant="outline" size="sm">
+                    List a Cause
                   </Button>
                 </Link>
-              </NavbarItem>
-            )}
+                <Link href="/dashboard/petitions/create">
+                  <Button variant="outline" size="sm">
+                    Create a Petition
+                  </Button>
+                </Link>
+                {!isLoading && user && (
+                  <Link href="/dashboard">
+                    <Button variant="ghost" size="sm">
+                      <LayoutDashboard className="mr-2 h-4 w-4" />
+                      Dashboard
+                    </Button>
+                  </Link>
+                )}
+              </div>
 
-            {!isLoading && !user ? (
-              <NavbarItem>
+              {/* Auth */}
+              {!isLoading && !user ? (
                 <Link href="/auth/signin">
                   <Button size="sm" variant="default">
                     Sign In
                   </Button>
                 </Link>
-              </NavbarItem>
-            ) : (
-              <NavbarItem>
+              ) : (
                 <UserNav />
-              </NavbarItem>
-            )}
+              )}
 
-            {/* Mobile Toggle */}
-            <NavbarItem className="md:hidden">
+              {/* Mobile Toggle */}
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="p-2 text-foreground hover:bg-gray-100 rounded-md transition-colors"
+                className="p-2 text-foreground hover:bg-gray-100 rounded-md transition-colors md:hidden"
                 aria-label={isMenuOpen ? "Close menu" : "Open menu"}
               >
                 {isMenuOpen ? (
@@ -195,23 +159,25 @@ export function Header() {
                   <Menu className="h-5 w-5" />
                 )}
               </button>
-            </NavbarItem>
-          </NavbarContent>
+            </div>
+          </div>
         </Navbar>
 
         {/* Mobile Menu */}
         <div
-          className={`md:hidden absolute top-full left-0 right-0 
-          bg-background/70 
-          backdrop-blur-md 
-          supports-[backdrop-filter]:bg-background/60 
-          border-b shadow-lg z-40 transition-all duration-300 ease-in-out ${
-            isMenuOpen
-              ? "opacity-100 translate-y-0 visible"
-              : "opacity-0 -translate-y-4 invisible"
-          }`}
+          className={`md:hidden fixed top-[64px] left-0 right-0 bottom-0
+    bg-background/70 
+    backdrop-blur-md 
+    supports-[backdrop-filter]:bg-background/60 
+    border-b shadow-lg z-40 transition-all duration-300 ease-in-out
+    ${
+      isMenuOpen
+        ? "opacity-100 translate-y-0 visible"
+        : "opacity-0 -translate-y-4 invisible"
+    }
+  `}
         >
-          <div className="container py-6 space-y-4">
+          <div className="container py-6 space-y-4 max-h-[calc(100vh-64px)] overflow-y-auto">
             {/* Main Nav */}
             <div className="space-y-1">
               {navItems.map((item, index) => {
