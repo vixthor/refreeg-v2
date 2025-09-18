@@ -2,8 +2,6 @@
 
 import { usePathname } from "next/navigation";
 import { DashboardNav } from "@/components/dashboard-nav";
-import { MobileSidebar } from "@/components/mobile-sidebar";
-import { useState } from "react";
 
 export default function ClientLayoutWrapper({
   children,
@@ -12,7 +10,6 @@ export default function ClientLayoutWrapper({
 }) {
   const pathname = usePathname();
   const hideNav = pathname.startsWith("/dashboard/settings/kyc-setup");
-  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -32,13 +29,6 @@ export default function ClientLayoutWrapper({
           </main>
         </div>
       )}
-
-      {/* Mobile Dashboard Sidebar */}
-      <MobileSidebar
-        isOpen={mobileSidebarOpen}
-        onClose={() => setMobileSidebarOpen(false)}
-        isDashboard={true}
-      />
     </div>
   );
 }

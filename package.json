@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@heroui/react": "^2.8.4",
     "@hookform/resolvers": "^3.9.1",
     "@metamask/providers": "^22.1.0",
     "@radix-ui/react-accordion": "^1.2.2",
