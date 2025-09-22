@@ -257,20 +257,20 @@ export function Header() {
                           <DropdownTrigger>
                             <HeroButton
                               variant="light"
-                              className="text-sm items-center font-medium text-muted-foreground hover:text-secondary"
-                              endContent={<ChevronDown className="text-small" />}
+                              className="text-sm items-center font-medium text-muted-foreground hover:text-secondary hover:bg-gray-100 px-3 py-2 rounded-md transition-all duration-200 group"
+                              endContent={<ChevronDown className="text-small transition-transform duration-200 group-hover:rotate-180" />}
                             >
                               {item.title}
                             </HeroButton>
                           </DropdownTrigger>
                           <DropdownMenu
                             aria-label={item.title}
-                            className="bg-white shadow-xl rounded-md w-3/5"
+                            className="bg-white shadow-xl rounded-lg w-3/5 border border-gray-100"
                           >
                             <DropdownSection 
                               title={item.header} 
                               classNames={{
-                                heading: "font-semibold text-sm text-foreground px-4 py-2 border-b"
+                                heading: "font-semibold text-sm text-foreground px-4 py-3"
                               }}
                               showDivider
                             >
@@ -279,17 +279,20 @@ export function Header() {
                                 return (
                                   <DropdownItem
                                     key={dropdownItem.href}
-                                    className="py-3"
+                                    className="py-3 px-4 transition-all duration-200 hover:bg-blue-50 hover:border-l-4 hover:border-l-blue-500 cursor-pointer"
                                     textValue={dropdownItem.title}
                                   >
-                                    <Link href={dropdownItem.href} className="flex items-start gap-3">
-                                      {/* <Icon className="h-5 w-5 text-secondary mt-0.5 flex-shrink-0" /> */}
-                                      <div>
-                                        <p className="font-medium text-sm">{dropdownItem.title}</p>
-                                        <p className="text-xs text-muted-foreground mt-1">
+                                    <Link href={dropdownItem.href} className="flex items-start gap-3 w-full group">
+                                      <Icon className="h-5 w-5 text-gray-400 mt-0.5 flex-shrink-0 group-hover:text-blue-600 transition-colors" />
+                                      <div className="flex-1">
+                                        <p className="font-medium text-sm group-hover:text-blue-700 transition-colors">
+                                          {dropdownItem.title}
+                                        </p>
+                                        <p className="text-xs text-muted-foreground mt-1 group-hover:text-gray-600 transition-colors">
                                           {dropdownItem.description}
                                         </p>
                                       </div>
+                                      <ChevronDown className="h-4 w-4 text-transparent group-hover:text-blue-400 -rotate-90 transition-all" />
                                     </Link>
                                   </DropdownItem>
                                 );
