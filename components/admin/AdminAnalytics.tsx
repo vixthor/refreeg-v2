@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import type { AnalyticsData } from "@/actions/admin-analytics-actions";
 import {
   Card,
   CardContent,
@@ -15,7 +16,11 @@ import { useAdmin } from "@/hooks/use-admin";
 import { BarChart, Users, DollarSign, TrendingUp } from "lucide-react";
 import { AnalyticsCard } from "@/components/analytics-card";
 
-export default function AdminAnalytics() {
+export default function AdminAnalytics({
+  analytics,
+}: {
+  analytics: AnalyticsData;
+}) {
   const router = useRouter();
   const { user } = useAuth();
   const { isAdminOrManager, isLoading: adminLoading } = useAdmin(user?.id);
@@ -55,26 +60,26 @@ export default function AdminAnalytics() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <AnalyticsCard
           title="Total Donations"
-          value="₦125,500"
-          description="+20.1% from last month"
+          value={analytics.totalDonations.current}
+          description={analytics.totalDonations.percentageChange}
           icon={DollarSign}
         />
         <AnalyticsCard
           title="Total Users"
-          value="+42"
-          description="+10.1% from last month"
+          value={String(analytics.totalUsers.current)}
+          description={analytics.totalUsers.percentageChange}
           icon={Users}
         />
         <AnalyticsCard
           title="Active Causes"
-          value="12"
-          description="+2 new this month"
+          value={String(analytics.activeCauses.current)}
+          description={analytics.activeCauses.percentageChange}
           icon={TrendingUp}
         />
         <AnalyticsCard
           title="Pending Approvals"
-          value="7"
-          description="+5 new this week"
+          value={String(analytics.pendingApprovals.current)}
+          description={analytics.pendingApprovals.percentageChange}
           icon={BarChart}
         />
       </div>
