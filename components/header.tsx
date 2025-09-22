@@ -24,6 +24,19 @@ import {
   Lightbulb,
   Target,
   CircleDollarSign,
+  TargetIcon,
+  Heart,
+  BarChart3,
+  Shield,
+  Book,
+  Star,
+  Rocket,
+  HelpCircle,
+  Calendar,
+  MapPin,
+  Users2,
+  Globe2,
+  LightbulbIcon,
 } from "lucide-react";
 import {
   Navbar,
@@ -75,11 +88,11 @@ export function Header() {
     { 
       title: "What can I crowdfund?", 
       header: "Curious about what you crowdfund for? Here are some ideas:",
-      icon: HeartHandshake ,
+      icon: HeartHandshake,
       type: "dropdown",
       items: [
         { 
-          title: "🌍Refreeg for business", 
+          title: "🌍 Refreeg for business", 
           description: "Empower your brand with purpose. Launch CSR campaigns, support community-driven causes, and connect with customers who care about impact.", 
           href: "/how-it-works/contributors", 
           icon: CircleDollarSign 
@@ -97,7 +110,7 @@ export function Header() {
           icon: FileText 
         },
         { 
-          title: "🎨RefreeG for Creators", 
+          title: "🎨 RefreeG for Creators", 
           description: "Turn your influence into impact. Get your unique tag, share your story, and receive donations directly from your fans — in fiat or crypto.", 
           href: "/how-it-works/creators", 
           icon: FileText 
@@ -113,57 +126,92 @@ export function Header() {
     { 
       title: "How RefreeG works", 
       header: "How can you crowdfund on RefreeG?",
-      icon: HeartHandshake ,
+      icon: HeartHandshake,
       type: "dropdown",
       items: [
         { 
-          title: "⭐How to start a cause", 
+          title: "⭐ How to start a cause", 
           description: "Starting causes is easy, and fast because of the intuitive user experience Refreeg is built on. Set up causes in less than 3 minutes!", 
           href: "/crowdfund/medical", 
-          icon: HeartHandshake 
+          icon: Star 
         },
         { 
-          title: "🚀Crowdfunding tips", 
+          title: "🚀 Crowdfunding tips", 
           description: "Raise more, reach more. Build trust with transparent fundraising tools.", 
           href: "/crowdfund/education", 
-          icon: BookOpen 
+          icon: Rocket 
         },
         { 
-          title: "📢For Supporters", 
+          title: "📢 For Supporters", 
           description: "See how to discover causes, donate securely in fiat or crypto, and follow progress transparently.", 
           href: "/crowdfund/community", 
           icon: Users 
         },
         { 
-          title: "💸Fees & Payouts", 
+          title: "💸 Fees & Payouts", 
           description: "Clear explanation of transaction fees, payout timelines, and how creators/nonprofits access their funds.", 
           href: "/crowdfund/fees", 
-          icon: Globe 
+          icon: CircleDollarSign 
         },
         { 
-          title: "🛡️Trust & Safety", 
+          title: "🛡️ Trust & Safety", 
           description: "Read about our fraud checks, KYC verification, and commitment to protecting both donors and cause.", 
           href: "/crowdfund/trust", 
-          icon: Globe 
+          icon: Shield 
+        },
+        { 
+          title: "📣 FAQ", 
+          description: "Get answers to the most common questions about crowdfunding on RefreeG.", 
+          href: "/crowdfund/faq", 
+          icon: HelpCircle 
+        },
+      ]
+    },
+    { 
+      title: "About RefreeG", 
+      header: "About RefreeG?",
+      icon: Info,
+      type: "dropdown",
+      items: [
+        { 
+          title: "💼Our Mission", 
+          description: "Find out what our mission here at RefreeG.", 
+          href: "/about-us/OurMission", 
+          icon: TargetIcon 
+        },
+        { 
+          title: "📢Our Story", 
+          description: "Raise more, reach more. Build trust with transparent fundraising tools.", 
+          href: "/about-us/OurStory", 
+          icon: Book 
+        },
+        { 
+          title: "🔨Our Impact", 
+          description: "See how to discover causes, donate securely in fiat or crypto, and follow progress transparently.", 
+          href: "/about-us/OurImpact", 
+          icon: BarChart3 
+        },
+        { 
+          title: "🧑‍🤝‍🧑Who Are We Made By", 
+          description: "Clear explanation of transaction fees, payout timelines, and how creators/nonprofits access their funds.", 
+          href: "/about-us/OurTeam", 
+          icon: Users2 
+        },
+        { 
+          title: "💡 What We Do", 
+          description: "Read about our fraud checks, KYC verification, and commitment to protecting both donors and cause.", 
+          href: "/about-us/WhatWeDo", 
+          icon: LightbulbIcon 
         },
         { 
           title: "📣FAQ", 
           description: "Get answers to the most common questions about crowdfunding on RefreeG.", 
-          href: "/crowdfund/faq", 
-          icon: Globe 
+          href: "/about-us/faq", 
+          icon: Heart 
         },
+        
       ]
     },
-  ];
-
-  const aboutUsItems = [
-    { title: "Our Mission", href: "/about-us/OurMission" },
-    {
-      title: 'Our Story (The "Why" Behind RefreeG)',
-      href: "/about-us/OurStory",
-    },
-    { title: "Our Impact", href: "/about-us/OurImpact" },
-    { title: "What We Do", href: "/about-us/WhatWeDo" },
   ];
 
   const toggleDropdown = (title: string) => {
@@ -217,7 +265,7 @@ export function Header() {
                           </DropdownTrigger>
                           <DropdownMenu
                             aria-label={item.title}
-                            className="bg-white shadow-xl rounded-md w-96"
+                            className="bg-white shadow-xl rounded-md w-3/5"
                           >
                             <DropdownSection 
                               title={item.header} 
@@ -235,7 +283,7 @@ export function Header() {
                                     textValue={dropdownItem.title}
                                   >
                                     <Link href={dropdownItem.href} className="flex items-start gap-3">
-                                      <Icon className="h-5 w-5 text-secondary mt-0.5 flex-shrink-0" />
+                                      {/* <Icon className="h-5 w-5 text-secondary mt-0.5 flex-shrink-0" /> */}
                                       <div>
                                         <p className="font-medium text-sm">{dropdownItem.title}</p>
                                         <p className="text-xs text-muted-foreground mt-1">
@@ -253,42 +301,6 @@ export function Header() {
                     );
                   }
                 })}
-
-                <NavbarItem>
-                  <Dropdown>
-                    <DropdownTrigger>
-                      <HeroButton
-                        variant="light"
-                        className="text-sm items-center font-medium text-muted-foreground hover:text-secondary"
-                        endContent={<ChevronDown className="text-small" />}
-                      >
-                        About RefreeG
-                      </HeroButton>
-                    </DropdownTrigger>
-                    <DropdownMenu
-                      aria-label="About RefreeG"
-                      className="bg-white shadow-xl rounded-md"
-                    >
-                      <DropdownSection 
-                        title="About RefreeG" 
-                        classNames={{
-                          heading: "font-semibold text-sm text-foreground px-4 py-2 border-b"
-                        }}
-                        showDivider
-                      >
-                        {aboutUsItems.map((item) => (
-                          <DropdownItem
-                            key={item.href}
-                            className="py-3"
-                            textValue={item.title}
-                          >
-                            <Link href={item.href}>{item.title}</Link>
-                          </DropdownItem>
-                        ))}
-                      </DropdownSection>
-                    </DropdownMenu>
-                  </Dropdown>
-                </NavbarItem>
               </div>
             </div>
 
@@ -425,46 +437,6 @@ export function Header() {
                   );
                 }
               })}
-            </div>
-
-            {/* About Us Collapsible */}
-            <div className="border-t pt-4">
-              <button
-                className="w-full flex justify-between items-center py-3 px-2 text-foreground font-medium hover:bg-blue-600/5 rounded-md transition-colors"
-                onClick={() => toggleDropdown("About RefreeG")}
-              >
-                About RefreeG
-                <ChevronDown
-                  className={`h-4 w-4 transition-transform duration-200 ${
-                    openDropdown === "About RefreeG" ? "rotate-180" : "rotate-0"
-                  }`}
-                />
-              </button>
-              <div
-                className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                  openDropdown === "About RefreeG" ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
-                }`}
-              >
-                <div className="ml-4 mt-2 space-y-1">
-                  {aboutUsItems.map((subItem) => (
-                    <Link
-                      key={subItem.href}
-                      href={subItem.href}
-                      className={`block py-2 px-3 text-sm hover:text-blue-600 hover:bg-blue-600/5 rounded-md transition-all duration-200 ${
-                        pathname === subItem.href
-                          ? "text-blue-600 font-medium bg-blue-600/10"
-                          : "text-muted-foreground"
-                      }`}
-                      onClick={() => {
-                        setIsMenuOpen(false);
-                        setOpenDropdown(null);
-                      }}
-                    >
-                      {subItem.title}
-                    </Link>
-                  ))}
-                </div>
-              </div>
             </div>
 
             {/* Actions */}
