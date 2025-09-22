@@ -98,31 +98,31 @@ export function Header() {
         { 
           title: "🌍 Refreeg for business", 
           description: "Empower your brand with purpose. Launch CSR campaigns, support community-driven causes, and connect with customers who care about impact.", 
-          href: "/how-it-works/contributors", 
+          href: "/contributors", 
           icon: CircleDollarSign 
         },
         { 
           title: "🤝 RefreeG for Nonprofits", 
           description: "Raise more, reach more. Build trust with transparent fundraising tools designed to help nonprofits thrive and grow their donor communities.", 
-          href: "/how-it-works/campaigners", 
+          href: "/campaigners", 
           icon: Target 
         },
         { 
           title: "🌪️ RefreeG for Disaster Relief", 
           description: "Respond faster when it matters most. Rally urgent support for communities hit by disasters and get aid to those who need it — quickly and securely.", 
-          href: "/how-it-works/pricing", 
+          href: "/pricing", 
           icon: FileText 
         },
         { 
           title: "🎨 RefreeG for Creators", 
           description: "Turn your influence into impact. Get your unique tag, share your story, and receive donations directly from your fans — in fiat or crypto.", 
-          href: "/how-it-works/creators", 
+          href: "/creators", 
           icon: FileText 
         },
         { 
           title: "🏥 RefreeG for Healthcare", 
           description: "Give hope a platform. Raise funds for medical bills, healthcare projects, or critical treatments — with transparency and community support.", 
-          href: "/how-it-works/healthcare", 
+          href: "/healthcare", 
           icon: FileText 
         },
       ]
