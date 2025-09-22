@@ -37,6 +37,10 @@ import {
   Users2,
   Globe2,
   LightbulbIcon,
+  Search,
+  Sparkles,
+  PlayCircle,
+  HandHeart,
 } from "lucide-react";
 import {
   Navbar,
@@ -88,7 +92,7 @@ export function Header() {
     { 
       title: "What can I crowdfund?", 
       header: "Curious about what you crowdfund for? Here are some ideas:",
-      icon: HeartHandshake,
+      icon: HandHeart,
       type: "dropdown",
       items: [
         { 
@@ -126,7 +130,7 @@ export function Header() {
     { 
       title: "How RefreeG works", 
       header: "How can you crowdfund on RefreeG?",
-      icon: HeartHandshake,
+      icon: Lightbulb,
       type: "dropdown",
       items: [
         { 
@@ -170,7 +174,7 @@ export function Header() {
     { 
       title: "About RefreeG", 
       header: "About RefreeG?",
-      icon: Info,
+      icon: Lightbulb,
       type: "dropdown",
       items: [
         { 
@@ -209,7 +213,6 @@ export function Header() {
           href: "/about-us/faq", 
           icon: Heart 
         },
-        
       ]
     },
   ];
@@ -240,10 +243,10 @@ export function Header() {
                       <NavbarItem key={item.href} isActive={pathname === item.href}>
                         <Link
                           href={item.href}
-                          className={`text-sm font-medium transition-colors hover:text-secondary ${
+                          className={`text-sm font-medium transition-colors hover:text-secondary px-3 py-2 rounded-md ${
                             pathname === item.href
-                              ? "text-foreground"
-                              : "text-muted-foreground"
+                              ? "text-foreground bg-primary/10"
+                              : "text-muted-foreground hover:bg-gray-100"
                           }`}
                         >
                           {item.title}
@@ -268,14 +271,21 @@ export function Header() {
                             className="bg-white shadow-xl rounded-lg w-3/5 border border-gray-100"
                           >
                             <DropdownSection 
-                              title={item.header} 
+                              title={
+                                <div className="flex items-center gap-2">
+                                  <div className="p-3 border border-1 bg-[#E8E8E8] rounded-full">
+                                    <item.icon className="h-6 w-6" />
+                                  </div>
+                                  {item.header}
+                                </div>
+                              } 
                               classNames={{
-                                heading: "font-semibold text-sm text-foreground px-4 py-3"
+                                heading: "font-semibold text-sm text-foreground px-4 py-3 flex items-center gap-2"
                               }}
                               showDivider
                             >
                               {item.items.map((dropdownItem) => {
-                                const Icon = dropdownItem.icon;
+                                const DropdownIcon = dropdownItem.icon;
                                 return (
                                   <DropdownItem
                                     key={dropdownItem.href}
@@ -283,7 +293,7 @@ export function Header() {
                                     textValue={dropdownItem.title}
                                   >
                                     <Link href={dropdownItem.href} className="flex items-start gap-3 w-full group">
-                                      <Icon className="h-5 w-5 text-gray-400 mt-0.5 flex-shrink-0 group-hover:text-blue-600 transition-colors" />
+                                      {/* <DropdownIcon className="h-5 w-5 text-gray-400 mt-0.5 flex-shrink-0 group-hover:text-blue-600 transition-colors" /> */}
                                       <div className="flex-1">
                                         <p className="font-medium text-sm group-hover:text-blue-700 transition-colors">
                                           {dropdownItem.title}
@@ -311,19 +321,21 @@ export function Header() {
             <div className="flex items-center gap-2">
               <div className="hidden md:flex items-center gap-2">
                 <Link href="/dashboard/causes/create">
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" className="flex items-center gap-2">
+                    <Megaphone className="h-4 w-4" />
                     List a Cause
                   </Button>
                 </Link>
                 <Link href="/dashboard/petitions/create">
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" className="flex items-center gap-2">
+                    <FileText className="h-4 w-4" />
                     Create a Petition
                   </Button>
                 </Link>
                 {!isLoading && user && (
                   <Link href="/dashboard">
-                    <Button variant="ghost" size="sm">
-                      <LayoutDashboard className="mr-2 h-4 w-4" />
+                    <Button variant="ghost" size="sm" className="flex items-center gap-2">
+                      <LayoutDashboard className="h-4 w-4" />
                       Dashboard
                     </Button>
                   </Link>
@@ -409,7 +421,13 @@ export function Header() {
                           openDropdown === item.title ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
                         }`}
                       >
-                        <div className="ml-4 mt-2 space-y-3">
+                        {/* Mobile Dropdown Header with Icon */}
+                        <div className="ml-4 mt-2 mb-3 flex items-center gap-2 px-3 py-2 bg-blue-50 rounded-md">
+                          <item.icon className="h-4 w-4 text-blue-600" />
+                          <span className="text-sm font-medium text-blue-800">{item.header}</span>
+                        </div>
+                        
+                        <div className="ml-4 space-y-3">
                           {item.items.map((subItem) => {
                             const Icon = subItem.icon;
                             return (
@@ -446,29 +464,29 @@ export function Header() {
             <div className="border-t pt-4 space-y-2">
               <Link
                 href="/dashboard/causes/create"
-                className="flex items-center py-3 px-2 text-foreground hover:text-blue-600 rounded-md transition-colors font-medium"
+                className="flex items-center gap-3 py-3 px-2 text-foreground hover:text-blue-600 rounded-md transition-colors font-medium"
                 onClick={() => setIsMenuOpen(false)}
               >
-                <Megaphone className="mr-2 h-4 w-4" />
+                <Megaphone className="h-4 w-4" />
                 List a Cause
               </Link>
 
               <Link
                 href="/dashboard/petitions/create"
-                className="flex items-center py-3 px-2 text-foreground hover:text-blue-600 rounded-md transition-colors font-medium"
+                className="flex items-center gap-3 py-3 px-2 text-foreground hover:text-blue-600 rounded-md transition-colors font-medium"
                 onClick={() => setIsMenuOpen(false)}
               >
-                <FileText className="mr-2 h-4 w-4" />
+                <FileText className="h-4 w-4" />
                 Create a Petition
               </Link>
 
               {!isLoading && user && (
                 <Link
                   href="/dashboard"
-                  className="flex items-center py-3 px-2 text-foreground hover:text-blue-600 rounded-md transition-colors font-medium"
+                  className="flex items-center gap-3 py-3 px-2 text-foreground hover:text-blue-600 rounded-md transition-colors font-medium"
                   onClick={() => setIsMenuOpen(false)}
                 >
-                  <LayoutDashboard className="mr-2 h-4 w-4" />
+                  <LayoutDashboard className="h-4 w-4" />
                   Dashboard
                 </Link>
               )}
@@ -479,9 +497,9 @@ export function Header() {
                     signOut?.();
                     setIsMenuOpen(false);
                   }}
-                  className="flex items-center w-full py-3 px-2 text-foreground hover:text-red-600 rounded-md transition-colors font-medium"
+                  className="flex items-center gap-3 w-full py-3 px-2 text-foreground hover:text-red-600 rounded-md transition-colors font-medium"
                 >
-                  <LogOut className="mr-2 h-4 w-4" />
+                  <LogOut className="h-4 w-4" />
                   Sign Out
                 </button>
               )}
@@ -495,24 +513,25 @@ export function Header() {
                 </div>
                 <div className="space-y-1">
                   {[
-                    { href: "/dashboard/admin/causes", title: "Manage Causes" },
-                    {
-                      href: "/dashboard/admin/petitions",
-                      title: "Manage Petitions",
-                    },
-                    { href: "/dashboard/admin/users", title: "Manage Users" },
-                    { href: "/dashboard/admin/analytics", title: "Analytics" },
-                    { href: "/dashboard/admin/logs", title: "Logs" },
-                  ].map((adminItem) => (
-                    <Link
-                      key={adminItem.href}
-                      href={adminItem.href}
-                      className="block py-2 px-2 text-sm text-foreground hover:text-blue-600 hover:bg-blue-600/5 rounded-md transition-colors"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      {adminItem.title}
-                    </Link>
-                  ))}
+                    { href: "/dashboard/admin/causes", title: "Manage Causes", icon: Megaphone },
+                    { href: "/dashboard/admin/petitions", title: "Manage Petitions", icon: FileText },
+                    { href: "/dashboard/admin/users", title: "Manage Users", icon: Users },
+                    { href: "/dashboard/admin/analytics", title: "Analytics", icon: BarChart3 },
+                    { href: "/dashboard/admin/logs", title: "Logs", icon: Book },
+                  ].map((adminItem) => {
+                    const AdminIcon = adminItem.icon;
+                    return (
+                      <Link
+                        key={adminItem.href}
+                        href={adminItem.href}
+                        className="flex items-center gap-3 py-2 px-2 text-sm text-foreground hover:text-blue-600 hover:bg-blue-600/5 rounded-md transition-colors"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        <AdminIcon className="h-4 w-4" />
+                        {adminItem.title}
+                      </Link>
+                    );
+                  })}
                 </div>
               </div>
             )}
