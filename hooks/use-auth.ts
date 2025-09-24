@@ -1,14 +1,14 @@
 // Helper to extract a simple device/OS string from user agent
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { createClient } from "@/lib/supabase/client"
-import { useRouter } from "next/navigation"
-import { toast } from "@/components/ui/use-toast"
+import { useEffect, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
+import { useRouter } from "next/navigation";
+import { toast } from "@/components/ui/use-toast";
 
-import { getCurrentUser } from "@/actions/auth-actions"
-import { updateProfile } from "@/actions"
-import { sendLoginNotificationEmail } from "@/services/mail"
+import { getCurrentUser } from "@/actions/auth-actions";
+import { updateProfile } from "@/actions";
+import { sendLoginNotificationEmail } from "@/services/mail";
 // Helper to extract a simple device/OS string from user agent
 function getDeviceInfo() {
   if (typeof window === "undefined") return "Unknown Device";
@@ -21,64 +21,65 @@ function getDeviceInfo() {
   return "Other";
 }
 export function useAuth() {
-  const [user, setUser] = useState<any>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const router = useRouter()
-  const supabase = createClient()
+  const [user, setUser] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter();
+  const supabase = createClient();
 
   useEffect(() => {
     const getUser = async () => {
       try {
-        const currentUser = await getCurrentUser()
-        setUser(currentUser)
+        const currentUser = await getCurrentUser();
+        setUser(currentUser);
       } catch (error) {
-        console.error("Error getting current user:", error)
-        setUser(null)
+        console.error("Error getting current user:", error);
+        setUser(null);
       } finally {
-        setIsLoading(false)
+        setIsLoading(false);
       }
-    }
+    };
 
-    getUser()
+    getUser();
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session) {
-        const { data: { user }, error } = await supabase.auth.getUser()
+        const {
+          data: { user },
+          error,
+        } = await supabase.auth.getUser();
         if (!error && user) {
-          setUser(user)
+          setUser(user);
         } else {
-          setUser(null)
+          setUser(null);
         }
       } else {
-        setUser(null)
+        setUser(null);
       }
-      setIsLoading(false)
-    })
+      setIsLoading(false);
+    });
 
     return () => {
-      subscription.unsubscribe()
-    }
-  }, [supabase.auth])
+      subscription.unsubscribe();
+    };
+  }, [supabase.auth]);
 
   const signIn = async (email: string, password: string) => {
     try {
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
-      })
+      });
 
       if (error) {
         toast({
           title: "Error signing in",
           description: error.message,
           variant: "destructive",
-        })
-        return
+        });
+        return;
       }
-
-
 
       // Get device and IP address (best effort, client-side)
       const device = getDeviceInfo();
@@ -98,23 +99,22 @@ export function useAuth() {
         loginTime: new Date().toLocaleString(),
         device,
         ipAddress,
-      })
-        .catch((e) => console.error("Login notification email error:", e));
+      }).catch((e) => console.error("Login notification email error:", e));
 
       toast({
         title: "Welcome back!",
         description: "You have successfully signed in.",
-      })
+      });
 
-      router.push("/")
+      router.push("/");
     } catch (error: any) {
       toast({
         title: "Error signing in",
         description: error.message,
         variant: "destructive",
-      })
+      });
     }
-  }
+  };
 
   const signUp = async (
     email: string,
@@ -129,65 +129,123 @@ export function useAuth() {
         options: {
           data: {
             full_name: fullName,
-          }
-        }
-      })
+          },
+        },
+      });
 
       if (error) {
         toast({
           title: "Error signing up",
           description: error.message,
-          variant: "destructive"
-        })
-        return
+          variant: "destructive",
+        });
+        return;
       }
 
       // Create profile for the new user
       if (data.user) {
-        const { error: profileError } = await supabase
-          .from("profiles")
-          .insert({
-            id: data.user.id,
-            email: data.user.email,
-            full_name: fullName,
-            account_type: accountType,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          })
+        const { error: profileError } = await supabase.from("profiles").insert({
+          id: data.user.id,
+          email: data.user.email,
+          full_name: fullName,
+          account_type: accountType,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
 
         if (profileError) {
-          console.error("Error creating profile:", profileError)
+          console.error("Error creating profile:", profileError);
           toast({
             title: "Error creating profile",
-            description: "Your account was created but there was an error setting up your profile.",
-            variant: "destructive"
-          })
+            description:
+              "Your account was created but there was an error setting up your profile.",
+            variant: "destructive",
+          });
         }
       }
 
       toast({
         title: "Account created successfully",
         description: "You can now sign in with your credentials.",
-      })
+      });
 
-      router.push("/")
+      router.push("/");
     } catch (error: any) {
       toast({
         title: "Error signing up",
         description: error.message,
         variant: "destructive",
-      })
+      });
     }
-  }
+  };
 
   const signOut = async () => {
-    await supabase.auth.signOut()
-    router.push("/")
+    await supabase.auth.signOut();
+    router.push("/");
     toast({
       title: "Signed out",
       description: "You have been signed out successfully.",
-    })
-  }
+    });
+  };
+  const resetPassword = async (email: string) => {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/update-password`,
+      });
+
+      if (error) {
+        toast({
+          title: "Error sending reset email",
+          description: error.message,
+          variant: "destructive",
+        });
+        return false;
+      }
+
+      toast({
+        title: "Reset email sent",
+        description: "Check your email for the password reset link.",
+      });
+      return true;
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
+
+  const updatePassword = async (newPassword: string) => {
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+
+      if (error) {
+        toast({
+          title: "Error updating password",
+          description: error.message,
+          variant: "destructive",
+        });
+        return false;
+      }
+
+      toast({
+        title: "Password updated successfully",
+        description: "You can now sign in with your new password.",
+      });
+      return true;
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
 
   return {
     user,
@@ -195,5 +253,7 @@ export function useAuth() {
     signIn,
     signUp,
     signOut,
-  }
+    resetPassword,
+    updatePassword,
+  };
 }
