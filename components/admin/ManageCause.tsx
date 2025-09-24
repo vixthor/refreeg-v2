@@ -119,7 +119,7 @@ export default function ManageCauses() {
 
   const openPreviewDialog = (cause: Cause | CauseWithUser) => {
     // For preview, we'll use the basic cause data and handle missing user info
-    const previewCause: CauseWithUser = {
+    const previewCause = {
       ...cause,
       user: (cause as CauseWithUser).user || {
         name: (cause as any).profiles?.full_name || "Anonymous",
@@ -129,7 +129,8 @@ export default function ManageCauses() {
       },
       sections: (cause as CauseWithUser).sections || [],
       multimedia: (cause as CauseWithUser).multimedia || [],
-    };
+      video_links: (cause as any).video_links || [],
+    } as any;
 
     setPreviewDialog({
       open: true,

@@ -68,6 +68,8 @@ export async function getPetition(
       sub_account_code: data.profiles?.sub_account_code || "",
     },
     sections: data.petition_sections || [],
+    multimedia: data.multimedia || [],
+    video_links: data.video_links || [],
   } as unknown as PetitionWithUser;
 
   // Remove the nested objects that we've flattened
