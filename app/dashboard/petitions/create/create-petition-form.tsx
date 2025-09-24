@@ -373,7 +373,7 @@ export default function CreatePetitionForm() {
       startDate: formData.startDate,
       endDate: formData.endDate,
       multimedia: formData.multimedia,
-      video_links: formData.videoLinks, // <-- map to backend
+      video_links: formData.videoLinks,
     };
     try {
       await sendPetitionUnderReviewEmail({
