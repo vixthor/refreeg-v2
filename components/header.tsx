@@ -96,21 +96,21 @@ export function Header() {
       type: "dropdown",
       items: [
         { 
-          title: "🌍 Refreeg for business", 
+          title: "🌍 Refreeg for Businesses", 
           description: "Empower your brand with purpose. Launch CSR campaigns, support community-driven causes, and connect with customers who care about impact.", 
-          href: "/contributors", 
+          href: "/businesses", 
           icon: CircleDollarSign 
         },
         { 
           title: "🤝 RefreeG for Nonprofits", 
           description: "Raise more, reach more. Build trust with transparent fundraising tools designed to help nonprofits thrive and grow their donor communities.", 
-          href: "/campaigners", 
+          href: "/nonprofits", 
           icon: Target 
         },
         { 
           title: "🌪️ RefreeG for Disaster Relief", 
           description: "Respond faster when it matters most. Rally urgent support for communities hit by disasters and get aid to those who need it — quickly and securely.", 
-          href: "/pricing", 
+          href: "/disaster-relief", 
           icon: FileText 
         },
         { 
