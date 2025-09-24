@@ -63,6 +63,8 @@ export async function getCause(causeId: string): Promise<CauseWithUser | null> {
       profile_photo: data.profiles?.profile_photo || null,
     },
     sections: data.cause_sections || [],
+    multimedia: data.multimedia || [],
+    video_links: data.video_links || [],
   } as unknown as CauseWithUser;
 
   // Remove the nested objects that we've flattened
