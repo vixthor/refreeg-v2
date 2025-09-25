@@ -34,7 +34,14 @@ import { Progress } from "@/components/ui/progress";
 import { ImageUpload } from "@/components/ui/image-upload";
 import { categories } from "@/lib/categories";
 import { sendCauseUnderReviewEmail } from "@/services/mail";
-import { format, addDays, isAfter, isBefore, differenceInDays } from "date-fns";
+import {
+  format,
+  addDays,
+  isAfter,
+  isBefore,
+  differenceInDays,
+  startOfDay,
+} from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import MultimediaCarousel from "@/components/MultimediaCarousel";
@@ -605,7 +612,9 @@ export default function CreateCauseForm() {
                       mode="single"
                       selected={formData.startDate}
                       onSelect={(date) => handleDateChange(date, "startDate")}
-                      disabled={(date) => isBefore(date, new Date())}
+                      disabled={(date) =>
+                        isBefore(date, startOfDay(new Date()))
+                      }
                       initialFocus
                     />
                   </PopoverContent>
@@ -639,7 +648,7 @@ export default function CreateCauseForm() {
                       selected={formData.endDate}
                       onSelect={(date) => handleDateChange(date, "endDate")}
                       disabled={(date) => {
-                        const isPast = isBefore(date, new Date());
+                        const isPast = isBefore(date, startOfDay(new Date()));
                         const isBeforeStart = formData.startDate
                           ? isBefore(date, formData.startDate)
                           : false;
