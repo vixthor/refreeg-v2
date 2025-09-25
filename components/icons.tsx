@@ -7,7 +7,7 @@ import {
   HelpCircle,
   Laptop,
   Loader2,
-  type LightbulbIcon as LucideProps,
+  LightbulbIcon,
   Moon,
   Plus,
   Settings,
@@ -16,7 +16,9 @@ import {
   User,
   X,
   Upload,
+  Check,
   type LucideIcon,
+  type LucideProps,
 } from "lucide-react"
 
 export type Icon = LucideIcon
@@ -38,6 +40,7 @@ export const Icons = {
   moon: Moon,
   sun: SunMedium,
   upload: Upload,
+  mail: Check,
   gitHub: ({ ...props }: LucideProps) => (
     <svg
       aria-hidden="true"
@@ -73,4 +76,3 @@ export const Icons = {
     </svg>
   ),
 }
-
