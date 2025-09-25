@@ -1,33 +1,40 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { useState } from "react"
-import Link from "next/link"
-import { useAuth } from "@/hooks/use-auth"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Icons } from "@/components/icons"
+import type React from "react";
+import { useState } from "react";
+import Link from "next/link";
+import { useAuth } from "@/hooks/use-auth";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Icons } from "@/components/icons";
 
 export default function ResetPasswordPage() {
-  const [email, setEmail] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
-  const [isSubmitted, setIsSubmitted] = useState(false)
-  const { resetPassword } = useAuth()
+  const [email, setEmail] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const { resetPassword } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-    
+    e.preventDefault();
+    setIsLoading(true);
+
     try {
-      await resetPassword(email)
-      setIsSubmitted(true)
+      await resetPassword(email);
+      setIsSubmitted(true);
     } catch (error) {
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   if (isSubmitted) {
     return (
@@ -35,7 +42,9 @@ export default function ResetPasswordPage() {
         <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
           <Card>
             <CardHeader className="space-y-1">
-              <CardTitle className="text-2xl text-center">Check your email</CardTitle>
+              <CardTitle className="text-2xl text-center">
+                Check your email
+              </CardTitle>
               <CardDescription className="text-center">
                 We've sent a password reset link to {email}
               </CardDescription>
@@ -49,8 +58,8 @@ export default function ResetPasswordPage() {
               </p>
             </CardContent>
             <CardFooter className="flex flex-col space-y-4">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={() => setIsSubmitted(false)}
                 className="w-full"
               >
@@ -58,7 +67,10 @@ export default function ResetPasswordPage() {
               </Button>
               <div className="text-sm text-center text-muted-foreground">
                 Remember your password?{" "}
-                <Link href="/auth/signin" className="underline underline-offset-4 hover:text-primary">
+                <Link
+                  href="/auth/signin"
+                  className="underline underline-offset-4 hover:text-primary"
+                >
                   Sign in
                 </Link>
               </div>
@@ -66,7 +78,7 @@ export default function ResetPasswordPage() {
           </Card>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -74,9 +86,12 @@ export default function ResetPasswordPage() {
       <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
         <Card>
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl text-center">Reset password</CardTitle>
+            <CardTitle className="text-2xl text-center">
+              Reset password
+            </CardTitle>
             <CardDescription className="text-center">
-              Enter your email address and we'll send you a link to reset your password
+              Enter your email address and we'll send you a link to reset your
+              password
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -109,13 +124,19 @@ export default function ResetPasswordPage() {
           <CardFooter className="flex flex-col space-y-4">
             <div className="text-sm text-center text-muted-foreground">
               Remember your password?{" "}
-              <Link href="/auth/signin" className="underline underline-offset-4 hover:text-primary">
+              <Link
+                href="/auth/signin"
+                className="underline underline-offset-4 hover:text-primary"
+              >
                 Sign in
               </Link>
             </div>
             <div className="text-sm text-center text-muted-foreground">
               Don't have an account?{" "}
-              <Link href="/auth/signup" className="underline underline-offset-4 hover:text-primary">
+              <Link
+                href="/auth/signup"
+                className="underline underline-offset-4 hover:text-primary"
+              >
                 Sign up
               </Link>
             </div>
@@ -123,5 +144,5 @@ export default function ResetPasswordPage() {
         </Card>
       </div>
     </div>
-  )
+  );
 }
