@@ -210,15 +210,6 @@ export default function UpdatePasswordPage() {
               </div>
             </form>
           </CardContent>
-          {isLoading && (
-            <CardFooter>
-              <div className="w-full text-center text-sm text-muted-foreground">
-                {isRedirecting
-                  ? "Redirecting to sign in page..."
-                  : `You will be redirected to sign in page in ${redirectCountdown} seconds...`}
-              </div>
-            </CardFooter>
-          )}
         </Card>
       </div>
     </div>
