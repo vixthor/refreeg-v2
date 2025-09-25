@@ -68,20 +68,18 @@ export default function UpdatePasswordPage() {
     if (updateResult === "success") {
       toast({
         title: "Password updated successfully!",
-        description:
-          "You have been signed out. Please sign in with your new password.",
+        description: "Please sign in with your new password.",
       });
     } else {
       toast({
         title: "Password update process completed",
-        description:
-          "You have been signed out. Please try signing in with your new password.",
+        description: "Please try signing in with your new password.",
       });
     }
 
     try {
       await supabase.auth.signOut();
-      router.push("/auth/signin");
+      router.push("/");
     } catch (error) {
       router.push("/");
     }
