@@ -9,6 +9,7 @@ import { toast } from "@/components/ui/use-toast";
 import { getCurrentUser } from "@/actions/auth-actions";
 import { updateProfile } from "@/actions";
 import { sendLoginNotificationEmail } from "@/services/mail";
+
 // Helper to extract a simple device/OS string from user agent
 function getDeviceInfo() {
   if (typeof window === "undefined") return "Unknown Device";
@@ -20,6 +21,7 @@ function getDeviceInfo() {
   if (/Linux/.test(ua)) return "Linux";
   return "Other";
 }
+
 export function useAuth() {
   const [user, setUser] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -187,10 +189,12 @@ export function useAuth() {
       description: "You have been signed out successfully.",
     });
   };
+
   const resetPassword = async (email: string) => {
     try {
+      // Updated to go through callback route with type parameter
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/update-password`,
+        redirectTo: `${window.location.origin}/auth/callback?type=recovery`,
       });
 
       if (error) {
@@ -199,13 +203,9 @@ export function useAuth() {
           description: error.message,
           variant: "destructive",
         });
-        return false;
+        throw error;
       }
 
-      toast({
-        title: "Reset email sent",
-        description: "Check your email for the password reset link.",
-      });
       return true;
     } catch (error: any) {
       toast({
@@ -213,7 +213,7 @@ export function useAuth() {
         description: "An unexpected error occurred. Please try again.",
         variant: "destructive",
       });
-      return false;
+      throw error;
     }
   };
 
@@ -224,26 +224,12 @@ export function useAuth() {
       });
 
       if (error) {
-        toast({
-          title: "Error updating password",
-          description: error.message,
-          variant: "destructive",
-        });
-        return false;
+        throw error;
       }
 
-      toast({
-        title: "Password updated successfully",
-        description: "You can now sign in with your new password.",
-      });
       return true;
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred. Please try again.",
-        variant: "destructive",
-      });
-      return false;
+      throw error;
     }
   };
 
