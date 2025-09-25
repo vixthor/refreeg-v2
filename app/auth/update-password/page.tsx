@@ -3,6 +3,7 @@
 import type React from "react";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/use-auth";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,9 +26,11 @@ export default function UpdatePasswordPage() {
   const [isValidSession, setIsValidSession] = useState(true);
   const router = useRouter();
   const supabase = createClient();
+  const { updatePassword } = useAuth();
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         setIsValidSession(false);
         toast({
@@ -36,7 +39,9 @@ export default function UpdatePasswordPage() {
           variant: "destructive",
         });
       }
-    });
+    };
+
+    checkSession();
   }, [supabase.auth]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -63,24 +68,20 @@ export default function UpdatePasswordPage() {
     setIsLoading(true);
 
     try {
-      const { error } = await supabase.auth.updateUser({
-        password: password,
-      });
-
-      if (error) {
-        throw error;
-      }
+      await updatePassword(password);
 
       toast({
         title: "Password updated",
         description: "Your password has been updated successfully.",
       });
 
+      // Sign out the user and redirect to sign in
+      await supabase.auth.signOut();
       router.push("/auth/signin");
     } catch (error: any) {
       toast({
         title: "Error updating password",
-        description: error.message,
+        description: error.message || "Failed to update password",
         variant: "destructive",
       });
     } finally {
