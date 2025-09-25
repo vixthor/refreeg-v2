@@ -24,13 +24,20 @@ export default function UpdatePasswordPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isValidSession, setIsValidSession] = useState(true);
+  const [redirectCountdown, setRedirectCountdown] = useState(20);
+  const [isRedirecting, setIsRedirecting] = useState(false);
+  const [updateResult, setUpdateResult] = useState<"success" | "error" | null>(
+    null
+  );
   const router = useRouter();
   const supabase = createClient();
   const { updatePassword } = useAuth();
 
   useEffect(() => {
     const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session) {
         setIsValidSession(false);
         toast({
@@ -43,6 +50,42 @@ export default function UpdatePasswordPage() {
 
     checkSession();
   }, [supabase.auth]);
+  useEffect(() => {
+    if (isLoading && redirectCountdown > 0) {
+      const timer = setTimeout(() => {
+        setRedirectCountdown(redirectCountdown - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    } else if (isLoading && redirectCountdown === 0 && !isRedirecting) {
+      handleRedirect();
+    }
+  }, [isLoading, redirectCountdown, isRedirecting]);
+
+  const handleRedirect = async () => {
+    if (isRedirecting) return;
+
+    setIsRedirecting(true);
+    if (updateResult === "success") {
+      toast({
+        title: "Password updated successfully!",
+        description:
+          "You have been signed out. Please sign in with your new password.",
+      });
+    } else {
+      toast({
+        title: "Password update process completed",
+        description:
+          "You have been signed out. Please try signing in with your new password.",
+      });
+    }
+
+    try {
+      await supabase.auth.signOut();
+      router.push("/auth/signin");
+    } catch (error) {
+      router.push("/");
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,27 +109,18 @@ export default function UpdatePasswordPage() {
     }
 
     setIsLoading(true);
+    setRedirectCountdown(15);
+    setIsRedirecting(false);
+    setUpdateResult(null);
 
-    try {
-      await updatePassword(password);
-
-      toast({
-        title: "Password updated",
-        description: "Your password has been updated successfully.",
+    updatePassword(password)
+      .then(() => {
+        setUpdateResult("success");
+      })
+      .catch((error: any) => {
+        setUpdateResult("error");
+        console.error("Password update error:", error);
       });
-
-      // Sign out the user and redirect to sign in
-      await supabase.auth.signOut();
-      router.push("/auth/signin");
-    } catch (error: any) {
-      toast({
-        title: "Error updating password",
-        description: error.message || "Failed to update password",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
   };
 
   if (!isValidSession) {
@@ -141,6 +175,7 @@ export default function UpdatePasswordPage() {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     minLength={6}
+                    disabled={isLoading}
                   />
                 </div>
                 <div className="grid gap-2">
@@ -153,13 +188,20 @@ export default function UpdatePasswordPage() {
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
                     minLength={6}
+                    disabled={isLoading}
                   />
                 </div>
-                <Button type="submit" className="w-full" disabled={isLoading}>
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={isLoading || isRedirecting}
+                >
                   {isLoading ? (
                     <>
                       <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
-                      Updating password...
+                      {isRedirecting
+                        ? "Redirecting..."
+                        : `Updating password... (${redirectCountdown}s)`}
                     </>
                   ) : (
                     "Update password"
@@ -168,6 +210,15 @@ export default function UpdatePasswordPage() {
               </div>
             </form>
           </CardContent>
+          {isLoading && (
+            <CardFooter>
+              <div className="w-full text-center text-sm text-muted-foreground">
+                {isRedirecting
+                  ? "Redirecting to sign in page..."
+                  : `You will be redirected to sign in page in ${redirectCountdown} seconds...`}
+              </div>
+            </CardFooter>
+          )}
         </Card>
       </div>
     </div>
