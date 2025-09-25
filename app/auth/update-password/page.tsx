@@ -1,49 +1,54 @@
-// app/auth/update-password/page.tsx
-"use client"
+"use client";
 
-import type React from "react"
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { createClient } from "@/lib/supabase/client"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Icons } from "@/components/icons"
-import { toast } from "@/components/ui/use-toast"
+import type React from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Icons } from "@/components/icons";
+import { toast } from "@/components/ui/use-toast";
 
 export default function UpdatePasswordPage() {
-  const [password, setPassword] = useState("")
-  const [confirmPassword, setConfirmPassword] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
-  const [isValidSession, setIsValidSession] = useState(true)
-  const router = useRouter()
-  const supabase = createClient()
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [isValidSession, setIsValidSession] = useState(true);
+  const router = useRouter();
+  const supabase = createClient();
 
   useEffect(() => {
-    // Check if we're in a password recovery session
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) {
-        setIsValidSession(false)
+        setIsValidSession(false);
         toast({
           title: "Invalid session",
           description: "This password reset link has expired or is invalid.",
           variant: "destructive",
-        })
+        });
       }
-    })
-  }, [supabase.auth])
+    });
+  }, [supabase.auth]);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
+    e.preventDefault();
+
     if (password !== confirmPassword) {
       toast({
         title: "Passwords don't match",
         description: "Please make sure your passwords match.",
         variant: "destructive",
-      })
-      return
+      });
+      return;
     }
 
     if (password.length < 6) {
@@ -51,37 +56,37 @@ export default function UpdatePasswordPage() {
         title: "Password too short",
         description: "Password must be at least 6 characters long.",
         variant: "destructive",
-      })
-      return
+      });
+      return;
     }
 
-    setIsLoading(true)
+    setIsLoading(true);
 
     try {
       const { error } = await supabase.auth.updateUser({
-        password: password
-      })
+        password: password,
+      });
 
       if (error) {
-        throw error
+        throw error;
       }
 
       toast({
         title: "Password updated",
         description: "Your password has been updated successfully.",
-      })
+      });
 
-      router.push("/auth/signin")
+      router.push("/auth/signin");
     } catch (error: any) {
       toast({
         title: "Error updating password",
         description: error.message,
         variant: "destructive",
-      })
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   if (!isValidSession) {
     return (
@@ -89,20 +94,25 @@ export default function UpdatePasswordPage() {
         <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
           <Card>
             <CardHeader className="space-y-1">
-              <CardTitle className="text-2xl text-center">Invalid Link</CardTitle>
+              <CardTitle className="text-2xl text-center">
+                Invalid Link
+              </CardTitle>
               <CardDescription className="text-center">
                 This password reset link has expired or is invalid.
               </CardDescription>
             </CardHeader>
             <CardFooter>
-              <Button onClick={() => router.push("/auth/reset-password")} className="w-full">
+              <Button
+                onClick={() => router.push("/auth/reset-password")}
+                className="w-full"
+              >
                 Request new reset link
               </Button>
             </CardFooter>
           </Card>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -110,7 +120,9 @@ export default function UpdatePasswordPage() {
       <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
         <Card>
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl text-center">Update password</CardTitle>
+            <CardTitle className="text-2xl text-center">
+              Update password
+            </CardTitle>
             <CardDescription className="text-center">
               Enter your new password below
             </CardDescription>
@@ -158,5 +170,5 @@ export default function UpdatePasswordPage() {
         </Card>
       </div>
     </div>
-  )
+  );
 }
