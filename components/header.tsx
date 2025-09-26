@@ -104,7 +104,7 @@ export function Header() {
         { 
           title: "🤝 RefreeG for Nonprofits", 
           description: "Raise more, reach more. Build trust with transparent fundraising tools designed to help nonprofits thrive and grow their donor communities.", 
-          href: "/nonprofits", 
+          href: "/non-profits", 
           icon: Target 
         },
         { 
