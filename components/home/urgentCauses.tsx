@@ -10,8 +10,7 @@ import { Progress } from "@/components/ui/progress";
 import { DonateButton } from "@/components/donate-button";
 import { H2, P, H4 } from "../typograpy";
 import { Button } from "../ui/button";
-import { listPetitions } from "@/actions";
-import { listSignaturesForPetition } from "@/actions/signature-actions";
+import { listCauses } from "@/actions";
 import AnimatedCard from "./components/AnimatedCard";
 import AnimatedHeader from "@/components/home/components/AnimatedHeader";
 import { ArrowRight } from "lucide-react";
@@ -24,13 +23,32 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 
-export async function FeaturedPetitions() {
-  const featuredPetitions = await listPetitions();
+export async function UrgentCauses() {
+  const allCauses = await listCauses();
 
-  if (!featuredPetitions || featuredPetitions.length === 0) {
+  // Split urgent vs normal
+  const now = new Date();
+  const urgentCauses = allCauses.filter((cause) => {
+    const createdAt = new Date(cause.created_at);
+    const hoursSinceCreated =
+      (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
+
+    const percentageRaised =
+      cause.goal > 0 ? (cause.raised / cause.goal) * 100 : 0;
+
+    return hoursSinceCreated <= 24 && percentageRaised >= 1;
+  });
+
+  const normalCauses = allCauses.filter(
+    (cause) => !urgentCauses.includes(cause)
+  );
+
+  // Merge: urgent first, then the rest
+  const combinedCauses = [...urgentCauses, ...normalCauses];
+
+  if (combinedCauses.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
-        {/* Empty state */}
         <div className="w-16 h-16 mb-4 rounded-full bg-muted flex items-center justify-center">
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -49,37 +67,26 @@ export async function FeaturedPetitions() {
             <line x1="15" y1="9" x2="15.01" y2="9" />
           </svg>
         </div>
-        <h3 className="text-lg font-semibold">No Petitions Yet</h3>
+        <h3 className="text-lg font-semibold">No Causes Yet</h3>
         <p className="text-sm text-muted-foreground mt-2">
-          There are currently no petitions available. Check back later for new
+          There are currently no causes available. Check back later for new
           opportunities to make a difference.
         </p>
       </div>
     );
   }
 
-  // ✅ Fetch signers for each petition
-  const petitionsWithSigners = await Promise.all(
-    featuredPetitions.map(async (petition) => {
-      const signers = await listSignaturesForPetition(petition.id);
-      const percentSigned = Math.min(
-        Math.round(((signers?.length || 0) / petition.goal) * 100),
-        100
-      );
-      return { ...petition, signers, percentSigned };
-    })
-  );
-
   return (
     <div className="space-y-10 relative py-12">
       <Carousel className="w-full">
         <div className="flex items-start justify-between w-full relative">
-          <AnimatedHeader>
+          <AnimatedHeader className="flex-1">
             <H2 className="text-black text-4xl font-bold font-['Montserrat'] leading-[48px] mb-2">
-              Featured Petitions
+              Urgent Causes
             </H2>
             <P className="text-lg text-gray-500">
-              Explore petitions raising awareness and gathering support.
+              Support critical causes that are gaining rapid momentum in their
+              first hours. Your timely action can make the biggest difference
             </P>
           </AnimatedHeader>
           <div className="flex items-center gap-2 ml-4">
@@ -87,39 +94,37 @@ export async function FeaturedPetitions() {
             <CarouselNext className="static translate-y-0 translate-x-0" />
           </div>
         </div>
-
         <CarouselContent className="mt-6 mb-6 md:mr-4 md:ml-4">
-          {petitionsWithSigners.map((petition) => (
+          {combinedCauses.map((cause) => (
             <CarouselItem
-              key={petition.id}
+              key={cause.id}
               className="md:pl-4 basis-[85%] sm:basis-[50%] md:basis-[33.33%]"
             >
-              <Link
-                href={`/petitions/${petition.id}`}
-                className="group block h-full"
-              >
+              <Link href={`/causes/${cause.id}`} className="group block h-full">
                 <AnimatedCard>
-                  <Card className="overflow-hidden cursor-pointer transition hover:shadow-2xl shadow-lg h-[420px] flex flex-col border border-gray-300 ">
-                    <div className="aspect-video w-full overflow-hidden">
+                  <Card className="overflow-hidden cursor-pointer transition hover:shadow-2xl shadow-lg h-full flex flex-col border border-gray-300">
+                    <div className="aspect-video w-full overflow-hidden rounded-t-lg">
                       <img
-                        src={petition.image || "/placeholder.svg"}
-                        alt={petition.title}
+                        src={cause.image || "/placeholder.svg"}
+                        alt={cause.title}
                         className="object-cover w-full h-full"
                       />
                     </div>
-                    <CardHeader className="flex flex-col flex-1 p-4 ">
+                    <CardHeader className="flex flex-col flex-1 p-4">
                       <CardTitle>
-                        <H4 className="line-clamp-2">{petition.title}</H4>
+                        <H4>{cause.title}</H4>
                         <P className="font-extralight">
-                          {petition.profiles?.full_name || "Unknown"}
+                          {cause.profiles?.full_name || "Unknown"}
                         </P>
                       </CardTitle>
                       <hr className="border-t-2 border-gray-400" />
                       <div className="flex justify-between items-center pt-2 text-xs">
-                        <P>Sign Now</P>
+                        <P>Raised</P>
                         <P>
-                          {petition.percentSigned}% •{" "}
-                          {Number(petition.days_active || 0)} Days left
+                          {cause.goal > 0
+                            ? Math.round((cause.raised / cause.goal) * 100)
+                            : 0}
+                          % • {cause.days_active} Days left
                         </P>
                       </div>
                     </CardHeader>
@@ -127,7 +132,7 @@ export async function FeaturedPetitions() {
                       <CardContent>
                         <div className="space-y-2">
                           <Progress
-                            value={petition.percentSigned}
+                            value={(cause.raised / cause.goal) * 100}
                             className="h-2 bg-muted"
                           />
                         </div>
@@ -135,13 +140,13 @@ export async function FeaturedPetitions() {
                       <CardFooter>
                         <div className="w-full flex justify-between">
                           <span className="flex flex-col">
-                            <H4>{petition.signers.length}</H4>
+                            <H4>₦{cause.raised?.toLocaleString()}</H4>
                             <P className="font-light">
-                              Signed of {petition.goal?.toLocaleString()}
+                              Funded of ₦{cause.goal?.toLocaleString()}
                             </P>
                           </span>
                           <span>
-                            <DonateButton type="petition" disableLink />
+                            <DonateButton type="cause" disableLink />
                           </span>
                         </div>
                       </CardFooter>
@@ -153,10 +158,9 @@ export async function FeaturedPetitions() {
           ))}
         </CarouselContent>
       </Carousel>
-
-      {/* View All Button */}
+      {/* View All Causes Button */}
       <div className="flex justify-center mt-6">
-        <Link href="/petitions">
+        <Link href="/causes">
           <Button
             variant="outline"
             size="lg"

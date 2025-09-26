@@ -49,7 +49,7 @@ export async function TrendingCauses() {
             <line x1="15" y1="9" x2="15.01" y2="9" />
           </svg>
         </div>
-        <h3 className="text-lg font-semibold">No Causes Found</h3>
+        <h3 className="text-lg font-semibold">No Causes Yet</h3>
         <p className="text-sm text-muted-foreground mt-2">
           There are currently no causes available. Check back later for new
           opportunities to make a difference.
@@ -76,12 +76,12 @@ export async function TrendingCauses() {
             <CarouselNext className="static translate-y-0 translate-x-0" />
           </div>
         </div>
-        <CarouselContent className=" mt-6 mb-6 ml-4 mr-4 ">
+        <CarouselContent className=" mt-6 mb-6 md:mr-4 md:ml-4 ">
           {trendingCauses.map((cause) => {
             return (
               <CarouselItem
                 key={cause.id}
-                className="pl-4 basis-[85%] sm:basis-[50%] md:basis-[33.33%]"
+                className="md:pl-4 basis-[85%] sm:basis-[50%] md:basis-[33.33%]"
               >
                 <Link
                   href={`/causes/${cause.id}`}
