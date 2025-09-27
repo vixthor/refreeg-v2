@@ -2,6 +2,7 @@ import React from "react";
 import Hero from "./components/hero";
 import TrustSection from "./components/TrustSection";
 import FeaturesSection from "./components/FeaturesSection";
+import HowItWorksSection from "./components/HowItWorksSection";
 
 const NonProfitsPage = () => {
   return (
@@ -9,6 +10,7 @@ const NonProfitsPage = () => {
       <Hero />
       <TrustSection />
       <FeaturesSection />
+      <HowItWorksSection />
     </div>
   );
 };
