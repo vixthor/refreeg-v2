@@ -252,7 +252,7 @@ export default function Hero() {
               }
             >
               <img
-                src="https://images.unsplash.com/photo-1607990281513-2c110a25bd8c?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80"
+                src="https://images.unsplash.com/photo-1616680214084-22670de1bc82?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
                 alt="Community volunteer with boxes"
                 className="w-full h-full object-cover hover:scale-110 transition-transform duration-500"
               />
