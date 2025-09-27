@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { motion } from "framer-motion";
+import { motion, Variants } from "framer-motion";
 
 const HowItWorksSection = () => {
   const steps = [
@@ -31,75 +31,36 @@ const HowItWorksSection = () => {
     },
   ];
 
-  const containerVariants = {
+  const containerVariants: Variants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
-      transition: {
-        staggerChildren: 0.2,
-      },
+      transition: { staggerChildren: 0.2 },
     },
   };
 
-  const itemVariants = {
-    hidden: { opacity: 0, y: 50 },
+  const itemVariants: Variants = {
+    hidden: { opacity: 0, y: 30 },
     visible: {
       opacity: 1,
       y: 0,
-      transition: {
-        duration: 0.8,
-        ease: [0.4, 0, 0.2, 1] as const,
-      },
+      transition: { duration: 0.6 },
     },
   };
 
-  const numberVariants = {
-    hidden: { scale: 0, rotate: -180, opacity: 0 },
+  const numberVariants: Variants = {
+    hidden: { scale: 0, opacity: 0 },
     visible: {
       scale: 1,
-      rotate: 0,
       opacity: 1,
-      transition: {
-        duration: 0.8,
-        type: "spring" as const,
-        stiffness: 300,
-        damping: 15,
-      },
-    },
-    hover: {
-      scale: 1.1,
-      rotate: 5,
-      transition: {
-        duration: 0.3,
-        type: "spring" as const,
-        stiffness: 400,
-      },
+      transition: { duration: 0.6, type: "spring" as const, stiffness: 200 },
     },
     pulse: {
-      scale: [1, 1.05, 1],
+      scale: [1, 1.05],
       transition: {
-        duration: 2,
+        duration: 1.5,
         repeat: Infinity,
         repeatType: "reverse" as const,
-      },
-    },
-  };
-
-  const numberGlowVariants = {
-    hidden: { opacity: 0, scale: 0.8 },
-    visible: {
-      opacity: 1,
-      scale: 1,
-      transition: {
-        duration: 0.6,
-        delay: 0.3,
-      },
-    },
-    hover: {
-      opacity: 0.8,
-      scale: 1.2,
-      transition: {
-        duration: 0.4,
       },
     },
   };
@@ -135,7 +96,6 @@ const HowItWorksSection = () => {
             Simple, Secure, Impactful.
           </motion.p>
 
-          {/* Separator Line */}
           <motion.div
             className="w-24 h-1 bg-gradient-to-r from-purple-500 to-blue-500 mx-auto rounded-full"
             initial={{ width: 0 }}
@@ -160,64 +120,28 @@ const HowItWorksSection = () => {
               variants={itemVariants}
             >
               <div className="flex gap-6">
-                {/* Number Circle with Enhanced Animations */}
-                <motion.div 
+                {/* Number Circle */}
+                <motion.div
                   className="flex-shrink-0 relative"
                   variants={numberVariants}
-                  whileHover="hover"
                   animate="pulse"
                 >
-                  {/* Glow Effect */}
-                  <motion.div
-                    className="absolute inset-0 bg-gradient-to-br from-purple-400 to-blue-400 rounded-full blur-md opacity-0"
-                    variants={numberGlowVariants}
-                    whileHover="hover"
-                  />
-                  
-                  {/* Main Number Circle */}
-                  <div className="relative w-16 h-16 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-300 z-10">
-                    <motion.span 
-                      className="text-2xl font-bold text-white relative z-20"
+                  <div className="relative w-16 h-16 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center shadow-lg">
+                    <motion.span
+                      className="text-2xl font-bold text-white"
                       initial={{ scale: 0 }}
                       whileInView={{ scale: 1 }}
-                      transition={{ 
-                        duration: 0.5, 
+                      transition={{
+                        duration: 0.5,
                         delay: index * 0.1 + 0.3,
                         type: "spring",
-                        stiffness: 200
+                        stiffness: 200,
                       }}
                       viewport={{ once: true }}
-                      whileHover={{ scale: 1.1 }}
                     >
                       {step.number}
                     </motion.span>
-                    
-                    {/* Inner shine effect */}
-                    <motion.div
-                      className="absolute top-1 left-1 right-1 bottom-1 bg-gradient-to-br from-white/20 to-transparent rounded-full"
-                      initial={{ opacity: 0 }}
-                      whileInView={{ opacity: 1 }}
-                      transition={{ duration: 0.5, delay: index * 0.1 + 0.5 }}
-                      viewport={{ once: true }}
-                    />
                   </div>
-
-                  {/* Floating particles */}
-                  <motion.div
-                    className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full"
-                    initial={{ scale: 0, opacity: 0 }}
-                    whileInView={{ scale: 1, opacity: 1 }}
-                    transition={{ 
-                      duration: 0.6, 
-                      delay: index * 0.1 + 0.7,
-                      type: "spring" 
-                    }}
-                    viewport={{ once: true }}
-                    animate={{ 
-                      y: [0, -5, 0],
-                      rotate: [0, 180, 360]
-                    }}
-                  />
                 </motion.div>
 
                 {/* Content */}
@@ -242,23 +166,19 @@ const HowItWorksSection = () => {
                     {step.description}
                   </motion.p>
 
+                  {/* Tip with hover animation */}
                   <motion.p
-                    className="text-purple-500 text-sm font-medium flex items-center gap-2"
-                    initial={{ opacity: 0, x: 20 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.6, delay: index * 0.1 + 0.5 }}
-                    viewport={{ once: true }}
+                    className="text-purple-500 text-sm font-medium flex items-center gap-2 cursor-pointer"
+                    whileHover={{ x: 5, color: "#7c3aed" }}
+                    transition={{ type: "spring", stiffness: 200 }}
                   >
                     <motion.svg
                       className="w-4 h-4"
                       fill="currentColor"
                       viewBox="0 0 20 20"
-                      animate={{ y: [0, -2, 0] }}
-                      transition={{ 
-                        duration: 2, 
-                        repeat: Infinity,
-                        repeatType: "reverse" as const,
-                        delay: index * 0.5
+                      whileHover={{
+                        y: [0, -3, 0],
+                        transition: { duration: 0.6 },
                       }}
                     >
                       <path
@@ -272,7 +192,7 @@ const HowItWorksSection = () => {
                 </div>
               </div>
 
-              {/* Connector Line (except for last item) */}
+              {/* Connector Line */}
               {index < steps.length - 2 && (
                 <motion.div
                   className="ml-8 mt-4 mb-4 relative"
@@ -291,7 +211,7 @@ const HowItWorksSection = () => {
         </motion.div>
       </div>
 
-      {/* Background decorative elements */}
+      {/* Background Decorative Elements */}
       <div className="absolute top-20 left-10 w-32 h-32 bg-purple-100 rounded-full opacity-50 blur-xl"></div>
       <div className="absolute bottom-20 right-10 w-40 h-40 bg-blue-100 rounded-full opacity-50 blur-xl"></div>
     </section>
