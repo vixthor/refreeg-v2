@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { FaFacebookF, FaInstagram, FaXTwitter } from "react-icons/fa6";
 import { Linkedin, Youtube } from "lucide-react";
 import React, { ReactNode } from "react";
@@ -24,6 +25,9 @@ export function Footer() {
     margin: "-100px",
   });
 
+  const pathname = usePathname();
+  const isNonProfitsPage = pathname === "/non-profits";
+
   return (
     <div className="pt-8 bg-muted">
       {/* Top CTA Section */}
@@ -32,7 +36,9 @@ export function Footer() {
         initial={{ opacity: 0, y: 30 }}
         animate={isInView ? { opacity: 1, y: 0 } : {}}
         transition={{ ease: [0.6, -0.05, 0.01, 0.99], duration: 0.8 }}
-        className="flex flex-col items-center w-10/12 lg:w-8/12 mx-auto rounded-3xl text-secondary-foreground bg-secondary px-10 py-10 mb-16"
+        className={`flex flex-col items-center w-10/12 lg:w-8/12 mx-auto rounded-3xl text-secondary-foreground px-10 py-10 mb-16 ${
+          isNonProfitsPage ? "bg-purple-600" : "bg-secondary"
+        }`}
       >
         <div className="text-lg lg:text-3xl font-semibold mb-6">
           Ready to be part of the solution?
@@ -51,7 +57,11 @@ export function Footer() {
         >
           <motion.button
             whileHover={{ scale: 1.05 }}
-            className="flex border rounded-md bg-white px-3 py-3 text-blue-900 font-semibold hover:bg-gray-300 transition delay-150"
+            className={`flex border rounded-md px-3 py-3 font-semibold hover:bg-gray-300 transition delay-150 ${
+              isNonProfitsPage
+                ? "bg-white text-purple-600 hover:bg-purple-700 hover:text-white"
+                : "bg-white text-blue-900"
+            }`}
           >
             Join our community
           </motion.button>
@@ -75,7 +85,7 @@ export function Footer() {
               and releases
             </p>
             <div className="w-full">
-              <GetMail />
+              <GetMail isNonProfitsPage={isNonProfitsPage}/>
             </div>
             <p className="text-[10px] mt-3">
               By Subscribing you agree with our{" "}
