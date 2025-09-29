@@ -288,6 +288,7 @@ export default function EditPetitionForm({ petition }: EditPetitionFormProps) {
       category: formData.category,
       goal: formData.goal,
       coverImage: formData.coverImage,
+      image: !formData.coverImage ? (petition.image || undefined) : undefined,
       sections: formData.sections,
       startDate: formData.startDate,
       endDate: formData.endDate,
