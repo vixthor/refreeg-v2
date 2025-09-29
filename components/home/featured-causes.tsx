@@ -24,7 +24,9 @@ import {
 } from "@/components/ui/carousel";
 
 export async function FeaturedCauses() {
-  const featuredCauses = await listCauses();
+  const featuredCauses = (await listCauses()).filter(
+    (c) => (c.days_active ?? 0) > 0 && c.status !== ("expired" as any)
+  );
 
   if (!featuredCauses || featuredCauses.length === 0) {
     return (
