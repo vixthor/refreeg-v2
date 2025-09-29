@@ -380,7 +380,32 @@ export async function listCauses(
     throw error;
   }
 
-  return data as Cause[];
+  const causes = (data as Cause[]) || [];
+
+  // Auto-mark expired (days_active <= 0) and filter from public listings
+  const nowExpired = causes.filter(
+    (c) => (c.days_active ?? 0) <= 0 && c.status === ("approved" as any)
+  );
+
+  if (nowExpired.length > 0) {
+    try {
+      // Update status to expired in DB for those items
+      const ids = nowExpired.map((c) => c.id);
+      await supabase
+        .from("causes")
+        .update({ status: "expired" })
+        .in("id", ids);
+    } catch (e) {
+      console.error("Failed to auto-expire causes:", e);
+    }
+  }
+
+  const isOwnerScoped = !!options.userId; // owner dashboard should still see their items
+  const result = isOwnerScoped
+    ? causes
+    : causes.filter((c) => c.status !== ("expired" as any));
+
+  return result;
 }
 
 /**

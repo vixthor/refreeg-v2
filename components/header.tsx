@@ -84,22 +84,23 @@ export function Header() {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
   const navItems: NavItem[] = [
-    { 
-      title: "Explore Campaigns", 
-      href: "/causes", 
-      type: "link" 
+    {
+      title: "Explore Causes",
+      href: "/causes",
+      type: "link",
     },
-    { 
-      title: "What can I crowdfund?", 
+    {
+      title: "What can I crowdfund?",
       header: "Curious about what you crowdfund for? Here are some ideas:",
       icon: HandHeart,
       type: "dropdown",
       items: [
-        { 
-          title: "🌍 Refreeg for Businesses", 
-          description: "Empower your brand with purpose. Launch CSR campaigns, support community-driven causes, and connect with customers who care about impact.", 
-          href: "/businesses", 
-          icon: CircleDollarSign 
+        {
+          title: "🌍 Refreeg for Businesses",
+          description:
+            "Empower your brand with purpose. Launch CSR campaigns, support community-driven causes, and connect with customers who care about impact.",
+          href: "/businesses",
+          icon: CircleDollarSign,
         },
         { 
           title: "🤝 RefreeG for Nonprofits", 
@@ -107,113 +108,127 @@ export function Header() {
           href: "/non-profits", 
           icon: Target 
         },
-        { 
-          title: "🌪️ RefreeG for Disaster Relief", 
-          description: "Respond faster when it matters most. Rally urgent support for communities hit by disasters and get aid to those who need it — quickly and securely.", 
-          href: "/disaster-relief", 
-          icon: FileText 
+        {
+          title: "🌪️ RefreeG for Disaster Relief",
+          description:
+            "Respond faster when it matters most. Rally urgent support for communities hit by disasters and get aid to those who need it — quickly and securely.",
+          href: "/disaster-relief",
+          icon: FileText,
         },
-        { 
-          title: "🎨 RefreeG for Creators", 
-          description: "Turn your influence into impact. Get your unique tag, share your story, and receive donations directly from your fans — in fiat or crypto.", 
-          href: "/creators", 
-          icon: FileText 
+        {
+          title: "🎨 RefreeG for Creators",
+          description:
+            "Turn your influence into impact. Get your unique tag, share your story, and receive donations directly from your fans — in fiat or crypto.",
+          href: "/creators",
+          icon: FileText,
         },
-        { 
-          title: "🏥 RefreeG for Healthcare", 
-          description: "Give hope a platform. Raise funds for medical bills, healthcare projects, or critical treatments — with transparency and community support.", 
-          href: "/healthcare", 
-          icon: FileText 
+        {
+          title: "🏥 RefreeG for Healthcare",
+          description:
+            "Give hope a platform. Raise funds for medical bills, healthcare projects, or critical treatments — with transparency and community support.",
+          href: "/healthcare",
+          icon: FileText,
         },
-      ]
+      ],
     },
-    { 
-      title: "How RefreeG works", 
+    {
+      title: "How RefreeG works",
       header: "How can you crowdfund on RefreeG?",
       icon: Lightbulb,
       type: "dropdown",
       items: [
-        { 
-          title: "⭐ How to start a cause", 
-          description: "Starting causes is easy, and fast because of the intuitive user experience Refreeg is built on. Set up causes in less than 3 minutes!", 
-          href: "/crowdfund/medical", 
-          icon: Star 
+        {
+          title: "⭐ How to start a cause",
+          description:
+            "Starting causes is easy, and fast because of the intuitive user experience Refreeg is built on. Set up causes in less than 3 minutes!",
+          href: "/crowdfund/medical",
+          icon: Star,
         },
-        { 
-          title: "🚀 Crowdfunding tips", 
-          description: "Raise more, reach more. Build trust with transparent fundraising tools.", 
-          href: "/crowdfund/education", 
-          icon: Rocket 
+        {
+          title: "🚀 Crowdfunding tips",
+          description:
+            "Raise more, reach more. Build trust with transparent fundraising tools.",
+          href: "/crowdfund/education",
+          icon: Rocket,
         },
-        { 
-          title: "📢 For Supporters", 
-          description: "See how to discover causes, donate securely in fiat or crypto, and follow progress transparently.", 
-          href: "/crowdfund/community", 
-          icon: Users 
+        {
+          title: "📢 For Supporters",
+          description:
+            "See how to discover causes, donate securely in fiat or crypto, and follow progress transparently.",
+          href: "/crowdfund/community",
+          icon: Users,
         },
-        { 
-          title: "💸 Fees & Payouts", 
-          description: "Clear explanation of transaction fees, payout timelines, and how creators/nonprofits access their funds.", 
-          href: "/crowdfund/fees", 
-          icon: CircleDollarSign 
+        {
+          title: "💸 Fees & Payouts",
+          description:
+            "Clear explanation of transaction fees, payout timelines, and how creators/nonprofits access their funds.",
+          href: "/crowdfund/fees",
+          icon: CircleDollarSign,
         },
-        { 
-          title: "🛡️ Trust & Safety", 
-          description: "Read about our fraud checks, KYC verification, and commitment to protecting both donors and cause.", 
-          href: "/crowdfund/trust", 
-          icon: Shield 
+        {
+          title: "🛡️ Trust & Safety",
+          description:
+            "Read about our fraud checks, KYC verification, and commitment to protecting both donors and cause.",
+          href: "/crowdfund/trust",
+          icon: Shield,
         },
-        { 
-          title: "📣 FAQ", 
-          description: "Get answers to the most common questions about crowdfunding on RefreeG.", 
-          href: "/crowdfund/faq", 
-          icon: HelpCircle 
+        {
+          title: "📣 FAQ",
+          description:
+            "Get answers to the most common questions about crowdfunding on RefreeG.",
+          href: "/crowdfund/faq",
+          icon: HelpCircle,
         },
-      ]
+      ],
     },
-    { 
-      title: "About RefreeG", 
+    {
+      title: "About RefreeG",
       header: "About RefreeG?",
       icon: Lightbulb,
       type: "dropdown",
       items: [
-        { 
-          title: "💼Our Mission", 
-          description: "Find out what our mission here at RefreeG.", 
-          href: "/about-us/OurMission", 
-          icon: TargetIcon 
+        {
+          title: "💼Our Mission",
+          description: "Find out what our mission here at RefreeG.",
+          href: "/about-us/OurMission",
+          icon: TargetIcon,
         },
-        { 
-          title: "📢Our Story", 
-          description: "Raise more, reach more. Build trust with transparent fundraising tools.", 
-          href: "/about-us/OurStory", 
-          icon: Book 
+        {
+          title: "📢Our Story",
+          description:
+            "Raise more, reach more. Build trust with transparent fundraising tools.",
+          href: "/about-us/OurStory",
+          icon: Book,
         },
-        { 
-          title: "🔨Our Impact", 
-          description: "See how to discover causes, donate securely in fiat or crypto, and follow progress transparently.", 
-          href: "/about-us/OurImpact", 
-          icon: BarChart3 
+        {
+          title: "🔨Our Impact",
+          description:
+            "See how to discover causes, donate securely in fiat or crypto, and follow progress transparently.",
+          href: "/about-us/OurImpact",
+          icon: BarChart3,
         },
-        { 
-          title: "🧑‍🤝‍🧑Who Are We Made By", 
-          description: "Clear explanation of transaction fees, payout timelines, and how creators/nonprofits access their funds.", 
-          href: "/about-us/OurTeam", 
-          icon: Users2 
+        {
+          title: "🧑‍🤝‍🧑Who Are We Made By",
+          description:
+            "Clear explanation of transaction fees, payout timelines, and how creators/nonprofits access their funds.",
+          href: "/about-us/OurTeam",
+          icon: Users2,
         },
-        { 
-          title: "💡 What We Do", 
-          description: "Read about our fraud checks, KYC verification, and commitment to protecting both donors and cause.", 
-          href: "/about-us/WhatWeDo", 
-          icon: LightbulbIcon 
+        {
+          title: "💡 What We Do",
+          description:
+            "Read about our fraud checks, KYC verification, and commitment to protecting both donors and cause.",
+          href: "/about-us/WhatWeDo",
+          icon: LightbulbIcon,
         },
-        { 
-          title: "📣FAQ", 
-          description: "Get answers to the most common questions about crowdfunding on RefreeG.", 
-          href: "/about-us/faq", 
-          icon: Heart 
+        {
+          title: "📣FAQ",
+          description:
+            "Get answers to the most common questions about crowdfunding on RefreeG.",
+          href: "/about-us/faq",
+          icon: Heart,
         },
-      ]
+      ],
     },
   ];
 
@@ -238,9 +253,12 @@ export function Header() {
               {/* Desktop Navigation */}
               <div className="hidden md:flex gap-0 items-center">
                 {navItems.map((item) => {
-                  if (item.type === 'link') {
+                  if (item.type === "link") {
                     return (
-                      <NavbarItem key={item.href} isActive={pathname === item.href}>
+                      <NavbarItem
+                        key={item.href}
+                        isActive={pathname === item.href}
+                      >
                         <Link
                           href={item.href}
                           className={`text-sm font-medium transition-colors hover:text-secondary px-3 py-2 rounded-md ${
@@ -261,7 +279,9 @@ export function Header() {
                             <HeroButton
                               variant="light"
                               className="text-sm items-center font-medium text-muted-foreground hover:text-secondary hover:bg-gray-100 px-3 py-2 rounded-md transition-all duration-200 group"
-                              endContent={<ChevronDown className="text-small transition-transform duration-200 group-hover:rotate-180" />}
+                              endContent={
+                                <ChevronDown className="text-small transition-transform duration-200 group-hover:rotate-180" />
+                              }
                             >
                               {item.title}
                             </HeroButton>
@@ -270,7 +290,7 @@ export function Header() {
                             aria-label={item.title}
                             className="bg-white shadow-xl rounded-lg w-3/5 border border-gray-100"
                           >
-                            <DropdownSection 
+                            <DropdownSection
                               title={
                                 <div className="flex items-center gap-2">
                                   <div className="p-3 border border-1 bg-[#E8E8E8] rounded-full">
@@ -278,9 +298,10 @@ export function Header() {
                                   </div>
                                   {item.header}
                                 </div>
-                              } 
+                              }
                               classNames={{
-                                heading: "font-semibold text-sm text-foreground px-4 py-3 flex items-center gap-2"
+                                heading:
+                                  "font-semibold text-sm text-foreground px-4 py-3 flex items-center gap-2",
                               }}
                               showDivider
                             >
@@ -292,7 +313,10 @@ export function Header() {
                                     className="py-3 px-4 transition-all duration-200 hover:bg-blue-50 hover:border-l-4 hover:border-l-blue-500 cursor-pointer"
                                     textValue={dropdownItem.title}
                                   >
-                                    <Link href={dropdownItem.href} className="flex items-start gap-3 w-full group">
+                                    <Link
+                                      href={dropdownItem.href}
+                                      className="flex items-start gap-3 w-full group"
+                                    >
                                       {/* <DropdownIcon className="h-5 w-5 text-gray-400 mt-0.5 flex-shrink-0 group-hover:text-blue-600 transition-colors" /> */}
                                       <div className="flex-1">
                                         <p className="font-medium text-sm group-hover:text-blue-700 transition-colors">
@@ -321,25 +345,15 @@ export function Header() {
             <div className="flex items-center gap-2">
               <div className="hidden md:flex items-center gap-2">
                 <Link href="/dashboard/causes/create">
-                  <Button variant="outline" size="sm" className="flex items-center gap-2">
-                    <Megaphone className="h-4 w-4" />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-2"
+                  >
+                    
                     List a Cause
                   </Button>
-                </Link>
-                <Link href="/dashboard/petitions/create">
-                  <Button variant="outline" size="sm" className="flex items-center gap-2">
-                    <FileText className="h-4 w-4" />
-                    Create a Petition
-                  </Button>
-                </Link>
-                {!isLoading && user && (
-                  <Link href="/dashboard">
-                    <Button variant="ghost" size="sm" className="flex items-center gap-2">
-                      <LayoutDashboard className="h-4 w-4" />
-                      Dashboard
-                    </Button>
-                  </Link>
-                )}
+                </Link>       
               </div>
 
               {/* Auth */}
@@ -387,7 +401,7 @@ export function Header() {
             {/* Main Nav */}
             <div className="space-y-1">
               {navItems.map((item) => {
-                if (item.type === 'link') {
+                if (item.type === "link") {
                   return (
                     <Link
                       key={item.href}
@@ -412,21 +426,27 @@ export function Header() {
                         {item.title}
                         <ChevronDown
                           className={`h-4 w-4 transition-transform duration-200 ${
-                            openDropdown === item.title ? "rotate-180" : "rotate-0"
+                            openDropdown === item.title
+                              ? "rotate-180"
+                              : "rotate-0"
                           }`}
                         />
                       </button>
                       <div
                         className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                          openDropdown === item.title ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
+                          openDropdown === item.title
+                            ? "max-h-96 opacity-100"
+                            : "max-h-0 opacity-0"
                         }`}
                       >
                         {/* Mobile Dropdown Header with Icon */}
                         <div className="ml-4 mt-2 mb-3 flex items-center gap-2 px-3 py-2 bg-blue-50 rounded-md">
                           <item.icon className="h-4 w-4 text-blue-600" />
-                          <span className="text-sm font-medium text-blue-800">{item.header}</span>
+                          <span className="text-sm font-medium text-blue-800">
+                            {item.header}
+                          </span>
                         </div>
-                        
+
                         <div className="ml-4 space-y-3">
                           {item.items.map((subItem) => {
                             const Icon = subItem.icon;
@@ -443,7 +463,9 @@ export function Header() {
                                 <div className="flex items-start gap-2">
                                   <Icon className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
                                   <div>
-                                    <p className="font-medium">{subItem.title}</p>
+                                    <p className="font-medium">
+                                      {subItem.title}
+                                    </p>
                                     <p className="text-muted-foreground text-xs mt-1">
                                       {subItem.description}
                                     </p>
@@ -513,11 +535,31 @@ export function Header() {
                 </div>
                 <div className="space-y-1">
                   {[
-                    { href: "/dashboard/admin/causes", title: "Manage Causes", icon: Megaphone },
-                    { href: "/dashboard/admin/petitions", title: "Manage Petitions", icon: FileText },
-                    { href: "/dashboard/admin/users", title: "Manage Users", icon: Users },
-                    { href: "/dashboard/admin/analytics", title: "Analytics", icon: BarChart3 },
-                    { href: "/dashboard/admin/logs", title: "Logs", icon: Book },
+                    {
+                      href: "/dashboard/admin/causes",
+                      title: "Manage Causes",
+                      icon: Megaphone,
+                    },
+                    {
+                      href: "/dashboard/admin/petitions",
+                      title: "Manage Petitions",
+                      icon: FileText,
+                    },
+                    {
+                      href: "/dashboard/admin/users",
+                      title: "Manage Users",
+                      icon: Users,
+                    },
+                    {
+                      href: "/dashboard/admin/analytics",
+                      title: "Analytics",
+                      icon: BarChart3,
+                    },
+                    {
+                      href: "/dashboard/admin/logs",
+                      title: "Logs",
+                      icon: Book,
+                    },
                   ].map((adminItem) => {
                     const AdminIcon = adminItem.icon;
                     return (
