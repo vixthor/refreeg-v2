@@ -84,12 +84,16 @@ export function UserNav() {
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           {/* Mobile-only dashboard link inside menu */}
-          <div className="md:hidden">
+          <div className="">
             <DropdownMenuItem asChild>
               <Link href="/dashboard">Dashboard</Link>
             </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/dashboard/settings">Settings</Link>
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
           </div>
+
           <DropdownMenuItem
             onClick={async () => await signOut()}
             className="hover:bg-[#0070E0] focus:bg-[#0070E0] transition-colors"

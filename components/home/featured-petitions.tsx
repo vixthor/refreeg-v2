@@ -25,38 +25,10 @@ import {
 } from "@/components/ui/carousel";
 
 export async function FeaturedPetitions() {
-  const featuredPetitions = await listPetitions();
+  const featuredPetitions = (await listPetitions()).filter(
+    (p) => (p.days_active ?? 0) > 0 && p.status !== ("expired" as any)
+  );
 
-  if (!featuredPetitions || featuredPetitions.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center py-12 text-center">
-        {/* Empty state */}
-        <div className="w-16 h-16 mb-4 rounded-full bg-muted flex items-center justify-center">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="text-muted-foreground"
-          >
-            <circle cx="12" cy="12" r="10" />
-            <path d="M8 14s1.5 2 4 2 4-2 4-2" />
-            <line x1="9" y1="9" x2="9.01" y2="9" />
-            <line x1="15" y1="9" x2="15.01" y2="9" />
-          </svg>
-        </div>
-        <h3 className="text-lg font-semibold">No Petitions Found</h3>
-        <p className="text-sm text-muted-foreground mt-2">
-          There are currently no petitions available. Check back later for new
-          opportunities to make a difference.
-        </p>
-      </div>
-    );
-  }
 
   // ✅ Fetch signers for each petition
   const petitionsWithSigners = await Promise.all(
@@ -88,11 +60,11 @@ export async function FeaturedPetitions() {
           </div>
         </div>
 
-        <CarouselContent className="mt-6 mb-6 ml-4 mr-4">
+        <CarouselContent className="mt-6 mb-6 md:mr-4 md:ml-4">
           {petitionsWithSigners.map((petition) => (
             <CarouselItem
               key={petition.id}
-              className="basis-[85%] sm:basis-[50%] md:basis-[33.33%]"
+              className="md:pl-4 basis-[85%] sm:basis-[50%] md:basis-[33.33%]"
             >
               <Link
                 href={`/petitions/${petition.id}`}

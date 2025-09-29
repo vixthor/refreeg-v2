@@ -389,7 +389,31 @@ export async function listPetitions(
     throw error;
   }
 
-  return data as Petition[];
+  const petitions = (data as Petition[]) || [];
+
+  // Auto-mark expired (days_active <= 0) and filter from public listings
+  const nowExpired = petitions.filter(
+    (p) => (p.days_active ?? 0) <= 0 && p.status === ("approved" as any)
+  );
+
+  if (nowExpired.length > 0) {
+    try {
+      const ids = nowExpired.map((p) => p.id);
+      await supabase
+        .from("petitions")
+        .update({ status: "expired" })
+        .in("id", ids);
+    } catch (e) {
+      console.error("Failed to auto-expire petitions:", e);
+    }
+  }
+
+  const isOwnerScoped = !!options.userId;
+  const result = isOwnerScoped
+    ? petitions
+    : petitions.filter((p) => p.status !== ("expired" as any));
+
+  return result;
 }
 
 /**
