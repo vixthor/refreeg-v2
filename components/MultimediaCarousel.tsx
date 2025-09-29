@@ -17,6 +17,53 @@ export default function MultimediaCarousel({
 }) {
   const [current, setCurrent] = useState(0);
 
+  // Helpers to normalize and extract IDs from popular providers
+  const extractYouTubeId = (rawUrl: string): string | null => {
+    try {
+      const url = new URL(rawUrl);
+      // youtube.com/watch?v=ID or other params
+      const vParam = url.searchParams.get("v");
+      if (vParam) return vParam;
+      // youtu.be/ID (may include extra path or params)
+      if (url.hostname.includes("youtu.be")) {
+        const path = url.pathname.replace(/^\//, "");
+        return path ? path.split("/")[0] : null;
+      }
+      // youtube.com/shorts/ID
+      const shortsMatch = url.pathname.match(/\/shorts\/([^/?#]+)/);
+      if (shortsMatch) return shortsMatch[1];
+      // youtube.com/embed/ID already embedded
+      const embedMatch = url.pathname.match(/\/embed\/([^/?#]+)/);
+      if (embedMatch) return embedMatch[1];
+      return null;
+    } catch {
+      // Fallback regex if URL constructor fails
+      const direct = rawUrl.match(/(?:v=|be\/|embed\/|shorts\/)([A-Za-z0-9_-]{6,})/);
+      return direct ? direct[1] : null;
+    }
+  };
+
+  const extractTikTokId = (rawUrl: string): string | null => {
+    try {
+      const url = new URL(rawUrl);
+      // https://www.tiktok.com/@user/video/1234567890123456789
+      const match = url.pathname.match(/\/video\/(\d+)/);
+      return match ? match[1] : null;
+    } catch {
+      const match = rawUrl.match(/\/video\/(\d+)/);
+      return match ? match[1] : null;
+    }
+  };
+
+  const buildDrivePreviewUrl = (rawUrl: string): string | null => {
+    // Support: /file/d/{id}/view, /file/d/{id}/, open?id=, uc?id=
+    const dMatch = rawUrl.match(/\/d\/([^/]+)\//);
+    if (dMatch) return `https://drive.google.com/file/d/${dMatch[1]}/preview`;
+    const idParamMatch = rawUrl.match(/[?&]id=([^&#]+)/);
+    if (idParamMatch) return `https://drive.google.com/file/d/${idParamMatch[1]}/preview`;
+    return null;
+  };
+
   // Convert string array to MediaItem array
   const processMedia = (): MediaItem[] => {
     if (media.length === 0) return [];
@@ -46,12 +93,10 @@ export default function MultimediaCarousel({
 
       // YouTube embed
       if (url.includes("youtube.com") || url.includes("youtu.be")) {
-        const videoId = url.includes("youtube.com")
-          ? new URL(url).searchParams.get("v")
-          : url.split("youtu.be/")[1];
+        const videoId = extractYouTubeId(url);
         return (
           <iframe
-            src={`https://www.youtube.com/embed/${videoId}`}
+            src={videoId ? `https://www.youtube.com/embed/${videoId}` : url}
             title={`${title} - Video ${idx + 1}`}
             className="w-full h-full"
             frameBorder="0"
@@ -63,12 +108,11 @@ export default function MultimediaCarousel({
 
       // TikTok embed (requires /embed/VIDEO_ID)
       else if (url.includes("tiktok.com")) {
-        const match = url.match(/\/video\/(\d+)/);
-        const videoId = match ? match[1] : null;
+        const videoId = extractTikTokId(url);
         if (videoId) {
           return (
             <iframe
-              src={`https://www.tiktok.com/embed/${videoId}`}
+              src={`https://www.tiktok.com/embed/v2/${videoId}`}
               title={`${title} - TikTok Video ${idx + 1}`}
               className="w-full h-full"
               frameBorder="0"
@@ -91,12 +135,11 @@ export default function MultimediaCarousel({
 
       // Google Drive embed (/file/{id}/preview)
       else if (url.includes("drive.google.com")) {
-        const fileIdMatch = url.match(/\/d\/([^/]+)\//);
-        const fileId = fileIdMatch ? fileIdMatch[1] : null;
-        if (fileId) {
+        const previewUrl = buildDrivePreviewUrl(url);
+        if (previewUrl) {
           return (
             <iframe
-              src={`https://drive.google.com/file/d/${fileId}/preview`}
+              src={previewUrl}
               title={`${title} - Drive Video ${idx + 1}`}
               className="w-full h-full"
               allow="autoplay; encrypted-media"

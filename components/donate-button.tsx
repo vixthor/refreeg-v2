@@ -55,7 +55,7 @@ export function DonateButton({
         fullWidth ? "w-full" : ""
       } bg-white hover:text-white border border-blue-900 text-blue-900`}
       variant="default"
-      size="lg"
+      size="default"
       onClick={onClick}
     >
       {detectedType === "cause" ? "Donate" : "Sign Now"}
