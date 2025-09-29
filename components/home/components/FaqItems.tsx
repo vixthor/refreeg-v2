@@ -41,7 +41,7 @@ export default function FAQItem({
         <AccordionTrigger
           onClick={() => toggleItem(`item-${index}`)}
           className={cn(
-            "flex justify-between items-center px-5 py-4 text-left font-medium text-lg transition-colors",
+            "flex justify-between items-center px-5 py-4 text-left font-medium text-sm md:text-lg transition-colors",
             isOpen ? "text-blue-700" : "text-gray-800"
           )}
         >

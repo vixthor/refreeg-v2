@@ -52,7 +52,9 @@ export default function FAQ() {
         transition={{ duration: 0.6 }}
         className="text-center mb-10"
       >
-        <h1 className="text-4xl font-bold mb-2">Frequently Asked Questions</h1>
+        <h1 className="text-2xl md:text-4xl font-bold mb-2">
+          Frequently Asked Questions
+        </h1>
         <p className="text-gray-600 text-lg">
           Got questions? We’ve got the answers you need to get started.
         </p>
@@ -80,7 +82,6 @@ export default function FAQ() {
                 ? "bg-[#003366] text-white border-[#003366]"
                 : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
             )}
-            
           >
             {cat.label}
           </Button>
