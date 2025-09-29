@@ -351,20 +351,10 @@ export function Header() {
                     size="sm"
                     className="flex items-center gap-2"
                   >
-                    <Megaphone className="h-4 w-4" />
+                    
                     List a Cause
                   </Button>
-                </Link>
-                <Link href="/dashboard/petitions/create">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex items-center gap-2"
-                  >
-                    <FileText className="h-4 w-4" />
-                    Create a Petition
-                  </Button>
-                </Link>          
+                </Link>       
               </div>
 
               {/* Auth */}
