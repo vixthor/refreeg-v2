@@ -24,7 +24,9 @@ import {
 } from "@/components/ui/carousel";
 
 export async function TrendingCauses() {
-  const trendingCauses = (await listCauses()).sort(
+  const trendingCauses = (await listCauses())
+    .filter((c) => (c.days_active ?? 0) > 0 && c.status !== ("expired" as any))
+    .sort(
     (a, b) => b.raised - a.raised
   );
 

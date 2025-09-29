@@ -25,7 +25,9 @@ import {
 } from "@/components/ui/carousel";
 
 export async function FeaturedPetitions() {
-  const featuredPetitions = await listPetitions();
+  const featuredPetitions = (await listPetitions()).filter(
+    (p) => (p.days_active ?? 0) > 0 && p.status !== ("expired" as any)
+  );
 
 
   // ✅ Fetch signers for each petition
