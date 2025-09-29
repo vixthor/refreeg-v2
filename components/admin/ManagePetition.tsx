@@ -427,11 +427,29 @@ export default function ManagePetition() {
                   </div>
                 )}
 
+              {/* Sections (handle sections on both main petition and edit rows) */}
+              {Array.isArray((detailDialog.petition as any).petition_edit_sections) &&
+              (detailDialog.petition as any).petition_edit_sections.length > 0 ? (
+                <div className="space-y-2">
+                  <h3 className="font-medium">Sections</h3>
+                  {(detailDialog.petition as any).petition_edit_sections.map(
+                    (section: any, index: number) => (
+                      <div key={section.id ?? index} className="p-4 border rounded-lg">
+                        <h4 className="font-medium mb-2">{section.heading}</h4>
+                        <p className="text-sm text-muted-foreground">
+                          {section.description}
+                        </p>
+                      </div>
+                    )
+                  )}
+                </div>
+              ) : null}
+
               {/* Multimedia Preview */}
-              {((detailDialog.petition as any).multimedia &&
+              {(((detailDialog.petition as any).multimedia &&
                 (detailDialog.petition as any).multimedia.length > 0) ||
-              ((detailDialog.petition as any).video_links &&
-                (detailDialog.petition as any).video_links.length > 0) ? (
+                ((detailDialog.petition as any).video_links &&
+                  (detailDialog.petition as any).video_links.length > 0)) && (
                 <div className="space-y-4">
                   <h3 className="font-medium">Media</h3>
                   <MultimediaCarousel
@@ -443,7 +461,7 @@ export default function ManagePetition() {
                     title={detailDialog.petition.title}
                   />
                 </div>
-              ) : null}
+              )}
 
               <div className="grid grid-cols-2 gap-4 p-4 bg-muted rounded-lg">
                 <div>
