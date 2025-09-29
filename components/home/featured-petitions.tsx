@@ -27,36 +27,6 @@ import {
 export async function FeaturedPetitions() {
   const featuredPetitions = await listPetitions();
 
-  if (!featuredPetitions || featuredPetitions.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center py-12 text-center">
-        {/* Empty state */}
-        <div className="w-16 h-16 mb-4 rounded-full bg-muted flex items-center justify-center">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="text-muted-foreground"
-          >
-            <circle cx="12" cy="12" r="10" />
-            <path d="M8 14s1.5 2 4 2 4-2 4-2" />
-            <line x1="9" y1="9" x2="9.01" y2="9" />
-            <line x1="15" y1="9" x2="15.01" y2="9" />
-          </svg>
-        </div>
-        <h3 className="text-lg font-semibold">No Petitions Yet</h3>
-        <p className="text-sm text-muted-foreground mt-2">
-          There are currently no petitions available. Check back later for new
-          opportunities to make a difference.
-        </p>
-      </div>
-    );
-  }
 
   // ✅ Fetch signers for each petition
   const petitionsWithSigners = await Promise.all(
