@@ -364,19 +364,7 @@ export function Header() {
                     <FileText className="h-4 w-4" />
                     Create a Petition
                   </Button>
-                </Link>
-                {!isLoading && user && (
-                  <Link href="/dashboard">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="flex items-center gap-2"
-                    >
-                      <LayoutDashboard className="h-4 w-4" />
-                      Dashboard
-                    </Button>
-                  </Link>
-                )}
+                </Link>          
               </div>
 
               {/* Auth */}
