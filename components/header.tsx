@@ -338,77 +338,17 @@ export function Header() {
 
             {/* Right Side Actions */}
             <div className="flex items-center gap-2">
-              {(() => {
-                // Define color themes per page
-                const pathname = usePathname();
-
-                const themeMap: Record<
-                  string,
-                  {
-                    border: string;
-                    text: string;
-                    hoverBg: string;
-                    bg: string;
-                    hoverText: string;
-                  }
-                > = {
-                  "/non-profits": {
-                    border: "border-[#7D568A]",
-                    text: "text-[#7D568A]",
-                    hoverBg: "hover:bg-[#7D568A]",
-                    hoverText: "hover:text-white",
-                    bg: "bg-[#7D568A]",
-                  },
-                  "/businesses": {
-                    border: "border-[#008B73]",
-                    text: "text-[#008B73]",
-                    hoverBg: "hover:bg-[#008B73]",
-                    hoverText: "hover:text-white",
-                    bg: "bg-[#008B73]",
-                  },
-                  "/healthcare": {
-                    border: "border-[#C03744]",
-                    text: "text-[#C03744]",
-                    hoverBg: "hover:bg-[#C03744]",
-                    hoverText: "hover:text-white",
-                    bg: "bg-[#C03744]",
-                  },
-                  "/disaster-relief": {
-                    border: "border-[#151314]",
-                    text: "text-[#151314]",
-                    hoverBg: "hover:bg-[#151314]",
-                    hoverText: "hover:text-white",
-                    bg: "bg-[#151314]",
-                  },
-                  "/creators": {
-                    border: "border-[#0070E0]",
-                    text: "text-[#0070E0]",
-                    hoverBg: "hover:bg-[#0070E0]",
-                    hoverText: "hover:text-white",
-                    bg: "bg-[#0070E0]",
-                  },
-                };
-
-                // Pick active theme or fallback to neutral
-                const theme = themeMap[pathname] || {
-                  border: "border-secondary",
-                  text: "text-secondary",
-                  hoverBg: "hover:bg-secondary",
-                  hoverText: "hover:text-white",
-                  bg: "bg-primary",
-                };
-
-                return (
-                  <>
-                    <Link href="/dashboard/causes/create">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className={`flex items-center gap-2 border-2 ${theme.border} ${theme.text} ${theme.hoverBg} ${theme.hoverText} transition-colors`}
-                      >
-                        List a Cause
-                      </Button>
-                    </Link>
+              <div className="hidden md:flex items-center gap-2">
+                <Link href="/dashboard/causes/create">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-2"
+                  >
+                    List a Cause
+                  </Button>
+                </Link>
+              </div>
 
                     {/* Auth */}
                     {!isLoading && !user ? (
