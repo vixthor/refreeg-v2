@@ -102,12 +102,11 @@ export function Header() {
           href: "/businesses",
           icon: CircleDollarSign,
         },
-        {
-          title: "🤝 RefreeG for Nonprofits",
-          description:
-            "Raise more, reach more. Build trust with transparent fundraising tools designed to help nonprofits thrive and grow their donor communities.",
-          href: "/nonprofits",
-          icon: Target,
+        { 
+          title: "🤝 RefreeG for Nonprofits", 
+          description: "Raise more, reach more. Build trust with transparent fundraising tools designed to help nonprofits thrive and grow their donor communities.", 
+          href: "/non-profits", 
+          icon: Target 
         },
         {
           title: "🌪️ RefreeG for Disaster Relief",
