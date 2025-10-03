@@ -351,10 +351,9 @@ export function Header() {
                     size="sm"
                     className="flex items-center gap-2"
                   >
-                    
                     List a Cause
                   </Button>
-                </Link>       
+                </Link>
               </div>
 
               {/* Auth */}

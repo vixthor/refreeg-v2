@@ -4,6 +4,9 @@ import { CausesFilter } from "@/components/causes-filter";
 import { Skeleton } from "@/components/ui/skeleton";
 import { categories } from "@/lib/categories";
 import AdBanner from "@/components/AdBanner";
+import CausesFilterRow from "@/components/causes-filter-row";
+import { H1 } from "@/components/typograpy";
+import { H5 } from "@/components/typograpy";
 // Mock categories for filtering
 
 export default async function CausesPage({
@@ -19,12 +22,17 @@ export default async function CausesPage({
   return (
     <div className="p-10">
       <div className="space-y-6">
-        <div className="space-y-2">
-          <h1 className="text-3xl font-bold tracking-tight">Explore Causes</h1>
-          <p className="text-muted-foreground">
-            Discover and support causes that are making a difference.
-          </p>
+        <div className="space-y-2 text-center max-w-2xl mx-auto pt-10">
+          <H1 className="text-5xl font-bold tracking-tight">
+            Discover Causes That Matter
+          </H1>
+          <H5 className="text-muted-foreground">
+            From disaster relief to creative dreams, explore causes powered by
+            real people, verified for transparency, and built for impact.
+          </H5>
         </div>
+
+        <CausesFilterRow className="mt-4" />
 
         <CausesFilter categories={categories} selectedCategory={category} />
 
