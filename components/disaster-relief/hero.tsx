@@ -70,7 +70,7 @@ export default function Hero() {
             viewport={{ once: true }}
           >
             <Image
-              className="mx-auto md:ml-auto"
+              className="mx-auto md:ml-auto hidden md:block"
               src={"/disaster.png"}
               width={550}
               height={500}
