@@ -39,7 +39,7 @@ export function Footer() {
       ? "bg-purple-600 text-white"
       : "bg-secondary text-secondary-foreground";
 
-  const isNonProfitsPage = pathname === "/nonprofits";
+  const isNonProfitsPage = pathname === "/non-profits";
 
   return (
     <div className="pt-8 bg-muted">
