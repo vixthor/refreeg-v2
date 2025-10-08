@@ -9,7 +9,7 @@ import LifeMatters from '@/components/healthcare/lifematters'
 
 export default function Healthcare() {
   return (
-    <div className='space-y-10'>
+    <div className="flex flex-col gap-6 md:gap-10 lg:gap-16">
         <Hero />
         <Numbers />
         <MoreOnHealthcare />

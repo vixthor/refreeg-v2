@@ -54,7 +54,7 @@ export default function GrowYourBusiness() {
           alt="Grow Your Business"
           width={500}
           height={300}
-          className="w-full h-auto"
+          className="w-full h-auto hidden md:block"
         />
       </motion.div>
     </div>

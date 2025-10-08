@@ -81,7 +81,7 @@ export default function DespairAndHope() {
           alt="Grow Your Business"
           width={600}
           height={400}
-          className="w-full h-auto"
+          className="w-full h-auto hidden md:block"
         />
       </motion.div>
     </motion.div>
