@@ -8,6 +8,7 @@ import { motion } from "framer-motion";
 import GetMail from "./GetMail";
 import { useAnimateInView } from "@/hooks/use-animate-In-view";
 import { contactLinks, legalLinks, quickLinks, socialLinks } from "@/lib/links";
+import { usePathname } from "next/navigation"; // ✅ import this
 
 const Icon = ({ href, children }: { href: string; children: ReactNode }) => (
   <Link
@@ -24,6 +25,18 @@ export function Footer() {
     margin: "-100px",
   });
 
+  const pathname = usePathname(); // ✅ get current route
+
+  // ✅ define your conditional background colors
+  const ctaBg =
+    pathname === "/businesses"
+      ? "bg-[#003E25] text-white" // when on /businesses route
+      : pathname === "/healthcare"
+      ? "bg-[#8C1823] text-white" // when on /healthcare route
+      : pathname === "/disaster-relief"
+      ? "bg-[#0A0A0B] text-white" // when on /disaster route
+      : "bg-secondary text-secondary-foreground"; // default
+
   return (
     <div className="pt-8 bg-muted">
       {/* Top CTA Section */}
@@ -32,7 +45,7 @@ export function Footer() {
         initial={{ opacity: 0, y: 30 }}
         animate={isInView ? { opacity: 1, y: 0 } : {}}
         transition={{ ease: [0.6, -0.05, 0.01, 0.99], duration: 0.8 }}
-        className="flex flex-col items-center w-10/12 lg:w-8/12 mx-auto rounded-3xl text-secondary-foreground bg-secondary px-10 py-10 mb-16"
+        className={`flex flex-col items-center w-10/12 lg:w-8/12 mx-auto rounded-3xl px-10 py-10 mb-16 ${ctaBg}`} // ✅ dynamic color
       >
         <div className="text-lg lg:text-3xl font-semibold mb-6">
           Ready to be part of the solution?
