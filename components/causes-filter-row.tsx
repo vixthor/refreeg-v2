@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -13,21 +13,48 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Search as SearchIcon, SlidersHorizontal } from "lucide-react";
+import { FilterSideNav } from "@/components/filter-side-nav";
 
 type AudienceValue = "business" | "people" | "creator" | "all";
 
 interface CausesFilterRowProps {
   className?: string;
+  isFilterOpen?: boolean;
 }
 
-export default function CausesFilterRow({ className }: CausesFilterRowProps) {
+export default function CausesFilterRow({
+  className,
+  isFilterOpen: propIsFilterOpen,
+}: CausesFilterRowProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   const audience = (searchParams.get("audience") || "all") as AudienceValue;
   const search = searchParams.get("search") || "";
   const recommended = searchParams.get("recommended") || "recommended";
+
+  // Initialize filter state from URL on mount
+  useEffect(() => {
+    setIsFilterOpen(searchParams.get("filter") === "true");
+  }, [searchParams]);
+
+  const handleFilterToggle = (open: boolean) => {
+    setIsFilterOpen(open);
+
+    // Update URL without causing navigation
+    const next = new URLSearchParams(searchParams.toString());
+    if (open) {
+      next.set("filter", "true");
+    } else {
+      next.delete("filter");
+    }
+
+    // Use replaceState to update URL without navigation
+    const newUrl = `${pathname}?${next.toString()}`;
+    window.history.replaceState({}, "", newUrl);
+  };
 
   const params = useMemo(
     () => new URLSearchParams(searchParams.toString()),
@@ -71,69 +98,80 @@ export default function CausesFilterRow({ className }: CausesFilterRowProps) {
   }, []);
 
   return (
-    <div className={className}>
-      <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        {/* Left: Filter button + search */}
-        <div className="flex w-full items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="whitespace-nowrap rounded-full p-4"
-          >
-            <SlidersHorizontal className="mr-2 h-4 w-4" />
-            Filter
-          </Button>
+    <>
+      <div className={className}>
+        <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          {/* Left: Filter button + search */}
+          <div className="flex w-full items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="whitespace-nowrap rounded-full p-4"
+              onClick={() => handleFilterToggle(true)}
+            >
+              <SlidersHorizontal className="mr-2 h-4 w-4" />
+              Filter
+            </Button>
 
-          {/* Full-width search bar */}
-          <div className="relative flex-1">
-            <SearchIcon className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              defaultValue={search}
-              placeholder="Search RefreeG"
-              className="pl-8 pr-40 w-full rounded-full"
-              onChange={(e) => handleSearchChange(e.target.value)}
-            />
+            {/* Full-width search bar */}
+            <div className="relative flex-1">
+              <SearchIcon className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                defaultValue={search}
+                placeholder="Search RefreeG"
+                className="pl-8 pr-40 w-full rounded-full"
+                onChange={(e) => handleSearchChange(e.target.value)}
+              />
 
-            {/* Tabs inside input (on the right) */}
-            <div className="absolute right-1 top-1/2 -translate-y-1/2">
-              <Tabs
-                value={audience}
-                onValueChange={(v) => handleAudienceChange(v as AudienceValue)}
-              >
-                <TabsList className="h-7 rounded-md bg-muted shadow-sm">
-                  <TabsTrigger value="all" className="px-2 text-xs">
-                    All
-                  </TabsTrigger>
-                  <TabsTrigger value="people" className="px-2 text-xs">
-                    People
-                  </TabsTrigger>
-                  <TabsTrigger value="creator" className="px-2 text-xs">
-                    Creator
-                  </TabsTrigger>
-                  <TabsTrigger value="business" className="px-2 text-xs">
-                    Business
-                  </TabsTrigger>
-                </TabsList>
-              </Tabs>
+              {/* Tabs inside input (on the right) */}
+              <div className="absolute right-1 top-1/2 -translate-y-1/2">
+                <Tabs
+                  value={audience}
+                  onValueChange={(v) =>
+                    handleAudienceChange(v as AudienceValue)
+                  }
+                >
+                  <TabsList className="h-7 rounded-md bg-muted shadow-sm">
+                    <TabsTrigger value="all" className="px-2 text-xs">
+                      All
+                    </TabsTrigger>
+                    <TabsTrigger value="people" className="px-2 text-xs">
+                      People
+                    </TabsTrigger>
+                    <TabsTrigger value="creator" className="px-2 text-xs">
+                      Creator
+                    </TabsTrigger>
+                    <TabsTrigger value="business" className="px-2 text-xs">
+                      Business
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Right: Recommended select */}
-        <div className="flex items-center gap-2">
-          <Select value={recommended} onValueChange={handleRecommendedChange}>
-            <SelectTrigger className="w-[160px]">
-              <SelectValue placeholder="Recommended" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="recommended">Recommended</SelectItem>
-              <SelectItem value="latest">Latest</SelectItem>
-              <SelectItem value="most-funded">Most funded</SelectItem>
-              <SelectItem value="ending-soon">Ending soon</SelectItem>
-            </SelectContent>
-          </Select>
+          {/* Right: Recommended select */}
+          <div className="flex items-center gap-2">
+            <Select value={recommended} onValueChange={handleRecommendedChange}>
+              <SelectTrigger className="w-[160px]">
+                <SelectValue placeholder="Recommended" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="recommended">Recommended</SelectItem>
+                <SelectItem value="latest">Latest</SelectItem>
+                <SelectItem value="most-funded">Most funded</SelectItem>
+                <SelectItem value="ending-soon">Ending soon</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
-    </div>
+
+      {/* Filter Side Navigation */}
+      <FilterSideNav
+        isOpen={isFilterOpen}
+        onClose={() => handleFilterToggle(false)}
+      />
+    </>
   );
 }
