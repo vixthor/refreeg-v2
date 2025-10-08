@@ -1,6 +1,7 @@
 "use client";
-import { Mail } from "lucide-react";
+
 import React, { useState } from "react";
+import { Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { usePathname } from "next/navigation";
 
@@ -14,7 +15,7 @@ const GetMail = () => {
     setTimeout(() => setMessage(""), 3000);
   };
 
-  // ✅ Match same color logic as Footer
+  // 🎨 Match same color logic as Footer (route-based)
   const btnColor =
     pathname === "/businesses"
       ? "bg-[#003E25] hover:bg-[#004d2d]"
@@ -22,30 +23,42 @@ const GetMail = () => {
       ? "bg-[#8C1823] hover:bg-[#a71d2b]"
       : pathname === "/disaster-relief"
       ? "bg-[#0A0A0B] hover:bg-[#1a1a1b]"
-      : "bg-secondary hover:bg-secondary-7";
+      : pathname === "/non-profits"
+      ? "bg-purple-600 hover:bg-purple-700"
+      : "bg-secondary hover:bg-secondary/80";
 
   return (
     <div className="w-full">
-      <form onSubmit={handleSubmit} className="relative size-fit mt-2">
-        <input
-          type="email"
-          name="email"
-          className="bg-white rounded-3xl h-[45px] outline-none border-none placeholder:text-bold placeholder:font-medium 
-          placeholder:text-[12px] text-[12px] pl-[50px] pr-[120px] flex items-center w-full"
-          placeholder="Enter your Email"
-          required
-        />
-        <Mail className="text-bold size-4 absolute top-[15px] left-6" />
+      <form
+        onSubmit={handleSubmit}
+        className="relative flex items-center w-full max-w-sm mt-2"
+      >
+        {/* Email Input */}
+        <div className="relative w-full">
+          <Mail className="absolute top-1/2 left-4 -translate-y-1/2 text-gray-500 size-4" />
+          <input
+            type="email"
+            name="email"
+            required
+            placeholder="Enter your email"
+            className="w-full h-[45px] pl-10 pr-28 text-[13px] rounded-3xl outline-none 
+                       border border-gray-300 placeholder:text-gray-400 placeholder:font-medium"
+          />
+        </div>
+
+        {/* Subscribe Button */}
         <Button
           type="submit"
-          className={`text-white font-medium flex items-center justify-center text-[12px] h-[80%] absolute top-1 right-2 px-5 rounded-3xl cursor-pointer transition-all duration-300 ${btnColor}`}
+          className={`absolute right-1 top-1/2 -translate-y-1/2 text-white text-[13px] 
+                     font-medium rounded-3xl px-5 py-2 transition-colors ${btnColor}`}
         >
           Subscribe
         </Button>
       </form>
 
+      {/* Success Message */}
       {message && (
-        <div className="mt-2 bg-green-500 text-white p-2 rounded-md text-sm">
+        <div className="mt-3 bg-green-500 text-white py-2 px-4 rounded-md text-sm animate-fade-in">
           {message}
         </div>
       )}

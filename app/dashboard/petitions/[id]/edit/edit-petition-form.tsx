@@ -33,8 +33,16 @@ import { usePetition } from "@/hooks/use-petition";
 import { Progress } from "@/components/ui/progress";
 import { ImageUpload } from "@/components/ui/image-upload";
 import type { Petition } from "@/types";
+import MultimediaCarousel from "@/components/MultimediaCarousel";
 import { categories } from "@/lib/categories";
-import { format, addDays, isAfter, isBefore, differenceInDays } from "date-fns";
+import {
+  format,
+  addDays,
+  isAfter,
+  isBefore,
+  differenceInDays,
+  startOfDay,
+} from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -50,6 +58,8 @@ type FormData = {
   sections: { heading: string; description: string }[];
   startDate: Date | undefined;
   endDate: Date | undefined;
+  multimedia: File[];
+  videoLinks: string[];
 };
 
 type FormErrors = {
@@ -60,6 +70,7 @@ type FormErrors = {
   startDate?: string;
   endDate?: string;
   sections?: { heading?: string; description?: string }[];
+  multimedia?: string;
 };
 
 type EditPetitionFormProps = {
@@ -81,10 +92,16 @@ export default function EditPetitionForm({ petition }: EditPetitionFormProps) {
     coverImage: null,
     image: petition.image || "",
     sections: petition.sections || [{ heading: "", description: "" }],
-    startDate: petition.startDate ? new Date(petition.startDate) : undefined,
-    endDate: petition.endDate ? new Date(petition.endDate) : undefined,
+    startDate: petition.days_active ? new Date() : undefined,
+    endDate: petition.days_active
+      ? new Date(Date.now() + petition.days_active * 24 * 60 * 60 * 1000)
+      : undefined,
+    multimedia: [],
+    videoLinks: (petition as any).video_links || [],
   });
   const [errors, setErrors] = useState<FormErrors>({});
+  const [videoLinkInput, setVideoLinkInput] = useState("");
+  const [videoLinkError, setVideoLinkError] = useState<string | null>(null);
 
   console.log(petition.startDate, petition.endDate);
 
@@ -168,6 +185,43 @@ export default function EditPetitionForm({ petition }: EditPetitionFormProps) {
     }));
   };
 
+  const handleMultimediaUpload = (files: File[]) => {
+    const MAX_TOTAL_SIZE = 100 * 1024 * 1024; // 100MB in bytes
+    const currentSize =
+      formData.multimedia && formData.multimedia.length > 0
+        ? formData.multimedia.reduce((acc, file) => acc + file.size, 0)
+        : 0;
+    const newFilesSize = files.reduce((acc, file) => acc + file.size, 0);
+
+    if (currentSize + newFilesSize > MAX_TOTAL_SIZE) {
+      setErrors((prev) => ({
+        ...prev,
+        multimedia: "Total multimedia size must be less than 100MB",
+      }));
+      return;
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      multimedia: Array.isArray(prev.multimedia)
+        ? [...prev.multimedia, ...files]
+        : [...files],
+    }));
+
+    if (errors.multimedia) {
+      setErrors((prev) => ({ ...prev, multimedia: undefined }));
+    }
+  };
+
+  const removeMultimedia = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      multimedia: Array.isArray(prev.multimedia)
+        ? prev.multimedia.filter((_, i) => i !== index)
+        : [],
+    }));
+  };
+
   const validateStep = (step: number): boolean => {
     const currentErrors = validateForm(formData);
     setErrors(currentErrors);
@@ -194,13 +248,15 @@ export default function EditPetitionForm({ petition }: EditPetitionFormProps) {
         return !currentErrors.startDate && !currentErrors.endDate;
       case 4:
         return !currentErrors.coverImage;
+      case 5:
+        return true; // Media step is optional
       default:
         return true;
     }
   };
 
   const nextStep = () => {
-    if (currentStep < 5 && validateStep(currentStep)) {
+    if (currentStep < 6 && validateStep(currentStep)) {
       setCurrentStep((prev) => prev + 1);
     }
   };
@@ -227,14 +283,17 @@ export default function EditPetitionForm({ petition }: EditPetitionFormProps) {
       return;
     }
 
-    const petitionData: Partial<FormData> = {
+    const petitionData: Partial<FormData> & { video_links?: string[] } = {
       title: formData.title,
       category: formData.category,
       goal: formData.goal,
       coverImage: formData.coverImage,
+      image: !formData.coverImage ? (petition.image || undefined) : undefined,
       sections: formData.sections,
       startDate: formData.startDate,
       endDate: formData.endDate,
+      multimedia: formData.multimedia,
+      video_links: formData.videoLinks,
     };
 
     try {
@@ -407,7 +466,9 @@ export default function EditPetitionForm({ petition }: EditPetitionFormProps) {
                       mode="single"
                       selected={formData.startDate}
                       onSelect={(date) => handleDateChange(date, "startDate")}
-                      disabled={(date) => isBefore(date, new Date())}
+                      disabled={(date) =>
+                        isBefore(date, startOfDay(new Date()))
+                      }
                       initialFocus
                     />
                   </PopoverContent>
@@ -445,7 +506,7 @@ export default function EditPetitionForm({ petition }: EditPetitionFormProps) {
                       disabled={(date) =>
                         formData.startDate
                           ? isBefore(date, formData.startDate)
-                          : isBefore(date, new Date())
+                          : isBefore(date, startOfDay(new Date()))
                       }
                       initialFocus
                     />
@@ -477,13 +538,13 @@ export default function EditPetitionForm({ petition }: EditPetitionFormProps) {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>Cover Image</Label>
-              {petition.image && (
+              {(petition.image || formData.coverImage) && (
                 <div className="mb-4">
                   <img
                     src={
                       formData.coverImage
                         ? URL.createObjectURL(formData.coverImage)
-                        : petition.image
+                        : petition.image || undefined
                     }
                     alt="Current cover"
                     className="h-32 w-full object-cover rounded-md"
@@ -502,6 +563,123 @@ export default function EditPetitionForm({ petition }: EditPetitionFormProps) {
               </div>
               {errors.coverImage && (
                 <p className="text-sm text-red-500">{errors.coverImage}</p>
+              )}
+            </div>
+            <div className="mt-8 space-y-4">
+              <div className="space-y-2">
+                <Label>Additional Images</Label>
+                <p className="text-sm text-muted-foreground">
+                  Enhance your petition with images. Total size must not exceed
+                  100MB.
+                </p>
+                <ImageUpload
+                  onUpload={(files) => handleMultimediaUpload(files)}
+                  maxFiles={10}
+                  accept="image/*"
+                />
+                {errors.multimedia && (
+                  <p className="text-sm text-red-500">{errors.multimedia}</p>
+                )}
+              </div>
+              {formData.multimedia &&
+                Array.isArray(formData.multimedia) &&
+                formData.multimedia.length > 0 && (
+                  <div className="space-y-4">
+                    <h4 className="text-sm font-medium">
+                      Uploaded Images ({formData.multimedia.length})
+                    </h4>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      {formData.multimedia.map((file, index) => (
+                        <div key={index} className="relative group">
+                          <img
+                            src={URL.createObjectURL(file)}
+                            alt={`Multimedia ${index + 1}`}
+                            className="h-32 w-full object-cover rounded-md"
+                          />
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="sm"
+                            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => removeMultimedia(index)}
+                          >
+                            Remove
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+            </div>
+            {/* Video Links */}
+            <div className="mt-8 space-y-2">
+              <Label>Video Links (YouTube, TikTok, etc.)</Label>
+              <div className="flex gap-2">
+                <Input
+                  type="url"
+                  placeholder="Paste video link and press Add"
+                  value={videoLinkInput}
+                  onChange={(e) => setVideoLinkInput(e.target.value)}
+                  className="flex-1"
+                />
+                <Button
+                  type="button"
+                  onClick={() => {
+                    // Basic URL validation
+                    try {
+                      const url = new URL(videoLinkInput);
+                      if (!/^https?:\/\//.test(videoLinkInput)) {
+                        setVideoLinkError("Enter a valid URL");
+                        return;
+                      }
+                      setFormData((prev) => ({
+                        ...prev,
+                        videoLinks: [...prev.videoLinks, videoLinkInput],
+                      }));
+                      setVideoLinkInput("");
+                      setVideoLinkError(null);
+                    } catch {
+                      setVideoLinkError("Enter a valid URL");
+                    }
+                  }}
+                  disabled={!videoLinkInput}
+                >
+                  Add
+                </Button>
+              </div>
+              {videoLinkError && (
+                <p className="text-sm text-red-500">{videoLinkError}</p>
+              )}
+              {formData.videoLinks.length > 0 && (
+                <ul className="mt-2 space-y-1">
+                  {formData.videoLinks.map((link, idx) => (
+                    <li key={idx} className="flex items-center gap-2">
+                      <a
+                        href={link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 underline truncate max-w-xs"
+                      >
+                        {link}
+                      </a>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            videoLinks: prev.videoLinks.filter(
+                              (_, i) => i !== idx
+                            ),
+                          }))
+                        }
+                      >
+                        Remove
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
               )}
             </div>
           </div>
@@ -543,6 +721,45 @@ export default function EditPetitionForm({ petition }: EditPetitionFormProps) {
                 </p>
               )}
             </div>
+
+            <div className="space-y-2">
+              <h4 className="font-medium">Media Preview</h4>
+              <MultimediaCarousel
+                media={[
+                  ...formData.multimedia.map((file) =>
+                    URL.createObjectURL(file)
+                  ),
+                  ...formData.videoLinks,
+                ]}
+                coverImage={
+                  formData.coverImage
+                    ? URL.createObjectURL(formData.coverImage)
+                    : petition.image || undefined
+                }
+                title={formData.title}
+              />
+            </div>
+
+            {formData.multimedia &&
+              Array.isArray(formData.multimedia) &&
+              formData.multimedia.length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="font-medium">Multimedia Files</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    {formData.multimedia.map((file, index) => (
+                      <div key={index} className="flex flex-col">
+                        <p className="text-sm font-medium">{file.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {file.type.startsWith("image/")
+                            ? "Image file"
+                            : "Video file"}{" "}
+                          - {Math.round(file.size / 1024)} KB
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
           </div>
         );
 
@@ -559,7 +776,7 @@ export default function EditPetitionForm({ petition }: EditPetitionFormProps) {
           Update your petition details below. All changes will require
           re-approval before going live.
         </CardDescription>
-        <Progress value={(currentStep / 5) * 100} className="mt-4" />
+        <Progress value={(currentStep / 6) * 100} className="mt-4" />
       </CardHeader>
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">{renderStep()}</CardContent>
@@ -572,7 +789,7 @@ export default function EditPetitionForm({ petition }: EditPetitionFormProps) {
           >
             Back
           </Button>
-          {currentStep != 5 ? (
+          {currentStep != 6 ? (
             <Button type="button" onClick={nextStep}>
               Next
             </Button>

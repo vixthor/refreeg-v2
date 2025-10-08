@@ -7,6 +7,7 @@ import { TrendingCauses } from "@/components/home/trendingNow";
 import WhyItStandsOut from "@/components/home/whyitStandsOut";
 import HowitWorksYT from "@/components/home/howitWorksYT";
 import { FeaturedPetitions } from "@/components/home/featured-petitions";
+import { UrgentCauses } from "@/components/home/urgentCauses";
 
 export default function Home() {
   return (
@@ -17,12 +18,17 @@ export default function Home() {
         <LaunchYourCauseInSeconds />
       </div>
 
+      {/* Urgent Causes */}
       <div className="mx-8">
-        <TrendingCauses />
+        <UrgentCauses />
       </div>
 
       <div className="">
         <WhyItStandsOut />
+      </div>
+
+      <div className="mx-8">
+        <TrendingCauses />
       </div>
 
       {/* Featured Causes */}
@@ -38,7 +44,7 @@ export default function Home() {
         <HowitWorksYT />
       </div>
 
-      <div className="mx-8">
+      <div className="md:mx-8">
         <FAQ />
       </div>
     </div>

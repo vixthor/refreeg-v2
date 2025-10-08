@@ -34,7 +34,14 @@ import { Progress } from "@/components/ui/progress";
 import { ImageUpload } from "@/components/ui/image-upload";
 import type { Cause } from "@/types";
 import { categories } from "@/lib/categories";
-import { format, addDays, isAfter, isBefore, differenceInDays } from "date-fns";
+import {
+  format,
+  addDays,
+  isAfter,
+  isBefore,
+  differenceInDays,
+  startOfDay,
+} from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import MultimediaCarousel from "@/components/MultimediaCarousel";
@@ -86,8 +93,10 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
     coverImage: null,
     image: cause.image || "",
     sections: cause.sections || [{ heading: "", description: "" }],
-    startDate: cause.startDate ? new Date(cause.startDate) : undefined,
-    endDate: cause.endDate ? new Date(cause.endDate) : undefined,
+    startDate: cause.days_active ? new Date() : undefined,
+    endDate: cause.days_active
+      ? new Date(Date.now() + cause.days_active * 24 * 60 * 60 * 1000)
+      : undefined,
     multimedia: [],
     videoLinks: (cause as any).video_links || [],
   });
@@ -273,16 +282,17 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
       return;
     }
 
-    const causeData: Partial<FormData> = {
+    const causeData: Partial<FormData> & { video_links?: string[] } = {
       title: formData.title,
       category: formData.category,
       goal: formData.goal,
       coverImage: formData.coverImage,
+      image: !formData.coverImage ? (cause.image || undefined) : undefined,
       sections: formData.sections,
       startDate: formData.startDate,
       endDate: formData.endDate,
       multimedia: formData.multimedia,
-      videoLinks: formData.videoLinks,
+      video_links: formData.videoLinks,
     };
 
     try {
@@ -459,7 +469,9 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
                       mode="single"
                       selected={formData.startDate}
                       onSelect={(date) => handleDateChange(date, "startDate")}
-                      disabled={(date) => isBefore(date, new Date())}
+                      disabled={(date) =>
+                        isBefore(date, startOfDay(new Date()))
+                      }
                       initialFocus
                     />
                   </PopoverContent>
@@ -497,7 +509,7 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
                       disabled={(date) =>
                         formData.startDate
                           ? isBefore(date, formData.startDate)
-                          : isBefore(date, new Date())
+                          : isBefore(date, startOfDay(new Date()))
                       }
                       initialFocus
                     />
@@ -529,13 +541,13 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>Cover Image</Label>
-              {cause.image && (
+              {(cause.image || formData.coverImage) && (
                 <div className="mb-4">
                   <img
                     src={
                       formData.coverImage
                         ? URL.createObjectURL(formData.coverImage)
-                        : cause.image
+                        : cause.image || undefined
                     }
                     alt="Current cover"
                     className="h-32 w-full object-cover rounded-md"

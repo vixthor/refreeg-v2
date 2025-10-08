@@ -119,7 +119,7 @@ export default function ManageCauses() {
 
   const openPreviewDialog = (cause: Cause | CauseWithUser) => {
     // For preview, we'll use the basic cause data and handle missing user info
-    const previewCause: CauseWithUser = {
+    const previewCause = {
       ...cause,
       user: (cause as CauseWithUser).user || {
         name: (cause as any).profiles?.full_name || "Anonymous",
@@ -129,7 +129,8 @@ export default function ManageCauses() {
       },
       sections: (cause as CauseWithUser).sections || [],
       multimedia: (cause as CauseWithUser).multimedia || [],
-    };
+      video_links: (cause as any).video_links || [],
+    } as any;
 
     setPreviewDialog({
       open: true,
@@ -446,21 +447,33 @@ export default function ManageCauses() {
                       </p>
                     </div>
 
-                    {/* Sections */}
-                    {previewDialog.cause.sections &&
-                      previewDialog.cause.sections.length > 0 &&
-                      previewDialog.cause.sections.map(
+                    {/* Sections (handle sections on both main cause and edit rows) */}
+                    {Array.isArray((previewDialog.cause as any).cause_edit_sections) &&
+                    (previewDialog.cause as any).cause_edit_sections.length > 0 ? (
+                      (previewDialog.cause as any).cause_edit_sections.map(
                         (section: any, index: number) => (
-                          <div key={index} className="space-y-3">
-                            <h3 className="text-xl font-semibold">
-                              {section.heading}
-                            </h3>
+                          <div key={section.id ?? index} className="space-y-3">
+                            <h3 className="text-xl font-semibold">{section.heading}</h3>
                             <p className="text-muted-foreground whitespace-pre-line">
                               {section.description}
                             </p>
                           </div>
                         )
-                      )}
+                      )
+                    ) : (
+                      previewDialog.cause.sections &&
+                      previewDialog.cause.sections.length > 0 &&
+                      previewDialog.cause.sections.map(
+                        (section: any, index: number) => (
+                          <div key={index} className="space-y-3">
+                            <h3 className="text-xl font-semibold">{section.heading}</h3>
+                            <p className="text-muted-foreground whitespace-pre-line">
+                              {section.description}
+                            </p>
+                          </div>
+                        )
+                      )
+                    )}
 
                     {/* Multimedia Preview */}
                     {((previewDialog.cause as any).multimedia &&
