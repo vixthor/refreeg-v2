@@ -2,12 +2,12 @@ import { ICreateSubaccount, TransactionData } from "@/types";
 import axios from "axios"; /// Get API key from appropriate environment variable
 import { getBaseURL } from "@/lib/utils";
 
-const PAYSTACK_KEY = process.env.NEXT_PUBLIC_PAYSTACK_KEY;
+const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
 
 // Check if API key exists
-if (!PAYSTACK_KEY) {
+if (!PAYSTACK_SECRET_KEY) {
   console.warn(
-    "WARNING: No Paystack API key found in environment variables. API calls will fail."
+    "WARNING: No Paystack Secret Key found in environment variables. API calls will fail."
   );
 }
 
@@ -15,7 +15,7 @@ const Paystack = {
   api: axios.create({
     baseURL: "https://api.paystack.co",
     headers: {
-      Authorization: `Bearer ${PAYSTACK_KEY}`,
+      Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
       "Content-Type": "application/json",
     },
   }),
