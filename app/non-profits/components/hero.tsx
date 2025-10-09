@@ -42,12 +42,12 @@ export default function Hero() {
   }, []);
 
   return (
-    <section className="relative min-h-screen bg-gray-50 py-16 px-4 sm:px-6 lg:px-8 overflow-hidden">
+    <section className="relative min-h-screen bg-gray-50 py-8 md:py-16 px-4 sm:px-6 lg:px-8 overflow-hidden">
       {/* Background Pattern */}
       <motion.div
-        className="absolute inset-0 opacity-50"
+        className="absolute inset-0 opacity-30 md:opacity-50"
         initial={{ opacity: 0, scale: 1.1 }}
-        animate={{ opacity: 0.5, scale: 1 }}
+        animate={{ opacity: 0.3, scale: 1 }}
         transition={{ duration: 2, ease: "easeOut" }}
       >
         <img
@@ -59,10 +59,10 @@ export default function Hero() {
 
       <div className="relative max-w-7xl mx-auto">
         {/* Hero Images */}
-        <div className="relative flex justify-center items-center min-h-[600px]">
+        <div className="relative flex justify-center items-center min-h-[500px] md:min-h-[600px]">
           {/* Top Left - Disaster Relief */}
           <motion.div
-            className="absolute top-0 left-20 w-40 h-40 sm:w-48 sm:h-48"
+            className="absolute top-4 left-4 md:top-0 md:left-20 w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 lg:w-48 lg:h-48"
             initial={{ opacity: 0, y: 30, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{
@@ -72,7 +72,7 @@ export default function Hero() {
             }}
           >
             <motion.div
-              className="w-full h-full rounded-full overflow-hidden shadow-xl hover:shadow-2xl transition-shadow duration-300"
+              className="w-full h-full rounded-full overflow-hidden shadow-lg md:shadow-xl hover:shadow-xl md:hover:shadow-2xl transition-shadow duration-300"
               animate={
                 imagesShouldMove
                   ? {
@@ -102,7 +102,7 @@ export default function Hero() {
 
           {/* Top Right - Community Group */}
           <motion.div
-            className="absolute top-0 right-20 w-36 h-36 sm:w-44 sm:h-44"
+            className="absolute top-4 right-4 md:top-0 md:right-20 w-20 h-20 sm:w-28 sm:h-28 md:w-36 md:h-36 lg:w-44 lg:h-44"
             initial={{ opacity: 0, y: 30, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{
@@ -112,7 +112,7 @@ export default function Hero() {
             }}
           >
             <motion.div
-              className="w-full h-full rounded-full overflow-hidden shadow-xl hover:shadow-2xl transition-shadow duration-300"
+              className="w-full h-full rounded-full overflow-hidden shadow-lg md:shadow-xl hover:shadow-xl md:hover:shadow-2xl transition-shadow duration-300"
               animate={
                 imagesShouldMove
                   ? {
@@ -142,7 +142,7 @@ export default function Hero() {
 
           {/* Bottom Left - Volunteer */}
           <motion.div
-            className="absolute bottom-0 left-32 w-36 h-36 sm:w-44 sm:h-44"
+            className="absolute bottom-4 left-8 md:bottom-0 md:left-32 w-20 h-20 sm:w-28 sm:h-28 md:w-36 md:h-36 lg:w-44 lg:h-44"
             initial={{ opacity: 0, y: 30, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{
@@ -152,7 +152,7 @@ export default function Hero() {
             }}
           >
             <motion.div
-              className="w-full h-full rounded-full overflow-hidden shadow-xl hover:shadow-2xl transition-shadow duration-300"
+              className="w-full h-full rounded-full overflow-hidden shadow-lg md:shadow-xl hover:shadow-xl md:hover:shadow-2xl transition-shadow duration-300"
               animate={
                 imagesShouldMove
                   ? {
@@ -182,7 +182,7 @@ export default function Hero() {
 
           {/* Center Left - Food Distribution */}
           <motion.div
-            className="absolute left-8 top-1/2 transform -translate-y-1/2 w-32 h-32 sm:w-40 sm:h-40"
+            className="absolute left-2 top-1/2 transform -translate-y-1/2 w-16 h-16 sm:w-24 sm:h-24 md:w-32 md:h-32 lg:w-40 lg:h-40"
             initial={{ opacity: 0, y: 30, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{
@@ -192,7 +192,7 @@ export default function Hero() {
             }}
           >
             <motion.div
-              className="w-full h-full rounded-full overflow-hidden shadow-xl hover:shadow-2xl transition-shadow duration-300"
+              className="w-full h-full rounded-full overflow-hidden shadow-lg md:shadow-xl hover:shadow-xl md:hover:shadow-2xl transition-shadow duration-300"
               animate={
                 imagesShouldMove
                   ? {
@@ -222,7 +222,7 @@ export default function Hero() {
 
           {/* Center Right - Community Helper */}
           <motion.div
-            className="absolute right-8 top-1/2 transform -translate-y-1/2 w-32 h-32 sm:w-40 sm:h-40"
+            className="absolute right-2 top-1/2 transform -translate-y-1/2 w-16 h-16 sm:w-24 sm:h-24 md:w-32 md:h-32 lg:w-40 lg:h-40"
             initial={{ opacity: 0, y: 30, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{
@@ -232,7 +232,7 @@ export default function Hero() {
             }}
           >
             <motion.div
-              className="w-full h-full rounded-full overflow-hidden shadow-xl hover:shadow-2xl transition-shadow duration-300"
+              className="w-full h-full rounded-full overflow-hidden shadow-lg md:shadow-xl hover:shadow-xl md:hover:shadow-2xl transition-shadow duration-300"
               animate={
                 imagesShouldMove
                   ? {
@@ -263,7 +263,7 @@ export default function Hero() {
           {/* Central Content */}
           <div className="text-center max-w-2xl mx-auto px-4 z-10">
             <motion.h1
-              className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-800 mb-8 leading-tight"
+              className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-gray-800 mb-6 md:mb-8 leading-tight"
               {...slideUp(0.3)}
             >
               Fund Change. Build Trust.
@@ -272,7 +272,7 @@ export default function Hero() {
             </motion.h1>
 
             <motion.p
-              className="text-lg sm:text-xl text-gray-600 mb-12 max-w-xl mx-auto leading-relaxed"
+              className="text-base sm:text-lg md:text-xl text-gray-600 mb-8 md:mb-12 max-w-xl mx-auto leading-relaxed"
               {...slideUp(0.5)}
             >
               RefreeG gives nonprofits a transparent and powerful way to raise
@@ -282,7 +282,7 @@ export default function Hero() {
             </motion.p>
 
             <motion.button
-              className="bg-purple-600 hover:bg-purple-700 text-white font-semibold px-8 py-4 rounded-lg text-lg shadow-lg relative z-20"
+              className="bg-purple-600 hover:bg-purple-700 text-white font-semibold px-6 py-3 md:px-8 md:py-4 rounded-lg text-base md:text-lg shadow-lg relative z-20"
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{
                 opacity: 1,
