@@ -8,12 +8,14 @@ interface ComingSoonPageProps {
   pageTitle?: string;
   pageDescription?: string;
   emoji?: string;
+  titleColor?: string;
 }
 
 const ComingSoonPage: React.FC<ComingSoonPageProps> = ({
   pageTitle = "This Feature",
   pageDescription = "We're working hard to bring you something amazing.",
   emoji = "🚀",
+  titleColor = "text-gray-700",
 }) => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
@@ -43,7 +45,7 @@ const ComingSoonPage: React.FC<ComingSoonPageProps> = ({
           </h1>
 
           {/* Subtitle */}
-          <h2 className="text-xl md:text-2xl text-gray-700 mb-3 font-semibold">
+          <h2 className={`text-xl md:text-2xl ${titleColor} mb-3 font-semibold`}>
             {pageTitle}
           </h2>
 
