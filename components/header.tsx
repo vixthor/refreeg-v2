@@ -99,7 +99,7 @@ export function Header() {
           title: "🌍 Refreeg for Businesses",
           description:
             "Empower your brand with purpose. Launch CSR campaigns, support community-driven causes, and connect with customers who care about impact.",
-          href: "/businesses",
+          href: "/coming-soon/businesses",
           icon: CircleDollarSign,
         },
         { 
@@ -111,22 +111,22 @@ export function Header() {
         {
           title: "🌪️ RefreeG for Disaster Relief",
           description:
-            "Respond faster when it matters most. Rally urgent support for communities hit by disasters and get aid to those who need it — quickly and securely.",
-          href: "/disaster-relief",
+            "Rally urgent support for communities hit by disasters and get aid to those who need it; quickly and securely.",
+          href: "/coming-soon/disaster-relief",
           icon: FileText,
         },
         {
           title: "🎨 RefreeG for Creators",
           description:
-            "Turn your influence into impact. Get your unique tag, share your story, and receive donations directly from your fans — in fiat or crypto.",
-          href: "/creators",
+            "Turn your influence into impact. Get your unique tag, share your story, and receive donations directly from your fans in fiat or crypto.",
+          href: "/coming-soon/creators",
           icon: FileText,
         },
         {
           title: "🏥 RefreeG for Healthcare",
           description:
             "Give hope a platform. Raise funds for medical bills, healthcare projects, or critical treatments — with transparency and community support.",
-          href: "/healthcare",
+          href: "/coming-soon/healthcare",
           icon: FileText,
         },
       ],
