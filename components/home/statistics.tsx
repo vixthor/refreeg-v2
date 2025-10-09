@@ -9,7 +9,7 @@ const STAGGER_DELAY = 0.15;
 export default function Statistics() {
   return (
     <motion.div
-      className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-1 max-w-4xl mx-auto mb-4"
+      className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12 max-w-4xl mx-auto mb-4"
       initial={{ opacity: 0 }}
       whileInView={{ opacity: 1 }}
       transition={{ duration: 0.6 }}
