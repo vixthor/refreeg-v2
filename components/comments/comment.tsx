@@ -28,6 +28,29 @@ export function CommentComponent({
   const [showReplies, setShowReplies] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [replies, setReplies] = useState<Comment[]>([]);
+  const [isLoadingReplies, setIsLoadingReplies] = useState(false);
+  const [repliesCount, setRepliesCount] = useState(comment.replies_count || 0);
+
+  // Fetch replies when toggling showReplies to true
+  const handleToggleReplies = async () => {
+    if (!showReplies && replies.length === 0 && repliesCount > 0) {
+      setIsLoadingReplies(true);
+      try {
+        const response = await fetch(
+          `/api/comments/replies/${comment.id}?entityType=${entityType || "cause"}`
+        );
+        if (response.ok) {
+          const fetchedReplies = await response.json();
+          setReplies(fetchedReplies);
+        }
+      } catch (error) {
+        console.error("Failed to fetch replies:", error);
+      } finally {
+        setIsLoadingReplies(false);
+      }
+    }
+    setShowReplies(!showReplies);
+  };
 
   const handleDelete = async () => {
     try {
@@ -119,25 +142,28 @@ export function CommentComponent({
 
           <div className="mt-2 flex items-center gap-4">
             <button
-              onClick={() => setShowReplies(!showReplies)}
-              className="text-sm text-muted-foreground hover:text-primary"
+              onClick={handleToggleReplies}
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              disabled={isLoadingReplies}
             >
-              {comment.replies_count === 1
+              {isLoadingReplies
+                ? "Loading..."
+                : repliesCount === 1
                 ? "1 reply"
-                : `${comment.replies_count || 0} replies`}
+                : `${repliesCount} replies`}
             </button>
 
             {currentUserId === comment.user_id && (
               <div className="flex gap-2">
                 <button
                   onClick={() => setIsEditing(true)}
-                  className="text-sm text-muted-foreground hover:text-primary flex items-center gap-1"
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
                 >
                   <Pencil size={14} /> Edit
                 </button>
                 <button
                   onClick={handleDelete}
-                  className="text-sm text-muted-foreground hover:text-destructive flex items-center gap-1"
+                  className="text-sm text-muted-foreground hover:text-destructive transition-colors flex items-center gap-1"
                 >
                   <Trash2 size={14} /> Delete
                 </button>
@@ -152,6 +178,7 @@ export function CommentComponent({
                 parentId={comment.id}
                 onReplyAdded={(newReply) => {
                   setReplies([...replies, newReply]);
+                  setRepliesCount(repliesCount + 1);
                 }}
                 entityType={entityType}
               />
@@ -168,7 +195,10 @@ export function CommentComponent({
               comment={reply}
               causeId={causeId}
               currentUserId={currentUserId}
-              onCommentDeleted={onCommentDeleted}
+              onCommentDeleted={(deletedId) => {
+                setReplies(replies.filter((r) => r.id !== deletedId));
+                setRepliesCount(repliesCount - 1);
+              }}
               entityType={entityType}
             />
           ))}
