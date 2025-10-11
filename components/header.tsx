@@ -394,9 +394,9 @@ export function Header() {
                 // Pick active theme or fallback to neutral
                 const theme =
                   themeMap[pathname] || {
-                    border: "border-primary",
-                    text: "text-primary",
-                    hoverBg: "hover:bg-primary",
+                    border: "border-secondary",
+                    text: "text-secondary",
+                    hoverBg: "hover:bg-secondary",
                     hoverText: "hover:text-white",
                     bg: "bg-primary",
                   };
