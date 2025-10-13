@@ -326,6 +326,26 @@ export async function sendIncompleteCauseSetupEmail(context: {
       userName: profile?.full_name || "User",
       currentYear: new Date().getFullYear().toString(),
     },
-    from: "support@refreeg.com",
+  });
+}
+
+// Send incomplete KYC verification reminder email
+export async function sendIncompleteKycVerificationEmail(context: {
+  continueUrl: string;
+}) {
+  const user = await getCurrentUser();
+  if (!user) {
+    throw new Error("User not found");
+  }
+  const profile = await getProfile(user.id);
+  return sendMail({
+    to: profile?.email || "",
+    subject: "Just one more step to unlock your account ✅",
+    templateName: "incomplete-kyc",
+    context: {
+      ...context,
+      userName: profile?.full_name || "User",
+      currentYear: new Date().getFullYear().toString(),
+    },
   });
 }
