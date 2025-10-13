@@ -307,3 +307,25 @@ export const sendTestEmail = async (email: string) => {
     },
   });
 };
+
+// Send incomplete cause setup reminder email
+export async function sendIncompleteCauseSetupEmail(context: {
+  continueUrl: string;
+}) {
+  const user = await getCurrentUser();
+  if (!user) {
+    throw new Error("User not found");
+  }
+  const profile = await getProfile(user.id);
+  return sendMail({
+    to: profile?.email || "",
+    subject: "Don't let your cause stop halfway 🌱",
+    templateName: "incomplete-cause-setup",
+    context: {
+      ...context,
+      userName: profile?.full_name || "User",
+      currentYear: new Date().getFullYear().toString(),
+    },
+    from: "support@refreeg.com",
+  });
+}
