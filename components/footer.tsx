@@ -26,7 +26,39 @@ export function Footer() {
   });
 
   const pathname = usePathname();
-  const isNonProfitsPage = pathname === "/non-profits";
+
+  // Dynamically assign background and button colors based on current route
+  const getPageTheme = () => {
+    switch (pathname) {
+      case "/non-profits":
+        return {
+          bg: "bg-purple-600",
+          button: "bg-white text-purple-600 hover:bg-purple-700 hover:text-white",
+        };
+      case "/businesses":
+        return {
+          bg: "bg-[#004D40]",
+          button: "bg-white text-green-700 hover:bg-green-800 hover:text-white",
+        };
+      case "/healthcare":
+        return {
+          bg: "bg-[#8C1823]",
+          button: "bg-white text-[#8C1823] hover:bg-[#8C1823] hover:text-white",
+        };
+      case "/disaster-relief":
+        return {
+          bg: "bg-[#0A0A0B]",
+        button: "bg-white text-[#0A0A0B] hover:bg-[#0A0A0B] hover:text-white",
+        };
+      default:
+        return {
+          bg: "bg-secondary",
+          button: "bg-white text-blue-900 hover:bg-gray-300",
+        };
+    }
+  };
+
+  const { bg, button } = getPageTheme();
 
   return (
     <div className="pt-8 bg-muted">
@@ -36,14 +68,12 @@ export function Footer() {
         initial={{ opacity: 0, y: 30 }}
         animate={isInView ? { opacity: 1, y: 0 } : {}}
         transition={{ ease: [0.6, -0.05, 0.01, 0.99], duration: 0.8 }}
-        className={`flex flex-col items-center w-10/12 lg:w-8/12 mx-auto rounded-3xl text-secondary-foreground px-10 py-10 mb-16 ${
-          isNonProfitsPage ? "bg-purple-600" : "bg-secondary"
-        }`}
+        className={`flex flex-col items-center w-10/12 lg:w-8/12 mx-auto rounded-3xl text-secondary-foreground px-10 py-10 mb-16 ${bg}`}
       >
-        <div className="text-lg lg:text-3xl font-semibold mb-6">
+        <div className="text-lg lg:text-3xl font-semibold mb-6 text-white">
           Ready to be part of the solution?
         </div>
-        <div className="w-11/12 text-center text-base lg:text-lg mb-6">
+        <div className="w-11/12 text-center text-base lg:text-lg mb-6 text-white">
           Join the RefreeG community and become a RefreeGerian today! By joining
           us, you contribute to empowering less privileged individuals in
           African communities, supporting causes that foster socio-economic
@@ -57,11 +87,7 @@ export function Footer() {
         >
           <motion.button
             whileHover={{ scale: 1.05 }}
-            className={`flex border rounded-md px-3 py-3 font-semibold hover:bg-gray-300 transition delay-150 ${
-              isNonProfitsPage
-                ? "bg-white text-purple-600 hover:bg-purple-700 hover:text-white"
-                : "bg-white text-blue-900"
-            }`}
+            className={`flex border rounded-md px-3 py-3 font-semibold transition delay-150 ${button}`}
           >
             Join our community
           </motion.button>
@@ -85,7 +111,7 @@ export function Footer() {
               and releases
             </p>
             <div className="w-full">
-              <GetMail isNonProfitsPage={isNonProfitsPage}/>
+              <GetMail />
             </div>
             <p className="text-[10px] mt-3">
               By Subscribing you agree with our{" "}
