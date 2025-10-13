@@ -370,3 +370,25 @@ export async function sendIncompletePetitionDraftEmail(context: {
     },
   });
 }
+
+// Send unfinished donation attempt reminder email
+export async function sendUnfinishedDonationEmail(context: {
+  causeName: string;
+  continueUrl: string;
+}) {
+  const user = await getCurrentUser();
+  if (!user) {
+    throw new Error("User not found");
+  }
+  const profile = await getProfile(user.id);
+  return sendMail({
+    to: profile?.email || "",
+    subject: `You were almost done supporting ${context.causeName} ❤️`,
+    templateName: "unfinished-donation",
+    context: {
+      ...context,
+      userName: profile?.full_name || "there",
+      currentYear: new Date().getFullYear().toString(),
+    },
+  });
+}
