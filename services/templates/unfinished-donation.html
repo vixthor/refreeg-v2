@@ -1,10 +1,9 @@
 <!DOCTYPE html>
 <html>
-
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bank Account Added to RefreeG</title>
+    <title>Complete Your Donation - Refreeg</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -55,41 +54,56 @@
             color: #003366;
         }
         
-        .bank-info {
-            background-color: #f0f0f0;
+        .cta-button {
+            display: inline-block;
+            background-color: #003366;
+            color: white;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+        
+        .cause-section {
+            background-color: #fff0f0;
             padding: 15px;
             border-radius: 5px;
             margin: 15px 0;
+            border-left: 4px solid #ff6b6b;
+        }
+        
+        .impact-text {
+            color: #d63384;
+            font-weight: bold;
         }
     </style>
 </head>
 
 <body>
-    <div class="container">
-        <!-- <div class="header">
-            <h1>Did You Just Add a Bank Account to RefreeG? 🏦</h1>
+    <!-- <div class="container">
+        <div class="header">
+            <h1>You were almost done supporting {{causeName}} ❤️</h1>
         </div> -->
         <div class="content">
             <p>Hi {{userName}},</p>
 
-            <p>We noticed that a new bank account was just added to your RefreeG profile.</p>
+            <p>We noticed you tried to donate to <span class="highlight">{{causeName}}</span> but didn't complete your payment.</p>
 
-            <div class="bank-info">
-                <p><strong>Bank:</strong> {{bankName}}</p>
-                <p><strong>Account Number:</strong> {{accountNumber}}</p>
-                <p><strong>Account Name:</strong> {{accountName}}</p>
+            <div class="cause-section">
+                <p><span class="impact-text">Your support matters!</span> Every donation, no matter the size, helps create real change and makes a difference in someone's life.</p>
             </div>
 
-            <p>If you made this update — awesome! 🎉 No further action is needed. You're all set to receive donations directly to your account once your cause goes live.</p>
+            <p>It happens, maybe the network was slow or you got distracted. You can still complete it and make a real difference today.</p>
 
-            <p>But if this wasn't you, please log in to your account and change your password immediately. If you need any help, email us at <a href="mailto:Support@refreeg.com">Support@refreeg.com</a>. Your security is incredibly important to us, and we'll act fast to investigate and secure your account.</p>
+            <div style="text-align: center;">
+                <a href="{{continueUrl}}" class="cta-button">👉 Finish Donation</a>
+            </div>
 
-            <p>We built RefreeG to be a safe, empowering space for changemakers like you — and we take that responsibility seriously. If you ever have questions or concerns, we're always just an email away.</p>
-
-            <p>With care,<br>
-                Chukwunomso Amadike-Unaogu<br>
-                Chief Product Officer<br>
-                RefreeG</p>
+            <p>Thank you for supporting good causes.<br>
+                Salim Ibrahim<br>
+                Co-founder & CCO<br>
+                Refreeg</p>
         </div>
         <div class="footer">
             <p>This is an automated email. Please do not reply directly to this message.</p>
@@ -97,5 +111,4 @@
         </div>
     </div>
 </body>
-
 </html>
