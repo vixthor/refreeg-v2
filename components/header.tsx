@@ -112,7 +112,7 @@ export function Header() {
           title: "🌪️ RefreeG for Disaster Relief",
           description:
             "Rally urgent support for communities hit by disasters and get aid to those who need it; quickly and securely.",
-          href: "/coming-soon/disaster-relief",
+          href: "/disaster-relief",
           icon: FileText,
         },
         {
@@ -126,7 +126,7 @@ export function Header() {
           title: "🏥 RefreeG for Healthcare",
           description:
             "Give hope a platform. Raise funds for medical bills, healthcare projects, or critical treatments — with transparency and community support.",
-          href: "/coming-soon/healthcare",
+          href: "/healthcare",
           icon: FileText,
         },
       ],
