@@ -33,7 +33,7 @@ import { useCause } from "@/hooks/use-cause";
 import { Progress } from "@/components/ui/progress";
 import { ImageUpload } from "@/components/ui/image-upload";
 import { categories } from "@/lib/categories";
-import { sendCauseUnderReviewEmail } from "@/services/mail";
+import { sendCauseUnderReviewEmail, sendIncompleteCauseSetupEmail } from "@/services/mail";
 import {
   format,
   addDays,
@@ -207,6 +207,59 @@ export default function CreateCauseForm() {
     };
     localStorage.setItem("causeDraft", JSON.stringify(serializedData));
   }, [formData]);
+
+  // Track inactivity and send reminder email after 24 hours
+  useEffect(() => {
+    let inactivityTimer: NodeJS.Timeout;
+
+    const setupInactivityTracking = () => {
+      const hasDraft = localStorage.getItem("causeDraft");
+      const hasStartedFilling = formData.title || formData.category || formData.goal;
+      
+      if (hasDraft || hasStartedFilling) {
+        // Reset timer on any form interaction
+        const resetTimer = () => {
+          clearTimeout(inactivityTimer);
+          inactivityTimer = setTimeout(sendReminder, 24 * 60 * 60 * 1000); // 24 hours
+        };
+
+        // Set up event listeners for form interactions
+        const events = ['input', 'change', 'click', 'keydown'];
+        events.forEach(event => {
+          document.addEventListener(event, resetTimer, { passive: true });
+        });
+
+        // Start the initial timer
+        resetTimer();
+
+        // Cleanup function
+        return () => {
+          clearTimeout(inactivityTimer);
+          events.forEach(event => {
+            document.removeEventListener(event, resetTimer);
+          });
+        };
+      }
+    };
+
+    const sendReminder = async () => {
+      // Check if cause still isn't submitted
+      const currentDraft = localStorage.getItem("causeDraft");
+      if (currentDraft && user) {
+        try {
+          await sendIncompleteCauseSetupEmail({
+            continueUrl: `${window.location.origin}/dashboard/causes/create`
+          });
+          console.log("Incomplete cause reminder sent");
+        } catch (error) {
+          console.error("Failed to send incomplete cause email:", error);
+        }
+      }
+    };
+
+    const cleanup = setupInactivityTracking();
+    return cleanup;
+  }, [formData.title, formData.category, formData.goal, user]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -945,26 +998,46 @@ export default function CreateCauseForm() {
           >
             Back
           </Button>
-          {currentStep < 5 ? (
-            <Button type="button" onClick={nextStep}>
-              Next
-            </Button>
-          ) : (
-            <Button
-              type="button"
-              disabled={isLoading || submitting}
-              onClick={handleSubmit}
+          <div className="flex gap-2">
+            {/* REMOVE THIS TEST BUTTON IN PRODUCTION */}
+            {/* <Button 
+              type="button" 
+              variant="outline" 
+              onClick={async () => {
+                try {
+                  await sendIncompleteCauseSetupEmail({
+                    continueUrl: `${window.location.origin}/create-cause`
+                  });
+                  alert("Test email sent successfully!");
+                } catch (error) {
+                  alert("Failed to send test email");
+                }
+              }}
             >
-              {isLoading || submitting ? (
-                <>
-                  <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
-                  Submitting...
-                </>
-              ) : (
-                "Submit Cause"
-              )}
-            </Button>
-          )}
+              Test Incomplete Cause Email
+            </Button> */}
+            
+            {currentStep < 5 ? (
+              <Button type="button" onClick={nextStep}>
+                Next
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                disabled={isLoading || submitting}
+                onClick={handleSubmit}
+              >
+                {isLoading || submitting ? (
+                  <>
+                    <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+                    Submitting...
+                  </>
+                ) : (
+                  "Submit Cause"
+                )}
+              </Button>
+            )}
+          </div>
         </CardFooter>
       </form>
     </Card>
