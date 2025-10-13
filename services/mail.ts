@@ -349,3 +349,24 @@ export async function sendIncompleteKycVerificationEmail(context: {
     },
   });
 }
+
+// Send incomplete petition draft reminder email
+export async function sendIncompletePetitionDraftEmail(context: {
+  continueUrl: string;
+}) {
+  const user = await getCurrentUser();
+  if (!user) {
+    throw new Error("User not found");
+  }
+  const profile = await getProfile(user.id);
+  return sendMail({
+    to: profile?.email || "",
+    subject: "Your petition is waiting for you to finish it ✍️",
+    templateName: "incomplete-petition",
+    context: {
+      ...context,
+      userName: profile?.full_name || "User",
+      currentYear: new Date().getFullYear().toString(),
+    },
+  });
+}
