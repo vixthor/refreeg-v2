@@ -410,3 +410,50 @@ export async function sendWelcomeEmailToUser(
     },
   });
 }
+
+// Send petition signed email to specific user
+export async function sendPetitionSignedEmailToUser(
+  userEmail: string,
+  userName: string,
+  petitionName: string,
+  petitionUrl: string,
+  isAnonymous: boolean = false
+) {
+  return sendMail({
+    to: userEmail,
+    subject: "Thank you for signing! ✍️",
+    templateName: "petition-signed",
+    context: {
+      userName,
+      petitionName,
+      petitionUrl,
+      isAnonymous,
+      currentYear: new Date().getFullYear().toString(),
+    },
+  });
+}
+
+// Send notification to petition creator when someone signs
+export async function sendNewSignatureNotificationEmail(
+  creatorEmail: string,
+  creatorName: string,
+  petitionName: string,
+  petitionUrl: string,
+  signerName: string,
+  message?: string
+) {
+  return sendMail({
+    to: creatorEmail,
+    subject: `New signature for "${petitionName}"! 🎉`,
+    templateName: "new-signature",
+    context: {
+      creatorName,
+      petitionName,
+      petitionUrl,
+      signerName,
+      message: message || "No message provided",
+      hasMessage: !!message,
+      currentYear: new Date().getFullYear().toString(),
+    },
+  });
+}
