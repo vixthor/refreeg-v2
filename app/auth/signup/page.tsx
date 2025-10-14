@@ -1,47 +1,77 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { useState } from "react"
-import Link from "next/link"
-import { useAuth } from "@/hooks/use-auth"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Icons } from "@/components/icons"
+import type React from "react";
+import { useState } from "react";
+import Link from "next/link";
+import { useAuth } from "@/hooks/use-auth";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Icons } from "@/components/icons";
+import { sendWelcomeEmailToUser } from "@/services/mail";
 
 export default function SignUpPage() {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [confirmPassword, setConfirmPassword] = useState("")
-  const [firstName, setFirstName] = useState("")
-  const [lastName, setLastName] = useState("")
-  const [accountType, setAccountType] = useState<"individual" | "organization">()
-  const [isLoading, setIsLoading] = useState(false)
-  const { signUp } = useAuth()
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [accountType, setAccountType] = useState<
+    "individual" | "organization"
+  >();
+  const [isLoading, setIsLoading] = useState(false);
+  const { signUp } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
+    e.preventDefault();
+
     if (!accountType) {
-      alert("Please select an account type")
-      return
+      alert("Please select an account type");
+      return;
     }
-    
+
     if (!firstName.trim() || !lastName.trim()) {
-      alert("Please enter both first name and last name")
-      return
+      alert("Please enter both first name and last name");
+      return;
     }
-    
+
     if (password !== confirmPassword) {
-      alert("Passwords do not match")
-      return
+      alert("Passwords do not match");
+      return;
     }
-    
-    setIsLoading(true)
-    await signUp(email, password, `${firstName} ${lastName}`, accountType)
-    setIsLoading(false)
-  }
+
+    setIsLoading(true);
+
+    try {
+      // Sign up the user
+      await signUp(email, password, `${firstName} ${lastName}`, accountType);
+
+      // Send welcome email after successful signup
+      try {
+        await sendWelcomeEmailToUser(
+          email,
+          `${firstName} ${lastName}`,
+          `${window.location.origin}/dashboard/settings`
+        );
+        console.log("Welcome email sent successfully");
+      } catch (emailError) {
+        console.error("Failed to send welcome email:", emailError);
+        // Don't block the signup process if email fails
+      }
+    } catch (error) {
+      console.error("Signup failed:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="container flex h-screen w-screen flex-col items-center justify-center">
@@ -78,7 +108,8 @@ export default function SignUpPage() {
                     required
                   />
                   <p className="text-xs text-muted-foreground mt-1">
-                    Please use your real name. Accounts with fake or suspicious names will be flagged for review.
+                    Please use your real name. Accounts with fake or suspicious
+                    names will be flagged for review.
                   </p>
                 </div>
                 <div className="grid gap-1">
@@ -154,11 +185,37 @@ export default function SignUpPage() {
                 </Button>
               </div>
             </form>
+
+            {/* REMOVE THIS TEST BUTTON IN PRODUCTION */}
+            {/* <div className="mt-4 pt-4 border-t">
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={async () => {
+                  try {
+                    await sendWelcomeEmailToUser(
+                      email || "test@example.com",
+                      `${firstName || "Test"} ${lastName || "User"}`,
+                      `${window.location.origin}/profile`
+                    );
+                    alert("Test welcome email sent successfully!");
+                  } catch (error) {
+                    alert("Failed to send test welcome email");
+                  }
+                }}
+              >
+                Test Welcome Email
+              </Button>
+            </div> */}
           </CardContent>
           <CardFooter>
             <div className="text-sm text-center text-muted-foreground w-full">
               Already have an account?{" "}
-              <Link href="/auth/signin" className="underline underline-offset-4 hover:text-primary">
+              <Link
+                href="/auth/signin"
+                className="underline underline-offset-4 hover:text-primary"
+              >
                 Sign in
               </Link>
             </div>
@@ -166,5 +223,5 @@ export default function SignUpPage() {
         </Card>
       </div>
     </div>
-  )
+  );
 }
