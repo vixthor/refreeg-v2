@@ -392,3 +392,21 @@ export async function sendUnfinishedDonationEmail(context: {
     },
   });
 }
+
+// Send welcome email to specific user (for use in signup flow)
+export async function sendWelcomeEmailToUser(
+  userEmail: string,
+  userName: string,
+  profileSetupUrl: string
+) {
+  return sendMail({
+    to: userEmail,
+    subject: "Welcome to Refreeg 🌍 Let's get you started",
+    templateName: "welcome-email",
+    context: {
+      userName,
+      profileSetupUrl,
+      currentYear: new Date().getFullYear().toString(),
+    },
+  });
+}
