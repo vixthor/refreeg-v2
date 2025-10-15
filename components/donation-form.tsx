@@ -23,6 +23,7 @@ import { useProfile } from "@/hooks/use-profile";
 import { calculateServiceFee } from "@/lib/utils";
 import paystack from "@/services/paystack";
 import { usePayment } from "@/hooks/use-payment";
+import { sendUnfinishedDonationEmail } from "@/services/mail";
 
 interface DonationFormProps {
   causeId: string;
@@ -33,6 +34,8 @@ interface DonationFormProps {
   };
   subaccount?: string;
   status: "pending" | "rejected" | "approved";
+  causeName?: string; // Add causeName prop
+  causeUrl?: string; // Add causeUrl prop for the continue link
 }
 
 export function DonationForm({
@@ -40,6 +43,8 @@ export function DonationForm({
   profile,
   status,
   subaccount,
+  causeName = "this cause", // Default value
+  causeUrl = "/causes", // Default value
 }: DonationFormProps) {
   const { initializePayment, isLoading } = usePayment();
   const [formData, setFormData] = useState({
@@ -50,21 +55,113 @@ export function DonationForm({
     isAnonymous: false,
   });
 
+  // Track donation attempt progress
+  const [donationAttempt, setDonationAttempt] = useState({
+    hasStarted: false,
+    startTime: null as number | null,
+  });
+
   const isDisabled =
     status === "pending" || status === "rejected" ? true : false;
+
+  // Track when user starts filling donation form
+  useEffect(() => {
+    const hasStartedFilling = formData.amount || formData.name || formData.email;
+    
+    if (hasStartedFilling && !donationAttempt.hasStarted) {
+      setDonationAttempt({
+        hasStarted: true,
+        startTime: Date.now(),
+      });
+      
+      // Save donation attempt to localStorage
+      localStorage.setItem("donationAttempt", JSON.stringify({
+        causeId,
+        causeName,
+        causeUrl,
+        formData: {
+          amount: formData.amount,
+          // Don't save sensitive info like name/email for privacy
+        },
+        timestamp: Date.now(),
+      }));
+    }
+  }, [formData.amount, formData.name, formData.email, causeId, causeName, causeUrl]);
+
+  // Track inactivity and send reminder
+  useEffect(() => {
+    let inactivityTimer: NodeJS.Timeout;
+
+    const setupInactivityTracking = () => {
+      const savedAttempt = localStorage.getItem("donationAttempt");
+      const hasStartedFilling = formData.amount || formData.name || formData.email;
+      
+      if ((savedAttempt || hasStartedFilling) && !isLoading) {
+        // Reset timer on any form interaction
+        const resetTimer = () => {
+          clearTimeout(inactivityTimer);
+          inactivityTimer = setTimeout(sendReminder, 1 * 60 * 60 * 1000); // 1 hour for donations
+        };
+
+        // Set up event listeners for form interactions
+        const events = ['input', 'change', 'click', 'keydown'];
+        events.forEach(event => {
+          document.addEventListener(event, resetTimer, { passive: true });
+        });
+
+        // Start the initial timer
+        resetTimer();
+
+        // Cleanup function
+        return () => {
+          clearTimeout(inactivityTimer);
+          events.forEach(event => {
+            document.removeEventListener(event, resetTimer);
+          });
+        };
+      }
+    };
+
+    const sendReminder = async () => {
+      // Check if donation still isn't completed
+      const currentAttempt = localStorage.getItem("donationAttempt");
+      if (currentAttempt && profile?.email) {
+        try {
+          const attemptData = JSON.parse(currentAttempt);
+          await sendUnfinishedDonationEmail({
+            causeName: attemptData.causeName || causeName,
+            continueUrl: `${window.location.origin}${attemptData.causeUrl || causeUrl}`
+          });
+          console.log("Unfinished donation reminder sent");
+          
+          // Clear the attempt after sending reminder
+          localStorage.removeItem("donationAttempt");
+        } catch (error) {
+          console.error("Failed to send unfinished donation email:", error);
+        }
+      }
+    };
+
+    const cleanup = setupInactivityTracking();
+    return cleanup;
+  }, [formData.amount, formData.name, formData.email, isLoading, profile?.email, causeName, causeUrl]);
+
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
-  console.log(formData.isAnonymous);
+
   const handleSwitchChange = (checked: boolean) => {
     setFormData((prev) => ({ ...prev, isAnonymous: checked }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Clear donation attempt when user successfully submits
+    localStorage.removeItem("donationAttempt");
 
     await initializePayment({
       email: formData.email,
@@ -171,7 +268,26 @@ export function DonationForm({
             </div>
           )}
         </CardContent>
-        <CardFooter>
+        <CardFooter className="flex flex-col gap-4">
+          {/* REMOVE THIS TEST BUTTON IN PRODUCTION */}
+          {/* <Button 
+            type="button" 
+            variant="outline"
+            onClick={async () => {
+              try {
+                await sendUnfinishedDonationEmail({
+                  causeName: causeName,
+                  continueUrl: `${window.location.origin}${causeUrl}`
+                });
+                alert("Test donation email sent successfully!");
+              } catch (error) {
+                alert("Failed to send test donation email");
+              }
+            }}
+          >
+            Test Donation Email
+          </Button> */}
+          
           <Button
             type="submit"
             disabled={isLoading || isDisabled}
