@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -23,6 +23,7 @@ import { useAuth } from "@/hooks/use-auth";
 import ProgressNav from "./components/ProgressNav";
 import StepAddressDetails from "./StepAddressDetails";
 import Image from "next/image";
+import { sendIncompleteKycVerificationEmail } from "@/services/mail";
 
 const documentTypes = [
   "NIN",
@@ -53,6 +54,87 @@ export default function KycSetupPage() {
   });
   const { user } = useAuth();
   const [uploadError, setUploadError] = useState<string | null>(null);
+
+  // Auto-save KYC progress to localStorage
+  useEffect(() => {
+    const savedKycDraft = localStorage.getItem("kycDraft");
+    if (savedKycDraft) {
+      const parsedDraft = JSON.parse(savedKycDraft);
+      setFormData(parsedDraft.formData || formData);
+      setSelectedDoc(parsedDraft.selectedDoc || "");
+      setStep(parsedDraft.step || 0);
+    }
+  }, []);
+
+  useEffect(() => {
+    // Save KYC progress to localStorage
+    const kycDraft = {
+      formData,
+      selectedDoc,
+      step,
+      timestamp: new Date().toISOString(),
+    };
+    localStorage.setItem("kycDraft", JSON.stringify(kycDraft));
+  }, [formData, selectedDoc, step]);
+
+  // Track inactivity and send reminder email after 24 hours
+  useEffect(() => {
+    let inactivityTimer: NodeJS.Timeout;
+
+    const setupInactivityTracking = () => {
+      const hasKycDraft = localStorage.getItem("kycDraft");
+      const hasStartedFilling =
+        formData.firstName || formData.lastName || selectedDoc;
+
+      if (hasKycDraft || hasStartedFilling) {
+        // Reset timer on any form interaction
+        const resetTimer = () => {
+          clearTimeout(inactivityTimer);
+          inactivityTimer = setTimeout(sendReminder, 24 * 60 * 60 * 1000); // 24 hours
+        };
+
+        // Set up event listeners for form interactions
+        const events = ["input", "change", "click", "keydown"];
+        events.forEach((event) => {
+          document.addEventListener(event, resetTimer, { passive: true });
+        });
+
+        // Start the initial timer
+        resetTimer();
+
+        // Cleanup function
+        return () => {
+          clearTimeout(inactivityTimer);
+          events.forEach((event) => {
+            document.removeEventListener(event, resetTimer);
+          });
+        };
+      }
+    };
+
+    const sendReminder = async () => {
+      // Check if KYC still isn't submitted
+      const currentKycDraft = localStorage.getItem("kycDraft");
+      if (currentKycDraft && user) {
+        try {
+          await sendIncompleteKycVerificationEmail({
+            continueUrl: `${window.location.origin}/dashboard/settings?tab=kyc`,
+          });
+          console.log("Incomplete KYC reminder sent");
+        } catch (error) {
+          console.error("Failed to send incomplete KYC email:", error);
+        }
+      }
+    };
+
+    const cleanup = setupInactivityTracking();
+    return cleanup;
+  }, [formData.firstName, formData.lastName, selectedDoc, user]);
+
+  // Clear KYC draft on successful completion
+  const handleSuccessfulCompletion = () => {
+    localStorage.removeItem("kycDraft");
+  };
 
   // Validation for identity details
   const validateIdentityDetails = () => {
@@ -138,6 +220,7 @@ export default function KycSetupPage() {
         setStep(4);
         return;
       }
+      handleSuccessfulCompletion();
       setStep(4);
     } catch (err: any) {
       setUploadError(err.message || "Failed to submit KYC");
@@ -218,6 +301,24 @@ export default function KycSetupPage() {
 
           {/* BOTTOM RIGHT BUTTONS - sticky to bottom of card */}
           <div className="mt-auto flex justify-end px-6 pb-8 gap-4 bg-white z-10 border-t border-neutral-100">
+            {/* REMOVE THIS TEST BUTTON IN PRODUCTION */}
+            {/* <Button 
+              type="button" 
+              variant="outline"
+              onClick={async () => {
+                try {
+                  await sendIncompleteKycVerificationEmail({
+                    continueUrl: `${window.location.origin}/kyc`
+                  });
+                  alert("Test KYC email sent successfully!");
+                } catch (error) {
+                  alert("Failed to send test KYC email");
+                }
+              }}
+            >
+              Test KYC Email
+            </Button> */}
+
             {step > 0 && step < 3 && (
               <Button
                 variant="outline"

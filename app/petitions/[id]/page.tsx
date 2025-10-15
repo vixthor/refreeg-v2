@@ -418,6 +418,12 @@ export default async function PetitionDetailPage({
                   profile={profile}
                   status={petition.status}
                   subaccount={petition?.user?.sub_account_code}
+                  petitionData={{
+                    title: petition.title,
+                    creatorId: petition.user_id,
+                    creatorEmail: creatorProfile?.email || undefined, // Convert null to undefined
+                    creatorName: petition.user?.name,
+                  }}
                 />
               </div>
             </CardContent>

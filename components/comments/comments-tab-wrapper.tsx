@@ -3,7 +3,7 @@
 import { CommentsSection } from "./comment-section";
 import { TabsContent } from "@/components/ui/tabs";
 import { Comment } from "@/types/common-types";
-import { useState, useEffect } from "react";
+import { useState } from "react"; // Remove useEffect import
 
 export function CommentsTabWrapper({
   initialComments,
@@ -29,10 +29,7 @@ export function CommentsTabWrapper({
     setCommentCount(prev => prev - 1);
   };
 
-  // Update browser tab title with comment count
-  useEffect(() => {
-    document.title = `Comments (${commentCount}) | ${document.title.split('|')[0]}`;
-  }, [commentCount]);
+  // REMOVED the useEffect that was changing document.title
 
   return (
     <TabsContent value="comments" forceMount className="space-y-6">
