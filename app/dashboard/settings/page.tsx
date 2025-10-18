@@ -171,7 +171,7 @@ export default function SettingsPage() {
       </div>
     );
   }
-
+console.log("solana_wallet settings page");
   return (
     <div className="space-y-6">
       <div>
