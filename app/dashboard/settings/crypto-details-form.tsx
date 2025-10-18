@@ -13,6 +13,7 @@ export default function SolanaWalletForm() {
   const supabase = createClient();
 
   const { toast } = useToast();
+  console.log("walletAddress", walletAddress,"solana_wallet active");
 
   useEffect(() => {
     const fetchWallet = async () => {
