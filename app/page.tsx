@@ -9,6 +9,7 @@ import HowitWorksYT from "@/components/home/howitWorksYT";
 import { FeaturedPetitions } from "@/components/home/featured-petitions";
 import { UrgentCauses } from "@/components/home/urgentCauses";
 import Statistics from "@/components/home/statistics";
+import Numbers from "@/components/numbers";
 
 export default function Home() {
   return (
@@ -16,7 +17,7 @@ export default function Home() {
       <Hero />
       {/* Statistics Section */}
       <div className="mx-8">
-        <Statistics />
+        <Numbers />
       </div>
 
       <div className="mx-8">

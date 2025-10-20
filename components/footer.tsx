@@ -81,7 +81,7 @@ export function Footer() {
           significant impact and create a brighter future for all.
         </div>
         <Link
-          href="https://t.me/+d67UCIer8c01ODhk"
+          href="https://t.me/Refreeg"
           target="_blank"
           rel="noopener noreferrer"
         >
