@@ -119,7 +119,7 @@ export function Header() {
           title: "🎨 RefreeG for Creators",
           description:
             "Turn your influence into impact. Get your unique tag, share your story, and receive donations directly from your fans in fiat or crypto.",
-          href: "/coming-soon/creators",
+          href: "/creators",
           icon: FileText,
         },
         {
