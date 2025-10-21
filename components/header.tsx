@@ -102,11 +102,12 @@ export function Header() {
           href: "/businesses",
           icon: CircleDollarSign,
         },
-        { 
-          title: "🤝 RefreeG for Nonprofits", 
-          description: "Raise more, reach more. Build trust with transparent fundraising tools designed to help nonprofits thrive and grow their donor communities.", 
-          href: "/non-profits", 
-          icon: Target 
+        {
+          title: "🤝 RefreeG for Nonprofits",
+          description:
+            "Raise more, reach more. Build trust with transparent fundraising tools designed to help nonprofits thrive and grow their donor communities.",
+          href: "/non-profits",
+          icon: Target,
         },
         {
           title: "🌪️ RefreeG for Disaster Relief",
@@ -141,42 +142,42 @@ export function Header() {
           title: "⭐ How to start a cause",
           description:
             "Starting causes is easy, and fast because of the intuitive user experience Refreeg is built on. Set up causes in less than 3 minutes!",
-          href: "/crowdfund/medical",
+          href: "/dashboard/causes/create",
           icon: Star,
         },
-        {
-          title: "🚀 Crowdfunding tips",
-          description:
-            "Raise more, reach more. Build trust with transparent fundraising tools.",
-          href: "/crowdfund/education",
-          icon: Rocket,
-        },
-        {
-          title: "📢 For Supporters",
-          description:
-            "See how to discover causes, donate securely in fiat or crypto, and follow progress transparently.",
-          href: "/crowdfund/community",
-          icon: Users,
-        },
-        {
-          title: "💸 Fees & Payouts",
-          description:
-            "Clear explanation of transaction fees, payout timelines, and how creators/nonprofits access their funds.",
-          href: "/crowdfund/fees",
-          icon: CircleDollarSign,
-        },
-        {
-          title: "🛡️ Trust & Safety",
-          description:
-            "Read about our fraud checks, KYC verification, and commitment to protecting both donors and cause.",
-          href: "/crowdfund/trust",
-          icon: Shield,
-        },
+        // {
+        //   title: "🚀 Crowdfunding tips",
+        //   description:
+        //     "Raise more, reach more. Build trust with transparent fundraising tools.",
+        //   href: "/crowdfund/education",
+        //   icon: Rocket,
+        // },
+        // {
+        //   title: "📢 For Supporters",
+        //   description:
+        //     "See how to discover causes, donate securely in fiat or crypto, and follow progress transparently.",
+        //   href: "/crowdfund/community",
+        //   icon: Users,
+        // },
+        // {
+        //   title: "💸 Fees & Payouts",
+        //   description:
+        //     "Clear explanation of transaction fees, payout timelines, and how creators/nonprofits access their funds.",
+        //   href: "/crowdfund/fees",
+        //   icon: CircleDollarSign,
+        // },
+        // {
+        //   title: "🛡️ Trust & Safety",
+        //   description:
+        //     "Read about our fraud checks, KYC verification, and commitment to protecting both donors and cause.",
+        //   href: "/crowdfund/trust",
+        //   icon: Shield,
+        // },
         {
           title: "📣 FAQ",
           description:
             "Get answers to the most common questions about crowdfunding on RefreeG.",
-          href: "/crowdfund/faq",
+          href: "/#faq",
           icon: HelpCircle,
         },
       ],
@@ -347,13 +348,16 @@ export function Header() {
                 // Define color themes per page
                 const pathname = usePathname();
 
-                const themeMap: Record<string, { 
-                  border: string; 
-                  text: string; 
-                  hoverBg: string; 
-                  bg: string; 
-                  hoverText: string; 
-                }> = {
+                const themeMap: Record<
+                  string,
+                  {
+                    border: string;
+                    text: string;
+                    hoverBg: string;
+                    bg: string;
+                    hoverText: string;
+                  }
+                > = {
                   "/non-profits": {
                     border: "border-[#7D568A]",
                     text: "text-[#7D568A]",
@@ -392,14 +396,13 @@ export function Header() {
                 };
 
                 // Pick active theme or fallback to neutral
-                const theme =
-                  themeMap[pathname] || {
-                    border: "border-secondary",
-                    text: "text-secondary",
-                    hoverBg: "hover:bg-secondary",
-                    hoverText: "hover:text-white",
-                    bg: "bg-primary",
-                  };
+                const theme = themeMap[pathname] || {
+                  border: "border-secondary",
+                  text: "text-secondary",
+                  hoverBg: "hover:bg-secondary",
+                  hoverText: "hover:text-white",
+                  bg: "bg-primary",
+                };
 
                 return (
                   <>

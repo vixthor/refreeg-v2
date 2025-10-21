@@ -50,7 +50,7 @@ export default function Home() {
         <HowitWorksYT />
       </div>
 
-      <div className="md:mx-8">
+      <div id="faq" className="md:mx-8">
         <FAQ />
       </div>
     </div>
