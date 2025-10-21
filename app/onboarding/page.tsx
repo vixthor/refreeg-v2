@@ -11,7 +11,10 @@ import Step4 from "./step4";
 import Step5 from "./step5";
 import NavigationLoader from "@/components/NavigationLoader";
 import OnboardingNav from "./onboardingNav";
-import { hasCompletedOnboarding } from "@/actions/profile-actions";
+import {
+  hasCompletedOnboarding,
+  createOnboardingProfile,
+} from "@/actions/profile-actions";
 import { toast } from "@/components/ui/use-toast";
 
 export default function OnboardingPage() {
@@ -24,7 +27,9 @@ export default function OnboardingPage() {
     accountType: "",
     gender: "",
     profile: {
-      fullName: "",
+      firstName: "",
+      lastName: "",
+      username: "",
       bio: "",
       location: "",
       website: "",
@@ -70,7 +75,9 @@ export default function OnboardingPage() {
       // This is a fallback check - the main protection is in middleware
       const profileData = onboardingData.profile;
       const isStep3Complete = !!(
-        profileData?.fullName &&
+        profileData?.firstName &&
+        profileData?.lastName &&
+        profileData?.username &&
         profileData?.location &&
         profileData?.phone
       );
@@ -94,7 +101,7 @@ export default function OnboardingPage() {
         gender: localStorage.getItem("onboarding_gender") || "",
         profile: JSON.parse(
           localStorage.getItem("onboarding_profile") ||
-            '{"fullName":"","bio":"","location":"","website":"","phone":""}'
+            '{"firstName":"","lastName":"","username":"","bio":"","location":"","website":"","phone":""}'
         ),
         interests: JSON.parse(
           localStorage.getItem("onboarding_interests") || "[]"
@@ -124,11 +131,6 @@ export default function OnboardingPage() {
   const handleStep3Submit = async (profileData: any) => {
     setIsSubmitting(true);
     try {
-      // Import the createOnboardingProfile function
-      const { createOnboardingProfile } = await import(
-        "@/actions/profile-actions"
-      );
-
       // Create user profile with all collected data
       await createOnboardingProfile(
         user.id,
@@ -151,11 +153,11 @@ export default function OnboardingPage() {
     } catch (error) {
       console.error("Error completing onboarding:", error);
       // Show error to user
-      alert(
-        `Error creating profile: ${
-          error instanceof Error ? error.message : "Unknown error"
-        }`
-      );
+      toast({
+        title: "Error creating profile",
+        description: error instanceof Error ? error.message : "Unknown error",
+        variant: "destructive",
+      });
     } finally {
       setIsSubmitting(false);
     }
