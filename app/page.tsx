@@ -9,11 +9,17 @@ import HowitWorksYT from "@/components/home/howitWorksYT";
 import { FeaturedPetitions } from "@/components/home/featured-petitions";
 import { UrgentCauses } from "@/components/home/urgentCauses";
 import CTASection from "@/components/home/cta-section";
+import Statistics from "@/components/home/statistics";
+import Numbers from "@/components/numbers";
 
 export default function Home() {
   return (
     <div className="flex flex-col min-h-screen mt-16 ">
       <Hero />
+      {/* Statistics Section */}
+      <div className="mx-8">
+        <Numbers />
+      </div>
 
       <div className="mx-8">
         <LaunchYourCauseInSeconds />
@@ -47,7 +53,7 @@ export default function Home() {
 
       <CTASection />
 
-      <div className="md:mx-8">
+      <div id="faq" className="md:mx-8">
         <FAQ />
       </div>
     </div>

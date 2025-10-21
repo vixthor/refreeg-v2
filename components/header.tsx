@@ -113,14 +113,14 @@ export function Header() {
         {
           title: "🌪️ RefreeG for Disaster Relief",
           description:
-            "Respond faster when it matters most. Rally urgent support for communities hit by disasters and get aid to those who need it — quickly and securely.",
+            "Rally urgent support for communities hit by disasters and get aid to those who need it; quickly and securely.",
           href: "/disaster-relief",
           icon: FileText,
         },
         {
           title: "🎨 RefreeG for Creators",
           description:
-            "Turn your influence into impact. Get your unique tag, share your story, and receive donations directly from your fans — in fiat or crypto.",
+            "Turn your influence into impact. Get your unique tag, share your story, and receive donations directly from your fans in fiat or crypto.",
           href: "/creators",
           icon: FileText,
         },
@@ -143,42 +143,42 @@ export function Header() {
           title: "⭐ How to start a cause",
           description:
             "Starting causes is easy, and fast because of the intuitive user experience Refreeg is built on. Set up causes in less than 3 minutes!",
-          href: "/crowdfund/medical",
+          href: "/dashboard/causes/create",
           icon: Star,
         },
-        {
-          title: "🚀 Crowdfunding tips",
-          description:
-            "Raise more, reach more. Build trust with transparent fundraising tools.",
-          href: "/crowdfund/education",
-          icon: Rocket,
-        },
-        {
-          title: "📢 For Supporters",
-          description:
-            "See how to discover causes, donate securely in fiat or crypto, and follow progress transparently.",
-          href: "/crowdfund/community",
-          icon: Users,
-        },
-        {
-          title: "💸 Fees & Payouts",
-          description:
-            "Clear explanation of transaction fees, payout timelines, and how creators/nonprofits access their funds.",
-          href: "/crowdfund/fees",
-          icon: CircleDollarSign,
-        },
-        {
-          title: "🛡️ Trust & Safety",
-          description:
-            "Read about our fraud checks, KYC verification, and commitment to protecting both donors and cause.",
-          href: "/crowdfund/trust",
-          icon: Shield,
-        },
+        // {
+        //   title: "🚀 Crowdfunding tips",
+        //   description:
+        //     "Raise more, reach more. Build trust with transparent fundraising tools.",
+        //   href: "/crowdfund/education",
+        //   icon: Rocket,
+        // },
+        // {
+        //   title: "📢 For Supporters",
+        //   description:
+        //     "See how to discover causes, donate securely in fiat or crypto, and follow progress transparently.",
+        //   href: "/crowdfund/community",
+        //   icon: Users,
+        // },
+        // {
+        //   title: "💸 Fees & Payouts",
+        //   description:
+        //     "Clear explanation of transaction fees, payout timelines, and how creators/nonprofits access their funds.",
+        //   href: "/crowdfund/fees",
+        //   icon: CircleDollarSign,
+        // },
+        // {
+        //   title: "🛡️ Trust & Safety",
+        //   description:
+        //     "Read about our fraud checks, KYC verification, and commitment to protecting both donors and cause.",
+        //   href: "/crowdfund/trust",
+        //   icon: Shield,
+        // },
         {
           title: "📣 FAQ",
           description:
             "Get answers to the most common questions about crowdfunding on RefreeG.",
-          href: "/crowdfund/faq",
+          href: "/#faq",
           icon: HelpCircle,
         },
       ],
@@ -338,28 +338,94 @@ export function Header() {
 
             {/* Right Side Actions */}
             <div className="flex items-center gap-2">
-              <div className="hidden md:flex items-center gap-2">
-                <Link href="/dashboard/causes/create">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex items-center gap-2"
-                  >
-                    List a Cause
-                  </Button>
-                </Link>
-              </div>
+              {(() => {
+                // Define color themes per page
+                const pathname = usePathname();
 
-              {/* Auth */}
-              {!isLoading && !user ? (
-                <Link href="/auth/signin">
-                  <Button size="sm" variant="default">
-                    Sign In
-                  </Button>
-                </Link>
-              ) : (
-                <UserNav />
-              )}
+                const themeMap: Record<
+                  string,
+                  {
+                    border: string;
+                    text: string;
+                    hoverBg: string;
+                    bg: string;
+                    hoverText: string;
+                  }
+                > = {
+                  "/non-profits": {
+                    border: "border-[#7D568A]",
+                    text: "text-[#7D568A]",
+                    hoverBg: "hover:bg-[#7D568A]",
+                    hoverText: "hover:text-white",
+                    bg: "bg-[#7D568A]",
+                  },
+                  "/businesses": {
+                    border: "border-[#008B73]",
+                    text: "text-[#008B73]",
+                    hoverBg: "hover:bg-[#008B73]",
+                    hoverText: "hover:text-white",
+                    bg: "bg-[#008B73]",
+                  },
+                  "/healthcare": {
+                    border: "border-[#C03744]",
+                    text: "text-[#C03744]",
+                    hoverBg: "hover:bg-[#C03744]",
+                    hoverText: "hover:text-white",
+                    bg: "bg-[#C03744]",
+                  },
+                  "/disaster-relief": {
+                    border: "border-[#151314]",
+                    text: "text-[#151314]",
+                    hoverBg: "hover:bg-[#151314]",
+                    hoverText: "hover:text-white",
+                    bg: "bg-[#151314]",
+                  },
+                  "/creators": {
+                    border: "border-[#0070E0]",
+                    text: "text-[#0070E0]",
+                    hoverBg: "hover:bg-[#0070E0]",
+                    hoverText: "hover:text-white",
+                    bg: "bg-[#0070E0]",
+                  },
+                };
+
+                // Pick active theme or fallback to neutral
+                const theme = themeMap[pathname] || {
+                  border: "border-secondary",
+                  text: "text-secondary",
+                  hoverBg: "hover:bg-secondary",
+                  hoverText: "hover:text-white",
+                  bg: "bg-primary",
+                };
+
+                return (
+                  <>
+                    <Link href="/dashboard/causes/create">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className={`flex items-center gap-2 border-2 ${theme.border} ${theme.text} ${theme.hoverBg} ${theme.hoverText} transition-colors`}
+                      >
+                        List a Cause
+                      </Button>
+                    </Link>
+
+                    {/* Auth */}
+                    {!isLoading && !user ? (
+                      <Link href="/auth/signin">
+                        <Button
+                          size="sm"
+                          className={`text-white ${theme.bg} ${theme.hoverBg}`}
+                        >
+                          Sign In
+                        </Button>
+                      </Link>
+                    ) : (
+                      <UserNav />
+                    )}
+                  </>
+                );
+              })()}
 
               {/* Mobile Toggle */}
               <button

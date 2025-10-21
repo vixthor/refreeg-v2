@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Complete Your Donation - Refreeg</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        line-height: 1.6;
+        color: #333;
+        margin: 0;
+        padding: 0;
+      }
+
+      .container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+
+      .header {
+        background-color: #003366;
+        color: white;
+        padding: 20px;
+        text-align: center;
+      }
+
+      .logo {
+        max-width: 150px;
+        margin-bottom: 10px;
+      }
+
+      .content {
+        padding: 20px;
+        background-color: #f9f9f9;
+      }
+
+      .footer {
+        text-align: center;
+        padding: 20px;
+        font-size: 12px;
+        color: #777;
+        border-top: 3px solid #003366;
+      }
+
+      h1 {
+        color: #ffffff;
+        margin-top: 0;
+      }
+
+      .highlight {
+        font-weight: bold;
+        color: #003366;
+      }
+
+      .cta-button {
+        display: inline-block;
+        background-color: #0066cc;
+        color: white !important; /* Force white text color */
+        padding: 12px 24px;
+        text-decoration: none;
+        border-radius: 8px;
+        margin: 20px 0;
+        font-weight: bold;
+        font-size: 16px;
+        transition: background-color 0.3s ease;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .cta-button:hover {
+        background-color: #0052a3;
+        color: white !important; /* Ensure text stays white on hover */
+      }
+
+      .cause-section {
+        background-color: #e8f4fd;
+        padding: 15px;
+        border-radius: 5px;
+        margin: 15px 0;
+        border-left: 4px solid #0066cc;
+      }
+
+      .impact-text {
+        color: #0066cc;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>You were almost done supporting {{causeName}} ❤️</h1>
+      </div>
+      <div class="content">
+        <p>Hi {{userName}},</p>
+
+        <p>
+          We noticed you tried to donate to
+          <span class="highlight">{{causeName}}</span> but didn't complete your
+          payment.
+        </p>
+
+        <div class="cause-section">
+          <p>
+            <span class="impact-text">Your support matters!</span> Every
+            donation, no matter the size, helps create real change and makes a
+            difference in someone's life.
+          </p>
+        </div>
+
+        <p>
+          It happens, maybe the network was slow or you got distracted. You can
+          still complete it and make a real difference today.
+        </p>
+
+        <div style="text-align: center">
+          <a
+            href="{{continueUrl}}"
+            class="cta-button"
+            style="color: white; text-decoration: none"
+            >👉 Finish Donation</a
+          >
+        </div>
+
+        <p>
+          Thank you for supporting good causes.<br />
+          The Refreeg Team
+        </p>
+      </div>
+      <div class="footer">
+        <p>
+          This is an automated email. Please do not reply directly to this
+          message.
+        </p>
+        <p>© {{currentYear}} RefreeG. All rights reserved.</p>
+      </div>
+    </div>
+  </body>
+</html>

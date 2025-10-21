@@ -159,7 +159,7 @@ export async function UrgentCauses() {
         </CarouselContent>
       </Carousel>
       {/* View All Causes Button */}
-      <div className="flex justify-center mt-6">
+      {/* <div className="flex justify-center mt-6">
         <Link href="/causes">
           <Button
             variant="outline"
@@ -169,7 +169,7 @@ export async function UrgentCauses() {
             View More <ArrowRight />
           </Button>
         </Link>
-      </div>
+      </div> */}
     </div>
   );
 }

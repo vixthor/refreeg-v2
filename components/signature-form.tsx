@@ -20,6 +20,7 @@ import { Icons } from "@/components/icons";
 import { useAuth } from "@/hooks/use-auth";
 import { useSignature } from "@/hooks/use-signature";
 import { useProfile } from "@/hooks/use-profile";
+import { sendPetitionSignedEmailToUser, sendNewSignatureNotificationEmail } from "@/services/mail";
 
 interface SignatureFormProps {
   petitionId: string;
@@ -30,6 +31,12 @@ interface SignatureFormProps {
   };
   subaccount?: string;
   status: "pending" | "rejected" | "approved";
+  petitionData?: { // Add petition data for email context
+    title?: string;
+    creatorId?: string;
+    creatorEmail?: string | null; // Change to accept null
+    creatorName?: string;
+  };
 }
 
 export function SignatureForm({
@@ -37,6 +44,7 @@ export function SignatureForm({
   profile,
   status,
   subaccount,
+  petitionData = {},
 }: SignatureFormProps) {
   const { createUserSignature, isLoading } = useSignature();
   const [friendlyError, setFriendlyError] = useState<string | null>(null);
@@ -55,7 +63,9 @@ export function SignatureForm({
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
+  
   console.log(formData.isAnonymous);
+  
   const handleSwitchChange = (checked: boolean) => {
     setFormData((prev) => ({ ...prev, isAnonymous: checked }));
   };
@@ -63,20 +73,56 @@ export function SignatureForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Removed sign-in requirement. Anyone can sign now.
+    try {
+      const ok = await createUserSignature(petitionId, profile.id, {
+        amount: 1,
+        email: formData.email,
+        name: formData.name,
+        message: formData.message,
+        isAnonymous: formData.isAnonymous,
+      });
 
-    const ok = await createUserSignature(petitionId, profile.id, {
-      amount: 1,
-      email: formData.email,
-      name: formData.name,
-      message: formData.message,
-      isAnonymous: formData.isAnonymous,
-    });
+      if (!ok) {
+        setFriendlyError("We couldn't process your signature. Please try again.");
+        return;
+      }
 
-    if (!ok) {
-      setFriendlyError("We couldn't process your signature. Please try again.");
-    } else {
       setFriendlyError(null);
+
+      // Send confirmation email to the signer
+      try {
+        await sendPetitionSignedEmailToUser(
+          formData.email,
+          formData.isAnonymous ? "Supporter" : formData.name,
+          petitionData.title || "the petition",
+          `${window.location.origin}/petitions/${petitionId}`,
+          formData.isAnonymous
+        );
+        console.log("Petition signed confirmation email sent");
+      } catch (emailError) {
+        console.error("Failed to send confirmation email:", emailError);
+      }
+
+      // Send notification to petition creator (if we have creator info)
+      if (petitionData.creatorEmail && petitionData.creatorName && petitionData.title) {
+        try {
+          await sendNewSignatureNotificationEmail(
+            petitionData.creatorEmail, // This is now string | null, but we checked it exists
+            petitionData.creatorName,
+            petitionData.title,
+            `${window.location.origin}/petitions/${petitionId}`,
+            formData.isAnonymous ? "Anonymous Supporter" : formData.name,
+            formData.message
+          );
+          console.log("New signature notification sent to creator");
+        } catch (notificationError) {
+          console.error("Failed to send creator notification:", notificationError);
+        }
+      }
+
+    } catch (error) {
+      console.error("Error submitting signature:", error);
+      setFriendlyError("We couldn't process your signature. Please try again.");
     }
   };
 
@@ -92,6 +138,12 @@ export function SignatureForm({
       </CardHeader>
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">
+          {friendlyError && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+              <p className="text-sm text-red-600">{friendlyError}</p>
+            </div>
+          )}
+
           <div className="space-y-2">
             <Label htmlFor="name">Your Name</Label>
             <Input
@@ -147,7 +199,29 @@ export function SignatureForm({
             </div>
           )}
         </CardContent>
-        <CardFooter>
+        <CardFooter className="flex flex-col gap-4">
+          {/* REMOVE THIS TEST BUTTON IN PRODUCTION */}
+          {/* <Button 
+            type="button" 
+            variant="outline"
+            onClick={async () => {
+              try {
+                await sendPetitionSignedEmailToUser(
+                  formData.email || "test@example.com",
+                  formData.name || "Test User",
+                  petitionData.title || "Test Petition",
+                  `${window.location.origin}/petitions/${petitionId}`,
+                  formData.isAnonymous
+                );
+                alert("Test petition signed email sent successfully!");
+              } catch (error) {
+                alert("Failed to send test petition signed email");
+              }
+            }}
+          >
+            Test Signed Email
+          </Button> */}
+          
           <Button
             type="submit"
             disabled={isLoading || isDisabled}

@@ -11,7 +11,9 @@ export default function SolanaWalletForm() {
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const supabase = createClient();
+
   const { toast } = useToast();
+  console.log("walletAddress", walletAddress,"solana_wallet active");
 
   useEffect(() => {
     const fetchWallet = async () => {
@@ -21,6 +23,7 @@ export default function SolanaWalletForm() {
           data: { user },
         } = await supabase.auth.getUser();
         if (!user) return;
+        
 
         const { data: profile } = await supabase
           .from("profiles")

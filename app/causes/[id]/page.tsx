@@ -341,6 +341,8 @@ export default async function CauseDetailPage({
                       profile={profile}
                       status={cause.status}
                       subaccount={cause?.user.sub_account_code}
+                      causeName={cause.title} // Pass the cause name
+                      causeUrl={`/causes/${cause.id}`} // Pass the cause URL
                     />
                   </div>
                 </div>
@@ -358,6 +360,8 @@ export default async function CauseDetailPage({
                     profile={profile}
                     status={cause.status}
                     subaccount={cause?.user.sub_account_code}
+                    causeName={cause.title} // Pass the cause name
+                    causeUrl={`/causes/${cause.id}`} // Pass the cause URL
                   />
                 </div>
               )}
