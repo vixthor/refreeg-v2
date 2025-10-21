@@ -56,21 +56,29 @@
 
       .cta-button {
         display: inline-block;
-        background-color: #003366;
-        color: white;
+        background-color: #0066CC;
+        color: white !important;
         padding: 12px 24px;
         text-decoration: none;
-        border-radius: 5px;
+        border-radius: 8px;
         margin: 20px 0;
         font-weight: bold;
+        font-size: 16px;
+        transition: background-color 0.3s ease;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .cta-button:hover {
+        background-color: #0052A3;
+        color: white !important;
       }
 
       .welcome-section {
-        background-color: #e8f5e8;
+        background-color: #e8f4fd;
         padding: 15px;
         border-radius: 5px;
         margin: 15px 0;
-        border-left: 4px solid #4caf50;
+        border-left: 4px solid #0066CC;
       }
 
       .features {
@@ -85,7 +93,7 @@
 
       .feature-item:before {
         content: "✓";
-        color: #4caf50;
+        color: #0066CC;
         font-weight: bold;
         position: absolute;
         left: 0;
@@ -95,9 +103,9 @@
 
   <body>
     <div class="container">
-      <!-- <div class="header">
-            <h1>Welcome to Refreeg 🌍 Let's get you started</h1>
-        </div> -->
+      <div class="header">
+        <h1>Welcome to Refreeg 🌍 Let's get you started</h1>
+      </div>
       <div class="content">
         <p>Hey {{userName}},</p>
 
@@ -132,9 +140,7 @@
         </p>
 
         <div style="text-align: center">
-          <a href="{{profileSetupUrl}}" class="cta-button"
-            >👉 Set up your profile</a
-          >
+          <a href="{{profileSetupUrl}}" class="cta-button" style="color: white; text-decoration: none;">👉 Set up your profile</a>
         </div>
 
         <p>I can't wait to see what you'll create here.</p>
