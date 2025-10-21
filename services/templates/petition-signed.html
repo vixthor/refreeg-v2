@@ -56,21 +56,29 @@
 
       .cta-button {
         display: inline-block;
-        background-color: #003366;
-        color: white;
+        background-color: #0066cc;
+        color: white !important;
         padding: 12px 24px;
         text-decoration: none;
-        border-radius: 5px;
+        border-radius: 8px;
         margin: 20px 0;
         font-weight: bold;
+        font-size: 16px;
+        transition: background-color 0.3s ease;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .cta-button:hover {
+        background-color: #0052a3;
+        color: white !important;
       }
 
       .thank-you-section {
-        background-color: #e8f5e8;
+        background-color: #e8f4fd;
         padding: 15px;
         border-radius: 5px;
         margin: 15px 0;
-        border-left: 4px solid #4caf50;
+        border-left: 4px solid #0066cc;
       }
 
       .impact-section {
@@ -85,7 +93,7 @@
 
       .impact-item:before {
         content: "✓";
-        color: #4caf50;
+        color: #0066cc;
         font-weight: bold;
         position: absolute;
         left: 0;
@@ -94,7 +102,7 @@
       .petition-name {
         font-size: 1.2em;
         font-weight: bold;
-        color: #003366;
+        color: #0066cc;
         margin: 10px 0;
       }
 
@@ -111,9 +119,9 @@
 
   <body>
     <div class="container">
-      <!-- <div class="header">
-            <h1>Thank you for signing! ✍️</h1>
-        </div> -->
+      <div class="header">
+        <h1>Thank you for signing! ✍️</h1>
+      </div>
       <div class="content">
         <p>Hi {{userName}},</p>
 
@@ -153,7 +161,10 @@
         </p>
 
         <div style="text-align: center">
-          <a href="{{petitionUrl}}" class="cta-button"
+          <a
+            href="{{petitionUrl}}"
+            class="cta-button"
+            style="color: white; text-decoration: none"
             >👉 Share This Petition</a
           >
         </div>
