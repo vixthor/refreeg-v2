@@ -11,18 +11,35 @@ import { Icons } from "@/components/icons";
 import { AuthTestimonials } from "@/components/ui/auth-testimonials";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
+import { Eye, EyeOff } from "lucide-react";
+import { toast } from "@/components/ui/use-toast";
 
 export default function SignInPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { signIn, signInWithGoogle } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    await signIn(email, password);
-    setIsLoading(false);
+
+    // Show loading toast
+    toast({
+      title: "Signing you in...",
+      description: "Please wait while we authenticate your account.",
+    });
+
+    try {
+      await signIn(email, password);
+
+      // Success toast will be shown by the signIn function
+    } catch (error) {
+      // Error toast will be shown by the signIn function
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -56,14 +73,28 @@ export default function SignInPage() {
             <div className="mb-6">
               <LabelInputContainer>
                 <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+                    )}
+                  </button>
+                </div>
               </LabelInputContainer>
               <div className="mt-2 text-right">
                 <Link
@@ -81,14 +112,7 @@ export default function SignInPage() {
               disabled={isLoading}
               variant="default"
             >
-              {isLoading ? (
-                <>
-                  <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
-                  Signing in...
-                </>
-              ) : (
-                "Sign In"
-              )}
+              Sign In
               <BottomGradient />
             </Button>
 
@@ -119,6 +143,22 @@ export default function SignInPage() {
                 className="font-medium text-black hover:underline"
               >
                 Sign Up Now
+              </Link>
+            </div>
+            <div className="mt-2 text-sm text-center text-neutral-600">
+              By signing in, you agree to our{" "}
+              <Link
+                href="/terms"
+                className="font-medium text-black hover:underline"
+              >
+                Terms of Service
+              </Link>{" "}
+              and{" "}
+              <Link
+                href="/privacy"
+                className="font-medium text-black hover:underline"
+              >
+                Privacy Policy
               </Link>
             </div>
           </form>

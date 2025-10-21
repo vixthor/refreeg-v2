@@ -24,6 +24,7 @@ export function UserNav() {
   // Add the useAdmin hook to check for admin/manager access
   const { isAdminOrManager, isLoading: adminLoading } = useAdmin(user?.id);
   const [open, setOpen] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -95,10 +96,15 @@ export function UserNav() {
           </div>
 
           <DropdownMenuItem
-            onClick={async () => await signOut()}
-            className="hover:bg-[#0070E0] focus:bg-[#0070E0] transition-colors"
+            onClick={async () => {
+              setIsSigningOut(true);
+              await signOut();
+              setIsSigningOut(false);
+            }}
+            disabled={isSigningOut}
+            className="hover:bg-[#0070E0] focus:bg-[#0070E0] transition-colors disabled:opacity-50"
           >
-            Log out
+            {isSigningOut ? "Signing out..." : "Log out"}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
