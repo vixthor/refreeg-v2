@@ -12,6 +12,7 @@ import Step5 from "./step5";
 import NavigationLoader from "@/components/NavigationLoader";
 import OnboardingNav from "./onboardingNav";
 import { hasCompletedOnboarding } from "@/actions/profile-actions";
+import { toast } from "@/components/ui/use-toast";
 
 export default function OnboardingPage() {
   const [currentStep, setCurrentStep] = useState(1);
@@ -60,6 +61,30 @@ export default function OnboardingPage() {
 
     checkUser();
   }, [router, supabase.auth]);
+
+  // Additional protection: Reset to step 1 if user tries to access steps 4-5 without completing step 3
+  useEffect(() => {
+    if (user && currentStep > 3) {
+      // Check if profile data is complete (step 3 completion)
+      // We need to check if the profile was actually created in the database
+      // This is a fallback check - the main protection is in middleware
+      const profileData = onboardingData.profile;
+      const isStep3Complete = !!(
+        profileData?.fullName &&
+        profileData?.location &&
+        profileData?.phone
+      );
+
+      if (!isStep3Complete) {
+        setCurrentStep(1);
+        toast({
+          title: "Complete your profile first",
+          description: "Please complete steps 1-3 before proceeding.",
+          variant: "destructive",
+        });
+      }
+    }
+  }, [user, currentStep, onboardingData.profile]);
 
   // Load saved data from localStorage on mount
   useEffect(() => {

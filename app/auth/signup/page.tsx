@@ -11,24 +11,46 @@ import { Icons } from "@/components/icons";
 import { AuthTestimonials } from "@/components/ui/auth-testimonials";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
+import { Eye, EyeOff } from "lucide-react";
+import { toast } from "@/components/ui/use-toast";
 export default function SignUpPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { signUp, signInWithGoogle } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (password !== confirmPassword) {
-      alert("Passwords do not match");
+      toast({
+        title: "Passwords do not match",
+        description: "Please make sure both passwords are the same.",
+        variant: "destructive",
+      });
       return;
     }
 
     setIsLoading(true);
-    await signUp(email, password, "User", "individual");
-    setIsLoading(false);
+
+    // Show loading toast
+    toast({
+      title: "Creating your account...",
+      description: "Please wait while we set up your RefreeG account.",
+    });
+
+    try {
+      await signUp(email, password, "User", "individual");
+
+      // Success toast will be shown by the signUp function
+    } catch (error) {
+      // Error toast will be shown by the signUp function
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -62,44 +84,65 @@ export default function SignUpPage() {
             <div className="mb-4">
               <LabelInputContainer>
                 <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+                    )}
+                  </button>
+                </div>
               </LabelInputContainer>
             </div>
             <div className="mb-8">
               <LabelInputContainer>
                 <Label htmlFor="confirmPassword">Confirm Password</Label>
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  placeholder="••••••••"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                />
+                <div className="relative">
+                  <Input
+                    id="confirmPassword"
+                    type={showConfirmPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+                    )}
+                  </button>
+                </div>
               </LabelInputContainer>
             </div>
 
             <Button
-              className="group/btn relative block h-10 w-full rounded-md font-medium text-white shadow-[0px_1px_0px_0px_#ffffff40_inset,0px_-1px_0px_0px_#ffffff40_inset]"
+              className="group/btn relative h-10 w-full rounded-md font-medium text-white shadow-[0px_1px_0px_0px_#ffffff40_inset,0px_-1px_0px_0px_#ffffff40_inset] flex items-center justify-center gap-2"
               type="submit"
               disabled={isLoading}
               variant="default"
             >
-              {isLoading ? (
-                <>
-                  <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
-                  Creating account...
-                </>
-              ) : (
-                "Sign up →"
-              )}
+              <span>Sign up</span>
               <BottomGradient />
             </Button>
 
@@ -130,6 +173,22 @@ export default function SignUpPage() {
                 className="font-medium text-black hover:underline"
               >
                 Sign In
+              </Link>
+            </div>
+            <div className="mt-2 text-sm text-center text-neutral-600">
+              By signing up, you agree to our{" "}
+              <Link
+                href="/terms"
+                className="font-medium text-black hover:underline"
+              >
+                Terms of Service
+              </Link>{" "}
+              and{" "}
+              <Link
+                href="/privacy"
+                className="font-medium text-black hover:underline"
+              >
+                Privacy Policy
               </Link>
             </div>
           </form>

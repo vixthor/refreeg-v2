@@ -10,27 +10,33 @@ import {
 export async function middleware(request: NextRequest) {
   const response = await updateSession(request);
 
-  // Skip onboarding check for auth pages and onboarding itself
+  // Skip onboarding check for auth pages, onboarding itself, and public pages
   if (
     request.nextUrl.pathname.startsWith("/auth") ||
     request.nextUrl.pathname.startsWith("/onboarding") ||
-    request.nextUrl.pathname === "/"
+    request.nextUrl.pathname === "/" ||
+    request.nextUrl.pathname.startsWith("/causes") ||
+    request.nextUrl.pathname.startsWith("/about-us") ||
+    request.nextUrl.pathname.startsWith("/how-it-works") ||
+    request.nextUrl.pathname.startsWith("/guide") ||
+    request.nextUrl.pathname.startsWith("/api") ||
+    request.nextUrl.pathname.startsWith("/_next") ||
+    request.nextUrl.pathname.startsWith("/favicon") ||
+    request.nextUrl.pathname.includes(".")
   ) {
     return response;
   }
 
-  // Check if user has completed onboarding for dashboard routes
-  if (request.nextUrl.pathname.startsWith("/dashboard")) {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+  // Check if user is authenticated and has completed onboarding for ALL protected routes
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-    if (user) {
-      const hasCompleted = await hasCompletedOnboarding(user.id);
-      if (!hasCompleted) {
-        return NextResponse.redirect(new URL("/onboarding", request.url));
-      }
+  if (user) {
+    const hasCompleted = await hasCompletedOnboarding(user.id);
+    if (!hasCompleted) {
+      return NextResponse.redirect(new URL("/onboarding", request.url));
     }
   }
 

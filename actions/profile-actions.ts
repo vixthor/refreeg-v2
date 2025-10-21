@@ -248,7 +248,9 @@ export async function hasCompletedOnboarding(userId: string): Promise<boolean> {
 
     const { data: profile, error } = await supabase
       .from("profiles")
-      .select("full_name, phone, email")
+      .select(
+        "full_name, phone, email, first_name, last_name, username, location"
+      )
       .eq("id", userId)
       .single();
 
@@ -256,8 +258,16 @@ export async function hasCompletedOnboarding(userId: string): Promise<boolean> {
       return false;
     }
 
-    // Check if basic required fields are present
-    return !!(profile?.full_name && profile?.phone && profile?.email);
+    // Check if all required fields from step 3 are present
+    return !!(
+      profile?.full_name &&
+      profile?.phone &&
+      profile?.email &&
+      profile?.first_name &&
+      profile?.last_name &&
+      profile?.username &&
+      profile?.location
+    );
   } catch (error) {
     console.error("Error checking onboarding completion:", error);
     return false;
