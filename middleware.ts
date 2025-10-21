@@ -2,10 +2,37 @@ import { type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
-import { isProfileComplete } from "@/actions/profile-actions";
+import {
+  isProfileComplete,
+  hasCompletedOnboarding,
+} from "@/actions/profile-actions";
 
 export async function middleware(request: NextRequest) {
   const response = await updateSession(request);
+
+  // Skip onboarding check for auth pages and onboarding itself
+  if (
+    request.nextUrl.pathname.startsWith("/auth") ||
+    request.nextUrl.pathname.startsWith("/onboarding") ||
+    request.nextUrl.pathname === "/"
+  ) {
+    return response;
+  }
+
+  // Check if user has completed onboarding for dashboard routes
+  if (request.nextUrl.pathname.startsWith("/dashboard")) {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (user) {
+      const hasCompleted = await hasCompletedOnboarding(user.id);
+      if (!hasCompleted) {
+        return NextResponse.redirect(new URL("/onboarding", request.url));
+      }
+    }
+  }
 
   // Check KYC verification and profile completion for cause creation
   if (request.nextUrl.pathname.startsWith("/dashboard/causes/create")) {

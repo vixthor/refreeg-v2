@@ -181,6 +181,32 @@ export function useAuth() {
     }
   };
 
+  const signInWithGoogle = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+
+      if (error) {
+        toast({
+          title: "Error signing in with Google",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error signing in with Google",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
   const signOut = async () => {
     await supabase.auth.signOut();
     router.push("/");
@@ -239,6 +265,7 @@ export function useAuth() {
     signIn,
     signUp,
     signOut,
+    signInWithGoogle,
     resetPassword,
     updatePassword,
   };
