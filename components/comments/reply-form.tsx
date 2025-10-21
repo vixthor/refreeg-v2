@@ -57,7 +57,7 @@ export function ReplyForm({
     return (
       <button
         onClick={() => setIsReplying(true)}
-        className="text-sm text-muted-foreground hover:text-primary"
+        className="text-sm text-muted-foreground hover:text-green-600 transition-colors duration-200"
       >
         Reply
       </button>

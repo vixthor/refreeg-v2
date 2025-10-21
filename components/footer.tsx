@@ -26,7 +26,40 @@ export function Footer() {
   });
 
   const pathname = usePathname();
-  const isNonProfitsPage = pathname === "/non-profits";
+
+  // Dynamically assign background and button colors based on current route
+  const getPageTheme = () => {
+    switch (pathname) {
+      case "/non-profits":
+        return {
+          bg: "bg-purple-600",
+          button:
+            "bg-white text-purple-600 hover:bg-purple-700 hover:text-white",
+        };
+      case "/businesses":
+        return {
+          bg: "bg-[#004D40]",
+          button: "bg-white text-green-700 hover:bg-green-800 hover:text-white",
+        };
+      case "/healthcare":
+        return {
+          bg: "bg-[#8C1823]",
+          button: "bg-white text-[#8C1823] hover:bg-[#8C1823] hover:text-white",
+        };
+      case "/disaster-relief":
+        return {
+          bg: "bg-[#0A0A0B]",
+          button: "bg-white text-[#0A0A0B] hover:bg-[#0A0A0B] hover:text-white",
+        };
+      default:
+        return {
+          bg: "bg-secondary",
+          button: "bg-white text-blue-900 hover:bg-gray-300",
+        };
+    }
+  };
+
+  const { bg, button } = getPageTheme();
 
   return (
     <div className="pt-8 bg-muted">
@@ -47,7 +80,7 @@ export function Footer() {
               and releases
             </p>
             <div className="w-full">
-              <GetMail isNonProfitsPage={isNonProfitsPage} />
+              <GetMail />
             </div>
             <p className="text-[10px] mt-3">
               By Subscribing you agree with our{" "}
