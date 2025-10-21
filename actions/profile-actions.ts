@@ -2,7 +2,12 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
-import type { Profile, ProfileFormData, BankDetailsFormData } from "@/types";
+import type {
+  Profile,
+  ProfileFormData,
+  BankDetailsFormData,
+  OnboardingProfileData,
+} from "@/types";
 
 /**
  * Get a user's profile
@@ -155,6 +160,108 @@ export async function updateBankDetails(
 
   revalidatePath("/dashboard/settings");
   return data as Profile;
+}
+
+/**
+ * Create a new profile during onboarding
+ */
+export async function createOnboardingProfile(
+  userId: string,
+  profileData: OnboardingProfileData,
+  oauthAvatarUrl?: string | null
+): Promise<Profile> {
+  const supabase = await createClient();
+
+  // Upload profile photo if provided, otherwise use OAuth avatar
+  let profilePhotoUrl: string | null = null;
+  if (profileData.profilePhoto) {
+    const fileName = `${userId}-${Date.now()}-${profileData.profilePhoto.name}`;
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from("profile-photos")
+      .upload(fileName, profileData.profilePhoto, {
+        cacheControl: "3600",
+        upsert: true,
+      });
+
+    if (uploadError) {
+      console.error("Error uploading profile photo:", uploadError);
+      throw new Error("Failed to upload profile photo");
+    }
+
+    const { data: urlData } = supabase.storage
+      .from("profile-photos")
+      .getPublicUrl(fileName);
+    profilePhotoUrl = urlData.publicUrl;
+  } else if (oauthAvatarUrl) {
+    // Use OAuth avatar URL if no custom photo uploaded
+    profilePhotoUrl = oauthAvatarUrl;
+  }
+
+  const fullName = `${profileData.firstName} ${profileData.lastName}`.trim();
+
+  // Start with basic required fields
+  const insertData: any = {
+    id: userId,
+    email: profileData.email,
+    full_name: fullName,
+    phone: profileData.phone,
+    profile_photo: profilePhotoUrl,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+
+  // Try to add new fields, but don't fail if they don't exist
+  try {
+    if (profileData.firstName) insertData.first_name = profileData.firstName;
+    if (profileData.lastName) insertData.last_name = profileData.lastName;
+    if (profileData.username) insertData.username = profileData.username;
+    if (profileData.location) insertData.location = profileData.location;
+    if (profileData.accountType)
+      insertData.account_type = profileData.accountType;
+    if (profileData.gender) insertData.gender = profileData.gender;
+  } catch (e) {
+    console.warn("Some fields may not exist in database schema:", e);
+  }
+
+  const { data, error } = await supabase
+    .from("profiles")
+    .upsert(insertData)
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error creating profile:", error);
+    throw new Error(`Failed to create profile: ${error.message}`);
+  }
+
+  revalidatePath("/dashboard");
+  revalidatePath("/");
+  return data as Profile;
+}
+
+/**
+ * Check if user has completed onboarding
+ */
+export async function hasCompletedOnboarding(userId: string): Promise<boolean> {
+  try {
+    const supabase = await createClient();
+
+    const { data: profile, error } = await supabase
+      .from("profiles")
+      .select("full_name, phone, email")
+      .eq("id", userId)
+      .single();
+
+    if (error) {
+      return false;
+    }
+
+    // Check if basic required fields are present
+    return !!(profile?.full_name && profile?.phone && profile?.email);
+  } catch (error) {
+    console.error("Error checking onboarding completion:", error);
+    return false;
+  }
 }
 
 /**

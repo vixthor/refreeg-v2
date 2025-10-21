@@ -30,44 +30,6 @@ export function Footer() {
 
   return (
     <div className="pt-8 bg-muted">
-      {/* Top CTA Section */}
-      <motion.div
-        ref={ref}
-        initial={{ opacity: 0, y: 30 }}
-        animate={isInView ? { opacity: 1, y: 0 } : {}}
-        transition={{ ease: [0.6, -0.05, 0.01, 0.99], duration: 0.8 }}
-        className={`flex flex-col items-center w-10/12 lg:w-8/12 mx-auto rounded-3xl text-secondary-foreground px-10 py-10 mb-16 ${
-          isNonProfitsPage ? "bg-purple-600" : "bg-secondary"
-        }`}
-      >
-        <div className="text-lg lg:text-3xl font-semibold mb-6">
-          Ready to be part of the solution?
-        </div>
-        <div className="w-11/12 text-center text-base lg:text-lg mb-6">
-          Join the RefreeG community and become a RefreeGerian today! By joining
-          us, you contribute to empowering less privileged individuals in
-          African communities, supporting causes that foster socio-economic
-          growth, and promoting sustainable development. Together, we can make a
-          significant impact and create a brighter future for all.
-        </div>
-        <Link
-          href="https://t.me/+d67UCIer8c01ODhk"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            className={`flex border rounded-md px-3 py-3 font-semibold hover:bg-gray-300 transition delay-150 ${
-              isNonProfitsPage
-                ? "bg-white text-purple-600 hover:bg-purple-700 hover:text-white"
-                : "bg-white text-blue-900"
-            }`}
-          >
-            Join our community
-          </motion.button>
-        </Link>
-      </motion.div>
-
       {/* Footer Links Section */}
       <section className="w-full h-full px-[10px] md:px-[50px] py-[25px] mt-[30px] bg-muted">
         <motion.div
@@ -85,7 +47,7 @@ export function Footer() {
               and releases
             </p>
             <div className="w-full">
-              <GetMail isNonProfitsPage={isNonProfitsPage}/>
+              <GetMail isNonProfitsPage={isNonProfitsPage} />
             </div>
             <p className="text-[10px] mt-3">
               By Subscribing you agree with our{" "}

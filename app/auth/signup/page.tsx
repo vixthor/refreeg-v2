@@ -1,170 +1,168 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { useState } from "react"
-import Link from "next/link"
-import { useAuth } from "@/hooks/use-auth"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Icons } from "@/components/icons"
-
+import type React from "react";
+import { useState } from "react";
+import Link from "next/link";
+import { useAuth } from "@/hooks/use-auth";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
+import { Icons } from "@/components/icons";
+import { AuthTestimonials } from "@/components/ui/auth-testimonials";
+import Image from "next/image";
+import { Button } from "@/components/ui/button";
 export default function SignUpPage() {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [confirmPassword, setConfirmPassword] = useState("")
-  const [firstName, setFirstName] = useState("")
-  const [lastName, setLastName] = useState("")
-  const [accountType, setAccountType] = useState<"individual" | "organization">()
-  const [isLoading, setIsLoading] = useState(false)
-  const { signUp } = useAuth()
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const { signUp, signInWithGoogle } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    if (!accountType) {
-      alert("Please select an account type")
-      return
-    }
-    
-    if (!firstName.trim() || !lastName.trim()) {
-      alert("Please enter both first name and last name")
-      return
-    }
-    
+    e.preventDefault();
+
     if (password !== confirmPassword) {
-      alert("Passwords do not match")
-      return
+      alert("Passwords do not match");
+      return;
     }
-    
-    setIsLoading(true)
-    await signUp(email, password, `${firstName} ${lastName}`, accountType)
-    setIsLoading(false)
-  }
+
+    setIsLoading(true);
+    await signUp(email, password, "User", "individual");
+    setIsLoading(false);
+  };
 
   return (
-    <div className="container flex h-screen w-screen flex-col items-center justify-center">
-      <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
-        <Card>
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl text-center">Sign up</CardTitle>
-            <CardDescription className="text-center">
+    <div className="flex h-screen w-screen">
+      {/* Left side - White background with form */}
+      <div className="flex md:w-2/5 w-full flex-col items-center justify-center bg-white px-8">
+        <div className="w-full max-w-md">
+          <div className="mb-8">
+            <h1 className="text-2xl font-bold text-neutral-800">
+              Welcome to RefreeG
+            </h1>
+            <p className="mt-2 text-sm text-neutral-600">
               Create an account to start fundraising or donating
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-4">
-            <form onSubmit={handleSubmit}>
-              <div className="grid gap-2">
-                <div className="grid gap-1">
-                  <Label htmlFor="firstName">First Name</Label>
-                  <Input
-                    id="firstName"
-                    type="text"
-                    placeholder="John"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="grid gap-1">
-                  <Label htmlFor="lastName">Last Name</Label>
-                  <Input
-                    id="lastName"
-                    type="text"
-                    placeholder="Doe"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    required
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Please use your real name. Accounts with fake or suspicious names will be flagged for review.
-                  </p>
-                </div>
-                <div className="grid gap-1">
-                  <Label>Account Type</Label>
-                  <div className="flex items-center space-x-4">
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="radio"
-                        id="individual"
-                        name="accountType"
-                        value="individual"
-                        checked={accountType === "individual"}
-                        onChange={() => setAccountType("individual")}
-                        required
-                      />
-                      <Label htmlFor="individual">Individual</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="radio"
-                        id="organization"
-                        name="accountType"
-                        value="organization"
-                        checked={accountType === "organization"}
-                        onChange={() => setAccountType("organization")}
-                      />
-                      <Label htmlFor="organization">Organization</Label>
-                    </div>
-                  </div>
-                </div>
-                <div className="grid gap-1">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="name@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="grid gap-1">
-                  <Label htmlFor="password">Password</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={password}
-                    placeholder="********"
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="grid gap-1">
-                  <Label htmlFor="confirmPassword">Confirm Password</Label>
-                  <Input
-                    id="confirmPassword"
-                    type="password"
-                    value={confirmPassword}
-                    placeholder="********"
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    required
-                  />
-                </div>
-                <Button type="submit" className="mt-2" disabled={isLoading}>
-                  {isLoading ? (
-                    <>
-                      <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
-                      Creating account...
-                    </>
-                  ) : (
-                    "Create Account"
-                  )}
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-          <CardFooter>
-            <div className="text-sm text-center text-muted-foreground w-full">
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmit}>
+            <div className="mb-4">
+              <LabelInputContainer>
+                <Label htmlFor="email">Email Address</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="name@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </LabelInputContainer>
+            </div>
+            <div className="mb-4">
+              <LabelInputContainer>
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </LabelInputContainer>
+            </div>
+            <div className="mb-8">
+              <LabelInputContainer>
+                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  placeholder="••••••••"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                />
+              </LabelInputContainer>
+            </div>
+
+            <Button
+              className="group/btn relative block h-10 w-full rounded-md font-medium text-white shadow-[0px_1px_0px_0px_#ffffff40_inset,0px_-1px_0px_0px_#ffffff40_inset]"
+              type="submit"
+              disabled={isLoading}
+              variant="default"
+            >
+              {isLoading ? (
+                <>
+                  <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+                  Creating account...
+                </>
+              ) : (
+                "Sign up →"
+              )}
+              <BottomGradient />
+            </Button>
+
+            <div className="my-2 h-[1px] w-full bg-gradient-to-r from-transparent via-neutral-300 to-transparent" />
+
+            <div className="flex flex-col space-y-4">
+              <button
+                className="group/btn shadow-input relative flex h-10 w-full items-center justify-center space-x-2 rounded-md bg-gray-50 px-4 font-medium text-black"
+                type="button"
+                onClick={signInWithGoogle}
+                disabled={isLoading}
+              >
+                <Image
+                  src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+                  alt="Google logo"
+                  width={18}
+                  height={18}
+                />
+                <span className="text-sm text-neutral-700">Google</span>
+                <BottomGradient />
+              </button>
+            </div>
+
+            <div className="mt-6 text-center text-sm text-neutral-600">
               Already have an account?{" "}
-              <Link href="/auth/signin" className="underline underline-offset-4 hover:text-primary">
-                Sign in
+              <Link
+                href="/auth/signin"
+                className="font-medium text-black hover:underline"
+              >
+                Sign In
               </Link>
             </div>
-          </CardFooter>
-        </Card>
+          </form>
+        </div>
+      </div>
+
+      {/* Right side - Blue background with testimonial */}
+      <div className="hidden md:flex md:w-3/5 items-center justify-center bg-[#003366] px-8">
+        <AuthTestimonials />
       </div>
     </div>
-  )
+  );
 }
+
+const BottomGradient = () => {
+  return (
+    <>
+      <span className="absolute inset-x-0 -bottom-px block h-px w-full bg-gradient-to-r from-transparent via-cyan-500 to-transparent opacity-0 transition duration-500 group-hover/btn:opacity-100" />
+      <span className="absolute inset-x-10 -bottom-px mx-auto block h-px w-1/2 bg-gradient-to-r from-transparent via-indigo-500 to-transparent opacity-0 blur-sm transition duration-500 group-hover/btn:opacity-100" />
+    </>
+  );
+};
+
+const LabelInputContainer = ({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) => {
+  return (
+    <div className={cn("flex w-full flex-col space-y-2", className)}>
+      {children}
+    </div>
+  );
+};

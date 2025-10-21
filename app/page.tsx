@@ -8,6 +8,7 @@ import WhyItStandsOut from "@/components/home/whyitStandsOut";
 import HowitWorksYT from "@/components/home/howitWorksYT";
 import { FeaturedPetitions } from "@/components/home/featured-petitions";
 import { UrgentCauses } from "@/components/home/urgentCauses";
+import CTASection from "@/components/home/cta-section";
 
 export default function Home() {
   return (
@@ -43,6 +44,8 @@ export default function Home() {
       <div className="">
         <HowitWorksYT />
       </div>
+
+      <CTASection />
 
       <div className="md:mx-8">
         <FAQ />
