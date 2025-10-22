@@ -82,6 +82,7 @@ export function Header() {
   const { isAdminOrManager } = useAdmin(user?.id);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [isSigningOut, setIsSigningOut] = useState(false);
 
   const navItems: NavItem[] = [
     {
@@ -292,14 +293,7 @@ export function Header() {
                             className="bg-white shadow-xl rounded-lg w-3/5 border border-gray-100"
                           >
                             <DropdownSection
-                              title={
-                                <div className="flex items-center gap-2">
-                                  <div className="p-3 border border-1 bg-[#E8E8E8] rounded-full">
-                                    <item.icon className="h-6 w-6" />
-                                  </div>
-                                  {item.header}
-                                </div>
-                              }
+                              title={item.header as string}
                               classNames={{
                                 heading:
                                   "font-semibold text-sm text-foreground px-4 py-3 flex items-center gap-2",
@@ -581,14 +575,17 @@ export function Header() {
 
               {!isLoading && user && (
                 <button
-                  onClick={() => {
-                    signOut?.();
+                  onClick={async () => {
+                    setIsSigningOut(true);
+                    await signOut?.();
+                    setIsSigningOut(false);
                     setIsMenuOpen(false);
                   }}
-                  className="flex items-center gap-3 w-full py-3 px-2 text-foreground hover:text-red-600 rounded-md transition-colors font-medium"
+                  disabled={isSigningOut}
+                  className="flex items-center gap-3 w-full py-3 px-2 text-foreground hover:text-red-600 rounded-md transition-colors font-medium disabled:opacity-50"
                 >
                   <LogOut className="h-4 w-4" />
-                  Sign Out
+                  {isSigningOut ? "Signing out..." : "Sign Out"}
                 </button>
               )}
             </div>

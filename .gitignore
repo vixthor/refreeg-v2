@@ -5,6 +5,7 @@
 
 # next.js
 /.next/
+/.qodo/
 /out/
 
 # production

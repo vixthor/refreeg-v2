@@ -23,6 +23,24 @@ export async function GET(request: NextRequest) {
         new URL("/auth/update-password", request.url)
       );
     }
+
+    // Check if user is new (OAuth sign-up) and redirect to onboarding
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (user) {
+      // Check if user has a profile
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .single();
+
+      // If no profile exists, this is a new OAuth user - redirect to onboarding
+      if (!profile) {
+        return NextResponse.redirect(new URL("/onboarding", request.url));
+      }
+    }
   }
 
   return NextResponse.redirect(new URL("/dashboard", request.url));

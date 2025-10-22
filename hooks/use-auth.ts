@@ -103,6 +103,49 @@ export function useAuth() {
         ipAddress,
       }).catch((e) => console.error("Login notification email error:", e));
 
+      // Get the current user after successful sign in
+      const {
+        data: { user: currentUser },
+      } = await supabase.auth.getUser();
+
+      if (!currentUser) {
+        toast({
+          title: "Error",
+          description: "Unable to get user information.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Check if user needs to complete onboarding
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select(
+          "full_name, phone, email, first_name, last_name, username, location"
+        )
+        .eq("id", currentUser.id)
+        .single();
+
+      // Check if all required fields from step 3 are present
+      const hasCompletedOnboarding = !!(
+        profile?.full_name &&
+        profile?.phone &&
+        profile?.email &&
+        profile?.first_name &&
+        profile?.last_name &&
+        profile?.username &&
+        profile?.location
+      );
+
+      if (!hasCompletedOnboarding) {
+        toast({
+          title: "Complete your profile",
+          description: "Please finish setting up your account.",
+        });
+        router.push("/onboarding");
+        return;
+      }
+
       toast({
         title: "Welcome back!",
         description: "You have successfully signed in.",
@@ -168,10 +211,11 @@ export function useAuth() {
 
       toast({
         title: "Account created successfully",
-        description: "You can now sign in with your credentials.",
+        description: "Welcome! Let's set up your profile.",
       });
 
-      router.push("/");
+      // Redirect to onboarding for new users
+      router.push("/onboarding");
     } catch (error: any) {
       toast({
         title: "Error signing up",
@@ -181,13 +225,56 @@ export function useAuth() {
     }
   };
 
+  const signInWithGoogle = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+
+      if (error) {
+        toast({
+          title: "Error signing in with Google",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error signing in with Google",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
   const signOut = async () => {
-    await supabase.auth.signOut();
-    router.push("/");
-    toast({
-      title: "Signed out",
-      description: "You have been signed out successfully.",
-    });
+    try {
+      // Immediately update UI state
+      setUser(null);
+
+      // Sign out from Supabase
+      await supabase.auth.signOut();
+
+      // Show success message
+      toast({
+        title: "Signed out",
+        description: "You have been signed out successfully.",
+      });
+
+      // Navigate to home page
+      router.push("/");
+    } catch (error) {
+      console.error("Error signing out:", error);
+      toast({
+        title: "Error signing out",
+        description: "There was an error signing out. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const resetPassword = async (email: string) => {
@@ -239,6 +326,7 @@ export function useAuth() {
     signIn,
     signUp,
     signOut,
+    signInWithGoogle,
     resetPassword,
     updatePassword,
   };
