@@ -39,9 +39,9 @@ export default function Home() {
       </div>
 
       {/* Featured Causes */}
-      <div className="mx-8">
+      {/* <div className="mx-8">
         <FeaturedCauses />
-      </div>
+      </div> */}
 
       <div className="mx-8">
         <FeaturedPetitions />
