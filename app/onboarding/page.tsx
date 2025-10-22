@@ -14,15 +14,22 @@ import OnboardingNav from "./onboardingNav";
 import {
   hasCompletedOnboarding,
   createOnboardingProfile,
+  getCurrentOnboardingStep,
+  getOnboardingData,
+  saveStep1Progress,
+  saveStep2Progress,
 } from "@/actions/profile-actions";
 import { toast } from "@/components/ui/use-toast";
 
 export default function OnboardingPage() {
+  // State management for dynamic onboarding flow
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [direction, setDirection] = useState(1);
+
+  // Onboarding data state - now prefilled from database
   const [onboardingData, setOnboardingData] = useState({
     accountType: "",
     gender: "",
@@ -39,6 +46,7 @@ export default function OnboardingPage() {
     kycCompleted: false,
     consent: false,
   });
+
   const router = useRouter();
   const supabase = createClient();
 
@@ -61,6 +69,43 @@ export default function OnboardingPage() {
       }
 
       setUser(user);
+
+      // DYNAMIC ONBOARDING LOGIC:
+      // 1. Determine which step to resume from based on existing database data
+      // 2. Fetch and prefill form data from database
+      // 3. Skip completed steps automatically
+      try {
+        const [currentStepFromDB, existingData] = await Promise.all([
+          getCurrentOnboardingStep(user.id),
+          getOnboardingData(user.id),
+        ]);
+
+        // Set the current step based on database state
+        // This automatically skips completed steps
+        setCurrentStep(currentStepFromDB);
+
+        // Prefill onboarding data with existing database data
+        // This ensures forms show previously entered data
+        setOnboardingData((prev) => ({
+          ...prev,
+          accountType: existingData.accountType,
+          gender: existingData.gender,
+          profile: {
+            ...prev.profile,
+            ...existingData.profile,
+          },
+        }));
+
+        console.log(
+          `Resuming onboarding from step ${currentStepFromDB}`,
+          existingData
+        );
+      } catch (error) {
+        console.error("Error loading onboarding progress:", error);
+        // If there's an error, start from step 1
+        setCurrentStep(1);
+      }
+
       setIsLoading(false);
     };
 
@@ -93,31 +138,48 @@ export default function OnboardingPage() {
     }
   }, [user, currentStep, onboardingData.profile]);
 
-  // Load saved data from localStorage on mount
-  useEffect(() => {
-    if (user) {
-      const savedData = {
-        accountType: localStorage.getItem("onboarding_account_type") || "",
-        gender: localStorage.getItem("onboarding_gender") || "",
-        profile: JSON.parse(
-          localStorage.getItem("onboarding_profile") ||
-            '{"firstName":"","lastName":"","username":"","bio":"","location":"","website":"","phone":""}'
-        ),
-        interests: JSON.parse(
-          localStorage.getItem("onboarding_interests") || "[]"
-        ),
-        kycCompleted:
-          localStorage.getItem("onboarding_kyc_completed") === "true",
-        consent: localStorage.getItem("onboarding_consent") === "true",
-      };
-      setOnboardingData(savedData);
-    }
-  }, [user]);
+  // Note: localStorage loading removed - now using database for persistence
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (currentStep < 5) {
       setDirection(1);
       setCurrentStep(currentStep + 1);
+    }
+  };
+
+  // PROGRESS SAVING HANDLERS:
+  // Each step now saves progress to database immediately upon completion
+  // This ensures users can resume from their last incomplete step
+
+  // Handle step 1 completion with database save
+  const handleStep1Next = async (accountType: string) => {
+    try {
+      await saveStep1Progress(user.id, accountType);
+      updateOnboardingData("accountType", accountType);
+      handleNext();
+    } catch (error) {
+      console.error("Error saving step 1 progress:", error);
+      toast({
+        title: "Error saving progress",
+        description: "Failed to save your account type. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Handle step 2 completion with database save
+  const handleStep2Next = async (gender: string) => {
+    try {
+      await saveStep2Progress(user.id, gender);
+      updateOnboardingData("gender", gender);
+      handleNext();
+    } catch (error) {
+      console.error("Error saving step 2 progress:", error);
+      toast({
+        title: "Error saving progress",
+        description: "Failed to save your gender. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -128,10 +190,12 @@ export default function OnboardingPage() {
     }
   };
 
+  // Handle step 3 completion - saves complete profile to database
   const handleStep3Submit = async (profileData: any) => {
     setIsSubmitting(true);
     try {
       // Create user profile with all collected data
+      // This step saves the complete profile to database
       await createOnboardingProfile(
         user.id,
         {
@@ -164,6 +228,14 @@ export default function OnboardingPage() {
   };
 
   const handleComplete = () => {
+    // Clear any remaining localStorage data
+    localStorage.removeItem("onboarding_account_type");
+    localStorage.removeItem("onboarding_gender");
+    localStorage.removeItem("onboarding_profile");
+    localStorage.removeItem("onboarding_interests");
+    localStorage.removeItem("onboarding_kyc_completed");
+    localStorage.removeItem("onboarding_consent");
+
     router.push("/dashboard");
   };
 
@@ -237,7 +309,7 @@ export default function OnboardingPage() {
               {currentStep === 1 && (
                 <Step1
                   user={user}
-                  onNext={handleNext}
+                  onNext={handleStep1Next}
                   onboardingData={onboardingData}
                   updateOnboardingData={updateOnboardingData}
                 />
@@ -245,7 +317,7 @@ export default function OnboardingPage() {
               {currentStep === 2 && (
                 <Step2
                   user={user}
-                  onNext={handleNext}
+                  onNext={handleStep2Next}
                   onBack={handleBack}
                   onboardingData={onboardingData}
                   updateOnboardingData={updateOnboardingData}
