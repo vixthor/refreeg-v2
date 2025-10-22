@@ -8,7 +8,6 @@ try {
   // ignore error
 }
 
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   eslint: {
@@ -26,6 +25,10 @@ const nextConfig = {
             ? "eivlgwyipqojpeaxoajm.supabase.co"
             : "gfrksuuzzaczlxcswgkw.supabase.co",
         pathname: "/storage/v1/object/**",
+      },
+      {
+        protocol: "https",
+        hostname: "lh3.googleusercontent.com",
       },
     ],
   },
