@@ -1,5 +1,18 @@
+"use client";
+
 import React from 'react'
 import { FaArrowRight } from "react-icons/fa6";
+import { motion } from "framer-motion";
+
+// Animation variants
+const fadeInUp = {
+  hidden: { opacity: 0, y: 30 },
+  show: (i: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.5, delay: i * 0.2, ease: "easeOut" as any },
+  }),
+};
 
 export default function Hero() {
     return (
@@ -15,13 +28,39 @@ export default function Hero() {
 
                 {/* Centered text content */}
                 <div className="relative z-10 flex flex-col items-center text-center gap-6 px-6">
-                    <h1 className="text-2xl md:text-4xl lg:text-5xl font-semibold text-slate-900">We are RefreeG</h1>
-                    <p className="text-sm md:text-base lg:text-lg text-slate-700 max-w-[680px]">
+                    <motion.h1 
+                        className="text-2xl md:text-4xl lg:text-5xl font-semibold text-slate-900"
+                        custom={0}
+                        variants={fadeInUp}
+                        initial="hidden"
+                        whileInView="show"
+                        viewport={{ once: true }}
+                    >
+                        We are RefreeG
+                    </motion.h1>
+                    <motion.p 
+                        className="text-sm md:text-base lg:text-lg text-slate-700 max-w-[680px]"
+                        custom={1}
+                        variants={fadeInUp}
+                        initial="hidden"
+                        whileInView="show"
+                        viewport={{ once: true }}
+                    >
                         Built by people who believe funding should be simple, fair, and accessible to everyone. We believe that trust is the foundation of every relationship, and it deserves to be rewarded.
-                    </p>
-                    <button className="text-sm md:text-base inline-flex items-center gap-x-2 text-white px-5 py-3 bg-[#0B5CB8] hover:bg-[#0A53A6] rounded-lg shadow-sm">
+                    </motion.p>
+                    <motion.a 
+                        href="/dashboard/causes/create" 
+                        className="text-sm md:text-base inline-flex items-center gap-x-2 text-white px-5 py-3 bg-[#0B5CB8] hover:bg-[#0A53A6] rounded-lg shadow-sm"
+                        custom={2}
+                        variants={fadeInUp}
+                        initial="hidden"
+                        whileInView="show"
+                        viewport={{ once: true }}
+                        whileHover={{ scale: 1.05, transition: { duration: 0.2 } }}
+                        whileTap={{ scale: 0.95 }}
+                    >
                         Start a Cause Now <FaArrowRight />
-                    </button>
+                    </motion.a>
                 </div>
             </div>
         </div>
