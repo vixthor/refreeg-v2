@@ -13,7 +13,6 @@ export default function WhatWeDo() {
         <div className="w-full">
             <Hero />
             <ImpactHighlights />
-            
             <WhoWeAre/>
             <WhyRefreegExists/>
             <OurJourney/>
