@@ -265,6 +265,12 @@ export default function EditPetitionForm({ petition }: EditPetitionFormProps) {
     e.preventDefault();
     if (!user) return;
 
+    // Only allow submit on last step (step 6)
+    if (currentStep < 6) {
+      nextStep();
+      return;
+    }
+
     const validationErrors = validateForm(formData);
 
     // Check if there are any validation errors
@@ -288,7 +294,7 @@ export default function EditPetitionForm({ petition }: EditPetitionFormProps) {
       category: formData.category,
       goal: formData.goal,
       coverImage: formData.coverImage,
-      image: !formData.coverImage ? (petition.image || undefined) : undefined,
+      image: !formData.coverImage ? petition.image || undefined : undefined,
       sections: formData.sections,
       startDate: formData.startDate,
       endDate: formData.endDate,
