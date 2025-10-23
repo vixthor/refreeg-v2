@@ -359,7 +359,8 @@ export async function listPetitions(
   if (options.status) {
     query = query.eq("status", options.status);
   } else {
-    // Default to approved petitions for public listing
+    // Default to approved petitions for public listing only when no status is specified
+    // Admin queries should show all petitions when no status filter is applied
     if (!options.userId) {
       query = query.eq("status", "approved");
     }
@@ -436,7 +437,8 @@ export async function countPetitions(
   if (options.status) {
     query = query.eq("status", options.status);
   } else {
-    // Default to approved petitions for public listing
+    // Default to approved petitions for public listing only when no status is specified
+    // Admin queries should show all petitions when no status filter is applied
     if (!options.userId) {
       query = query.eq("status", "approved");
     }
