@@ -1,5 +1,18 @@
+"use client";
+
 import Image from 'next/image'
 import React from 'react'
+import { motion } from "framer-motion";
+
+// Animation variants
+const fadeInUp = {
+  hidden: { opacity: 0, y: 30 },
+  show: (i: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.5, delay: i * 0.2, ease: "easeOut" as any },
+  }),
+};
 
 type TeamMemberProps = {
   imageSrc: string
@@ -49,9 +62,15 @@ export default function TeamMember({
   }
 
   return (
-    <div
+    <motion.div
       className={`flex flex-col items-center justify-center gap-[12px] ${className ?? ''}`}
       style={positioningStyle}
+      custom={0}
+      variants={fadeInUp}
+      initial="hidden"
+      whileInView="show"
+      viewport={{ once: true }}
+      whileHover={{ scale: 1.05, transition: { duration: 0.2 } }}
     >
       <Image
         src={imageSrc}
@@ -67,6 +86,6 @@ export default function TeamMember({
           <p className='text-xs sm:text-sm md:text-base text-gray-400 mt-1'>{location}</p>
         )}
       </div>
-    </div>
+    </motion.div>
   )
 }
