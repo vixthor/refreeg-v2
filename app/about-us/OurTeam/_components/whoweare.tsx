@@ -72,12 +72,23 @@ function DesktopTeamSlider() {
     
     // Use a single scene and repeat it for the infinite loop
     const scene = [
-        { ...TEAM[0], position: { left: '6%', bottom: '6%' }, style: {} }, // Somto (CEO) bottom-left
-        { ...TEAM[1], position: { left: '16%', top: '3%' }, style: {} }, // Ada (Design Lead) upper-left
-        { ...TEAM[2], position: { left: '50%', top: '22%' }, style: { transform: 'translateX(-50%)' } }, // Chinedu (CFO) center
-        { ...TEAM[3], position: { right: '16%', top: '3%' }, style: {} }, // Hassan (HR) upper-right
-        { ...TEAM[4], position: { right: '6%', bottom: '6%' }, style: {} }, // Uche (Lead Dev) bottom-right
-        { ...TEAM[5], position: { right: '-4%', top: '30%' }, style: {} }, // Tola (QA) slightly off-right
+        // Somto (CEO) - bottom-left
+        { ...TEAM[0], position: { left: '0%', bottom: '0%' }, style: { zIndex: 30 } },
+
+        // Ada (Design Lead) - upper-left
+        { ...TEAM[1], position: { left: '20%', top: '0%' }, style: { zIndex: 20 } },
+
+        // Chinedu (CFO) - center (horizontally centered)
+        { ...TEAM[2], position: { left: '40%', bottom: '0%' }, style: { transform: 'translateX(-50%)', zIndex: 40 } },
+
+        // Hassan (HR) - upper-right
+        { ...TEAM[3], position: { left: '60%', top: '0%' }, style: { zIndex: 20 } },
+
+        // Uche (Lead Dev) - bottom-right
+        { ...TEAM[4], position: { left: '-20%', bottom: '0%' }, style: { zIndex: 30 } },
+
+        // Tola (QA) - slightly right and lower than Hassan
+        { ...TEAM[5], position: { right: '-0%', top: '0%' }, style: { zIndex: 15, transform: 'translateX(-50%)' } }
     ];
 
     const SCENE_WIDTH = 100; // Each scene takes full width (100vw)
