@@ -17,7 +17,6 @@ export default function MoreThanCrowdfunding() {
   return (
       <section className="w-full px-4 md:px-8 lg:px-16 py-16 md:py-20">
       <div className="grid grid-cols-1 lg:grid-cols-2 items-center gap-10 lg:gap-16">
-        {/* Left: Text */}
         <div>
           <motion.div 
             className="inline-flex items-center px-4 py-2 rounded-full bg-white shadow-sm border border-gray-200 text-gray-700 text-xs md:text-sm mb-6"
@@ -59,7 +58,7 @@ export default function MoreThanCrowdfunding() {
             viewport={{ once: true }}
           >
             <motion.button 
-              className="inline-flex items-center gap-3 rounded-xl bg-white text-slate-900 px-6 py-3 text-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow"
+              className="inline-flex items-center gap-3 rounded-full bg-white text-slate-900 px-10 py-3 text-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow"
               whileHover={{ scale: 1.05, transition: { duration: 0.2 } }}
               whileTap={{ scale: 0.95 }}
             >
@@ -68,7 +67,7 @@ export default function MoreThanCrowdfunding() {
           </motion.div>
         </div>
 
-        {/* Right: Illustration */}
+
         <motion.div 
           className="relative flex justify-center lg:justify-end"
           custom={4}

@@ -17,7 +17,6 @@ const fadeInUp = {
 export default function Hero() {
     return (
         <div className="relative w-full min-h-[30vh] flex items-center justify-center px-6 md:px-10 py-16">
-            {/* Hexagon background with light blue fill */}
             <div className="relative w-[727px] max-w-full aspect-square flex items-center justify-center">
                 <div
                     className="absolute inset-0"
@@ -25,8 +24,6 @@ export default function Hero() {
                 >
                     <div className="w-full h-full bg-[#EAF3FF] border border-[#CFE4FF] shadow-[0_12px_32px_rgba(16,44,88,0.08)]" />
                 </div>
-
-                {/* Centered text content */}
                 <div className="relative z-10 flex flex-col items-center text-center gap-6 px-6">
                     <motion.h1 
                         className="text-2xl md:text-4xl lg:text-5xl font-semibold text-slate-900"

@@ -54,8 +54,9 @@ export default function OurJourney() {
         title="Our Journey"
         subtitle="The milestones that shaped RefreeG into what it is today."
         align="center"
+        className='mb-6 gap-[15px]'
         titleClassName="text-3xl md:text-5xl"
-        subtitleClassName="text-gray-500 mt-2"
+        subtitleClassName="text-gray-500 "
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
