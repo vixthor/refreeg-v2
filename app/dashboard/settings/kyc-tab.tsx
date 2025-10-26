@@ -243,7 +243,7 @@ export function KycTab({ profile, user }: KycTabProps) {
                 <>
                   {kycData.document_url.endsWith(".pdf") ? (
                     <div className="border rounded-lg p-4 bg-gray-50 flex items-center gap-4">
-                      <span className="inline-block w-8 h-8 bg-gray-200 flex items-center justify-center rounded">
+                      <span className="w-8 h-8 bg-gray-200 flex items-center justify-center rounded">
                         📄
                       </span>
                       <a
