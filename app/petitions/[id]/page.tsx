@@ -13,6 +13,7 @@ import {
   getCurrentUser,
   getProfile,
   listSignaturesForPetition,
+  getProfileByUsername, // Add this import
 } from "@/actions";
 import { notFound } from "next/navigation";
 import { ShareModal } from "@/components/share-modal";
@@ -164,6 +165,9 @@ export default async function PetitionDetailPage({
   const creatorProfile = await getProfile(petition.user_id);
   const hasCreatorWallet = !!creatorProfile?.solana_wallet;
 
+  // Get creator's username for the profile URL
+  const creatorUsername = creatorProfile?.username;
+
   // Parse social media links from JSON string
   let socialMedia = {
     twitter: "",
@@ -249,7 +253,11 @@ export default async function PetitionDetailPage({
                   <span>
                     Created by{" "}
                     <Link
-                      href={`/profile/${petition.user_id}`}
+                      href={
+                        creatorUsername
+                          ? `/${creatorUsername}`
+                          : `/profile/${petition.user_id}`
+                      }
                       className="hover:underline text-blue-600"
                     >
                       {petition.user?.name}

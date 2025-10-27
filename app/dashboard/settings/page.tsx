@@ -172,7 +172,7 @@ export default function SettingsPage() {
       </div>
     );
   }
-console.log("solana_wallet settings page");
+  console.log("solana_wallet settings page");
   return (
     <div className="space-y-6">
       <div>
@@ -192,7 +192,7 @@ console.log("solana_wallet settings page");
         <TabsList>
           <TabsTrigger value="profile">Profile</TabsTrigger>
           <TabsTrigger value="bank">Bank Details</TabsTrigger>
-          <TabsTrigger value="crypto">Crypto Wallet</TabsTrigger> {/* New tab */}
+          <TabsTrigger value="crypto">Crypto Wallet</TabsTrigger>
           <TabsTrigger value="kyc">KYC Verification</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
           <TabsTrigger value="danger">Account Management</TabsTrigger>
