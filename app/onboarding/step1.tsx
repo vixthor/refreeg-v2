@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 
 interface Step1Props {
   user: any;
-  onNext: () => void;
+  onNext: (accountType: string) => void;
   onboardingData: any;
   updateOnboardingData: (key: string, value: any) => void;
 }
@@ -31,7 +31,7 @@ export default function Step1({
   const handleNext = () => {
     if (!selectedType) return;
     updateOnboardingData("accountType", selectedType);
-    onNext();
+    onNext(selectedType);
   };
 
   return (
