@@ -47,6 +47,7 @@ export default function PublicProfile({
   const defaultProfileImage = "/default-avatar.jpg";
   const profileImage = profile.profile_photo || defaultProfileImage;
   const displayName = profile.full_name || "Anonymous";
+  const username = profile.username || ""; // Get username for display if needed
 
   return (
     <div className="w-full px-4 py-8">
@@ -79,6 +80,7 @@ export default function PublicProfile({
           <div className="flex-1 w-full">
             <div>
               <h1 className="text-2xl font-bold">{displayName}</h1>
+              {username && <p className="text-gray-600">@{username}</p>}
             </div>
 
             {/* Stats */}
