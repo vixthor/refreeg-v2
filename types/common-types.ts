@@ -25,6 +25,7 @@ export interface ProfileFormData {
   facebook_url?: string | null;
   instagram_url?: string | null;
   linkedin_url?: string | null;
+  username?: string;
 }
 
 export interface BankDetailsFormData {
