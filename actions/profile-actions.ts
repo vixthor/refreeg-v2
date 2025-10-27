@@ -53,6 +53,7 @@ export async function updateProfile(
     id: userId,
     full_name: profileData.name,
     email: profileData.email,
+    username: profileData.username,
     phone: profileData.phone,
     bio: profileData.bio,
     profile_photo: profileData.profile_photo,
@@ -371,4 +372,28 @@ export async function updateKycStatus(
 
   if (error) throw error;
   return data;
+}
+
+// actions/profile-actions.ts
+export async function getProfileByUsername(
+  username: string
+): Promise<Profile | null> {
+  const supabase = await createClient();
+  try {
+    const { data: profile, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("username", username)
+      .single();
+
+    if (error) {
+      console.error("Error fetching profile by username:", error);
+      return null;
+    }
+
+    return profile;
+  } catch (error) {
+    console.error("Error in getProfileByUsername:", error);
+    return null;
+  }
 }
