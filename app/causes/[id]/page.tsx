@@ -70,6 +70,9 @@ export default async function CauseDetailPage({
   const creatorProfile = await getProfile(cause.user_id);
   const hasCreatorWallet = !!creatorProfile?.solana_wallet;
 
+  // Get creator's username for the profile URL
+  const creatorUsername = creatorProfile?.username;
+
   let socialMedia = {
     twitter: "",
     facebook: "",
@@ -185,7 +188,11 @@ export default async function CauseDetailPage({
                 <span>
                   Created by{" "}
                   <Link
-                    href={`/profile/${cause.user_id}`}
+                    href={
+                      creatorUsername
+                        ? `/${creatorUsername}`
+                        : `/profile/${cause.user_id}`
+                    }
                     className="hover:underline text-blue-600"
                   >
                     {cause.user.name}
