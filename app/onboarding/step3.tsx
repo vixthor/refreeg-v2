@@ -48,7 +48,9 @@ export default function Step3({
   });
   const [profilePhoto, setProfilePhoto] = useState<File | null>(null);
   const [profilePhotoUrl, setProfilePhotoUrl] = useState<string | null>(
-    user?.user_metadata?.avatar_url || null
+    onboardingData.profile?.profilePhoto ||
+      user?.user_metadata?.avatar_url ||
+      null
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isConsentChecked, setIsConsentChecked] = useState(false);
@@ -85,7 +87,13 @@ export default function Step3({
       username: savedData.username || "",
       location: savedData.location || "",
       phone: savedData.phone || oauthPhone,
+      email: savedData.email || user?.email || prev.email,
     }));
+
+    // Set profile photo URL if available from database
+    if (savedData.profilePhoto) {
+      setProfilePhotoUrl(savedData.profilePhoto);
+    }
 
     // Load consent data
     setIsConsentChecked(onboardingData.consent || false);
