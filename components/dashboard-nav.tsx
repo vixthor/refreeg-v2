@@ -1,3 +1,4 @@
+// components/dashboard-nav.tsx (Updated)
 "use client";
 
 import Link from "next/link";
@@ -13,6 +14,7 @@ import {
   Shield,
   UserCog,
   ClipboardCheckIcon,
+  Wallet,
 } from "lucide-react";
 import { useAdmin } from "@/hooks/use-admin";
 import { useAuth } from "@/hooks/use-auth";
@@ -39,6 +41,11 @@ const userNavItems = [
     title: "My Donations",
     href: "/dashboard/donations",
     icon: Users,
+  },
+  {
+    title: "Crypto Wallet", // New item
+    href: "/dashboard/crypto",
+    icon: Wallet,
   },
   {
     title: "Settings",
@@ -89,10 +96,6 @@ export function DashboardNav() {
           <Skeleton key={index} className="h-10 w-full" />
         ))}
         <div className="my-2">
-          {/* <div className="mb-2 px-2 text-xs font-semibold tracking-tight flex items-center">
-            <Shield className="mr-1 h-3 w-3" />
-            Admin
-          </div> */}
           {adminNavItems.map((_, index) => (
             <Skeleton key={index} className="h-10 w-full" />
           ))}
@@ -131,10 +134,16 @@ export function DashboardNav() {
         {userNavItems.map((item, index) => (
           <Link key={index} href={item.href}>
             <Button
-              variant={pathname === item.href ? "secondary" : "ghost"}
+              variant={
+                pathname === item.href || 
+                pathname.startsWith(`${item.href}/`) ? "secondary" : "ghost"
+              }
               className={cn(
                 "w-full justify-start",
-                pathname === item.href ? "bg-secondary hover:bg-secondary" : ""
+                pathname === item.href || 
+                pathname.startsWith(`${item.href}/`) 
+                  ? "bg-secondary hover:bg-secondary" 
+                  : ""
               )}
             >
               <item.icon className="mr-2 h-4 w-4" />
