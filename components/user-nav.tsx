@@ -102,7 +102,7 @@ export function UserNav() {
               setIsSigningOut(false);
             }}
             disabled={isSigningOut}
-            className="hover:bg-[#0070E0] focus:bg-[#0070E0] transition-colors disabled:opacity-50"
+            className="hover:bg-[red] focus:bg-[red] transition-colors disabled:opacity-50"
           >
             {isSigningOut ? "Signing out..." : "Log out"}
           </DropdownMenuItem>
