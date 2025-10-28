@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { type NextRequest, NextResponse } from "next/server";
+import { hasCompletedOnboarding } from "@/actions/profile-actions";
 
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
@@ -24,10 +25,11 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Check if user is new (OAuth sign-up) and redirect to onboarding
+    // Check if user is new and needs onboarding
     const {
       data: { user },
     } = await supabase.auth.getUser();
+
     if (user) {
       // Check if user has a profile
       const { data: profile } = await supabase
@@ -36,8 +38,18 @@ export async function GET(request: NextRequest) {
         .eq("id", user.id)
         .single();
 
-      // If no profile exists, this is a new OAuth user - redirect to onboarding
+      // If no profile exists, this is a new user - redirect to onboarding
       if (!profile) {
+        return NextResponse.redirect(new URL("/onboarding", request.url));
+      }
+
+      // Check if user needs to complete onboarding
+      // hasCompletedOnboarding handles grandfathering existing users automatically
+      const completedOnboarding = await hasCompletedOnboarding(user.id);
+
+      // Only redirect to onboarding if they haven't completed it
+      // This handles existing users who are grandfathered in
+      if (!completedOnboarding) {
         return NextResponse.redirect(new URL("/onboarding", request.url));
       }
     }
