@@ -9,6 +9,7 @@ import { toast } from "@/components/ui/use-toast";
 import { getCurrentUser } from "@/actions/auth-actions";
 import { updateProfile } from "@/actions";
 import { sendLoginNotificationEmail } from "@/services/mail";
+import { hasCompletedOnboarding } from "@/actions/profile-actions";
 
 // Helper to extract a simple device/OS string from user agent
 function getDeviceInfo() {
@@ -118,26 +119,10 @@ export function useAuth() {
       }
 
       // Check if user needs to complete onboarding
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select(
-          "full_name, phone, email, first_name, last_name, username, location"
-        )
-        .eq("id", currentUser.id)
-        .single();
+      // hasCompletedOnboarding handles grandfathering existing users automatically
+      const completedOnboarding = await hasCompletedOnboarding(currentUser.id);
 
-      // Check if all required fields from step 3 are present
-      const hasCompletedOnboarding = !!(
-        profile?.full_name &&
-        profile?.phone &&
-        profile?.email &&
-        profile?.first_name &&
-        profile?.last_name &&
-        profile?.username &&
-        profile?.location
-      );
-
-      if (!hasCompletedOnboarding) {
+      if (!completedOnboarding) {
         toast({
           title: "Complete your profile",
           description: "Please finish setting up your account.",
