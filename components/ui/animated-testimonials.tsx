@@ -69,13 +69,13 @@ export const AnimatedTestimonials = ({
           </div>
           <div className="flex flex-col justify-between py-4">
             <div>
-              <h3 className="text-2xl font-bold text-black dark:text-white">
+              <h3 className="text-2xl font-bold text-white ">
                 {testimonials[0]?.name}
               </h3>
               <p className="text-sm text-white">
                 {testimonials[0]?.designation}
               </p>
-              <p className="mt-8 text-lg text-white dark:text-neutral-300">
+              <p className="mt-8 text-lg text-white ">
                 {testimonials[0]?.quote}
               </p>
             </div>
@@ -155,13 +155,13 @@ export const AnimatedTestimonials = ({
               ease: "easeInOut",
             }}
           >
-            <h3 className="text-2xl font-bold text-black dark:text-white">
+            <h3 className="text-2xl font-bold text-white ">
               {testimonials[active].name}
             </h3>
             <p className="text-sm text-white">
               {testimonials[active].designation}
             </p>
-            <motion.p className="mt-8 text-lg text-white dark:text-neutral-300">
+            <motion.p className="mt-8 text-lg text-white ">
               {testimonials[active].quote.split(" ").map((word, index) => (
                 <motion.span
                   key={index}
