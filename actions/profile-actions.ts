@@ -242,6 +242,10 @@ export async function createOnboardingProfile(
 
 /**
  * Check if user has completed onboarding
+ *
+ * IMPORTANT: We grandfather in existing users who signed up before the onboarding feature
+ * was implemented. These users don't have the onboarding fields but should still be
+ * able to use the platform. Only truly new users (after onboarding feature) must complete onboarding.
  */
 export async function hasCompletedOnboarding(userId: string): Promise<boolean> {
   try {
@@ -250,25 +254,37 @@ export async function hasCompletedOnboarding(userId: string): Promise<boolean> {
     const { data: profile, error } = await supabase
       .from("profiles")
       .select(
-        "full_name, phone, email, first_name, last_name, username, location"
+        "full_name, phone, email, first_name, last_name, username, location, created_at"
       )
       .eq("id", userId)
       .single();
 
-    if (error) {
+    if (error || !profile) {
       return false;
     }
 
-    // Check if all required fields from step 3 are present
-    return !!(
-      profile?.full_name &&
-      profile?.phone &&
-      profile?.email &&
-      profile?.first_name &&
-      profile?.last_name &&
-      profile?.username &&
-      profile?.location
+    // Grandfather in existing users: If user has basic profile data but lacks onboarding fields,
+    // they're an existing user who signed up before onboarding was implemented
+    const hasBasicProfile = !!(profile.full_name && profile.email);
+
+    const hasOnboardingFields = !!(
+      profile.first_name &&
+      profile.last_name &&
+      profile.username &&
+      profile.location &&
+      profile.phone
     );
+
+    // If user has basic profile but not onboarding fields, they're an existing user - consider onboarding complete
+    if (hasBasicProfile && !hasOnboardingFields) {
+      console.log(
+        `Grandfathered existing user ${userId} - has basic profile but no onboarding fields`
+      );
+      return true;
+    }
+
+    // New users must have all onboarding fields
+    return hasOnboardingFields;
   } catch (error) {
     console.error("Error checking onboarding completion:", error);
     return false;
