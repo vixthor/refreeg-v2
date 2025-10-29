@@ -1,6 +1,7 @@
+// SolanaWalletForm.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ConnectSolanaWalletButton } from "@/components/crypto-details/ConnectSolanaWalletButton";
 import { DisconnectSolanaWalletButton } from "@/components/crypto-details/DisconnectSolanaWalletButton";
@@ -10,51 +11,72 @@ import { useToast } from "@/components/ui/use-toast";
 export default function SolanaWalletForm() {
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const supabase = createClient();
-
+  const [isMounted, setIsMounted] = useState(false);
   const { toast } = useToast();
+
   console.log("walletAddress", walletAddress, "solana_wallet active");
 
+  // Handle client-side mounting
   useEffect(() => {
-    const fetchWallet = async () => {
-      setIsLoading(true);
-      try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        if (!user) return;
+    setIsMounted(true);
+  }, []);
 
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("solana_wallet")
-          .eq("id", user.id)
-          .single();
+  const fetchWallet = useCallback(async () => {
+    if (!isMounted) return;
 
-        if (profile?.solana_wallet) {
-          setWalletAddress(profile.solana_wallet);
-        } else {
-          setWalletAddress(null);
-        }
-      } catch (error) {
-        console.error("Error fetching wallet:", error);
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Failed to load wallet",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchWallet();
-  }, [supabase, toast]);
-
-  const handleWalletConnected = async (address: string) => {
+    setIsLoading(true);
     try {
+      const supabase = createClient();
       const {
         data: { user },
       } = await supabase.auth.getUser();
+
+      if (!user) {
+        setWalletAddress(null);
+        setIsLoading(false);
+        return;
+      }
+
+      const { data: profile, error } = await supabase
+        .from("profiles")
+        .select("solana_wallet")
+        .eq("id", user.id)
+        .single();
+
+      if (error) {
+        console.error("Error fetching profile:", error);
+        setWalletAddress(null);
+      } else if (profile?.solana_wallet) {
+        setWalletAddress(profile.solana_wallet);
+      } else {
+        setWalletAddress(null);
+      }
+    } catch (error) {
+      console.error("Error fetching wallet:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to load wallet",
+      });
+      setWalletAddress(null);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [isMounted, toast]);
+
+  useEffect(() => {
+    if (isMounted) {
+      fetchWallet();
+    }
+  }, [isMounted, fetchWallet]);
+
+  const handleWalletConnected = async (address: string) => {
+    try {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
       if (!user) throw new Error("User not authenticated");
 
       const { error } = await supabase
@@ -79,13 +101,26 @@ export default function SolanaWalletForm() {
     }
   };
 
-  const handleWalletDisconnected = () => {
+  const handleWalletDisconnected = async () => {
     setWalletAddress(null);
-    toast({
-      title: "Success",
-      description: "Wallet disconnected successfully",
-    });
+    // Don't show toast here - let the DisconnectButton handle it
   };
+
+  // Don't render anything until mounted (prevents hydration issues)
+  if (!isMounted) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Solana Wallet</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-4 text-muted-foreground">
+            Loading...
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   if (isLoading) {
     return (
