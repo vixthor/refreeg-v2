@@ -1,17 +1,18 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user)
+  if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
   const { causeId, content, parentId, entityType } = await request.json();
-  if (!causeId || !content) {
+  if (!causeId || !content || typeof content !== "string") {
     return NextResponse.json({ error: "Missing fields" }, { status: 400 });
   }
 
@@ -29,25 +30,20 @@ export async function POST(request: Request) {
         parent_id: parentId || null,
         is_edited: false,
       })
-      .select(
-        `
-        *,
-        user:profiles(full_name, profile_photo)
-      `
-      )
+      .select(`*, user:profiles(full_name, profile_photo) `)
       .single();
 
     if (error) throw error;
-    return NextResponse.json(comment);
-  } catch (error) {
+    return NextResponse.json(comment, { status: 201 });
+  } catch (error: any) {
     return NextResponse.json(
-      { error: "Failed to create comment" },
+      { error: error?.message || "Failed to create comment" },
       { status: 500 }
     );
   }
 }
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   const supabase = await createClient();
   const { searchParams } = new URL(request.url);
   const causeId = searchParams.get("causeId");
@@ -75,9 +71,9 @@ export async function GET(request: Request) {
 
     if (error) throw error;
     return NextResponse.json(comments);
-  } catch (error) {
+  } catch (error: any) {
     return NextResponse.json(
-      { error: "Failed to fetch comments" },
+      { error: error?.message || "Failed to fetch comments" },
       { status: 500 }
     );
   }
