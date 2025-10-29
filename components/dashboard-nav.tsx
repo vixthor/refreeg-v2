@@ -76,11 +76,16 @@ const adminNavItems = [
   },
 ];
 
-export function DashboardNav() {
+export function DashboardNav({
+  showMobileToggle = true,
+}: {
+  showMobileToggle?: boolean;
+}) {
   const pathname = usePathname();
   const { user } = useAuth();
   const { isAdminOrManager, isLoading } = useAdmin(user?.id);
   const [open, setOpen] = useState(false);
+  const isOpen = showMobileToggle ? open : true;
 
   if (isLoading) {
     return (
@@ -104,30 +109,32 @@ export function DashboardNav() {
   return (
     <nav className="grid items-start gap-2 py-4">
       {/* Mobile/Tablet hamburger toggle for dashboard nav */}
-      <div className="md:hidden flex justify-between items-center mb-2">
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label="Toggle dashboard menu"
-          onClick={() => setOpen(!open)}
-        >
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+      {showMobileToggle && (
+        <div className="md:hidden flex justify-between items-center mb-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Toggle dashboard menu"
+            onClick={() => setOpen(!open)}
           >
-            <line x1="3" y1="12" x2="21" y2="12"></line>
-            <line x1="3" y1="6" x2="21" y2="6"></line>
-            <line x1="3" y1="18" x2="21" y2="18"></line>
-          </svg>
-        </Button>
-      </div>
-      <div className={cn("md:block", open ? "block" : "hidden")}>
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+          </Button>
+        </div>
+      )}
+      <div className={cn("md:block", isOpen ? "block" : "hidden")}>
         {userNavItems.map((item, index) => (
           <Link key={index} href={item.href}>
             <Button
