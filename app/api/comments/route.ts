@@ -30,11 +30,27 @@ export async function POST(request: NextRequest) {
         parent_id: parentId || null,
         is_edited: false,
       })
-      .select(`*, user:profiles(full_name, profile_photo) `)
+      .select("*")
       .single();
 
     if (error) throw error;
-    return NextResponse.json(comment, { status: 201 });
+    // attach profile
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("full_name, profile_photo")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    return NextResponse.json(
+      {
+        ...comment,
+        user: {
+          full_name: profile?.full_name || null,
+          profile_photo: profile?.profile_photo || null,
+        },
+      },
+      { status: 201 }
+    );
   } catch (error: any) {
     return NextResponse.json(
       { error: error?.message || "Failed to create comment" },
@@ -59,18 +75,40 @@ export async function GET(request: NextRequest) {
 
     const { data: comments, error } = await supabase
       .from(table)
-      .select(
-        `
-        *,
-        user:profiles(full_name, profile_photo)
-      `
-      )
+      .select("*")
       .eq(idColumn, causeId)
       .is("parent_id", null)
       .order("created_at", { ascending: false });
 
     if (error) throw error;
-    return NextResponse.json(comments);
+
+    // attach profiles in bulk
+    const userIds = Array.from(
+      new Set((comments || []).map((c: any) => c.user_id))
+    );
+    let profilesMap: Record<
+      string,
+      { full_name: string | null; profile_photo: string | null }
+    > = {};
+    if (userIds.length > 0) {
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, full_name, profile_photo")
+        .in("id", userIds);
+      (profiles || []).forEach((p: any) => {
+        profilesMap[p.id] = {
+          full_name: p.full_name || null,
+          profile_photo: p.profile_photo || null,
+        };
+      });
+    }
+
+    const response = (comments || []).map((c: any) => ({
+      ...c,
+      user: profilesMap[c.user_id] || { full_name: null, profile_photo: null },
+    }));
+
+    return NextResponse.json(response);
   } catch (error: any) {
     return NextResponse.json(
       { error: error?.message || "Failed to fetch comments" },

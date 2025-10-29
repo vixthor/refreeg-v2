@@ -31,6 +31,17 @@ import Link from "next/link";
 import MultimediaCarousel from "@/components/MultimediaCarousel";
 import { SignersList } from "@/components/signers-list";
 import { CommentsSection } from "@/components/comments/comment-section";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogFooter,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import PetitionSignatureClient from "@/components/PetitionSignatureClient";
 
 // Mock data for a petition
 const mockPetition = {
@@ -420,20 +431,13 @@ export default async function PetitionDetailPage({
               <CardDescription></CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-4">
-                <SignatureForm
-                  petitionId={petition.id}
-                  profile={profile}
-                  status={petition.status}
-                  subaccount={petition?.user?.sub_account_code}
-                  petitionData={{
-                    title: petition.title,
-                    creatorId: petition.user_id,
-                    creatorEmail: creatorProfile?.email || undefined, // Convert null to undefined
-                    creatorName: petition.user?.name,
-                  }}
-                />
-              </div>
+              <PetitionSignatureClient
+                petition={petition}
+                user={user}
+                profile={profile}
+                petitionStatus={petition.status}
+                creatorProfile={creatorProfile}
+              />
             </CardContent>
           </Card>
         </div>
