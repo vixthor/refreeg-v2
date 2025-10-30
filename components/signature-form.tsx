@@ -90,7 +90,7 @@ export function SignatureForm({
 
       if (!ok) {
         setFriendlyError(
-          "We couldn't process your signature. Please try again."
+          "We couldn't process your signature. Please try again. If the problem persists, please contact support."
         );
         return;
       }
