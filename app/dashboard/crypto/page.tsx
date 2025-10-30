@@ -1,7 +1,6 @@
 // app/dashboard/crypto/page.tsx
 "use client";
 
-import { Suspense } from "react";
 import {
   Card,
   CardContent,
@@ -10,21 +9,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import SolanaWalletForm from "../settings/crypto-details-form";
-
-function WalletFormLoader() {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Solana Wallet</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="text-center py-4 text-muted-foreground">
-          Loading wallet...
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
 
 export default function CryptoPage() {
   return (
@@ -37,9 +21,7 @@ export default function CryptoPage() {
       </div>
 
       <div className="grid gap-6">
-        <Suspense fallback={<WalletFormLoader />}>
-          <SolanaWalletForm />
-        </Suspense>
+        <SolanaWalletForm />
 
         {/* Additional crypto information */}
         <Card>
