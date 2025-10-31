@@ -13,7 +13,8 @@ import {
   getCurrentUser,
   getProfile,
   listSignaturesForPetition,
-  getProfileByUsername, // Add this import
+  getProfileByUsername,
+  checkUserSignature, // Add this import
 } from "@/actions";
 import { notFound } from "next/navigation";
 import { ShareModal } from "@/components/share-modal";
@@ -159,6 +160,12 @@ export default async function PetitionDetailPage({
     id: myprofile?.id || "",
     subaccount: myprofile?.sub_account_code || "",
   };
+
+  // Check if current user has already signed this petition
+  let hasSigned = false;
+  if (user) {
+    hasSigned = await checkUserSignature(petition.id, user.id);
+  }
 
   const baseUrl = getBaseURL();
   // Check if creator has a wallet
@@ -426,10 +433,11 @@ export default async function PetitionDetailPage({
                   profile={profile}
                   status={petition.status}
                   subaccount={petition?.user?.sub_account_code}
+                  hasSigned={hasSigned}
                   petitionData={{
                     title: petition.title,
                     creatorId: petition.user_id,
-                    creatorEmail: creatorProfile?.email || undefined, // Convert null to undefined
+                    creatorEmail: creatorProfile?.email || undefined,
                     creatorName: petition.user?.name,
                   }}
                 />
