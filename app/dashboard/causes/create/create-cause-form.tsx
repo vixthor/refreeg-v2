@@ -33,7 +33,10 @@ import { useCause } from "@/hooks/use-cause";
 import { Progress } from "@/components/ui/progress";
 import { ImageUpload } from "@/components/ui/image-upload";
 import { categories } from "@/lib/categories";
-import { sendCauseUnderReviewEmail, sendIncompleteCauseSetupEmail } from "@/services/mail";
+import {
+  sendCauseUnderReviewEmail,
+  sendIncompleteCauseSetupEmail,
+} from "@/services/mail";
 import {
   format,
   addDays,
@@ -214,8 +217,9 @@ export default function CreateCauseForm() {
 
     const setupInactivityTracking = () => {
       const hasDraft = localStorage.getItem("causeDraft");
-      const hasStartedFilling = formData.title || formData.category || formData.goal;
-      
+      const hasStartedFilling =
+        formData.title || formData.category || formData.goal;
+
       if (hasDraft || hasStartedFilling) {
         // Reset timer on any form interaction
         const resetTimer = () => {
@@ -224,8 +228,8 @@ export default function CreateCauseForm() {
         };
 
         // Set up event listeners for form interactions
-        const events = ['input', 'change', 'click', 'keydown'];
-        events.forEach(event => {
+        const events = ["input", "change", "click", "keydown"];
+        events.forEach((event) => {
           document.addEventListener(event, resetTimer, { passive: true });
         });
 
@@ -235,7 +239,7 @@ export default function CreateCauseForm() {
         // Cleanup function
         return () => {
           clearTimeout(inactivityTimer);
-          events.forEach(event => {
+          events.forEach((event) => {
             document.removeEventListener(event, resetTimer);
           });
         };
@@ -248,7 +252,7 @@ export default function CreateCauseForm() {
       if (currentDraft && user) {
         try {
           await sendIncompleteCauseSetupEmail({
-            continueUrl: `${window.location.origin}/dashboard/causes/create`
+            continueUrl: `${window.location.origin}/dashboard/causes/create`,
           });
           console.log("Incomplete cause reminder sent");
         } catch (error) {
@@ -891,7 +895,7 @@ export default function CreateCauseForm() {
               {formData.sections.map((section, index) => (
                 <div key={index} className="space-y-2">
                   <h5 className="font-medium">{section.heading}</h5>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-muted-foreground whitespace-pre-line">
                     {section.description}
                   </p>
                 </div>
@@ -1016,7 +1020,7 @@ export default function CreateCauseForm() {
             >
               Test Incomplete Cause Email
             </Button> */}
-            
+
             {currentStep < 5 ? (
               <Button type="button" onClick={nextStep}>
                 Next
