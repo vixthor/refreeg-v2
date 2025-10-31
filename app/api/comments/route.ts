@@ -1,17 +1,18 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user)
+  if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
   const { causeId, content, parentId, entityType } = await request.json();
-  if (!causeId || !content) {
+  if (!causeId || !content || typeof content !== "string") {
     return NextResponse.json({ error: "Missing fields" }, { status: 400 });
   }
 
@@ -29,25 +30,36 @@ export async function POST(request: Request) {
         parent_id: parentId || null,
         is_edited: false,
       })
-      .select(
-        `
-        *,
-        user:profiles(full_name, profile_photo)
-      `
-      )
+      .select("*")
       .single();
 
     if (error) throw error;
-    return NextResponse.json(comment);
-  } catch (error) {
+    // attach profile
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("full_name, profile_photo")
+      .eq("id", user.id)
+      .maybeSingle();
+
     return NextResponse.json(
-      { error: "Failed to create comment" },
+      {
+        ...comment,
+        user: {
+          full_name: profile?.full_name || null,
+          profile_photo: profile?.profile_photo || null,
+        },
+      },
+      { status: 201 }
+    );
+  } catch (error: any) {
+    return NextResponse.json(
+      { error: error?.message || "Failed to create comment" },
       { status: 500 }
     );
   }
 }
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   const supabase = await createClient();
   const { searchParams } = new URL(request.url);
   const causeId = searchParams.get("causeId");
@@ -63,21 +75,43 @@ export async function GET(request: Request) {
 
     const { data: comments, error } = await supabase
       .from(table)
-      .select(
-        `
-        *,
-        user:profiles(full_name, profile_photo)
-      `
-      )
+      .select("*")
       .eq(idColumn, causeId)
       .is("parent_id", null)
       .order("created_at", { ascending: false });
 
     if (error) throw error;
-    return NextResponse.json(comments);
-  } catch (error) {
+
+    // attach profiles in bulk
+    const userIds = Array.from(
+      new Set((comments || []).map((c: any) => c.user_id))
+    );
+    let profilesMap: Record<
+      string,
+      { full_name: string | null; profile_photo: string | null }
+    > = {};
+    if (userIds.length > 0) {
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, full_name, profile_photo")
+        .in("id", userIds);
+      (profiles || []).forEach((p: any) => {
+        profilesMap[p.id] = {
+          full_name: p.full_name || null,
+          profile_photo: p.profile_photo || null,
+        };
+      });
+    }
+
+    const response = (comments || []).map((c: any) => ({
+      ...c,
+      user: profilesMap[c.user_id] || { full_name: null, profile_photo: null },
+    }));
+
+    return NextResponse.json(response);
+  } catch (error: any) {
     return NextResponse.json(
-      { error: "Failed to fetch comments" },
+      { error: error?.message || "Failed to fetch comments" },
       { status: 500 }
     );
   }

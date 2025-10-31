@@ -260,7 +260,7 @@ export default async function CauseDetailPage({
                     <h3 className="text-xl font-semibold mb-2">
                       {section.heading}
                     </h3>
-                    <p className="text-muted-foreground">
+                    <p className="text-muted-foreground whitespace-pre-line">
                       {section.description}
                     </p>
                   </div>

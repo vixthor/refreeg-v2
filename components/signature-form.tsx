@@ -20,7 +20,10 @@ import { Icons } from "@/components/icons";
 import { useAuth } from "@/hooks/use-auth";
 import { useSignature } from "@/hooks/use-signature";
 import { useProfile } from "@/hooks/use-profile";
-import { sendPetitionSignedEmailToUser, sendNewSignatureNotificationEmail } from "@/services/mail";
+import {
+  sendPetitionSignedEmailToUser,
+  sendNewSignatureNotificationEmail,
+} from "@/services/mail";
 
 interface SignatureFormProps {
   petitionId: string;
@@ -31,12 +34,14 @@ interface SignatureFormProps {
   };
   subaccount?: string;
   status: "pending" | "rejected" | "approved";
-  petitionData?: { // Add petition data for email context
+  petitionData?: {
+    // Add petition data for email context
     title?: string;
     creatorId?: string;
     creatorEmail?: string | null; // Change to accept null
     creatorName?: string;
   };
+  onSuccess?: () => void; // <-- Add this
 }
 
 export function SignatureForm({
@@ -45,6 +50,7 @@ export function SignatureForm({
   status,
   subaccount,
   petitionData = {},
+  onSuccess, // <-- Add this
 }: SignatureFormProps) {
   const { createUserSignature, isLoading } = useSignature();
   const [friendlyError, setFriendlyError] = useState<string | null>(null);
@@ -63,9 +69,9 @@ export function SignatureForm({
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
-  
+
   console.log(formData.isAnonymous);
-  
+
   const handleSwitchChange = (checked: boolean) => {
     setFormData((prev) => ({ ...prev, isAnonymous: checked }));
   };
@@ -74,7 +80,7 @@ export function SignatureForm({
     e.preventDefault();
 
     try {
-      const ok = await createUserSignature(petitionId, profile.id, {
+      const ok = await createUserSignature(petitionId, profile.id || null, {
         amount: 1,
         email: formData.email,
         name: formData.name,
@@ -83,7 +89,9 @@ export function SignatureForm({
       });
 
       if (!ok) {
-        setFriendlyError("We couldn't process your signature. Please try again.");
+        setFriendlyError(
+          "We couldn't process your signature. Please try again. If the problem persists, please contact support."
+        );
         return;
       }
 
@@ -104,7 +112,11 @@ export function SignatureForm({
       }
 
       // Send notification to petition creator (if we have creator info)
-      if (petitionData.creatorEmail && petitionData.creatorName && petitionData.title) {
+      if (
+        petitionData.creatorEmail &&
+        petitionData.creatorName &&
+        petitionData.title
+      ) {
         try {
           await sendNewSignatureNotificationEmail(
             petitionData.creatorEmail, // This is now string | null, but we checked it exists
@@ -116,10 +128,14 @@ export function SignatureForm({
           );
           console.log("New signature notification sent to creator");
         } catch (notificationError) {
-          console.error("Failed to send creator notification:", notificationError);
+          console.error(
+            "Failed to send creator notification:",
+            notificationError
+          );
         }
       }
 
+      if (onSuccess) onSuccess(); // <-- call here
     } catch (error) {
       console.error("Error submitting signature:", error);
       setFriendlyError("We couldn't process your signature. Please try again.");
@@ -221,7 +237,7 @@ export function SignatureForm({
           >
             Test Signed Email
           </Button> */}
-          
+
           <Button
             type="submit"
             disabled={isLoading || isDisabled}
