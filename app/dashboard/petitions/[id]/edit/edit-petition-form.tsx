@@ -705,7 +705,9 @@ export default function EditPetitionForm({ petition }: EditPetitionFormProps) {
               {formData.sections.map((section, index) => (
                 <div key={index} className="space-y-2">
                   <h5 className="font-medium">{section.heading}</h5>
-                  <p className="text-sm">{section.description}</p>
+                  <p className="text-sm whitespace-pre-line">
+                    {section.description}
+                  </p>
                 </div>
               ))}
             </div>

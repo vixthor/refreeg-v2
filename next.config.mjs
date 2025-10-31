@@ -33,13 +33,14 @@ const nextConfig = {
     ],
   },
   experimental: {
-    webpackBuildWorker: true,
-    parallelServerBuildTraces: true,
-    parallelServerCompiles: true,
+    webpackBuildWorker: false,
+    parallelServerBuildTraces: false,
+    parallelServerCompiles: false,
     serverActions: {
       bodySizeLimit: "100mb",
     },
   },
+
   webpack(config, { dev, isServer }) {
     // Aceternity UI may import CSS that requires MiniCssExtractPlugin in prod
     if (!dev && !isServer) {
