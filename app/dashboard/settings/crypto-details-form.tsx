@@ -1,3 +1,4 @@
+// SolanaWalletForm.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -10,52 +11,72 @@ import { useToast } from "@/components/ui/use-toast";
 export default function SolanaWalletForm() {
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const supabase = createClient();
-
   const { toast } = useToast();
-  console.log("walletAddress", walletAddress,"solana_wallet active");
+
+  console.log("walletAddress", walletAddress, "solana_wallet active");
 
   useEffect(() => {
+    let isCancelled = false;
+
     const fetchWallet = async () => {
-      setIsLoading(true);
       try {
+        const supabase = createClient();
         const {
           data: { user },
         } = await supabase.auth.getUser();
-        if (!user) return;
-        
 
-        const { data: profile } = await supabase
+        if (isCancelled) return;
+
+        if (!user) {
+          setWalletAddress(null);
+          setIsLoading(false);
+          return;
+        }
+
+        const { data: profile, error } = await supabase
           .from("profiles")
           .select("solana_wallet")
           .eq("id", user.id)
           .single();
 
-        if (profile?.solana_wallet) {
-          setWalletAddress(profile.solana_wallet);
-        } else {
+        if (isCancelled) return;
+
+        if (error) {
+          console.error("Error fetching profile:", error);
           setWalletAddress(null);
+        } else {
+          setWalletAddress(profile?.solana_wallet || null);
         }
       } catch (error) {
+        if (isCancelled) return;
         console.error("Error fetching wallet:", error);
         toast({
           variant: "destructive",
           title: "Error",
           description: "Failed to load wallet",
         });
+        setWalletAddress(null);
       } finally {
-        setIsLoading(false);
+        if (!isCancelled) {
+          setIsLoading(false);
+        }
       }
     };
 
     fetchWallet();
-  }, [supabase, toast]);
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [toast]);
 
   const handleWalletConnected = async (address: string) => {
     try {
+      const supabase = createClient();
       const {
         data: { user },
       } = await supabase.auth.getUser();
+
       if (!user) throw new Error("User not authenticated");
 
       const { error } = await supabase
@@ -80,12 +101,8 @@ export default function SolanaWalletForm() {
     }
   };
 
-  const handleWalletDisconnected = () => {
+  const handleWalletDisconnected = async () => {
     setWalletAddress(null);
-    toast({
-      title: "Success",
-      description: "Wallet disconnected successfully",
-    });
   };
 
   if (isLoading) {

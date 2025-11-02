@@ -1,3 +1,4 @@
+// ConnectSolanaWalletButton.tsx
 "use client";
 
 import { useState } from "react";
@@ -16,7 +17,6 @@ export function ConnectSolanaWalletButton({
 }: ConnectSolanaWalletButtonProps) {
   const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const supabase = createClient();
   const { toast } = useToast();
 
   const installPhantom = () => {
@@ -49,6 +49,7 @@ export function ConnectSolanaWalletButton({
       const response = await window.solana.connect();
       const publicKey = response.publicKey.toString();
 
+      const supabase = createClient();
       const {
         data: { user },
       } = await supabase.auth.getUser();
@@ -69,13 +70,15 @@ export function ConnectSolanaWalletButton({
         throw new Error("Failed to save wallet address");
       }
 
-      onConnected?.(publicKey);
+      // Call the callback BEFORE showing toast or resetting state
+      if (onConnected) {
+        await onConnected(publicKey);
+      }
 
       toast({
         title: "Success",
         description: "Solana wallet connected successfully",
       });
-      return { address: publicKey };
     } catch (err) {
       console.error("Wallet connection error:", err);
       const errorMessage =
@@ -86,7 +89,6 @@ export function ConnectSolanaWalletButton({
         title: "Error",
         description: errorMessage,
       });
-      throw new Error(errorMessage);
     } finally {
       setIsConnecting(false);
     }

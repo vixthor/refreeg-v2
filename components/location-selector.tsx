@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { Check, ChevronsUpDown, Loader2 } from "lucide-react";
 import React from "react";
+import { ALL_COUNTRIES, getCountries } from "@/app/utils/countryUtils";
 
 interface LocationSelectorProps {
   selected: string;
@@ -45,7 +46,8 @@ export function LocationSelector({
 }: LocationSelectorProps) {
   const [isOpen, setIsOpen] = React.useState(false);
 
-  const fetchCountries = () => fetchLocations("/api/countries");
+  // Use getCountries from countryUtils which handles API and fallback automatically
+  const fetchCountries = () => getCountries();
   const fetchStates = (countryName: string | null): Promise<string[]> => {
     if (!countryName) return Promise.resolve([]);
     return fetchLocations(
@@ -68,6 +70,9 @@ export function LocationSelector({
     queryFn: fetchCountries,
     enabled: mode === "country",
     staleTime: Infinity,
+    retry: false, // Don't retry, just use fallback
+    // Use initial data as fallback
+    initialData: ALL_COUNTRIES,
   });
 
   const {
@@ -95,7 +100,8 @@ export function LocationSelector({
   const getOptions = () => {
     switch (mode) {
       case "country":
-        return countries;
+        // Ensure we always return countries, fall back to static list if needed
+        return countries.length > 0 ? countries : ALL_COUNTRIES;
       case "state":
         return states;
       case "city":

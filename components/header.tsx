@@ -413,10 +413,7 @@ export function Header() {
                     {/* Auth */}
                     {!isLoading && !user ? (
                       <Link href="/auth/signin">
-                        <Button
-                          size="sm"
-                          className={`text-white ${theme.bg} ${theme.hoverBg}`}
-                        >
+                        <Button size="sm" variant="default" className={``}>
                           Sign In
                         </Button>
                       </Link>
