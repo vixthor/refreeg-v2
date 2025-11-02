@@ -13,6 +13,7 @@ import {
   getCurrentUser,
   getProfile,
   listSignaturesForPetition,
+  getProfileByUsername, // Add this import
 } from "@/actions";
 import { notFound } from "next/navigation";
 import { ShareModal } from "@/components/share-modal";
@@ -30,6 +31,17 @@ import Link from "next/link";
 import MultimediaCarousel from "@/components/MultimediaCarousel";
 import { SignersList } from "@/components/signers-list";
 import { CommentsSection } from "@/components/comments/comment-section";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogFooter,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import PetitionSignatureClient from "@/components/PetitionSignatureClient";
 
 // Mock data for a petition
 const mockPetition = {
@@ -164,6 +176,9 @@ export default async function PetitionDetailPage({
   const creatorProfile = await getProfile(petition.user_id);
   const hasCreatorWallet = !!creatorProfile?.solana_wallet;
 
+  // Get creator's username for the profile URL
+  const creatorUsername = creatorProfile?.username;
+
   // Parse social media links from JSON string
   let socialMedia = {
     twitter: "",
@@ -249,7 +264,11 @@ export default async function PetitionDetailPage({
                   <span>
                     Created by{" "}
                     <Link
-                      href={`/profile/${petition.user_id}`}
+                      href={
+                        creatorUsername
+                          ? `/${creatorUsername}`
+                          : `/profile/${petition.user_id}`
+                      }
                       className="hover:underline text-blue-600"
                     >
                       {petition.user?.name}
@@ -342,7 +361,7 @@ export default async function PetitionDetailPage({
                 petition.sections.map((section, index) => (
                   <div key={index} className="mt-4">
                     <h3 className="text-xl font-semibold">{section.heading}</h3>
-                    <p className="text-muted-foreground">
+                    <p className="text-muted-foreground whitespace-pre-line">
                       {section.description}
                     </p>
                   </div>
@@ -412,20 +431,13 @@ export default async function PetitionDetailPage({
               <CardDescription></CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-4">
-                <SignatureForm
-                  petitionId={petition.id}
-                  profile={profile}
-                  status={petition.status}
-                  subaccount={petition?.user?.sub_account_code}
-                  petitionData={{
-                    title: petition.title,
-                    creatorId: petition.user_id,
-                    creatorEmail: creatorProfile?.email || undefined, // Convert null to undefined
-                    creatorName: petition.user?.name,
-                  }}
-                />
-              </div>
+              <PetitionSignatureClient
+                petition={petition}
+                user={user}
+                profile={profile}
+                petitionStatus={petition.status}
+                creatorProfile={creatorProfile}
+              />
             </CardContent>
           </Card>
         </div>

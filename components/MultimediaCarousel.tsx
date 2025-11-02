@@ -38,7 +38,9 @@ export default function MultimediaCarousel({
       return null;
     } catch {
       // Fallback regex if URL constructor fails
-      const direct = rawUrl.match(/(?:v=|be\/|embed\/|shorts\/)([A-Za-z0-9_-]{6,})/);
+      const direct = rawUrl.match(
+        /(?:v=|be\/|embed\/|shorts\/)([A-Za-z0-9_-]{6,})/
+      );
       return direct ? direct[1] : null;
     }
   };
@@ -60,7 +62,8 @@ export default function MultimediaCarousel({
     const dMatch = rawUrl.match(/\/d\/([^/]+)\//);
     if (dMatch) return `https://drive.google.com/file/d/${dMatch[1]}/preview`;
     const idParamMatch = rawUrl.match(/[?&]id=([^&#]+)/);
-    if (idParamMatch) return `https://drive.google.com/file/d/${idParamMatch[1]}/preview`;
+    if (idParamMatch)
+      return `https://drive.google.com/file/d/${idParamMatch[1]}/preview`;
     return null;
   };
 
@@ -182,6 +185,43 @@ export default function MultimediaCarousel({
     }
   };
 
+  // SVG Arrow Icons with blue color
+  const ArrowLeft = () => (
+    <svg
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M15 18L9 12L15 6"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+
+  const ArrowRight = () => (
+    <svg
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M9 18L15 12L9 6"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+
   return (
     <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-black">
       {slides.map((item, idx) => (
@@ -199,31 +239,33 @@ export default function MultimediaCarousel({
         <>
           <button
             onClick={prev}
-            className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/70 hover:bg-white text-black rounded-full w-10 h-10 shadow-md z-20"
+            className="absolute left-4 top-1/2 -translate-y-1/2 bg-blue-600/90 hover:bg-blue-700 backdrop-blur-sm text-white rounded-full w-12 h-12 shadow-lg z-20 transition-all duration-300 hover:scale-110 hover:shadow-xl border border-blue-400/30 flex items-center justify-center"
             aria-label="Previous"
             type="button"
           >
-            &#8592;
+            <ArrowLeft />
           </button>
           <button
             onClick={next}
-            className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/70 hover:bg-white text-black rounded-full w-10 h-10 shadow-md z-20"
+            className="absolute right-4 top-1/2 -translate-y-1/2 bg-blue-600/90 hover:bg-blue-700 backdrop-blur-sm text-white rounded-full w-12 h-12 shadow-lg z-20 transition-all duration-300 hover:scale-110 hover:shadow-xl border border-blue-400/30 flex items-center justify-center"
             aria-label="Next"
             type="button"
           >
-            &#8594;
+            <ArrowRight />
           </button>
         </>
       )}
       {/* Indicators */}
       {slides.length > 1 && (
-        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-2 z-20">
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-20">
           {slides.map((_, idx) => (
             <button
               key={idx}
               onClick={() => goTo(idx)}
-              className={`w-2 h-2 rounded-full ${
-                idx === current ? "bg-white" : "bg-white/50"
+              className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                idx === current
+                  ? "bg-blue-500 scale-125"
+                  : "bg-white/50 hover:bg-blue-400/70 hover:scale-110"
               }`}
               aria-label={`Go to slide ${idx + 1}`}
               type="button"
