@@ -160,13 +160,13 @@ export function Header() {
         //   href: "/crowdfund/community",
         //   icon: Users,
         // },
-        // {
-        //   title: "💸 Fees & Payouts",
-        //   description:
-        //     "Clear explanation of transaction fees, payout timelines, and how creators/nonprofits access their funds.",
-        //   href: "/crowdfund/fees",
-        //   icon: CircleDollarSign,
-        // },
+        {
+          title: "💸 Fees & Payouts",
+          description:
+            "Clear explanation of transaction fees, payout timelines, and how creators/nonprofits access their funds.",
+          href: "/crowdfund/fees",
+          icon: CircleDollarSign,
+        },
         // {
         //   title: "🛡️ Trust & Safety",
         //   description:
