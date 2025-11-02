@@ -59,41 +59,129 @@ interface NavLink {
   title: string;
   type: "link";
   href: string;
-  icon: React.ReactNode;
-  external?: boolean;
 }
 
-const SAMPLE_PROFILE_DATA: Profile = {
-  name: "Eugene An",
-  email: "eugene@kokonutui.com",
-  avatar:
-    "https://ferf1mheo22r9ira.public.blob.vercel-storage.com/profile-mjss82WnWBRO86MHHGxvJ2TVZuyrDv.jpeg",
-  subscription: "PRO",
-  model: "Gemini 2.0 Flash",
-};
-
-interface ProfileDropdownProps extends React.HTMLAttributes<HTMLDivElement> {
-  data?: Profile;
-  showTopbar?: boolean;
-  onSignOut?: () => void;
-  menuItems?: MenuItem[];
+interface NavDropdown {
+  icon: React.ComponentType<any>;
+  header: string;
+  title: string;
+  type: "dropdown";
+  items: Array<{
+    title: string;
+    description: string;
+    href: string;
+    icon: React.ComponentType<any>;
+  }>;
 }
 
-export default function ProfileDropdown({
-  data = SAMPLE_PROFILE_DATA,
-  className,
-  onSignOut,
-  menuItems: customMenuItems,
-  ...props
-}: ProfileDropdownProps) {
-  const [isOpen, setIsOpen] = React.useState(false);
+type NavItem = NavLink | NavDropdown;
 
-  // Use custom menu items if provided, otherwise use default
-  const menuItems: MenuItem[] = customMenuItems || [
+export function Header() {
+  const pathname = usePathname();
+  const { user, isLoading, signOut } = useAuth();
+  const { isAdminOrManager } = useAdmin(user?.id);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [isSigningOut, setIsSigningOut] = useState(false);
+
+  const navItems: NavItem[] = [
     {
-      label: "Profile",
-      href: "#",
-      icon: <User className="w-4 h-4" />,
+      title: "Explore Causes",
+      href: "/causes",
+      type: "link",
+    },
+    {
+      title: "What can I crowdfund?",
+      header: "Curious about what you crowdfund for? Here are some ideas:",
+      icon: HandHeart,
+      type: "dropdown",
+      items: [
+        {
+          title: "🌍 Refreeg for Businesses",
+          description:
+            "Empower your brand with purpose. Launch CSR campaigns, support community-driven causes, and connect with customers who care about impact.",
+          href: "/businesses",
+          icon: CircleDollarSign,
+        },
+        {
+          title: "🤝 RefreeG for Nonprofits",
+          description:
+            "Raise more, reach more. Build trust with transparent fundraising tools designed to help nonprofits thrive and grow their donor communities.",
+          href: "/non-profits",
+          icon: Target,
+        },
+        {
+          title: "🌪️ RefreeG for Disaster Relief",
+          description:
+            "Rally urgent support for communities hit by disasters and get aid to those who need it; quickly and securely.",
+          href: "/disaster-relief",
+          icon: FileText,
+        },
+        {
+          title: "🎨 RefreeG for Creators",
+          description:
+            "Turn your influence into impact. Get your unique tag, share your story, and receive donations directly from your fans in fiat or crypto.",
+          href: "/creators",
+          icon: FileText,
+        },
+        {
+          title: "🏥 RefreeG for Healthcare",
+          description:
+            "Give hope a platform. Raise funds for medical bills, healthcare projects, or critical treatments — with transparency and community support.",
+          href: "/healthcare",
+          icon: FileText,
+        },
+      ],
+    },
+    {
+      title: "How RefreeG works",
+      header: "How can you crowdfund on RefreeG?",
+      icon: Lightbulb,
+      type: "dropdown",
+      items: [
+        {
+          title: "⭐ How to start a cause",
+          description:
+            "Starting causes is easy, and fast because of the intuitive user experience Refreeg is built on. Set up causes in less than 3 minutes!",
+          href: "/dashboard/causes/create",
+          icon: Star,
+        },
+        // {
+        //   title: "🚀 Crowdfunding tips",
+        //   description:
+        //     "Raise more, reach more. Build trust with transparent fundraising tools.",
+        //   href: "/crowdfund/education",
+        //   icon: Rocket,
+        // },
+        // {
+        //   title: "📢 For Supporters",
+        //   description:
+        //     "See how to discover causes, donate securely in fiat or crypto, and follow progress transparently.",
+        //   href: "/crowdfund/community",
+        //   icon: Users,
+        // },
+        {
+          title: "💸 Fees & Payouts",
+          description:
+            "Clear explanation of transaction fees, payout timelines, and how creators/nonprofits access their funds.",
+          href: "/crowdfund/fees",
+          icon: CircleDollarSign,
+        },
+        // {
+        //   title: "🛡️ Trust & Safety",
+        //   description:
+        //     "Read about our fraud checks, KYC verification, and commitment to protecting both donors and cause.",
+        //   href: "/crowdfund/trust",
+        //   icon: Shield,
+        // },
+        {
+          title: "📣 FAQ",
+          description:
+            "Get answers to the most common questions about crowdfunding on RefreeG.",
+          href: "/#faq",
+          icon: HelpCircle,
+        },
+      ],
     },
     {
       title: "About RefreeG",
