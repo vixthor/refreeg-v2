@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import Image from "next/image";
 
 // ✅ Import MUI icons
-import MaleIcon from "@mui/icons-material/Male";
+import MaleIcon from '@mui/icons-material/Male';
 import FemaleIcon from "@mui/icons-material/Female";
 import QuestionMarkIcon from "@mui/icons-material/QuestionMark";
 
