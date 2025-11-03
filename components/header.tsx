@@ -395,7 +395,7 @@ export function Header() {
                   text: "text-secondary",
                   hoverBg: "hover:bg-secondary",
                   hoverText: "hover:text-white",
-                  bg: "bg-primary",
+                  bg: "bg-secondary",
                 };
 
                 return (
