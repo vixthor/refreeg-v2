@@ -15,6 +15,7 @@ import {
   getCurrentUser,
   getProfile,
   listDonationsForCause,
+  getProfileByUsername, // Make sure this is imported
 } from "@/actions";
 import { notFound } from "next/navigation";
 import { ShareModal } from "@/components/share-modal";
@@ -191,7 +192,7 @@ export default async function CauseDetailPage({
                     href={
                       creatorUsername
                         ? `/${creatorUsername}`
-                        : `/profile/${cause.user_id}`
+                        : `/${cause.user_id}` // CHANGED: Remove '/profile' prefix
                     }
                     className="hover:underline text-blue-600"
                   >
