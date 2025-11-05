@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
     // attach profile
     const { data: profile } = await supabase
       .from("profiles")
-      .select("full_name, profile_photo")
+      .select("full_name, profile_photo, username")
       .eq("id", user.id)
       .maybeSingle();
 
@@ -93,7 +93,7 @@ export async function GET(request: NextRequest) {
     if (userIds.length > 0) {
       const { data: profiles } = await supabase
         .from("profiles")
-        .select("id, full_name, profile_photo")
+        .select("id, full_name, profile_photo, username")
         .in("id", userIds);
       (profiles || []).forEach((p: any) => {
         profilesMap[p.id] = {

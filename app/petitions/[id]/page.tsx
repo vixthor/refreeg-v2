@@ -13,7 +13,8 @@ import {
   getCurrentUser,
   getProfile,
   listSignaturesForPetition,
-  getProfileByUsername, // Add this import
+  getProfileByUsername,
+  checkUserSignature, // Add this import
 } from "@/actions";
 import { notFound } from "next/navigation";
 import { ShareModal } from "@/components/share-modal";
@@ -31,17 +32,6 @@ import Link from "next/link";
 import MultimediaCarousel from "@/components/MultimediaCarousel";
 import { SignersList } from "@/components/signers-list";
 import { CommentsSection } from "@/components/comments/comment-section";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogFooter,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import PetitionSignatureClient from "@/components/PetitionSignatureClient";
 
 // Mock data for a petition
 const mockPetition = {
@@ -170,6 +160,12 @@ export default async function PetitionDetailPage({
     id: myprofile?.id || "",
     subaccount: myprofile?.sub_account_code || "",
   };
+
+  // Check if current user has already signed this petition
+  let hasSigned = false;
+  if (user) {
+    hasSigned = await checkUserSignature(petition.id, user.id);
+  }
 
   const baseUrl = getBaseURL();
   // Check if creator has a wallet
@@ -361,7 +357,7 @@ export default async function PetitionDetailPage({
                 petition.sections.map((section, index) => (
                   <div key={index} className="mt-4">
                     <h3 className="text-xl font-semibold">{section.heading}</h3>
-                    <p className="text-muted-foreground whitespace-pre-line">
+                    <p className="text-muted-foreground">
                       {section.description}
                     </p>
                   </div>
@@ -431,13 +427,21 @@ export default async function PetitionDetailPage({
               <CardDescription></CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <PetitionSignatureClient
-                petition={petition}
-                user={user}
-                profile={profile}
-                petitionStatus={petition.status}
-                creatorProfile={creatorProfile}
-              />
+              <div className="space-y-4">
+                <SignatureForm
+                  petitionId={petition.id}
+                  profile={profile}
+                  status={petition.status}
+                  subaccount={petition?.user?.sub_account_code}
+                  hasSigned={hasSigned}
+                  petitionData={{
+                    title: petition.title,
+                    creatorId: petition.user_id,
+                    creatorEmail: creatorProfile?.email || undefined,
+                    creatorName: petition.user?.name,
+                  }}
+                />
+              </div>
             </CardContent>
           </Card>
         </div>

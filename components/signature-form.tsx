@@ -1,7 +1,6 @@
 "use client";
 
 import type React from "react";
-
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,6 +23,8 @@ import {
   sendPetitionSignedEmailToUser,
   sendNewSignatureNotificationEmail,
 } from "@/services/mail";
+import { ShareModal } from "@/components/share-modal"; // Add this import
+import { getBaseURL } from "@/lib/utils"; // Add this import
 
 interface SignatureFormProps {
   petitionId: string;
@@ -35,13 +36,12 @@ interface SignatureFormProps {
   subaccount?: string;
   status: "pending" | "rejected" | "approved";
   petitionData?: {
-    // Add petition data for email context
     title?: string;
     creatorId?: string;
-    creatorEmail?: string | null; // Change to accept null
+    creatorEmail?: string | null;
     creatorName?: string;
   };
-  onSuccess?: () => void; // <-- Add this
+  hasSigned: boolean;
 }
 
 export function SignatureForm({
@@ -50,7 +50,7 @@ export function SignatureForm({
   status,
   subaccount,
   petitionData = {},
-  onSuccess, // <-- Add this
+  hasSigned,
 }: SignatureFormProps) {
   const { createUserSignature, isLoading } = useSignature();
   const [friendlyError, setFriendlyError] = useState<string | null>(null);
@@ -61,11 +61,17 @@ export function SignatureForm({
     isAnonymous: false,
   });
 
-  const isDisabled =
-    status === "pending" || status === "rejected" ? true : false;
+  const baseUrl = getBaseURL();
+
+  // Check if form should be disabled
+  const isFormDisabled =
+    hasSigned || status === "pending" || status === "rejected";
+
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
+    if (isFormDisabled) return;
+
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
@@ -73,14 +79,21 @@ export function SignatureForm({
   console.log(formData.isAnonymous);
 
   const handleSwitchChange = (checked: boolean) => {
+    if (isFormDisabled) return;
     setFormData((prev) => ({ ...prev, isAnonymous: checked }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Prevent submission if already signed
+    if (hasSigned) {
+      setFriendlyError("You have already signed this petition.");
+      return;
+    }
+
     try {
-      const ok = await createUserSignature(petitionId, profile.id || null, {
+      const ok = await createUserSignature(petitionId, profile.id, {
         amount: 1,
         email: formData.email,
         name: formData.name,
@@ -90,7 +103,7 @@ export function SignatureForm({
 
       if (!ok) {
         setFriendlyError(
-          "We couldn't process your signature. Please try again. If the problem persists, please contact support."
+          "We couldn't process your signature. Please try again."
         );
         return;
       }
@@ -111,7 +124,7 @@ export function SignatureForm({
         console.error("Failed to send confirmation email:", emailError);
       }
 
-      // Send notification to petition creator (if we have creator info)
+      // Send notification to petition creator
       if (
         petitionData.creatorEmail &&
         petitionData.creatorName &&
@@ -119,7 +132,7 @@ export function SignatureForm({
       ) {
         try {
           await sendNewSignatureNotificationEmail(
-            petitionData.creatorEmail, // This is now string | null, but we checked it exists
+            petitionData.creatorEmail,
             petitionData.creatorName,
             petitionData.title,
             `${window.location.origin}/petitions/${petitionId}`,
@@ -134,8 +147,6 @@ export function SignatureForm({
           );
         }
       }
-
-      if (onSuccess) onSuccess(); // <-- call here
     } catch (error) {
       console.error("Error submitting signature:", error);
       setFriendlyError("We couldn't process your signature. Please try again.");
@@ -149,11 +160,21 @@ export function SignatureForm({
       <CardHeader>
         <CardTitle>Sign a petition</CardTitle>
         <CardDescription>
-          Your contribution helps make a difference
+          {hasSigned
+            ? "Thank you for signing this petition! Share it to help reach the goal."
+            : "Your contribution helps make a difference"}
         </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">
+          {hasSigned && (
+            <div className="p-3 bg-green-50 border border-green-200 rounded-md">
+              <p className="text-sm text-green-600">
+                ✓ You've already signed this petition
+              </p>
+            </div>
+          )}
+
           {friendlyError && (
             <div className="p-3 bg-red-50 border border-red-200 rounded-md">
               <p className="text-sm text-red-600">{friendlyError}</p>
@@ -169,7 +190,8 @@ export function SignatureForm({
               value={formData.name}
               onChange={handleChange}
               required={!formData.isAnonymous}
-              disabled={formData.isAnonymous}
+              disabled={formData.isAnonymous || isFormDisabled}
+              className={isFormDisabled ? "bg-gray-100 cursor-not-allowed" : ""}
             />
           </div>
 
@@ -183,6 +205,8 @@ export function SignatureForm({
               value={formData.email}
               onChange={handleChange}
               required
+              disabled={isFormDisabled}
+              className={isFormDisabled ? "bg-gray-100 cursor-not-allowed" : ""}
             />
           </div>
 
@@ -194,6 +218,8 @@ export function SignatureForm({
               placeholder="Leave a message of support"
               value={formData.message}
               onChange={handleChange}
+              disabled={isFormDisabled}
+              className={isFormDisabled ? "bg-gray-100 cursor-not-allowed" : ""}
             />
           </div>
 
@@ -202,8 +228,14 @@ export function SignatureForm({
               id="anonymous"
               checked={formData.isAnonymous}
               onCheckedChange={handleSwitchChange}
+              disabled={isFormDisabled}
             />
-            <Label htmlFor="anonymous">Sign anonymously</Label>
+            <Label
+              htmlFor="anonymous"
+              className={isFormDisabled ? "text-gray-400" : ""}
+            >
+              Sign anonymously
+            </Label>
           </div>
 
           {signatureAmount > 0 && (
@@ -216,42 +248,35 @@ export function SignatureForm({
           )}
         </CardContent>
         <CardFooter className="flex flex-col gap-4">
-          {/* REMOVE THIS TEST BUTTON IN PRODUCTION */}
-          {/* <Button 
-            type="button" 
-            variant="outline"
-            onClick={async () => {
-              try {
-                await sendPetitionSignedEmailToUser(
-                  formData.email || "test@example.com",
-                  formData.name || "Test User",
-                  petitionData.title || "Test Petition",
-                  `${window.location.origin}/petitions/${petitionId}`,
-                  formData.isAnonymous
-                );
-                alert("Test petition signed email sent successfully!");
-              } catch (error) {
-                alert("Failed to send test petition signed email");
-              }
-            }}
-          >
-            Test Signed Email
-          </Button> */}
-
-          <Button
-            type="submit"
-            disabled={isLoading || isDisabled}
-            className="w-full"
-          >
-            {isLoading ? (
-              <>
-                <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
-                Processing...
-              </>
-            ) : (
-              "Sign Now"
-            )}
-          </Button>
+          {hasSigned ? (
+            <>
+              <ShareModal
+                url={`${baseUrl}/petitions/${petitionId}`}
+                title={petitionData.title || "Petition"}
+                entityId={petitionId}
+                entityType="petition"
+              />
+              <div className="text-center text-sm text-muted-foreground">
+                Thank you for your support! Help spread the word by sharing this
+                petition.
+              </div>
+            </>
+          ) : (
+            <Button
+              type="submit"
+              disabled={isLoading || isFormDisabled}
+              className="w-full"
+            >
+              {isLoading ? (
+                <>
+                  <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                "Sign Now"
+              )}
+            </Button>
+          )}
         </CardFooter>
       </form>
     </Card>
