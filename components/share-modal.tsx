@@ -130,7 +130,7 @@ export function ShareModal({
     <Dialog>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" className="flex items-center gap-2">
-          <Share2 className="h-4 w-4" />
+          <Share2 className="h-6 w-6" />
           Share
         </Button>
       </DialogTrigger>
