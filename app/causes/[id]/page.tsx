@@ -15,7 +15,7 @@ import {
   getCurrentUser,
   getProfile,
   listDonationsForCause,
-  getProfileByUsername, // Make sure this is imported
+  getProfileByUsername,
 } from "@/actions";
 import { notFound } from "next/navigation";
 import { ShareModal } from "@/components/share-modal";
@@ -128,6 +128,7 @@ export default async function CauseDetailPage({
       user: {
         full_name: d.name || "Anonymous",
         profile_photo: null,
+        username: null,
       },
       replies: [],
       replies_count: 0,
@@ -192,7 +193,7 @@ export default async function CauseDetailPage({
                     href={
                       creatorUsername
                         ? `/${creatorUsername}`
-                        : `/${cause.user_id}` // CHANGED: Remove '/profile' prefix
+                        : `/${cause.user_id}`
                     }
                     className="hover:underline text-blue-600"
                   >
