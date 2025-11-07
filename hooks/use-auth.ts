@@ -8,7 +8,10 @@ import { toast } from "@/components/ui/use-toast";
 
 import { getCurrentUser } from "@/actions/auth-actions";
 import { updateProfile } from "@/actions";
-import { sendLoginNotificationEmail } from "@/services/mail";
+import {
+  sendLoginNotificationEmail,
+  sendWelcomeEmailToUser,
+} from "@/services/mail";
 import { hasCompletedOnboarding } from "@/actions/profile-actions";
 
 // Helper to extract a simple device/OS string from user agent
@@ -192,11 +195,21 @@ export function useAuth() {
             variant: "destructive",
           });
         }
+
+        // Send welcome email after successful signup and profile creation
+        try {
+          const profileSetupUrl = `${window.location.origin}/dashboard/settings`;
+          await sendWelcomeEmailToUser(email, fullName, profileSetupUrl);
+        } catch (emailError) {
+          console.error("Error sending welcome email:", emailError);
+          // Don't fail signup if email fails
+        }
       }
 
       toast({
         title: "Account created successfully",
-        description: "Welcome! Let's set up your profile.",
+        description:
+          "Welcome! Let's set up your profile. Check your email for a welcome message.",
       });
 
       // Redirect to onboarding for new users
