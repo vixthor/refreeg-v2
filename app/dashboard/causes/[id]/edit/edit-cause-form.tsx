@@ -106,6 +106,29 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
 
   console.log(cause.startDate, cause.endDate);
 
+  // Test email function
+  // const testEmailFunction = async () => {
+  //   try {
+  //     console.log("Testing email function...");
+
+  //     await sendCauseEditedEmail({
+  //       causeName: formData.title || "Test Cause",
+  //       reviewTimeframe: "3-5 business days",
+  //       dashboardUrl: `${window.location.origin}/dashboard/causes`,
+  //     });
+
+  //     console.log("✅ Email sent successfully!");
+  //     alert("Test email sent successfully! Check the console for details.");
+  //   } catch (error) {
+  //     console.error("❌ Failed to send email:", error);
+  //     alert(
+  //       `Failed to send test email: ${
+  //         error instanceof Error ? error.message : "Unknown error"
+  //       }`
+  //     );
+  //   }
+  // };
+
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
@@ -300,6 +323,7 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
       await sendCauseEditedEmail({
         causeName: formData.title,
         reviewTimeframe: "3-5 business days",
+        dashboardUrl: `${window.location.origin}/dashboard/causes`, // Use actual dashboard URL
       });
     } catch (error) {
       console.error("Error updating cause:", error);
@@ -786,14 +810,25 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">{renderStep()}</CardContent>
         <CardFooter className="flex justify-between">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={prevStep}
-            disabled={currentStep === 1}
-          >
-            Back
-          </Button>
+          {/* Test email button */}
+          {/* <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={prevStep}
+              disabled={currentStep === 1}
+            >
+              Back
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={testEmailFunction}
+              disabled={isLoading}
+            >
+              Test Email
+            </Button>
+          </div> */}
           {currentStep != 5 ? (
             <Button type="button" onClick={nextStep}>
               Next

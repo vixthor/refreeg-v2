@@ -489,6 +489,8 @@ export async function updatePetitionStatus(
       throw editError;
     }
 
+    let updatedPetition;
+
     if (edit) {
       // Copy edit fields into petitions (including description)
       const updateData: any = {
@@ -557,8 +559,7 @@ export async function updatePetitionStatus(
         .eq("petition_edit_id", edit.id);
       await supabase.from("petition_edits").delete().eq("id", edit.id);
 
-      revalidatePath("/dashboard/admin/petitions");
-      return updated as Petition;
+      updatedPetition = updated;
     } else {
       // No edit found, approve the main petition directly
       const { data: updated, error: updateError } = await supabase
@@ -575,10 +576,24 @@ export async function updatePetitionStatus(
         console.error("Error approving petition:", updateError);
         throw updateError;
       }
-
-      revalidatePath("/dashboard/admin/petitions");
-      return updated as Petition;
+      updatedPetition = updated;
     }
+
+    // Send approval email
+    const { data: petition } = await supabase
+      .from("petitions")
+      .select("user_id, title, id")
+      .eq("id", petitionId)
+      .single();
+
+    if (petition) {
+      await sendPetitionApprovedEmailForUser(petition.user_id, {
+        petitionName: petition.title,
+      });
+    }
+
+    revalidatePath("/dashboard/admin/petitions");
+    return updatedPetition as Petition;
   }
 
   // If rejecting, mark the latest pending edit as rejected
@@ -591,13 +606,15 @@ export async function updatePetitionStatus(
       .order("created_at", { ascending: false })
       .limit(1)
       .single();
+
     if (edit && !editError) {
       await supabase
         .from("petition_edits")
         .update({ status: "rejected", rejection_reason: rejectionReason })
         .eq("id", edit.id);
     }
-    // Optionally, update the main petition status to rejected if needed (legacy)
+
+    // Update the main petition status to rejected
     const { data, error } = await supabase
       .from("petitions")
       .update({
@@ -608,10 +625,26 @@ export async function updatePetitionStatus(
       .eq("id", petitionId)
       .select()
       .single();
+
     if (error) {
       console.error("Error updating petition status:", error);
       throw error;
     }
+
+    // Send rejection email
+    const { data: petition } = await supabase
+      .from("petitions")
+      .select("user_id, title, id")
+      .eq("id", petitionId)
+      .single();
+
+    if (petition) {
+      await sendPetitionRejectedEmailForUser(petition.user_id, {
+        petitionName: petition.title,
+        rejectionReason: rejectionReason,
+      });
+    }
+
     revalidatePath("/dashboard/admin/petitions");
     return data as Petition;
   }

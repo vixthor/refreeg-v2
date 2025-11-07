@@ -13,7 +13,6 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Eye, EyeOff } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
-import { sendWelcomeEmailToUser } from "@/services/mail";
 
 export default function SignUpPage() {
   const [email, setEmail] = useState("");
