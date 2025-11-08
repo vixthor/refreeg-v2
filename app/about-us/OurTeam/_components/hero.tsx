@@ -3,6 +3,7 @@
 import React from 'react'
 import { FaArrowRight } from "react-icons/fa6";
 import { motion } from "framer-motion";
+import Image from 'next/image'
 
 // Animation variants
 const fadeInUp = {
@@ -16,49 +17,58 @@ const fadeInUp = {
 
 export default function Hero() {
     return (
-        <div className="relative w-full min-h-[30vh] flex items-center justify-center px-6 md:px-10 py-16">
-            <div className="relative w-[727px] max-w-full aspect-square flex items-center justify-center">
-                <div
-                    className="absolute inset-0"
-                    style={{ clipPath: 'polygon(50% 0%, 93.3% 25%, 93.3% 75%, 50% 100%, 6.7% 75%, 6.7% 25%)' }}
+        <div className="relative w-full min-h-[50vh] flex items-center justify-center px-6 md:px-10 py-16 bg-white">
+            <div className="max-w-4xl mx-auto text-center">
+                {/* Icon */}
+                <motion.div 
+                    className="mb-8 flex justify-center"
+                    custom={0}
+                    variants={fadeInUp}
+                    initial="hidden"
+                    whileInView="show"
+                    viewport={{ once: true }}
                 >
-                    <div className="w-full h-full bg-[#EAF3FF] border border-[#CFE4FF] shadow-[0_12px_32px_rgba(16,44,88,0.08)]" />
-                </div>
-                <div className="relative z-10 flex flex-col items-center text-center gap-6 px-6">
-                    <motion.h1 
-                        className="text-2xl md:text-4xl lg:text-5xl font-semibold text-slate-900"
-                        custom={0}
-                        variants={fadeInUp}
-                        initial="hidden"
-                        whileInView="show"
-                        viewport={{ once: true }}
-                    >
-                        We are RefreeG
-                    </motion.h1>
-                    <motion.p 
-                        className="text-sm md:text-base lg:text-lg text-slate-700 max-w-[680px]"
-                        custom={1}
-                        variants={fadeInUp}
-                        initial="hidden"
-                        whileInView="show"
-                        viewport={{ once: true }}
-                    >
-                        Built by people who believe funding should be simple, fair, and accessible to everyone. We believe that trust is the foundation of every relationship, and it deserves to be rewarded.
-                    </motion.p>
-                    <motion.a 
-                        href="/dashboard/causes/create" 
-                        className="text-sm md:text-base inline-flex items-center gap-x-2 text-white px-5 py-3 bg-[#0B5CB8] hover:bg-[#0A53A6] rounded-lg shadow-sm"
-                        custom={2}
-                        variants={fadeInUp}
-                        initial="hidden"
-                        whileInView="show"
-                        viewport={{ once: true }}
-                        whileHover={{ scale: 1.05, transition: { duration: 0.2 } }}
-                        whileTap={{ scale: 0.95 }}
-                    >
-                        Start a Cause Now <FaArrowRight />
-                    </motion.a>
-                </div>
+                    <Image width={126.17} height={91.67} src="/images/hero-icon.png" alt="hero-icon"  />
+                </motion.div>
+
+                {/* Heading */}
+                <motion.h1 
+                    className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-6"
+                    custom={1}
+                    variants={fadeInUp}
+                    initial="hidden"
+                    whileInView="show"
+                    viewport={{ once: true }}
+                >
+                    We are RefreeG
+                </motion.h1>
+
+                {/* Description */}
+                <motion.p 
+                    className="text-lg md:text-xl text-gray-700 max-w-3xl mx-auto mb-10 leading-relaxed"
+                    custom={2}
+                    variants={fadeInUp}
+                    initial="hidden"
+                    whileInView="show"
+                    viewport={{ once: true }}
+                >
+                    Built by people who believe funding should be simple, fair, and accessible to everyone. We believe that trust is the foundation of every relationship, and it deserves to be rewarded.
+                </motion.p>
+
+                {/* CTA Button */}
+                <motion.a 
+                    href="/dashboard/causes/create" 
+                    className="inline-flex items-center gap-x-3 text-white px-8 py-4 bg-[#0B5CB8] hover:bg-[#0A53A6] rounded-lg shadow-lg text-lg font-medium transition-colors duration-200"
+                    custom={3}
+                    variants={fadeInUp}
+                    initial="hidden"
+                    whileInView="show"
+                    viewport={{ once: true }}
+                    whileHover={{ scale: 1.05, transition: { duration: 0.2 } }}
+                    whileTap={{ scale: 0.95 }}
+                >
+                    Start a Cause Now <FaArrowRight className="text-sm" />
+                </motion.a>
             </div>
         </div>
     )
