@@ -178,7 +178,7 @@ export function Header() {
           title: "📣 FAQ",
           description:
             "Get answers to the most common questions about crowdfunding on RefreeG.",
-          href: "/#faq",
+          href: "/faq",
           icon: HelpCircle,
         },
       ],
