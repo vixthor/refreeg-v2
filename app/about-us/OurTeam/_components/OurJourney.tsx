@@ -23,27 +23,27 @@ type Step = {
 const steps: Step[] = [
   {
     number: 1,
-    title: 'Where it began',
+    title: 'The Idea',
     description:
-      'We recognized the barriers in traditional fundraising and set out to build a simpler, more transparent path.',
+      'We realized that too many people with great ideas or urgent needs lacked access to fair and effective funding opportunities.',
   },
   {
     number: 2,
-    title: 'Building trust',
+    title: 'The Build',
     description:
-      'We focused on verification, clarity, and community—making it easy for supporters to see their impact.',
+      'A small, passionate team came together to design RefreeG, with trust, simplicity, and community at its core.',
   },
   {
     number: 3,
-    title: 'Scaling support',
+    title: 'The Launch',
     description:
-      'From individuals to organizations, we expanded tools that help campaigns grow safely and effectively.',
+      'After months of dedication, we launched RefreeG to give anyone the chance to bring their ideas and causes to life.',
   },
   {
     number: 4,
-    title: 'The movement today',
+    title: 'The Future',
     description:
-      'RefreeG continues to empower change-makers with reliable, accessible crowdfunding for real impact.',
+      'We’re building towards a global platform where opportunities, impact, and support can be shared without limits.',
   },
 ]
 
