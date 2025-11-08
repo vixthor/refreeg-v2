@@ -33,7 +33,7 @@ export default function Hero() {
         transition={{ ...floatTransition, duration: 4 }}
         className="absolute top-0 left-0"
       >
-        <Image src="/rocket.png" alt="rocket" width={200} height={200} />
+        <Image src="/images/Yellowbitcoin.png" alt="rocket" width={200} height={200} />
       </motion.div>
 
       <motion.div
@@ -42,7 +42,7 @@ export default function Hero() {
         transition={{ ...floatTransition, duration: 4, delay: 0.3 }}
         className="absolute top-0 right-0"
       >
-        <Image src="/filecase.png" alt="filecase" width={200} height={200} />
+        <Image src="/images/moneyandphone.png" alt="filecase" width={200} height={200} />
       </motion.div>
 
       <motion.div
@@ -51,7 +51,7 @@ export default function Hero() {
         transition={{ ...floatTransition, duration: 4, delay: 0.6 }}
         className="absolute bottom-0 left-0"
       >
-        <Image src="/coinscale.png" alt="coinscale" width={200} height={200} />
+        <Image src="/images/safegreen.png" alt="green-safe" width={200} height={200} />
       </motion.div>
 
       <motion.div
@@ -61,7 +61,7 @@ export default function Hero() {
         className="absolute bottom-0 right-0"
       >
         <Image
-          src="/targetbusiness.png"
+          src="/images/Brownwallet.png"
           alt="targetbusiness"
           width={200}
           height={200}
@@ -78,29 +78,13 @@ export default function Hero() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 1.2, ease: "easeOut" }}
       >
-        <motion.p
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="border rounded-full w-fit px-4 py-2 mb-4 bg-[#FAFAFA] text-sm font-medium inline-flex items-center justify-center mx-auto"
-        >
-          <Image
-            src="/users.png"
-            alt="users"
-            width={20}
-            height={20}
-            className="mr-2"
-          />
-          Join thousands already fundraising on RefreeG
-        </motion.p>
-
         <motion.h1
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
           className="text-4xl md:text-5xl font-bold mb-4"
         >
-          Fuel Your Business Growth with Crowdfunding
+          Simple, Transparent Fees
         </motion.h1>
 
         <motion.p
@@ -109,9 +93,7 @@ export default function Hero() {
           transition={{ delay: 0.7 }}
           className="text-lg md:text-xl mb-6"
         >
-          Whether you’re launching a startup or scaling an existing business,
-          RefreeG helps you raise funds transparently, attract supporters, and
-          maximize every dollar through our unique yield feature.
+          At RefreeG, we believe your impact shouldn’t be hidden behind confusing charges. That’s why we keep our fees clear, fair, and simple—so you always know exactly where your money goes and how it gets to you.
         </motion.p>
 
         <motion.div
@@ -123,8 +105,8 @@ export default function Hero() {
             Start a Business Campaign
             <Image
               src="/images/chevron-right-2.png"
-              height={20}
-              width={20}
+              height={14}
+              width={14}
               alt="get started"
               className="ml-2"
             />
