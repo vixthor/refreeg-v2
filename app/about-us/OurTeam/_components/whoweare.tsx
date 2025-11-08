@@ -7,12 +7,12 @@ import { motion, useAnimation } from 'framer-motion';
 import { useAnimateInView } from '@/hooks/use-animate-In-view';
 
 const TEAM = [
-    { imageSrc: '/team.JPG', name: 'Somto', role: 'CEO', location: 'Lagos, NG' },
-    { imageSrc: '/team.JPG', name: 'Ada', role: 'Design Lead', location: 'Abuja, NG' },
-    { imageSrc: '/team.JPG', name: 'Chinedu', role: 'CFO', location: 'Lagos, NG' },
-    { imageSrc: '/team.JPG', name: 'Hassan', role: 'HR', location: 'Kano, NG' },
-    { imageSrc: '/team.JPG', name: 'Uche', role: 'Lead Dev', location: 'Lagos, NG' },
-    { imageSrc: '/team.JPG', name: 'Tola', role: 'QA', location: 'Ibadan, NG' },
+    { imageSrc: '/images/tega.png', name: 'Oghenetega Victor Gbiyede', role: 'COO', location: 'Abuja, NG' },
+    { imageSrc: '/images/ayo.png', name: 'David Ayomikun Akintunde', role: 'UI/UX Designer', location: 'Abuja, NG' },
+    { imageSrc: '/images/nomso.png', name: 'Nomso', role: 'CFO', location: 'Lagos, NG' },
+    // { imageSrc: '/team.JPG', name: 'Hassan', role: 'HR', location: 'Kano, NG' },
+    // { imageSrc: '/team.JPG', name: 'Uche', role: 'Lead Dev', location: 'Lagos, NG' },
+    // { imageSrc: '/team.JPG', name: 'Tola', role: 'QA', location: 'Ibadan, NG' },
 ];
 
 const CARD_GAP = 24; // px
@@ -66,97 +66,43 @@ function MobileTeamSlider() {
     );
 }
 
-function DesktopTeamSlider() {
+function DesktopTeamGrid() {
     const { ref, isInView } = useAnimateInView({ once: true, margin: '-50px' });
-    const sliderControls = useAnimation();
-    
-    // Use a single scene and repeat it for the infinite loop
-    const scene = [
-        // Somto (CEO) - bottom-left
-        { ...TEAM[0], position: { left: '0%', bottom: '0%' }, style: { zIndex: 30 } },
 
-        // Ada (Design Lead) - upper-left
-        { ...TEAM[1], position: { left: '20%', top: '0%' }, style: { zIndex: 20 } },
-
-        // Chinedu (CFO) - center (horizontally centered)
-        { ...TEAM[2], position: { left: '40%', bottom: '0%' }, style: { transform: 'translateX(-50%)', zIndex: 40 } },
-
-        // Hassan (HR) - upper-right
-        { ...TEAM[3], position: { left: '60%', top: '0%' }, style: { zIndex: 20 } },
-
-        // Uche (Lead Dev) - bottom-right
-        { ...TEAM[4], position: { left: '-20%', bottom: '0%' }, style: { zIndex: 30 } },
-
-        // Tola (QA) - slightly right and lower than Hassan
-        { ...TEAM[5], position: { right: '-0%', top: '0%' }, style: { zIndex: 15, transform: 'translateX(-50%)' } }
-    ];
-
-    const SCENE_WIDTH = 100; // Each scene takes full width (100vw)
-    const SLIDER_SPEED = 200; // seconds per full loop (faster since only 2 scenes)
-
-    React.useEffect(() => {
-        if (isInView) {
-            // Start infinite horizontal loop: shift by one scene width (we render 3 copies)
-            const totalWidth = SCENE_WIDTH; // 100% per scene
-            sliderControls.start({
-                x: `-${totalWidth}%`,
-                transition: {
-                    repeat: Infinity,
-                    repeatType: 'loop',
-                    duration: SLIDER_SPEED,
-                    ease: 'linear'
-                },
-            });
-        }
-    }, [isInView, sliderControls]);
+    // Determine grid columns based on team size
+    const getGridCols = (teamSize: number) => {
+        if (teamSize <= 2) return 'grid-cols-1 md:grid-cols-2';
+        if (teamSize === 3) return 'grid-cols-1 md:grid-cols-3';
+        if (teamSize === 4) return 'grid-cols-2 md:grid-cols-2';
+        if (teamSize <= 6) return 'grid-cols-2 md:grid-cols-3';
+        return 'grid-cols-2 md:grid-cols-4';
+    };
 
     return (
-        <div className="relative hidden md:block w-full max-w-7xl h-[720px] mt-10 overflow-hidden">
+        <div className="hidden md:block w-full max-w-6xl mx-auto mt-10">
             <motion.div 
                 ref={ref}
-                className="flex w-max"
-                animate={sliderControls}
-                initial={{ x: 0 }}
+                className={`grid ${getGridCols(TEAM.length)} gap-8 items-center justify-items-center`}
+                initial={{ opacity: 0 }}
+                animate={isInView ? { opacity: 1 } : { opacity: 0 }}
+                transition={{ duration: 0.8 }}
             >
-                {/* Render scenes multiple times for infinite loop */}
-                    {[scene, scene, scene].map((s: any[], sceneIndex: number) => (
-                    <div 
-                        key={sceneIndex}
-                        className="relative flex-shrink-0"
-                        style={{ width: '100vw', maxWidth: '1152px', height: '720px' }} // max-w-7xl = 1152px
+                {TEAM.map((member, index) => (
+                    <motion.div
+                        key={member.name}
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
+                        transition={{ duration: 0.6, delay: index * 0.1 }}
                     >
-                        {/* Team members positioned within each scene */}
-                            {s.map((member: any, memberIndex: number) => (
-                            <motion.div
-                                    key={`${sceneIndex}-${member.name}`}
-                                className="absolute"
-                                style={{
-                                    ...member.position,
-                                    zIndex: 10,
-                                    ...(member.style || {})
-                                }}
-                                initial={{ opacity: 0, y: 30 }}
-                                animate={{ 
-                                    opacity: 1, 
-                                    y: 0,
-                                    transition: { 
-                                        duration: 0.6, 
-                                        delay: memberIndex * 0.1,
-                                        ease: "easeOut"
-                                    }
-                                }}
-                            >
-                                <TeamMember
-                                    imageSrc={member.imageSrc}
-                                    name={member.name}
-                                    role={member.role}
-                                    location={member.location}
-                                    width={302}
-                                    height={302}
-                                />
-                            </motion.div>
-                        ))}
-                    </div>
+                        <TeamMember
+                            imageSrc={member.imageSrc}
+                            name={member.name}
+                            role={member.role}
+                            location={member.location}
+                            width={280}
+                            height={280}
+                        />
+                    </motion.div>
                 ))}
             </motion.div>
         </div>
@@ -179,8 +125,8 @@ export default function WhoWeAre() {
                 <MobileTeamSlider />
             </div>
 
-            {/* Desktop layout: positioned collage slider */}
-            <DesktopTeamSlider />
+            {/* Desktop layout: clean grid */}
+            <DesktopTeamGrid />
         </div>
     )
 }
