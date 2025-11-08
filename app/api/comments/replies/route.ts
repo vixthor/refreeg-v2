@@ -17,12 +17,7 @@ export async function GET(request: Request) {
 
     const { data: replies, error } = await supabase
       .from(table)
-      .select(
-        `
-        *,
-        user:profiles(full_name, profile_photo)
-      `
-      )
+      .select(`*, user:profiles(full_name, profile_photo, username)`)
       .eq("parent_id", parentId)
       .order("created_at", { ascending: true });
 

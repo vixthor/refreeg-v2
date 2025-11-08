@@ -117,12 +117,7 @@ export async function PUT(
         updated_at: new Date().toISOString(),
       })
       .eq("id", commentId)
-      .select(
-        `
-        *,
-        user:profiles(full_name, profile_photo)
-      `
-      )
+      .select(`*, user:profiles(full_name, profile_photo, username)`)
       .single();
 
     if (error) throw error;
