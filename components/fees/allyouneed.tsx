@@ -9,33 +9,30 @@ export default function AllYouNeed() {
   const steps = [
     {
       number: 1,
-      title: "List Your Business Campaign",
+      title: "Set Up Your Payout Details",
       desc: (
         <>
-          Tell your story, set your funding goals,
-          <br /> and upload proof of your business.
+          Securely link your bank account and/ <br /> or wallet for easy withdrawals.
         </>
       ),
       align: "self-start text-left",
     },
     {
       number: 2,
-      title: "Engage & Build Trust",
+      title: "Track Contributions",
       desc: (
         <>
-          Share updates, respond to supporters,
-          <br /> and showcase your progress.
+          Monitor donations and campaign <br /> growth in real-time.
         </>
       ),
       align: "self-center text-left",
     },
     {
       number: 3,
-      title: "Raise, Grow & Earn More",
+      title: "Funds Disbursement",
       desc: (
         <>
-          Use the funds to scale while also earning
-          <br /> yield through our staking option.
+          Funds donated to you get sent directly <br /> to your account in less than 48 hours.
         </>
       ),
       align: "self-end text-left",
@@ -83,8 +80,8 @@ export default function AllYouNeed() {
         transition={{ duration: 0.8 }}
         viewport={{ once: true }}
       >
-        Everything You Need, All in One <br />
-        <span className="text-gray-500">Place</span>
+        Fast and Secure <br />
+        <span className="text-gray-500">Withdrawals</span>
       </motion.div>
 
       <motion.div
@@ -94,8 +91,7 @@ export default function AllYouNeed() {
         transition={{ duration: 0.8, delay: 0.2 }}
         viewport={{ once: true }}
       >
-        Raise funds, protect your supporters, and grow your capital with features
-        made for forward-thinking entrepreneurs.
+        Getting your funds is as easy as raising them. RefreeG gives you complete control and visibility over your payout process.
       </motion.div>
 
       {/* Steps */}
