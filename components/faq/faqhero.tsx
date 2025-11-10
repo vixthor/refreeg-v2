@@ -71,7 +71,7 @@ export default function FAQHero() {
         >
           <div className="relative w-full max-w-[500px] aspect-[1.2/1]">
             <Image
-              src="/impact.png"
+              src="/images/magnifyer.png"
               alt="Impact and growth illustration"
               fill
               priority={true}

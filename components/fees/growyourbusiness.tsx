@@ -8,7 +8,7 @@ import { motion } from "framer-motion";
 
 export default function GrowYourBusiness() {
   return (
-    <div className="w-full h-auto flex flex-col lg:flex-row justify-center items-center px-6 lg:px-10 py-10 gap-4 overflow-hidden">
+    <div className="w-full h-auto flex flex-col lg:flex-row justify-center items-center px-6 lg:px-10 py-10 gap-4 overflow-hidden max-w-7xl mx-auto">
       {/* Text Section */}
       <motion.div
         className="w-full lg:w-3/4 h-auto flex flex-col justify-center items-start gap-6"
