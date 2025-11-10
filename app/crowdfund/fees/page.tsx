@@ -5,6 +5,7 @@ import AllYouNeed from "@/components/fees/allyouneed";
 import FeeBreakdown from "@/components/fees/feebreakdown";
 import FundStreamingProtection from "@/components/fees/fundstreamingprotection";
 import DonorGuarantee from "@/components/fees/donorguarantee";
+import JoinOurCommunity from "@/components/fees/joinourcommunity";
 import Numbers from "@/components/numbers";
 import Hero from "@/components/fees/hero";
 
@@ -17,6 +18,7 @@ export default function Fees() {
       <MoreOnBusiness />
       <FundStreamingProtection />
       <DonorGuarantee />
+      <JoinOurCommunity />
       <GrowYourBusiness />
     </div>
   );
