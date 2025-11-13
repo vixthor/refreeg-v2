@@ -8,11 +8,18 @@ import WhyItStandsOut from "@/components/home/whyitStandsOut";
 import HowitWorksYT from "@/components/home/howitWorksYT";
 import { FeaturedPetitions } from "@/components/home/featured-petitions";
 import { UrgentCauses } from "@/components/home/urgentCauses";
+import CTASection from "@/components/home/cta-section";
+import Statistics from "@/components/home/statistics";
+import Numbers from "@/components/numbers";
 
 export default function Home() {
   return (
     <div className="flex flex-col min-h-screen mt-16 ">
       <Hero />
+      {/* Statistics Section */}
+      <div className="mx-8">
+        <Numbers />
+      </div>
 
       <div className="mx-8">
         <LaunchYourCauseInSeconds />
@@ -32,9 +39,9 @@ export default function Home() {
       </div>
 
       {/* Featured Causes */}
-      <div className="mx-8">
+      {/* <div className="mx-8">
         <FeaturedCauses />
-      </div>
+      </div> */}
 
       <div className="mx-8">
         <FeaturedPetitions />
@@ -44,7 +51,9 @@ export default function Home() {
         <HowitWorksYT />
       </div>
 
-      <div className="md:mx-8">
+      <CTASection />
+
+      <div id="faq" className="md:mx-8">
         <FAQ />
       </div>
     </div>

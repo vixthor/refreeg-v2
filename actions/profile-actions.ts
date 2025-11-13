@@ -2,7 +2,12 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
-import type { Profile, ProfileFormData, BankDetailsFormData } from "@/types";
+import type {
+  Profile,
+  ProfileFormData,
+  BankDetailsFormData,
+  OnboardingProfileData,
+} from "@/types";
 
 /**
  * Get a user's profile
@@ -48,6 +53,7 @@ export async function updateProfile(
     id: userId,
     full_name: profileData.name,
     email: profileData.email,
+    username: profileData.username,
     phone: profileData.phone,
     bio: profileData.bio,
     profile_photo: profileData.profile_photo,
@@ -158,6 +164,317 @@ export async function updateBankDetails(
 }
 
 /**
+ * Create a new profile during onboarding
+ */
+export async function createOnboardingProfile(
+  userId: string,
+  profileData: OnboardingProfileData,
+  oauthAvatarUrl?: string | null
+): Promise<Profile> {
+  const supabase = await createClient();
+
+  // Upload profile photo if provided, otherwise use OAuth avatar
+  let profilePhotoUrl: string | null = null;
+  if (profileData.profilePhoto) {
+    const fileName = `${userId}-${Date.now()}-${profileData.profilePhoto.name}`;
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from("profile-photos")
+      .upload(fileName, profileData.profilePhoto, {
+        cacheControl: "3600",
+        upsert: true,
+      });
+
+    if (uploadError) {
+      console.error("Error uploading profile photo:", uploadError);
+      throw new Error("Failed to upload profile photo");
+    }
+
+    const { data: urlData } = supabase.storage
+      .from("profile-photos")
+      .getPublicUrl(fileName);
+    profilePhotoUrl = urlData.publicUrl;
+  } else if (oauthAvatarUrl) {
+    // Use OAuth avatar URL if no custom photo uploaded
+    profilePhotoUrl = oauthAvatarUrl;
+  }
+
+  const fullName = `${profileData.firstName} ${profileData.lastName}`.trim();
+
+  // Start with basic required fields
+  const insertData: any = {
+    id: userId,
+    email: profileData.email,
+    full_name: fullName,
+    phone: profileData.phone,
+    profile_photo: profilePhotoUrl,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+
+  // Try to add new fields, but don't fail if they don't exist
+  try {
+    if (profileData.firstName) insertData.first_name = profileData.firstName;
+    if (profileData.lastName) insertData.last_name = profileData.lastName;
+    if (profileData.username) insertData.username = profileData.username;
+    if (profileData.location) insertData.location = profileData.location;
+    if (profileData.accountType)
+      insertData.account_type = profileData.accountType;
+    if (profileData.gender) insertData.gender = profileData.gender;
+  } catch (e) {
+    console.warn("Some fields may not exist in database schema:", e);
+  }
+
+  const { data, error } = await supabase
+    .from("profiles")
+    .upsert(insertData)
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error creating profile:", error);
+    throw new Error(`Failed to create profile: ${error.message}`);
+  }
+
+  revalidatePath("/dashboard");
+  revalidatePath("/");
+  return data as Profile;
+}
+
+/**
+ * Check if user has completed onboarding
+ *
+ * IMPORTANT: We grandfather in existing users who signed up before the onboarding feature
+ * was implemented. These users don't have the onboarding fields but should still be
+ * able to use the platform. Only truly new users (after onboarding feature) must complete onboarding.
+ */
+export async function hasCompletedOnboarding(userId: string): Promise<boolean> {
+  try {
+    const supabase = await createClient();
+
+    const { data: profile, error } = await supabase
+      .from("profiles")
+      .select(
+        "full_name, phone, email, first_name, last_name, username, location, created_at"
+      )
+      .eq("id", userId)
+      .single();
+
+    if (error || !profile) {
+      return false;
+    }
+
+    // Grandfather in existing users: If user has basic profile data but lacks onboarding fields,
+    // they're an existing user who signed up before onboarding was implemented
+    const hasBasicProfile = !!(profile.full_name && profile.email);
+
+    const hasOnboardingFields = !!(
+      profile.first_name &&
+      profile.last_name &&
+      profile.username &&
+      profile.location &&
+      profile.phone
+    );
+
+    // If user has basic profile but not onboarding fields, they're an existing user - consider onboarding complete
+    if (hasBasicProfile && !hasOnboardingFields) {
+      console.log(
+        `Grandfathered existing user ${userId} - has basic profile but no onboarding fields`
+      );
+      return true;
+    }
+
+    // New users must have all onboarding fields
+    return hasOnboardingFields;
+  } catch (error) {
+    console.error("Error checking onboarding completion:", error);
+    return false;
+  }
+}
+
+/**
+ * Determine the current onboarding step based on existing profile data
+ * Returns the step number (1-5) where the user should resume
+ */
+export async function getCurrentOnboardingStep(
+  userId: string
+): Promise<number> {
+  try {
+    const supabase = await createClient();
+
+    const { data: profile, error } = await supabase
+      .from("profiles")
+      .select(
+        "account_type, gender, first_name, last_name, username, location, phone, email, profile_photo"
+      )
+      .eq("id", userId)
+      .single();
+
+    if (error || !profile) {
+      return 1; // Start from step 1 if no profile exists
+    }
+
+    // Step 1: Check if account_type is set
+    if (!profile.account_type) {
+      return 1;
+    }
+
+    // Step 2: Check if gender is set
+    if (!profile.gender) {
+      return 2;
+    }
+
+    // Step 3: Check if all profile fields are set
+    const hasProfileData = !!(
+      profile.first_name &&
+      profile.last_name &&
+      profile.username &&
+      profile.location &&
+      profile.phone &&
+      profile.email
+    );
+
+    if (!hasProfileData) {
+      return 3;
+    }
+
+    // If all steps 1-3 are complete, user can proceed to step 4 (KYC)
+    return 4;
+  } catch (error) {
+    console.error("Error determining onboarding step:", error);
+    return 1;
+  }
+}
+
+/**
+ * Fetch existing onboarding data from database for prefilling forms
+ */
+export async function getOnboardingData(userId: string): Promise<{
+  accountType: string;
+  gender: string;
+  profile: {
+    firstName: string;
+    lastName: string;
+    username: string;
+    location: string;
+    phone: string;
+    email: string;
+    profilePhoto?: string;
+  };
+}> {
+  try {
+    const supabase = await createClient();
+
+    const { data: profile, error } = await supabase
+      .from("profiles")
+      .select(
+        "account_type, gender, first_name, last_name, username, location, phone, email, profile_photo"
+      )
+      .eq("id", userId)
+      .single();
+
+    if (error || !profile) {
+      // Return empty data if no profile exists
+      return {
+        accountType: "",
+        gender: "",
+        profile: {
+          firstName: "",
+          lastName: "",
+          username: "",
+          location: "",
+          phone: "",
+          email: "",
+        },
+      };
+    }
+
+    return {
+      accountType: profile.account_type || "",
+      gender: profile.gender || "",
+      profile: {
+        firstName: profile.first_name || "",
+        lastName: profile.last_name || "",
+        username: profile.username || "",
+        location: profile.location || "",
+        phone: profile.phone || "",
+        email: profile.email || "",
+        profilePhoto: profile.profile_photo || undefined,
+      },
+    };
+  } catch (error) {
+    console.error("Error fetching onboarding data:", error);
+    return {
+      accountType: "",
+      gender: "",
+      profile: {
+        firstName: "",
+        lastName: "",
+        username: "",
+        location: "",
+        phone: "",
+        email: "",
+      },
+    };
+  }
+}
+
+/**
+ * Save step 1 progress (account type)
+ */
+export async function saveStep1Progress(
+  userId: string,
+  accountType: string
+): Promise<void> {
+  try {
+    const supabase = await createClient();
+
+    const { error } = await supabase.from("profiles").upsert({
+      id: userId,
+      account_type: accountType,
+      updated_at: new Date().toISOString(),
+    });
+
+    if (error) {
+      console.error("Error saving step 1 progress:", error);
+      throw error;
+    }
+
+    revalidatePath("/onboarding");
+  } catch (error) {
+    console.error("Error in saveStep1Progress:", error);
+    throw error;
+  }
+}
+
+/**
+ * Save step 2 progress (gender)
+ */
+export async function saveStep2Progress(
+  userId: string,
+  gender: string
+): Promise<void> {
+  try {
+    const supabase = await createClient();
+
+    const { error } = await supabase.from("profiles").upsert({
+      id: userId,
+      gender: gender,
+      updated_at: new Date().toISOString(),
+    });
+
+    if (error) {
+      console.error("Error saving step 2 progress:", error);
+      throw error;
+    }
+
+    revalidatePath("/onboarding");
+  } catch (error) {
+    console.error("Error in saveStep2Progress:", error);
+    throw error;
+  }
+}
+
+/**
  * Check if profile is complete
  */
 export async function isProfileComplete(
@@ -254,4 +571,28 @@ export async function updateKycStatus(
 
   if (error) throw error;
   return data;
+}
+
+// actions/profile-actions.ts
+export async function getProfileByUsername(
+  username: string
+): Promise<Profile | null> {
+  const supabase = await createClient();
+  try {
+    const { data: profile, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("username", username)
+      .single();
+
+    if (error) {
+      console.error("Error fetching profile by username:", error);
+      return null;
+    }
+
+    return profile;
+  } catch (error) {
+    console.error("Error in getProfileByUsername:", error);
+    return null;
+  }
 }

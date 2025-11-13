@@ -28,6 +28,31 @@ export function CommentComponent({
   const [showReplies, setShowReplies] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [replies, setReplies] = useState<Comment[]>([]);
+  const [isLoadingReplies, setIsLoadingReplies] = useState(false);
+  const [repliesCount, setRepliesCount] = useState(comment.replies_count || 0);
+
+  // Fetch replies when toggling showReplies to true
+  const handleToggleReplies = async () => {
+    if (!showReplies && replies.length === 0 && repliesCount > 0) {
+      setIsLoadingReplies(true);
+      try {
+        const response = await fetch(
+          `/api/comments/replies/${comment.id}?entityType=${
+            entityType || "cause"
+          }`
+        );
+        if (response.ok) {
+          const fetchedReplies = await response.json();
+          setReplies(fetchedReplies);
+        }
+      } catch (error) {
+        console.error("Failed to fetch replies:", error);
+      } finally {
+        setIsLoadingReplies(false);
+      }
+    }
+    setShowReplies(!showReplies);
+  };
 
   const handleDelete = async () => {
     try {
@@ -65,11 +90,42 @@ export function CommentComponent({
     }
   };
 
+  // Determine profile link behavior
+  const getProfileLink = () => {
+    const hasUsername = !!comment.user.username;
+    const isCurrentUser = currentUserId === comment.user_id;
+
+    // If current user doesn't have username, direct to settings
+    if (isCurrentUser && !hasUsername) {
+      return "/dashboard/settings";
+    }
+
+    // If other user doesn't have username, stay on current page (prevent navigation)
+    if (!isCurrentUser && !hasUsername) {
+      return "#";
+    }
+
+    // For users with usernames, use normal profile link
+    return `/${comment.user.username}`;
+  };
+
+  const profileLink = getProfileLink();
+  const hasUsername = !!comment.user.username;
+  const isCurrentUser = currentUserId === comment.user_id;
+
   return (
     <div className="border-b pb-4 mb-4">
       <div className="flex gap-3">
         <div className="flex-shrink-0">
-          <Link href={`/profile/${comment.user_id}`}>
+          <Link
+            href={profileLink}
+            onClick={(e) => {
+              // Prevent navigation for other users without username
+              if (!isCurrentUser && !hasUsername) {
+                e.preventDefault();
+              }
+            }}
+          >
             {comment.user.profile_photo ? (
               <Image
                 src={comment.user.profile_photo}
@@ -79,7 +135,13 @@ export function CommentComponent({
                 className="rounded-full"
               />
             ) : (
-              <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
+              <div
+                className={`w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center ${
+                  !isCurrentUser && !hasUsername
+                    ? "cursor-default"
+                    : "cursor-pointer"
+                }`}
+              >
                 <span className="text-sm font-medium">
                   {comment.user.full_name?.charAt(0).toUpperCase() || "U"}
                 </span>
@@ -90,10 +152,36 @@ export function CommentComponent({
         <div className="flex-grow">
           <div className="flex items-center gap-2">
             <Link
-              href={`/profile/${comment.user_id}`}
-              className="font-medium hover:underline"
+              href={profileLink}
+              onClick={(e) => {
+                // Prevent navigation for other users without username
+                if (!isCurrentUser && !hasUsername) {
+                  e.preventDefault();
+                }
+              }}
+              className={`font-medium ${
+                !isCurrentUser && !hasUsername
+                  ? "text-gray-500 cursor-default no-underline"
+                  : "hover:underline"
+              }`}
             >
               {comment.user.full_name || "Anonymous"}
+              {isCurrentUser && !hasUsername && (
+                <span
+                  className="text-xs text-orange-600 ml-1"
+                  title="Set up your username in settings"
+                >
+                  *
+                </span>
+              )}
+              {!isCurrentUser && !hasUsername && (
+                <span
+                  className="text-xs text-gray-400 ml-1"
+                  title="This user hasn't set up their profile"
+                >
+                  •
+                </span>
+              )}
             </Link>
             <span className="text-sm text-muted-foreground">
               {formatDistanceToNow(new Date(comment.created_at), {
@@ -119,25 +207,28 @@ export function CommentComponent({
 
           <div className="mt-2 flex items-center gap-4">
             <button
-              onClick={() => setShowReplies(!showReplies)}
-              className="text-sm text-muted-foreground hover:text-primary"
+              onClick={handleToggleReplies}
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              disabled={isLoadingReplies}
             >
-              {comment.replies_count === 1
+              {isLoadingReplies
+                ? "Loading..."
+                : repliesCount === 1
                 ? "1 reply"
-                : `${comment.replies_count || 0} replies`}
+                : `${repliesCount} replies`}
             </button>
 
             {currentUserId === comment.user_id && (
               <div className="flex gap-2">
                 <button
                   onClick={() => setIsEditing(true)}
-                  className="text-sm text-muted-foreground hover:text-primary flex items-center gap-1"
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
                 >
                   <Pencil size={14} /> Edit
                 </button>
                 <button
                   onClick={handleDelete}
-                  className="text-sm text-muted-foreground hover:text-destructive flex items-center gap-1"
+                  className="text-sm text-muted-foreground hover:text-destructive transition-colors flex items-center gap-1"
                 >
                   <Trash2 size={14} /> Delete
                 </button>
@@ -152,6 +243,7 @@ export function CommentComponent({
                 parentId={comment.id}
                 onReplyAdded={(newReply) => {
                   setReplies([...replies, newReply]);
+                  setRepliesCount(repliesCount + 1);
                 }}
                 entityType={entityType}
               />
@@ -168,7 +260,10 @@ export function CommentComponent({
               comment={reply}
               causeId={causeId}
               currentUserId={currentUserId}
-              onCommentDeleted={onCommentDeleted}
+              onCommentDeleted={(deletedId) => {
+                setReplies(replies.filter((r) => r.id !== deletedId));
+                setRepliesCount(repliesCount - 1);
+              }}
               entityType={entityType}
             />
           ))}

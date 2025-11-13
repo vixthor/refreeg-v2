@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Thank You for Signing - Refreeg</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        line-height: 1.6;
+        color: #333;
+        margin: 0;
+        padding: 0;
+      }
+
+      .container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+
+      .header {
+        background-color: #003366;
+        color: white;
+        padding: 20px;
+        text-align: center;
+      }
+
+      .logo {
+        max-width: 150px;
+        margin-bottom: 10px;
+      }
+
+      .content {
+        padding: 20px;
+        background-color: #f9f9f9;
+      }
+
+      .footer {
+        text-align: center;
+        padding: 20px;
+        font-size: 12px;
+        color: #777;
+        border-top: 3px solid #003366;
+      }
+
+      h1 {
+        color: #ffffff;
+        margin-top: 0;
+      }
+
+      .highlight {
+        font-weight: bold;
+        color: #003366;
+      }
+
+      .cta-button {
+        display: inline-block;
+        background-color: #0066cc;
+        color: white !important;
+        padding: 12px 24px;
+        text-decoration: none;
+        border-radius: 8px;
+        margin: 20px 0;
+        font-weight: bold;
+        font-size: 16px;
+        transition: background-color 0.3s ease;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .cta-button:hover {
+        background-color: #0052a3;
+        color: white !important;
+      }
+
+      .thank-you-section {
+        background-color: #e8f4fd;
+        padding: 15px;
+        border-radius: 5px;
+        margin: 15px 0;
+        border-left: 4px solid #0066cc;
+      }
+
+      .impact-section {
+        margin: 20px 0;
+      }
+
+      .impact-item {
+        margin: 10px 0;
+        padding-left: 20px;
+        position: relative;
+      }
+
+      .impact-item:before {
+        content: "✓";
+        color: #0066cc;
+        font-weight: bold;
+        position: absolute;
+        left: 0;
+      }
+
+      .petition-name {
+        font-size: 1.2em;
+        font-weight: bold;
+        color: #0066cc;
+        margin: 10px 0;
+      }
+
+      .anonymous-notice {
+        background-color: #fff3cd;
+        padding: 10px;
+        border-radius: 5px;
+        margin: 10px 0;
+        font-size: 0.9em;
+        border-left: 4px solid #ffc107;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>Thank you for signing! ✍️</h1>
+      </div>
+      <div class="content">
+        <p>Hi {{userName}},</p>
+
+        <div class="thank-you-section">
+          <p>
+            <strong>Your voice matters!</strong> Thank you for signing the
+            petition <span class="petition-name">"{{petitionName}}"</span>.
+          </p>
+        </div>
+
+        {{#if isAnonymous}}
+        <div class="anonymous-notice">
+          <p>
+            <strong>Note:</strong> You signed this petition anonymously. Your
+            name will not be publicly displayed.
+          </p>
+        </div>
+        {{/if}}
+
+        <div class="impact-section">
+          <p><strong>Your signature makes a difference:</strong></p>
+          <div class="impact-item">
+            You've added to the collective voice for change
+          </div>
+          <div class="impact-item">
+            You've shown support for an important cause
+          </div>
+          <div class="impact-item">
+            You've helped move closer to the signature goal
+          </div>
+          <div class="impact-item">You've inspired others to take action</div>
+        </div>
+
+        <p>
+          Want to make an even bigger impact? Share the petition with your
+          friends and family to help gather more support.
+        </p>
+
+        <div style="text-align: center">
+          <a
+            href="{{petitionUrl}}"
+            class="cta-button"
+            style="color: white; text-decoration: none"
+            >👉 Share This Petition</a
+          >
+        </div>
+
+        <p>
+          Together, we can create change.<br />
+          The Refreeg Team
+        </p>
+      </div>
+      <div class="footer">
+        <p>
+          This is an automated email. Please do not reply directly to this
+          message.
+        </p>
+        <p>© {{currentYear}} RefreeG. All rights reserved.</p>
+      </div>
+    </div>
+  </body>
+</html>

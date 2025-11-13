@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Share2 } from "lucide-react";
+import { Share2, Link as LinkIcon } from "lucide-react";
 import { FaWhatsapp, FaInstagram, FaTwitter, FaLinkedin } from "react-icons/fa";
 import { useToast } from "@/components/ui/use-toast";
 import {
@@ -14,12 +14,14 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { saveCauseShare } from "@/actions/cause-actions";
+import { createShortUrl } from "@/actions/url-actions";
+import { useState, useEffect } from "react";
 
 interface ShareModalProps {
   url: string;
   title: string;
   entityId: string;
-  entityType: "cause" | "petition"; // 👈 required
+  entityType: "cause" | "petition";
 }
 
 export function ShareModal({
@@ -29,39 +31,56 @@ export function ShareModal({
   entityType,
 }: ShareModalProps) {
   const { toast } = useToast();
+  const [shortUrl, setShortUrl] = useState<string>(url);
+  const [isLoadingShortUrl, setIsLoadingShortUrl] = useState(true);
 
-  // ✅ entity-specific templates
+  // Generate short URL on mount
+  useEffect(() => {
+    const generateUrl = async () => {
+      try {
+        const shortened = await createShortUrl(entityId, entityType, url);
+        setShortUrl(shortened);
+      } catch (error) {
+        console.error("Error creating short URL:", error);
+        // Fall back to original URL if shortening fails
+        setShortUrl(url);
+      } finally {
+        setIsLoadingShortUrl(false);
+      }
+    };
+
+    generateUrl();
+  }, [entityId, entityType, url]);
+
+  // Entity-specific templates
   const templates = {
     cause: {
-      shareMessage: `🌍✨ I’ve started a cause on RefreeG because I believe change begins with us. 
-Your voice, your support, and even the smallest act of kindness can create ripples that touch countless lives. 
-This isn’t just about me—it’s about building hope, restoring dignity, and giving people a chance at a brighter tomorrow.  
-
-Please take a moment to read and support. Together, we can turn compassion into action: ${url}`,
+      shareMessage: `Please donate to my cause on RefreeG 🌍✨: ${shortUrl}`,
 
       dialogTitle: "Share this cause",
-      dialogDescription:
-        "Inspire others to care. Share this heartfelt message with your network and invite them to join the movement.",
+      dialogDescription: "Inspire others to care. ❤️",
     },
 
     petition: {
-      shareMessage: `✍️💡 I just signed a petition on RefreeG because staying silent only allows the problem to grow. 
-This petition is about standing up for fairness, for justice, and for voices that are too often ignored.  
-
-Your signature isn’t just a name—it’s a declaration that we care, that we won’t look away, and that we believe change is possible.  
-Please join me and add your voice. Together, we are stronger: ${url}`,
+      shareMessage: `Please sign my petition on RefreeG ✍️💡: ${shortUrl}`,
 
       dialogTitle: "Share this petition",
-      dialogDescription:
-        "Help amplify this cause. Share this message and invite others to stand with you for real change.",
+      dialogDescription: "Help amplify this petition. ❤️",
     },
   } as const;
 
-  // ✅ ensure fallback
   const { shareMessage, dialogTitle, dialogDescription } =
     templates[entityType] || templates["cause"];
 
   const handleCopyLink = () => {
+    navigator.clipboard.writeText(shortUrl);
+    toast({
+      title: "Copied!",
+      description: "The short link has been copied to your clipboard.",
+    });
+  };
+
+  const handleCopyMessage = () => {
     navigator.clipboard.writeText(shareMessage);
     toast({
       title: "Copied!",
@@ -72,7 +91,7 @@ Please join me and add your voice. Together, we are stronger: ${url}`,
   const handleShare = async (platform: string) => {
     let shareUrl = "";
     const encodedMessage = encodeURIComponent(shareMessage);
-    const encodedUrl = encodeURIComponent(url);
+    const encodedUrl = encodeURIComponent(shortUrl);
 
     switch (platform) {
       case "whatsapp":
@@ -111,7 +130,7 @@ Please join me and add your voice. Together, we are stronger: ${url}`,
     <Dialog>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" className="flex items-center gap-2">
-          <Share2 className="h-4 w-4" />
+          <Share2 className="h-6 w-6" />
           Share
         </Button>
       </DialogTrigger>
@@ -155,20 +174,46 @@ Please join me and add your voice. Together, we are stronger: ${url}`,
           </Button>
         </div>
         <div className="space-y-4">
-          <div className="p-3 bg-gray-100 rounded-md">
-            <p className="text-sm text-gray-700">{shareMessage}</p>
+          {/* Short URL Display */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Link</label>
+            <div className="flex items-center space-x-2">
+              <Input
+                value={isLoadingShortUrl ? "Generating..." : shortUrl}
+                readOnly
+                className="flex-1"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleCopyLink}
+                className="shrink-0"
+                disabled={isLoadingShortUrl}
+              >
+                <LinkIcon className="h-4 w-4 mr-2" />
+                Copy
+              </Button>
+            </div>
           </div>
-          <div className="flex items-center space-x-2">
-            <Input value={shareMessage} readOnly className="flex-1" />
+
+          {/* Share Message */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Share Message</label>
+            <div className="p-3 bg-gray-100 rounded-md max-h-32 overflow-y-auto">
+              <p className="text-sm text-gray-700 whitespace-pre-line">
+                {shareMessage}
+              </p>
+            </div>
             <Button
               type="button"
               variant="outline"
               size="sm"
-              onClick={handleCopyLink}
-              className="shrink-0"
+              onClick={handleCopyMessage}
+              className="w-full"
             >
               <Share2 className="h-4 w-4 mr-2" />
-              Copy
+              Copy Message
             </Button>
           </div>
         </div>

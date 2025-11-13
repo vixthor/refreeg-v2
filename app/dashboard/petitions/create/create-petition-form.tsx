@@ -33,8 +33,11 @@ import { usePetition } from "@/hooks/use-petition";
 import { Progress } from "@/components/ui/progress";
 import { ImageUpload } from "@/components/ui/image-upload";
 import { categories } from "@/lib/categories";
-import { sendPetitionUnderReviewEmail } from "@/services/mail";
-import { format, isBefore, differenceInDays } from "date-fns";
+import {
+  sendPetitionUnderReviewEmail,
+  sendIncompletePetitionDraftEmail,
+} from "@/services/mail";
+import { format, isBefore, differenceInDays, startOfDay } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import MultimediaCarousel from "@/components/MultimediaCarousel";
@@ -211,6 +214,60 @@ export default function CreatePetitionForm() {
     localStorage.setItem("petitionDraft", JSON.stringify(serializedData));
   }, [formData]);
 
+  // Track inactivity and send reminder email after 24 hours
+  useEffect(() => {
+    let inactivityTimer: NodeJS.Timeout;
+
+    const setupInactivityTracking = () => {
+      const hasDraft = localStorage.getItem("petitionDraft");
+      const hasStartedFilling =
+        formData.title || formData.category || formData.goal;
+
+      if (hasDraft || hasStartedFilling) {
+        // Reset timer on any form interaction
+        const resetTimer = () => {
+          clearTimeout(inactivityTimer);
+          inactivityTimer = setTimeout(sendReminder, 24 * 60 * 60 * 1000); // 24 hours
+        };
+
+        // Set up event listeners for form interactions
+        const events = ["input", "change", "click", "keydown"];
+        events.forEach((event) => {
+          document.addEventListener(event, resetTimer, { passive: true });
+        });
+
+        // Start the initial timer
+        resetTimer();
+
+        // Cleanup function
+        return () => {
+          clearTimeout(inactivityTimer);
+          events.forEach((event) => {
+            document.removeEventListener(event, resetTimer);
+          });
+        };
+      }
+    };
+
+    const sendReminder = async () => {
+      // Check if petition still isn't submitted
+      const currentDraft = localStorage.getItem("petitionDraft");
+      if (currentDraft && user) {
+        try {
+          await sendIncompletePetitionDraftEmail({
+            continueUrl: `${window.location.origin}/dashboard/petitions/create`,
+          });
+          console.log("Incomplete petition reminder sent");
+        } catch (error) {
+          console.error("Failed to send incomplete petition email:", error);
+        }
+      }
+    };
+
+    const cleanup = setupInactivityTracking();
+    return cleanup;
+  }, [formData.title, formData.category, formData.goal, user]);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -335,8 +392,7 @@ export default function CreatePetitionForm() {
     e.preventDefault();
 
     if (!user) return;
-    // Only allow submit on last step
-
+    // Only allow submit on last step (step 5)
     if (currentStep < 5) {
       nextStep();
       return;
@@ -596,7 +652,9 @@ export default function CreatePetitionForm() {
                       mode="single"
                       selected={formData.startDate}
                       onSelect={(date) => handleDateChange(date, "startDate")}
-                      disabled={(date) => isBefore(date, new Date())}
+                      disabled={(date) =>
+                        isBefore(date, startOfDay(new Date()))
+                      }
                       initialFocus
                     />
                   </PopoverContent>
@@ -630,7 +688,7 @@ export default function CreatePetitionForm() {
                       selected={formData.endDate}
                       onSelect={(date) => handleDateChange(date, "endDate")}
                       disabled={(date) => {
-                        const isPast = isBefore(date, new Date());
+                        const isPast = isBefore(date, startOfDay(new Date()));
                         const isBeforeStart = formData.startDate
                           ? isBefore(date, formData.startDate)
                           : false;
@@ -868,7 +926,7 @@ export default function CreatePetitionForm() {
               {formData.sections.map((section, index) => (
                 <div key={index} className="space-y-2">
                   <h5 className="font-medium">{section.heading}</h5>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-muted-foreground whitespace-pre-line">
                     {section.description}
                   </p>
                 </div>
@@ -940,22 +998,42 @@ export default function CreatePetitionForm() {
           >
             Back
           </Button>
-          {currentStep < 5 ? (
-            <Button type="button" onClick={nextStep}>
-              Next
-            </Button>
-          ) : (
-            <Button type="submit" disabled={isLoading || submitting}>
-              {isLoading || submitting ? (
-                <>
-                  <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
-                  Submitting...
-                </>
-              ) : (
-                "Submit Petition"
-              )}
-            </Button>
-          )}
+          <div className="flex gap-2">
+            {/* REMOVE THIS TEST BUTTON IN PRODUCTION */}
+            {/* <Button 
+              type="button" 
+              variant="outline"
+              onClick={async () => {
+                try {
+                  await sendIncompletePetitionDraftEmail({
+                    continueUrl: `${window.location.origin}/create-petition`
+                  });
+                  alert("Test petition email sent successfully!");
+                } catch (error) {
+                  alert("Failed to send test petition email");
+                }
+              }}
+            >
+              Test Petition Email
+            </Button> */}
+
+            {currentStep < 5 ? (
+              <Button type="button" onClick={nextStep}>
+                Next
+              </Button>
+            ) : (
+              <Button type="submit" disabled={isLoading || submitting}>
+                {isLoading || submitting ? (
+                  <>
+                    <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+                    Submitting...
+                  </>
+                ) : (
+                  "Submit Petition"
+                )}
+              </Button>
+            )}
+          </div>
         </CardFooter>
       </form>
     </Card>
