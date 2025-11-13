@@ -26,16 +26,16 @@ export default async function CausesPage({
           isFilterOpen ? "ml-80" : "ml-0"
         }`}
       >
-        <div className="p-10">
+        <div className="p-4 md:p-10">
           <div className="space-y-6">
-            <div className="space-y-2 text-center max-w-2xl mx-auto pt-6 md:pt-10">
+            <div className="space-y-2 text-center md:pt-10">
               <div>
-                <H1 className="text-5xl font-bold tracking-tight">
+                <H1 className=" font-bold tracking-tight">
                   Discover Causes That Matter
                 </H1>
               </div>
               <div>
-                <H5 className="text-muted-foreground">
+                <H5 className="text-muted-foreground md:max-w-2xl mx-auto">
                   From disaster relief to creative dreams, explore causes
                   powered by real people, verified for transparency, and built
                   for impact.

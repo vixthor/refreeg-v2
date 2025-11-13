@@ -35,23 +35,15 @@ export default function CausesFilterRow({
   const search = searchParams.get("search") || "";
   const recommended = searchParams.get("recommended") || "recommended";
 
-  // Initialize filter state from URL on mount
   useEffect(() => {
     setIsFilterOpen(searchParams.get("filter") === "true");
   }, [searchParams]);
 
   const handleFilterToggle = (open: boolean) => {
     setIsFilterOpen(open);
-
-    // Update URL without causing navigation
     const next = new URLSearchParams(searchParams.toString());
-    if (open) {
-      next.set("filter", "true");
-    } else {
-      next.delete("filter");
-    }
-
-    // Use replaceState to update URL without navigation
+    if (open) next.set("filter", "true");
+    else next.delete("filter");
     const newUrl = `${pathname}?${next.toString()}`;
     window.history.replaceState({}, "", newUrl);
   };
@@ -87,7 +79,6 @@ export default function CausesFilterRow({
     pushParams(next);
   };
 
-  // Ensure default for recommended exists for consistent UI
   useEffect(() => {
     if (!searchParams.get("recommended")) {
       const next = new URLSearchParams(params.toString());
@@ -100,31 +91,32 @@ export default function CausesFilterRow({
   return (
     <>
       <div className={className}>
-        <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          {/* Left: Filter button + search */}
-          <div className="flex w-full items-center gap-2">
+        <div className="flex w-full flex-col md:flex-row md:items-center md:justify-between gap-3">
+          {/* Left: Filter + Search */}
+          <div className="flex flex-col sm:flex-row w-full gap-2">
+            {/* Filter button */}
             <Button
               variant="outline"
               size="sm"
-              className="whitespace-nowrap rounded-full p-4"
+              className="rounded-full p-4 w-full sm:w-auto"
               onClick={() => handleFilterToggle(true)}
             >
               <SlidersHorizontal className="mr-2 h-4 w-4" />
               Filter
             </Button>
 
-            {/* Full-width search bar */}
-            <div className="relative flex-1">
+            {/* Search input */}
+            <div className="relative flex-1 w-full">
               <SearchIcon className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 defaultValue={search}
-                placeholder="Search RefreeG"
-                className="pl-8 pr-40 w-full rounded-full"
+                placeholder="Search Causes"
+                className="pl-8 pr-4 w-full rounded-full"
                 onChange={(e) => handleSearchChange(e.target.value)}
               />
 
-              {/* Tabs inside input (on the right) */}
-              <div className="absolute right-1 top-1/2 -translate-y-1/2">
+              {/* Tabs — shown inside searchbar on md+ only */}
+              <div className="hidden md:block absolute right-1 top-1/2 -translate-y-1/2">
                 <Tabs
                   value={audience}
                   onValueChange={(v) =>
@@ -148,12 +140,36 @@ export default function CausesFilterRow({
                 </Tabs>
               </div>
             </div>
+
+            {/* Tabs standalone for mobile */}
+            <div className="block md:hidden w-full">
+              <Tabs
+                value={audience}
+                onValueChange={(v) => handleAudienceChange(v as AudienceValue)}
+                className="w-full mt-1"
+              >
+                <TabsList className="w-full flex justify-between rounded-md bg-muted shadow-sm">
+                  <TabsTrigger value="all" className="flex-1 text-xs">
+                    All
+                  </TabsTrigger>
+                  <TabsTrigger value="people" className="flex-1 text-xs">
+                    People
+                  </TabsTrigger>
+                  <TabsTrigger value="creator" className="flex-1 text-xs">
+                    Creator
+                  </TabsTrigger>
+                  <TabsTrigger value="business" className="flex-1 text-xs">
+                    Business
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
           </div>
 
           {/* Right: Recommended select */}
-          <div className="flex items-center gap-2">
+          <div className="w-full sm:w-auto">
             <Select value={recommended} onValueChange={handleRecommendedChange}>
-              <SelectTrigger className="w-[160px]">
+              <SelectTrigger className="w-full sm:w-[160px]">
                 <SelectValue placeholder="Recommended" />
               </SelectTrigger>
               <SelectContent>
