@@ -69,7 +69,7 @@ export function FilterSideNav({ isOpen, onClose }: FilterSideNavProps) {
         <div className="flex flex-col h-full">
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b">
-            <h2 className="text-lg font-semibold">Filters</h2>
+            <h2 className="text-lg font-semibold text-left">Filters</h2>
             <Button
               variant="ghost"
               size="sm"
@@ -85,11 +85,11 @@ export function FilterSideNav({ isOpen, onClose }: FilterSideNavProps) {
             <Accordion type="single" collapsible>
               {/* Campaign Type */}
               <AccordionItem value="campaign">
-                <AccordionTrigger className="flex items-center gap-2 text-base font-medium">
-                  <Layers className="h-4 w-4 text-primary" />
-                  Cause Type
+                <AccordionTrigger className="flex items-center gap-2 text-base font-medium text-left">
+                  <Layers className="h-4 w-4 text-primary shrink-0" />
+                  <span className="text-left">Cause Type</span>
                 </AccordionTrigger>
-                <AccordionContent className="mt-2 space-y-2 pl-6">
+                <AccordionContent className="mt-2 space-y-2 pl-6 text-left">
                   {[
                     "Education",
                     "Healthcare",
@@ -119,31 +119,67 @@ export function FilterSideNav({ isOpen, onClose }: FilterSideNavProps) {
 
               {/* Location */}
               <AccordionItem value="location">
-                <AccordionTrigger className="flex items-center gap-2 text-base font-medium">
-                  <MapPin className="h-4 w-4 text-primary" />
-                  Location
+                <AccordionTrigger className="flex items-center gap-2 text-base font-medium text-left">
+                  <MapPin className="h-4 w-4 text-primary shrink-0" />
+                  <span className="text-left">Location</span>
                 </AccordionTrigger>
-                <AccordionContent className="mt-2 space-y-2 pl-6">
-                  {["Lagos", "Abuja", "Port Harcourt", "Ibadan", "Kano"].map(
-                    (city) => (
-                      <div key={city} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={city}
-                          checked={isChecked("location", city)}
-                          onCheckedChange={(checked) =>
-                            handleFilterChange(
-                              "location",
-                              city,
-                              checked as boolean
-                            )
-                          }
-                        />
-                        <Label htmlFor={city} className="text-sm font-normal">
-                          {city}
-                        </Label>
-                      </div>
-                    )
-                  )}
+                <AccordionContent className="mt-2 space-y-2 pl-6 text-left">
+                  {[
+                    "Abia",
+                    "Adamawa",
+                    "Akwa Ibom",
+                    "Anambra",
+                    "Bauchi",
+                    "Bayelsa",
+                    "Benue",
+                    "Borno",
+                    "Cross River",
+                    "Delta",
+                    "Ebonyi",
+                    "Edo",
+                    "Ekiti",
+                    "Enugu",
+                    "Federal Capital Territory (Abuja)",
+                    "Gombe",
+                    "Imo",
+                    "Jigawa",
+                    "Kaduna",
+                    "Kano",
+                    "Katsina",
+                    "Kebbi",
+                    "Kogi",
+                    "Kwara",
+                    "Lagos",
+                    "Nasarawa",
+                    "Niger",
+                    "Ogun",
+                    "Ondo",
+                    "Osun",
+                    "Oyo",
+                    "Plateau",
+                    "Rivers",
+                    "Sokoto",
+                    "Taraba",
+                    "Yobe",
+                    "Zamfara",
+                  ].map((state) => (
+                    <div key={state} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={state}
+                        checked={isChecked("location", state)}
+                        onCheckedChange={(checked) =>
+                          handleFilterChange(
+                            "location",
+                            state,
+                            checked as boolean
+                          )
+                        }
+                      />
+                      <Label htmlFor={state} className="text-sm font-normal">
+                        {state}
+                      </Label>
+                    </div>
+                  ))}
                 </AccordionContent>
               </AccordionItem>
             </Accordion>

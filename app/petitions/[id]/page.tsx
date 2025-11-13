@@ -357,7 +357,7 @@ export default async function PetitionDetailPage({
                 petition.sections.map((section, index) => (
                   <div key={index} className="mt-4">
                     <h3 className="text-xl font-semibold">{section.heading}</h3>
-                    <p className="text-muted-foreground">
+                    <p className="text-muted-foreground whitespace-pre-line">
                       {section.description}
                     </p>
                   </div>
