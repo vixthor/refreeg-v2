@@ -15,14 +15,15 @@ import { getCurrentUser } from "@/actions";
 import { useToast } from "@/components/ui/use-toast";
 import NavigationLoader from "../NavigationLoader";
 
-const DEFAULT_SOL_TO_NAIRA_RATE = 225814.49;
-const SOLANA_RPC_URL = "https://api.testnet.solana.com";
+const DEFAULT_SOL_TO_NAIRA_RATE = 346600;
+const SOLANA_RPC_URL = "https://api.mainnet-beta.solana.com";
 
 declare global {
   interface Window {
     solana?: {
       isPhantom?: boolean;
       connect: () => Promise<{ publicKey: PublicKey }>;
+      disconnect: () => Promise<void>;
       signAndSendTransaction: (
         transaction: Transaction
       ) => Promise<{ signature: string }>;
@@ -53,7 +54,7 @@ export default function SolDonationButton({
   onDonationSuccess,
 }: SolDonationButtonProps) {
   const [donationAmount, setDonationAmount] = useState("0.1");
-  const [nairaInput, setNairaInput] = useState("30.25");
+  const [nairaInput, setNairaInput] = useState("34,660.00");
   const [exchangeRate, setExchangeRate] = useState(DEFAULT_SOL_TO_NAIRA_RATE);
   const [isDonating, setIsDonating] = useState(false);
   const [txSignature, setTxSignature] = useState<string | null>(null);
@@ -257,7 +258,7 @@ export default function SolDonationButton({
           user_id: user.id,
           payment_method: "SOL",
           status: "completed",
-          network: "Solana Testnet",
+          network: "Solana Mainnet",
           currency: "SOL",
           wallet_type: "solana",
         },
@@ -541,7 +542,7 @@ export default function SolDonationButton({
           />
         </div>
         <p className="mt-1 text-xs text-gray-500">
-          Using Solana Testnet (1 SOL ≈ ₦{exchangeRate.toFixed(2)})
+          Using Solana Mainnet (1 SOL ≈ ₦{exchangeRate.toLocaleString()})
         </p>
       </div>
 
@@ -569,7 +570,7 @@ export default function SolDonationButton({
           <p className="mt-1 text-sm">
             Transaction:{" "}
             <a
-              href={`https://explorer.solana.com/tx/${txSignature}?cluster=testnet`}
+              href={`https://explorer.solana.com/tx/${txSignature}`}
               target="_blank"
               rel="noopener noreferrer"
               className="underline hover:text-green-800"

@@ -25,41 +25,129 @@ interface MenuItem {
   label: string;
   value?: string;
   href: string;
-  icon: React.ReactNode;
-  external?: boolean;
 }
 
-const SAMPLE_PROFILE_DATA: Profile = {
-  name: "Eugene An",
-  email: "eugene@kokonutui.com",
-  avatar:
-    "https://ferf1mheo22r9ira.public.blob.vercel-storage.com/profile-mjss82WnWBRO86MHHGxvJ2TVZuyrDv.jpeg",
-  subscription: "PRO",
-  model: "Gemini 2.0 Flash",
-};
-
-interface ProfileDropdownProps extends React.HTMLAttributes<HTMLDivElement> {
-  data?: Profile;
-  showTopbar?: boolean;
-  onSignOut?: () => void;
-  menuItems?: MenuItem[];
+interface NavDropdown {
+  icon: React.ComponentType<any>;
+  header: string;
+  title: string;
+  type: "dropdown";
+  items: Array<{
+    title: string;
+    description: string;
+    href: string;
+    icon: React.ComponentType<any>;
+  }>;
 }
 
-export default function ProfileDropdown({
-  data = SAMPLE_PROFILE_DATA,
-  className,
-  onSignOut,
-  menuItems: customMenuItems,
-  ...props
-}: ProfileDropdownProps) {
-  const [isOpen, setIsOpen] = React.useState(false);
+type NavItem = NavLink | NavDropdown;
 
-  // Use custom menu items if provided, otherwise use default
-  const menuItems: MenuItem[] = customMenuItems || [
+export function Header() {
+  const pathname = usePathname();
+  const { user, isLoading, signOut } = useAuth();
+  const { isAdminOrManager } = useAdmin(user?.id);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [isSigningOut, setIsSigningOut] = useState(false);
+
+  const navItems: NavItem[] = [
     {
-      label: "Profile",
-      href: "#",
-      icon: <User className="w-4 h-4" />,
+      title: "Explore Causes",
+      href: "/causes",
+      type: "link",
+    },
+    {
+      title: "What can I crowdfund?",
+      header: "Curious about what you crowdfund for? Here are some ideas:",
+      icon: HandHeart,
+      type: "dropdown",
+      items: [
+        {
+          title: "🌍 Refreeg for Businesses",
+          description:
+            "Empower your brand with purpose. Launch CSR campaigns, support community-driven causes, and connect with customers who care about impact.",
+          href: "/businesses",
+          icon: CircleDollarSign,
+        },
+        {
+          title: "🤝 RefreeG for Nonprofits",
+          description:
+            "Raise more, reach more. Build trust with transparent fundraising tools designed to help nonprofits thrive and grow their donor communities.",
+          href: "/non-profits",
+          icon: Target,
+        },
+        {
+          title: "🌪️ RefreeG for Disaster Relief",
+          description:
+            "Rally urgent support for communities hit by disasters and get aid to those who need it; quickly and securely.",
+          href: "/disaster-relief",
+          icon: FileText,
+        },
+        {
+          title: "🎨 RefreeG for Creators",
+          description:
+            "Turn your influence into impact. Get your unique tag, share your story, and receive donations directly from your fans in fiat or crypto.",
+          href: "/creators",
+          icon: FileText,
+        },
+        {
+          title: "🏥 RefreeG for Healthcare",
+          description:
+            "Give hope a platform. Raise funds for medical bills, healthcare projects, or critical treatments — with transparency and community support.",
+          href: "/healthcare",
+          icon: FileText,
+        },
+      ],
+    },
+    {
+      title: "How RefreeG works",
+      header: "How can you crowdfund on RefreeG?",
+      icon: Lightbulb,
+      type: "dropdown",
+      items: [
+        {
+          title: "⭐ How to start a cause",
+          description:
+            "Starting causes is easy, and fast because of the intuitive user experience Refreeg is built on. Set up causes in less than 3 minutes!",
+          href: "/dashboard/causes/create",
+          icon: Star,
+        },
+        // {
+        //   title: "🚀 Crowdfunding tips",
+        //   description:
+        //     "Raise more, reach more. Build trust with transparent fundraising tools.",
+        //   href: "/crowdfund/education",
+        //   icon: Rocket,
+        // },
+        // {
+        //   title: "📢 For Supporters",
+        //   description:
+        //     "See how to discover causes, donate securely in fiat or crypto, and follow progress transparently.",
+        //   href: "/crowdfund/community",
+        //   icon: Users,
+        // },
+        // {
+        //   title: "💸 Fees & Payouts",
+        //   description:
+        //     "Clear explanation of transaction fees, payout timelines, and how creators/nonprofits access their funds.",
+        //   href: "/crowdfund/fees",
+        //   icon: CircleDollarSign,
+        // },
+        // {
+        //   title: "🛡️ Trust & Safety",
+        //   description:
+        //     "Read about our fraud checks, KYC verification, and commitment to protecting both donors and cause.",
+        //   href: "/crowdfund/trust",
+        //   icon: Shield,
+        // },
+        {
+          title: "📣 FAQ",
+          description:
+            "Get answers to the most common questions about crowdfunding on RefreeG.",
+          href: "/#faq",
+          icon: HelpCircle,
+        },
+      ],
     },
     {
       label: "Subscription",
@@ -81,66 +169,204 @@ export default function ProfileDropdown({
   ];
 
   return (
-    <div className={cn("relative", className)} {...props}>
-      <DropdownMenu onOpenChange={setIsOpen}>
-        <div className="group relative">
-          <DropdownMenuTrigger asChild>
-            <button
-              type="button"
-              className="flex items-center gap-2 p-2 rounded-lg bg-white border border-zinc-300 hover:border-zinc-500 hover:bg-zinc-50/80 hover:shadow-sm transition-all duration-200 focus:outline-none"
-            >
-              <div className="text-left flex-1">
-                <div className="text-sm font-medium text-zinc-900 tracking-tight leading-tight">
-                  {data.name}
-                </div>
-                <div className="text-xs text-zinc-500 tracking-tight leading-tight">
-                  {data.email}
-                </div>
-              </div>
-              <div className="relative">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 via-blue-500 to-blue-400 p-0.5">
-                  <div className="w-full h-full rounded-full overflow-hidden bg-white">
-                    <Image
-                      src={data.avatar}
-                      alt={data.name}
-                      width={28}
-                      height={28}
-                      className="w-full h-full object-cover rounded-full"
-                    />
-                  </div>
-                </div>
-              </div>
-            </button>
-          </DropdownMenuTrigger>
+    <>
+      <div className="sticky top-0 left-0 right-0 z-50">
+        <Navbar
+          isBordered
+          className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-2 md:p-4"
+        >
+          <div className="flex items-center justify-between w-full">
+            {/* Left: Logo + Desktop Nav */}
+            <div className="flex items-center gap-4">
+              <NavbarBrand>
+                <Logo />
+              </NavbarBrand>
 
-          {/* Bending line indicator on the right */}
-          <div
-            className={cn(
-              "absolute -right-2 top-1/2 -translate-y-1/2 transition-all duration-200",
-              isOpen ? "opacity-100" : "opacity-60 group-hover:opacity-100"
-            )}
-          >
-            <svg
-              width="8"
-              height="16"
-              viewBox="0 0 8 16"
-              fill="none"
-              className={cn(
-                "transition-all duration-200",
-                isOpen
-                  ? "text-blue-500 scale-110"
-                  : "text-zinc-400 group-hover:text-zinc-600"
-              )}
-              aria-hidden="true"
-            >
-              <path
-                d="M1 3C4 6 4 10 1 13"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                fill="none"
-              />
-            </svg>
+              {/* Desktop Navigation */}
+              <div className="hidden md:flex gap-0 items-center">
+                {navItems.map((item) => {
+                  if (item.type === "link") {
+                    return (
+                      <NavbarItem
+                        key={item.href}
+                        isActive={pathname === item.href}
+                      >
+                        <Link
+                          href={item.href}
+                          className={`text-sm font-medium transition-colors hover:text-secondary px-3 py-2 rounded-md ${
+                            pathname === item.href
+                              ? "text-foreground bg-primary/10"
+                              : "text-muted-foreground hover:bg-gray-100"
+                          }`}
+                        >
+                          {item.title}
+                        </Link>
+                      </NavbarItem>
+                    );
+                  } else {
+                    return (
+                      <NavbarItem key={item.title}>
+                        <Dropdown>
+                          <DropdownTrigger>
+                            <HeroButton
+                              variant="light"
+                              className="text-sm items-center font-medium text-muted-foreground hover:text-secondary hover:bg-gray-100 px-3 py-2 rounded-md transition-all duration-200 group"
+                              endContent={
+                                <ChevronDown className="text-small transition-transform duration-200 group-hover:rotate-180" />
+                              }
+                            >
+                              {item.title}
+                            </HeroButton>
+                          </DropdownTrigger>
+                          <DropdownMenu
+                            aria-label={item.title}
+                            className="bg-white shadow-xl rounded-lg w-3/5 border border-gray-100"
+                          >
+                            <DropdownSection
+                              title={item.header as string}
+                              classNames={{
+                                heading:
+                                  "font-semibold text-sm text-foreground px-4 py-3 flex items-center gap-2",
+                              }}
+                              showDivider
+                            >
+                              {item.items.map((dropdownItem) => {
+                                const DropdownIcon = dropdownItem.icon;
+                                return (
+                                  <DropdownItem
+                                    key={dropdownItem.href}
+                                    className="py-3 px-4 transition-all duration-200 hover:bg-blue-50 hover:border-l-4 hover:border-l-blue-500 cursor-pointer"
+                                    textValue={dropdownItem.title}
+                                  >
+                                    <Link
+                                      href={dropdownItem.href}
+                                      className="flex items-start gap-3 w-full group"
+                                    >
+                                      {/* <DropdownIcon className="h-5 w-5 text-gray-400 mt-0.5 flex-shrink-0 group-hover:text-blue-600 transition-colors" /> */}
+                                      <div className="flex-1">
+                                        <p className="font-medium text-sm group-hover:text-blue-700 transition-colors">
+                                          {dropdownItem.title}
+                                        </p>
+                                        <p className="text-xs text-muted-foreground mt-1 group-hover:text-gray-600 transition-colors">
+                                          {dropdownItem.description}
+                                        </p>
+                                      </div>
+                                      <ChevronDown className="h-4 w-4 text-transparent group-hover:text-blue-400 -rotate-90 transition-all" />
+                                    </Link>
+                                  </DropdownItem>
+                                );
+                              })}
+                            </DropdownSection>
+                          </DropdownMenu>
+                        </Dropdown>
+                      </NavbarItem>
+                    );
+                  }
+                })}
+              </div>
+            </div>
+
+            {/* Right Side Actions */}
+            <div className="flex items-center gap-2">
+              {(() => {
+                // Define color themes per page
+                const pathname = usePathname();
+
+                const themeMap: Record<
+                  string,
+                  {
+                    border: string;
+                    text: string;
+                    hoverBg: string;
+                    bg: string;
+                    hoverText: string;
+                  }
+                > = {
+                  "/non-profits": {
+                    border: "border-[#7D568A]",
+                    text: "text-[#7D568A]",
+                    hoverBg: "hover:bg-[#7D568A]",
+                    hoverText: "hover:text-white",
+                    bg: "bg-[#7D568A]",
+                  },
+                  "/businesses": {
+                    border: "border-[#008B73]",
+                    text: "text-[#008B73]",
+                    hoverBg: "hover:bg-[#008B73]",
+                    hoverText: "hover:text-white",
+                    bg: "bg-[#008B73]",
+                  },
+                  "/healthcare": {
+                    border: "border-[#C03744]",
+                    text: "text-[#C03744]",
+                    hoverBg: "hover:bg-[#C03744]",
+                    hoverText: "hover:text-white",
+                    bg: "bg-[#C03744]",
+                  },
+                  "/disaster-relief": {
+                    border: "border-[#151314]",
+                    text: "text-[#151314]",
+                    hoverBg: "hover:bg-[#151314]",
+                    hoverText: "hover:text-white",
+                    bg: "bg-[#151314]",
+                  },
+                  "/creators": {
+                    border: "border-[#0070E0]",
+                    text: "text-[#0070E0]",
+                    hoverBg: "hover:bg-[#0070E0]",
+                    hoverText: "hover:text-white",
+                    bg: "bg-[#0070E0]",
+                  },
+                };
+
+                // Pick active theme or fallback to neutral
+                const theme = themeMap[pathname] || {
+                  border: "border-secondary",
+                  text: "text-secondary",
+                  hoverBg: "hover:bg-secondary",
+                  hoverText: "hover:text-white",
+                  bg: "bg-primary",
+                };
+
+                return (
+                  <>
+                    <Link href="/dashboard/causes/create">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className={`flex items-center gap-2 border-2 ${theme.border} ${theme.text} ${theme.hoverBg} ${theme.hoverText} transition-colors`}
+                      >
+                        List a Cause
+                      </Button>
+                    </Link>
+
+                    {/* Auth */}
+                    {!isLoading && !user ? (
+                      <Link href="/auth/signin">
+                        <Button size="sm" variant="default" className={``}>
+                          Sign In
+                        </Button>
+                      </Link>
+                    ) : (
+                      <UserNav />
+                    )}
+                  </>
+                );
+              })()}
+
+              {/* Mobile Toggle */}
+              <button
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                className="p-2 text-foreground hover:bg-gray-100 rounded-md transition-colors md:hidden"
+                aria-label={isMenuOpen ? "Close menu" : "Open menu"}
+              >
+                {isMenuOpen ? (
+                  <X className="h-5 w-5" />
+                ) : (
+                  <Menu className="h-5 w-5" />
+                )}
+              </button>
+            </div>
           </div>
 
           <DropdownMenuContent
@@ -181,21 +407,105 @@ export default function ProfileDropdown({
               ))}
             </div>
 
-            <DropdownMenuSeparator className="my-2 bg-gradient-to-r from-transparent via-zinc-200 to-transparent" />
-
-            <DropdownMenuItem asChild>
-              <button
-                type="button"
-                onClick={onSignOut}
-                className="w-full flex items-center gap-2 p-2 duration-200 bg-red-500/10 rounded-md hover:bg-red-500/20 cursor-pointer border border-transparent hover:border-red-500/30 hover:shadow-sm hover:bg-white transition-all group"
+            {/* Actions */}
+            <div className="border-t pt-4 space-y-2">
+              <Link
+                href="/dashboard/causes/create"
+                className="flex items-center gap-3 py-3 px-2 text-foreground hover:text-blue-600 rounded-md transition-colors font-medium"
+                onClick={() => setIsMenuOpen(false)}
               >
-                <LogOut className="w-4 h-4 text-red-500 group-hover:text-red-600 " />
-                <span className="text-sm font-medium text-red-500 group-hover:text-red-600 ">
-                  Sign Out
-                </span>
-              </button>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
+                <Megaphone className="h-4 w-4" />
+                List a Cause
+              </Link>
+
+              <Link
+                href="/dashboard/petitions/create"
+                className="flex items-center gap-3 py-3 px-2 text-foreground hover:text-blue-600 rounded-md transition-colors font-medium"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                <FileText className="h-4 w-4" />
+                Create a Petition
+              </Link>
+
+              {!isLoading && user && (
+                <Link
+                  href="/dashboard"
+                  className="flex items-center gap-3 py-3 px-2 text-foreground hover:text-blue-600 rounded-md transition-colors font-medium"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <LayoutDashboard className="h-4 w-4" />
+                  Dashboard
+                </Link>
+              )}
+
+              {!isLoading && user && (
+                <button
+                  onClick={async () => {
+                    setIsSigningOut(true);
+                    await signOut?.();
+                    setIsSigningOut(false);
+                    setIsMenuOpen(false);
+                  }}
+                  disabled={isSigningOut}
+                  className="flex items-center gap-3 w-full py-3 px-2 text-foreground hover:text-red-600 rounded-md transition-colors font-medium disabled:opacity-50"
+                >
+                  <LogOut className="h-4 w-4" />
+                  {isSigningOut ? "Signing out..." : "Sign Out"}
+                </button>
+              )}
+            </div>
+
+            {/* Admin Links */}
+            {isAdminOrManager && (
+              <div className="border-t pt-4">
+                <div className="py-2 px-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Admin
+                </div>
+                <div className="space-y-1">
+                  {[
+                    {
+                      href: "/dashboard/admin/causes",
+                      title: "Manage Causes",
+                      icon: Megaphone,
+                    },
+                    {
+                      href: "/dashboard/admin/petitions",
+                      title: "Manage Petitions",
+                      icon: FileText,
+                    },
+                    {
+                      href: "/dashboard/admin/users",
+                      title: "Manage Users",
+                      icon: Users,
+                    },
+                    {
+                      href: "/dashboard/admin/analytics",
+                      title: "Analytics",
+                      icon: BarChart3,
+                    },
+                    {
+                      href: "/dashboard/admin/logs",
+                      title: "Logs",
+                      icon: Book,
+                    },
+                  ].map((adminItem) => {
+                    const AdminIcon = adminItem.icon;
+                    return (
+                      <Link
+                        key={adminItem.href}
+                        href={adminItem.href}
+                        className="flex items-center gap-3 py-2 px-2 text-sm text-foreground hover:text-blue-600 hover:bg-blue-600/5 rounded-md transition-colors"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        <AdminIcon className="h-4 w-4" />
+                        {adminItem.title}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </DropdownMenu>
     </div>

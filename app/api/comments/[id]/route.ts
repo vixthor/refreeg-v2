@@ -7,8 +7,9 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    // First await the params
     const { id: commentId } = params;
+    const { searchParams } = new URL(request.url);
+    const entityType = searchParams.get("entityType");
 
     const supabase = await createClient();
     const {
@@ -20,28 +21,17 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Check if it's a petition comment or regular comment
-    const { data: petitionComment, error: petitionError } = await supabase
-      .from("petition_comments")
+    const isPetition = entityType === "petition";
+    const table = isPetition ? "petition_comments" : "comments";
+
+    // Check if comment exists and user owns it
+    const { data: comment, error: fetchError } = await supabase
+      .from(table)
       .select("user_id")
       .eq("id", commentId)
       .single();
 
-    const { data: regularComment, error: regularError } = await supabase
-      .from("comments")
-      .select("user_id")
-      .eq("id", commentId)
-      .single();
-
-    let comment;
-    let table;
-    if (petitionComment && !petitionError) {
-      comment = petitionComment;
-      table = "petition_comments";
-    } else if (regularComment && !regularError) {
-      comment = regularComment;
-      table = "comments";
-    } else {
+    if (fetchError || !comment) {
       return NextResponse.json({ error: "Comment not found" }, { status: 404 });
     }
 
@@ -75,8 +65,9 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    // First await the params
     const { id: commentId } = params;
+    const { searchParams } = new URL(request.url);
+    const entityType = searchParams.get("entityType");
 
     const supabase = await createClient();
     const {
@@ -97,26 +88,25 @@ export async function PUT(
       );
     }
 
-    // Check if it's a petition comment or regular comment
-    const { data: petitionComment, error: petitionError } = await supabase
-      .from("petition_comments")
+    const isPetition = entityType === "petition";
+    const table = isPetition ? "petition_comments" : "comments";
+
+    // Check if comment exists and user owns it
+    const { data: comment, error: fetchError } = await supabase
+      .from(table)
       .select("user_id")
       .eq("id", commentId)
       .single();
 
-    const { data: regularComment, error: regularError } = await supabase
-      .from("comments")
-      .select("user_id")
-      .eq("id", commentId)
-      .single();
-
-    let table;
-    if (petitionComment && !petitionError) {
-      table = "petition_comments";
-    } else if (regularComment && !regularError) {
-      table = "comments";
-    } else {
+    if (fetchError || !comment) {
       return NextResponse.json({ error: "Comment not found" }, { status: 404 });
+    }
+
+    if (comment.user_id !== user.id) {
+      return NextResponse.json(
+        { error: "Unauthorized to edit this comment" },
+        { status: 403 }
+      );
     }
 
     const { data: updatedComment, error } = await supabase
@@ -127,13 +117,7 @@ export async function PUT(
         updated_at: new Date().toISOString(),
       })
       .eq("id", commentId)
-      .eq("user_id", user.id)
-      .select(
-        `
-        *,
-        user:profiles(full_name, profile_photo)
-      `
-      )
+      .select(`*, user:profiles(full_name, profile_photo, username)`)
       .single();
 
     if (error) throw error;

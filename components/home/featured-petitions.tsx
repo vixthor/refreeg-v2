@@ -130,7 +130,7 @@ export async function FeaturedPetitions() {
       </Carousel>
 
       {/* View All Button */}
-      <div className="flex justify-center mt-6">
+      {/* <div className="flex justify-center mt-6">
         <Link href="/petitions">
           <Button
             variant="outline"
@@ -140,7 +140,7 @@ export async function FeaturedPetitions() {
             View More <ArrowRight />
           </Button>
         </Link>
-      </div>
+      </div> */}
     </div>
   );
 }

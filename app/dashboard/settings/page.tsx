@@ -18,6 +18,7 @@ import { useEffect, useState } from "react";
 import { getVerificationStatus } from "@/actions/kyc-actions";
 import { DeleteAccountButton } from "@/app/dashboard/settings/delete-account-button";
 import { isProfileComplete } from "@/actions/profile-actions";
+// import SolanaWalletForm from "./crypto-details-form";
 
 export default function SettingsPage() {
   const { user } = useAuth();
@@ -171,7 +172,7 @@ export default function SettingsPage() {
       </div>
     );
   }
-
+  console.log("solana_wallet settings page");
   return (
     <div className="space-y-6">
       <div>
@@ -191,6 +192,7 @@ export default function SettingsPage() {
         <TabsList>
           <TabsTrigger value="profile">Profile</TabsTrigger>
           <TabsTrigger value="bank">Bank Details</TabsTrigger>
+          {/* <TabsTrigger value="crypto">Crypto Wallet</TabsTrigger> */}
           <TabsTrigger value="kyc">KYC Verification</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
           <TabsTrigger value="danger">Account Management</TabsTrigger>
@@ -203,6 +205,10 @@ export default function SettingsPage() {
         <TabsContent value="bank">
           {profile && user && <BankDetailsForm profile={profile} user={user} />}
         </TabsContent>
+
+        {/* <TabsContent value="crypto">
+          <SolanaWalletForm />
+        </TabsContent> */}
 
         <TabsContent value="kyc">
           {profile && user && <KycTab profile={profile} user={user} />}

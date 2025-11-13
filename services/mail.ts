@@ -307,3 +307,153 @@ export const sendTestEmail = async (email: string) => {
     },
   });
 };
+
+// Send incomplete cause setup reminder email
+export async function sendIncompleteCauseSetupEmail(context: {
+  continueUrl: string;
+}) {
+  const user = await getCurrentUser();
+  if (!user) {
+    throw new Error("User not found");
+  }
+  const profile = await getProfile(user.id);
+  return sendMail({
+    to: profile?.email || "",
+    subject: "Don't let your cause stop halfway 🌱",
+    templateName: "incomplete-cause-setup",
+    context: {
+      ...context,
+      userName: profile?.full_name || "User",
+      currentYear: new Date().getFullYear().toString(),
+    },
+  });
+}
+
+// Send incomplete KYC verification reminder email
+export async function sendIncompleteKycVerificationEmail(context: {
+  continueUrl: string;
+}) {
+  const user = await getCurrentUser();
+  if (!user) {
+    throw new Error("User not found");
+  }
+  const profile = await getProfile(user.id);
+  return sendMail({
+    to: profile?.email || "",
+    subject: "Just one more step to unlock your account ✅",
+    templateName: "incomplete-kyc",
+    context: {
+      ...context,
+      userName: profile?.full_name || "User",
+      currentYear: new Date().getFullYear().toString(),
+    },
+  });
+}
+
+// Send incomplete petition draft reminder email
+export async function sendIncompletePetitionDraftEmail(context: {
+  continueUrl: string;
+}) {
+  const user = await getCurrentUser();
+  if (!user) {
+    throw new Error("User not found");
+  }
+  const profile = await getProfile(user.id);
+  return sendMail({
+    to: profile?.email || "",
+    subject: "Your petition is waiting for you to finish it ✍️",
+    templateName: "incomplete-petition",
+    context: {
+      ...context,
+      userName: profile?.full_name || "User",
+      currentYear: new Date().getFullYear().toString(),
+    },
+  });
+}
+
+// Send unfinished donation attempt reminder email
+export async function sendUnfinishedDonationEmail(context: {
+  causeName: string;
+  continueUrl: string;
+}) {
+  const user = await getCurrentUser();
+  if (!user) {
+    throw new Error("User not found");
+  }
+  const profile = await getProfile(user.id);
+  return sendMail({
+    to: profile?.email || "",
+    subject: `You were almost done supporting ${context.causeName} ❤️`,
+    templateName: "unfinished-donation",
+    context: {
+      ...context,
+      userName: profile?.full_name || "there",
+      currentYear: new Date().getFullYear().toString(),
+    },
+  });
+}
+
+// Send welcome email to specific user (for use in signup flow)
+export async function sendWelcomeEmailToUser(
+  userEmail: string,
+  userName: string,
+  profileSetupUrl: string
+) {
+  return sendMail({
+    to: userEmail,
+    subject: "Welcome to Refreeg 🌍 Let's get you started",
+    templateName: "welcome-email",
+    context: {
+      userName,
+      profileSetupUrl,
+      currentYear: new Date().getFullYear().toString(),
+    },
+  });
+}
+
+// Send petition signed email to specific user
+export async function sendPetitionSignedEmailToUser(
+  userEmail: string,
+  userName: string,
+  petitionName: string,
+  petitionUrl: string,
+  isAnonymous: boolean = false
+) {
+  return sendMail({
+    to: userEmail,
+    subject: "Thank you for signing! ✍️",
+    templateName: "petition-signed",
+    context: {
+      userName,
+      petitionName,
+      petitionUrl,
+      isAnonymous,
+      currentYear: new Date().getFullYear().toString(),
+    },
+  });
+}
+
+// Send notification to petition creator when someone signs
+export async function sendNewSignatureNotificationEmail(
+  creatorEmail: string,
+  creatorName: string,
+  petitionName: string,
+  petitionUrl: string,
+  signerName: string,
+  message?: string
+) {
+  return sendMail({
+    to: creatorEmail,
+    subject: `New signature for "${petitionName}"! 🎉`,
+    templateName: "new-signature",
+    context: {
+      creatorName,
+      petitionName,
+      petitionUrl,
+      signerName,
+      message: message || "No message provided",
+      hasMessage: !!message,
+      currentYear: new Date().getFullYear().toString(),
+    },
+  });
+}

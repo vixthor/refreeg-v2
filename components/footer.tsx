@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { FaFacebookF, FaInstagram, FaXTwitter } from "react-icons/fa6";
 import { Linkedin, Youtube } from "lucide-react";
 import React, { ReactNode } from "react";
@@ -24,40 +25,44 @@ export function Footer() {
     margin: "-100px",
   });
 
+  const pathname = usePathname();
+
+  // Dynamically assign background and button colors based on current route
+  const getPageTheme = () => {
+    switch (pathname) {
+      case "/non-profits":
+        return {
+          bg: "bg-purple-600",
+          button:
+            "bg-white text-purple-600 hover:bg-purple-700 hover:text-white",
+        };
+      case "/businesses":
+        return {
+          bg: "bg-[#004D40]",
+          button: "bg-white text-green-700 hover:bg-green-800 hover:text-white",
+        };
+      case "/healthcare":
+        return {
+          bg: "bg-[#8C1823]",
+          button: "bg-white text-[#8C1823] hover:bg-[#8C1823] hover:text-white",
+        };
+      case "/disaster-relief":
+        return {
+          bg: "bg-[#0A0A0B]",
+          button: "bg-white text-[#0A0A0B] hover:bg-[#0A0A0B] hover:text-white",
+        };
+      default:
+        return {
+          bg: "bg-secondary",
+          button: "bg-white text-blue-900 hover:bg-gray-300",
+        };
+    }
+  };
+
+  const { bg, button } = getPageTheme();
+
   return (
     <div className="pt-8 bg-muted">
-      {/* Top CTA Section */}
-      <motion.div
-        ref={ref}
-        initial={{ opacity: 0, y: 30 }}
-        animate={isInView ? { opacity: 1, y: 0 } : {}}
-        transition={{ ease: [0.6, -0.05, 0.01, 0.99], duration: 0.8 }}
-        className="flex flex-col items-center w-10/12 lg:w-8/12 mx-auto rounded-3xl text-secondary-foreground bg-secondary px-10 py-10 mb-16"
-      >
-        <div className="text-lg lg:text-3xl font-semibold mb-6">
-          Ready to be part of the solution?
-        </div>
-        <div className="w-11/12 text-center text-base lg:text-lg mb-6">
-          Join the RefreeG community and become a RefreeGerian today! By joining
-          us, you contribute to empowering less privileged individuals in
-          African communities, supporting causes that foster socio-economic
-          growth, and promoting sustainable development. Together, we can make a
-          significant impact and create a brighter future for all.
-        </div>
-        <Link
-          href="https://t.me/+d67UCIer8c01ODhk"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            className="flex border rounded-md bg-white px-3 py-3 text-blue-900 font-semibold hover:bg-gray-300 transition delay-150"
-          >
-            Join our community
-          </motion.button>
-        </Link>
-      </motion.div>
-
       {/* Footer Links Section */}
       <section className="w-full h-full px-[10px] md:px-[50px] py-[25px] mt-[30px] bg-muted">
         <motion.div

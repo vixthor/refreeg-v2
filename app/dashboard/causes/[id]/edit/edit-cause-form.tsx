@@ -287,7 +287,7 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
       category: formData.category,
       goal: formData.goal,
       coverImage: formData.coverImage,
-      image: !formData.coverImage ? (cause.image || undefined) : undefined,
+      image: !formData.coverImage ? cause.image || undefined : undefined,
       sections: formData.sections,
       startDate: formData.startDate,
       endDate: formData.endDate,
@@ -702,7 +702,9 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
               {formData.sections.map((section, index) => (
                 <div key={index} className="space-y-2">
                   <h5 className="font-medium">{section.heading}</h5>
-                  <p className="text-sm">{section.description}</p>
+                  <p className="text-sm whitespace-pre-line">
+                    {section.description}
+                  </p>
                 </div>
               ))}
             </div>
