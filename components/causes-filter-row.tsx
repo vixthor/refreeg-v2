@@ -93,17 +93,19 @@ export default function CausesFilterRow({
       <div className={className}>
         <div className="flex w-full flex-col md:flex-row md:items-center md:justify-between gap-3">
           {/* Left: Filter + Search */}
-          <div className="flex flex-col sm:flex-row w-full gap-2">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full">
             {/* Filter button */}
-            <Button
-              variant="outline"
-              size="sm"
-              className="rounded-full p-4 w-full sm:w-auto"
-              onClick={() => handleFilterToggle(true)}
-            >
-              <SlidersHorizontal className="mr-2 h-4 w-4" />
-              Filter
-            </Button>
+            <div className="flex-shrink-0">
+              <Button
+                variant="outline"
+                size="sm"
+                className="rounded-full p-4"
+                onClick={() => handleFilterToggle(true)}
+              >
+                <SlidersHorizontal className="mr-2 h-4 w-4" />
+                Filter
+              </Button>
+            </div>
 
             {/* Search input */}
             <div className="relative flex-1 w-full">

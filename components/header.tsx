@@ -1,29 +1,63 @@
 "use client";
 
-import * as React from "react";
-import { cn } from "@/lib/utils";
-import { Settings, CreditCard, FileText, LogOut, User } from "lucide-react";
-import Image from "next/image";
+import { useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { UserNav } from "@/components/user-nav";
+import { useAuth } from "@/hooks/use-auth";
+import { Logo } from "@/components/logo";
+import { useAdmin } from "@/hooks/use-admin";
 import {
+  LayoutDashboard,
+  ChevronDown,
+  Menu,
+  X,
+  Megaphone,
+  FileText,
+  Info,
+  LogOut,
+  HeartHandshake,
+  Users,
+  Globe,
+  BookOpen,
+  Lightbulb,
+  Target,
+  CircleDollarSign,
+  TargetIcon,
+  Heart,
+  BarChart3,
+  Shield,
+  Book,
+  Star,
+  Rocket,
+  HelpCircle,
+  Calendar,
+  MapPin,
+  Users2,
+  Globe2,
+  LightbulbIcon,
+  Search,
+  Sparkles,
+  PlayCircle,
+  HandHeart,
+} from "lucide-react";
+import {
+  Navbar,
+  NavbarBrand,
+  NavbarItem,
+  Dropdown,
+  DropdownTrigger,
   DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  DropdownItem,
+  DropdownSection,
+  Button as HeroButton,
+} from "@heroui/react";
 
-interface Profile {
-  name: string;
-  email: string;
-  avatar: string;
-  subscription?: string;
-  model?: string;
-}
-
-interface MenuItem {
-  label: string;
-  value?: string;
+// Define types for navigation items
+interface NavLink {
+  title: string;
+  type: "link";
   href: string;
   icon: React.ReactNode;
   external?: boolean;
@@ -62,23 +96,59 @@ export default function ProfileDropdown({
       icon: <User className="w-4 h-4" />,
     },
     {
-      label: "Subscription",
-      value: data.subscription,
-      href: "#",
-      icon: <CreditCard className="w-4 h-4" />,
-    },
-    {
-      label: "Settings",
-      href: "#",
-      icon: <Settings className="w-4 h-4" />,
-    },
-    {
-      label: "Terms & Policies",
-      href: "#",
-      icon: <FileText className="w-4 h-4" />,
-      external: true,
+      title: "About RefreeG",
+      header: "About RefreeG?",
+      icon: Lightbulb,
+      type: "dropdown",
+      items: [
+        {
+          title: "💼Our Mission",
+          description: "Find out what our mission here at RefreeG.",
+          href: "/about-us/OurMission",
+          icon: TargetIcon,
+        },
+        {
+          title: "📢Our Story",
+          description:
+            "Raise more, reach more. Build trust with transparent fundraising tools.",
+          href: "/about-us/OurStory",
+          icon: Book,
+        },
+        {
+          title: "🔨Our Impact",
+          description:
+            "See how to discover causes, donate securely in fiat or crypto, and follow progress transparently.",
+          href: "/about-us/OurImpact",
+          icon: BarChart3,
+        },
+        {
+          title: "🧑‍🤝‍🧑Who Are We Made By",
+          description:
+            "Clear explanation of transaction fees, payout timelines, and how creators/nonprofits access their funds.",
+          href: "/about-us/OurTeam",
+          icon: Users2,
+        },
+        {
+          title: "💡 What We Do",
+          description:
+            "Read about our fraud checks, KYC verification, and commitment to protecting both donors and cause.",
+          href: "/about-us/WhatWeDo",
+          icon: LightbulbIcon,
+        },
+        {
+          title: "📣FAQ",
+          description:
+            "Get answers to the most common questions about crowdfunding on RefreeG.",
+          href: "/about-us/faq",
+          icon: Heart,
+        },
+      ],
     },
   ];
+
+  const toggleDropdown = (title: string) => {
+    setOpenDropdown(openDropdown === title ? null : title);
+  };
 
   return (
     <div className={cn("relative", className)} {...props}>
@@ -142,43 +212,105 @@ export default function ProfileDropdown({
               />
             </svg>
           </div>
+        </Navbar>
 
-          <DropdownMenuContent
-            align="end"
-            sideOffset={4}
-            className="w-48 p-1 bg-white/95 backdrop-blur-sm border border-zinc-300 rounded-lg shadow-lg shadow-zinc-900/5 
-                    data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 origin-top-right"
-          >
+        {/* Mobile Menu */}
+        <div
+          className={`md:hidden fixed top-[64px] left-0 right-0 bottom-0
+    bg-background/70 
+    backdrop-blur-md 
+    supports-[backdrop-filter]:bg-background/60 
+    border-b shadow-lg z-40 transition-all duration-300 ease-in-out
+    ${
+      isMenuOpen
+        ? "opacity-100 translate-y-0 visible"
+        : "opacity-0 -translate-y-4 invisible"
+    }
+  `}
+        >
+          <div className="container py-6 space-y-4 max-h-[calc(100vh-64px)] overflow-y-auto">
+            {/* Main Nav */}
             <div className="space-y-1">
-              {menuItems.map((item) => (
-                <DropdownMenuItem key={item.label} asChild>
-                  <Link
-                    href={item.href}
-                    className="flex items-center p-2 hover:bg-zinc-100/80 rounded-md transition-all duration-200 cursor-pointer group hover:shadow-sm border border-transparent hover:border-zinc-200/50"
-                  >
-                    <div className="flex items-center gap-2 flex-1">
-                      {item.icon}
-                      <span className="text-sm font-medium text-zinc-900 tracking-tight leading-tight whitespace-nowrap group-hover:text-white transition-colors">
-                        {item.label}
-                      </span>
+              {navItems.map((item) => {
+                if (item.type === "link") {
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={`flex items-center py-3 px-2 text-foreground hover:text-blue-600 hover:bg-blue-600/5 rounded-md transition-all duration-200 ${
+                        pathname === item.href
+                          ? "text-blue-600 font-medium bg-blue-600/10"
+                          : ""
+                      }`}
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      {item.title}
+                    </Link>
+                  );
+                } else {
+                  return (
+                    <div key={item.title} className="border-t pt-4">
+                      <button
+                        className="w-full flex justify-between items-center py-3 px-2 text-foreground font-medium hover:bg-blue-600/5 rounded-md transition-colors"
+                        onClick={() => toggleDropdown(item.title)}
+                      >
+                        {item.title}
+                        <ChevronDown
+                          className={`h-4 w-4 transition-transform duration-200 ${
+                            openDropdown === item.title
+                              ? "rotate-180"
+                              : "rotate-0"
+                          }`}
+                        />
+                      </button>
+                      <div
+                        className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                          openDropdown === item.title
+                            ? "max-h-96 opacity-100"
+                            : "max-h-0 opacity-0"
+                        }`}
+                      >
+                        {/* Mobile Dropdown Header with Icon */}
+                        <div className="ml-4 mt-2 mb-3 flex items-center gap-2 px-3 py-2 bg-blue-50 rounded-md">
+                          <item.icon className="h-4 w-4 text-blue-600" />
+                          <span className="text-sm font-medium text-blue-800">
+                            {item.header}
+                          </span>
+                        </div>
+
+                        <div className="ml-4 space-y-3">
+                          {item.items.map((subItem) => {
+                            const Icon = subItem.icon;
+                            return (
+                              <Link
+                                key={subItem.href}
+                                href={subItem.href}
+                                className="block py-2 px-3 text-sm hover:text-blue-600 hover:bg-blue-600/5 rounded-md transition-all duration-200"
+                                onClick={() => {
+                                  setIsMenuOpen(false);
+                                  setOpenDropdown(null);
+                                }}
+                              >
+                                <div className="flex items-start gap-2">
+                                  <Icon className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                                  <div>
+                                    <p className="font-medium">
+                                      {subItem.title}
+                                    </p>
+                                    <p className="text-muted-foreground text-xs mt-1">
+                                      {subItem.description}
+                                    </p>
+                                  </div>
+                                </div>
+                              </Link>
+                            );
+                          })}
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex-shrink-0 ml-auto">
-                      {item.value && (
-                        <span
-                          className={cn(
-                            "text-xs font-medium rounded-md py-1 px-2 tracking-tight",
-                            item.label === "Model"
-                              ? "text-blue-600 bg-blue-50 border border-blue-500/10"
-                              : "text-purple-600 bg-purple-50 border border-purple-500/10"
-                          )}
-                        >
-                          {item.value}
-                        </span>
-                      )}
-                    </div>
-                  </Link>
-                </DropdownMenuItem>
-              ))}
+                  );
+                }
+              })}
             </div>
 
             <DropdownMenuSeparator className="my-2 bg-gradient-to-r from-transparent via-zinc-200 to-transparent" />
@@ -197,7 +329,7 @@ export default function ProfileDropdown({
             </DropdownMenuItem>
           </DropdownMenuContent>
         </div>
-      </DropdownMenu>
-    </div>
+      </div>
+    </>
   );
 }
