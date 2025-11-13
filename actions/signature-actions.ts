@@ -40,6 +40,8 @@ export async function checkUserSignature(
 
 /**
  * Create a new signature for a petition
+ * Note: Signatures can continue even after the petition goal is reached.
+ * There are no restrictions based on the number of signatures vs goal.
  * @param petitionId - The ID of the petition to sign
  */
 export async function createSignature(

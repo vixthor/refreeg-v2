@@ -64,6 +64,8 @@ export function SignatureForm({
   const baseUrl = getBaseURL();
 
   // Check if form should be disabled
+  // Note: Signatures can continue even after the petition goal is reached
+  // The form is only disabled if the user has already signed, or if the petition status is pending or rejected
   const isFormDisabled =
     hasSigned || status === "pending" || status === "rejected";
 

@@ -1,69 +1,77 @@
-"use server"
+"use server";
 
-import { createClient } from "@/lib/supabase/server"
-import { revalidatePath } from "next/cache"
-import type { Donation, DonationWithCause, DonationFormData } from "@/types"
+import { createClient } from "@/lib/supabase/server";
+import { revalidatePath } from "next/cache";
+import type { Donation, DonationWithCause, DonationFormData } from "@/types";
 
 /**
  * Create a new donation
+ * Note: Donations can continue even after the cause goal is reached.
+ * There are no restrictions based on the raised amount vs goal.
  */
 export async function createDonation(
   causeId: string,
   userId: string | null,
-  donationData: DonationFormData,
+  donationData: DonationFormData
 ): Promise<Donation> {
-  const supabase = await createClient()
-
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("donations")
     .insert({
       cause_id: causeId,
       ...(userId ? { user_id: userId } : {}),
-      amount: typeof donationData.amount === "string" ? Number.parseFloat(donationData.amount) : donationData.amount,
-      name: String(donationData.isAnonymous).toLocaleLowerCase() === "true" ? "Anonymous" : donationData.name,
+      amount:
+        typeof donationData.amount === "string"
+          ? Number.parseFloat(donationData.amount)
+          : donationData.amount,
+      name:
+        String(donationData.isAnonymous).toLocaleLowerCase() === "true"
+          ? "Anonymous"
+          : donationData.name,
       email: donationData.email,
       message: donationData.message || null,
       is_anonymous: donationData.isAnonymous,
       status: "completed", // For now, all donations are immediately completed
     })
     .select()
-    .single()
+    .single();
 
   if (error) {
-    console.error("Error creating donation:", error)
-    throw error
+    console.error("Error creating donation:", error);
+    throw error;
   }
 
-  revalidatePath(`/causes/${causeId}`)
-  revalidatePath('/causes')
-  revalidatePath('/')
+  revalidatePath(`/causes/${causeId}`);
+  revalidatePath("/causes");
+  revalidatePath("/");
   if (userId) {
-    revalidatePath("/dashboard/donations")
+    revalidatePath("/dashboard/donations");
   }
 
-  return data as Donation
+  return data as Donation;
 }
 
 /**
  * List donations for a cause
  */
-export async function listDonationsForCause(causeId: string): Promise<Donation[]> {
-  const supabase = await createClient()
-
+export async function listDonationsForCause(
+  causeId: string
+): Promise<Donation[]> {
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("donations")
     .select("*")
     .eq("cause_id", causeId)
-    .order("created_at", { ascending: false })
+    .order("created_at", { ascending: false });
 
   if (error) {
-    console.error("Error listing donations:", error)
-    throw error
+    console.error("Error listing donations:", error);
+    throw error;
   }
 
-  return data as Donation[]
+  return data as Donation[];
 }
 
 /**
@@ -71,35 +79,36 @@ export async function listDonationsForCause(causeId: string): Promise<Donation[]
  */
 export async function listUserDonations(
   userId: string,
-  timeframe: "all" | "recent" = "all",
+  timeframe: "all" | "recent" = "all"
 ): Promise<DonationWithCause[]> {
-  const supabase = await createClient()
-
+  const supabase = await createClient();
 
   let query = supabase
     .from("donations")
-    .select(`
+    .select(
+      `
       *,
       causes:cause_id (
         title,
         category
       )
-    `)
+    `
+    )
     .eq("user_id", userId)
-    .order("created_at", { ascending: false })
+    .order("created_at", { ascending: false });
 
   if (timeframe === "recent") {
     // Get donations from the last 30 days
-    const thirtyDaysAgo = new Date()
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
-    query = query.gte("created_at", thirtyDaysAgo.toISOString())
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    query = query.gte("created_at", thirtyDaysAgo.toISOString());
   }
 
-  const { data, error } = await query
+  const { data, error } = await query;
 
   if (error) {
-    console.error("Error listing user donations:", error)
-    throw error
+    console.error("Error listing user donations:", error);
+    throw error;
   }
 
   // Transform the response to match our DonationWithCause type
@@ -109,6 +118,5 @@ export async function listUserDonations(
       title: item.causes?.title || "Unknown Cause",
       category: item.causes?.category || "Unknown",
     },
-  })) as DonationWithCause[]
+  })) as DonationWithCause[];
 }
-
