@@ -238,11 +238,16 @@ export function useAuth() {
 
   const signOut = async () => {
     try {
-      // Immediately update UI state
-      setUser(null);
+      // Sign out from Supabase first
+      const { error } = await supabase.auth.signOut();
 
-      // Sign out from Supabase
-      await supabase.auth.signOut();
+      if (error) {
+        throw error;
+      }
+
+      // Update UI state after successful sign out
+      setUser(null);
+      setIsLoading(false);
 
       // Show success message
       toast({
@@ -252,13 +257,17 @@ export function useAuth() {
 
       // Navigate to home page
       router.push("/");
-    } catch (error) {
+      router.refresh(); // Refresh to clear any cached data
+    } catch (error: any) {
       console.error("Error signing out:", error);
+      // Don't update user state if sign out failed
       toast({
         title: "Error signing out",
-        description: "There was an error signing out. Please try again.",
+        description:
+          error?.message || "There was an error signing out. Please try again.",
         variant: "destructive",
       });
+      throw error; // Re-throw so calling components can handle it
     }
   };
 
