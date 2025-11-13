@@ -313,21 +313,121 @@ export default function ProfileDropdown({
               })}
             </div>
 
-            <DropdownMenuSeparator className="my-2 bg-gradient-to-r from-transparent via-zinc-200 to-transparent" />
-
-            <DropdownMenuItem asChild>
-              <button
-                type="button"
-                onClick={onSignOut}
-                className="w-full flex items-center gap-2 p-2 duration-200 bg-red-500/10 rounded-md hover:bg-red-500/20 cursor-pointer border border-transparent hover:border-red-500/30 hover:shadow-sm hover:bg-white transition-all group"
+            {/* Actions */}
+            <div className="border-t pt-4 space-y-2">
+              <Link
+                href="/dashboard/causes/create"
+                className="flex items-center gap-3 py-3 px-2 text-foreground hover:text-blue-600 rounded-md transition-colors font-medium"
+                onClick={() => setIsMenuOpen(false)}
               >
-                <LogOut className="w-4 h-4 text-red-500 group-hover:text-red-600 " />
-                <span className="text-sm font-medium text-red-500 group-hover:text-red-600 ">
-                  Sign Out
-                </span>
-              </button>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
+                <Megaphone className="h-4 w-4" />
+                List a Cause
+              </Link>
+
+              <Link
+                href="/dashboard/petitions/create"
+                className="flex items-center gap-3 py-3 px-2 text-foreground hover:text-blue-600 rounded-md transition-colors font-medium"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                <FileText className="h-4 w-4" />
+                Create a Petition
+              </Link>
+
+              {!isLoading && user && (
+                <Link
+                  href="/dashboard"
+                  className="flex items-center gap-3 py-3 px-2 text-foreground hover:text-blue-600 rounded-md transition-colors font-medium"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <LayoutDashboard className="h-4 w-4" />
+                  Dashboard
+                </Link>
+              )}
+
+              {!isLoading && user && (
+                <button
+                  onClick={async () => {
+                    if (isSigningOut) return;
+
+                    try {
+                      setIsSigningOut(true);
+                      setIsMenuOpen(false); // Close menu immediately
+                      if (signOut) {
+                        await signOut();
+                      }
+                    } catch (error) {
+                      console.error("Error signing out:", error);
+                      setIsSigningOut(false);
+                    }
+                    // Note: setIsSigningOut(false) is not needed here as signOut will redirect
+                  }}
+                  disabled={isSigningOut}
+                  className="flex items-center gap-3 w-full py-3 px-2 text-foreground hover:text-red-600 rounded-md transition-colors font-medium disabled:opacity-50"
+                >
+                  <LogOut className="h-4 w-4" />
+                  {isSigningOut ? (
+                    <span className="flex items-center gap-2">
+                      <span className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                      Signing out...
+                    </span>
+                  ) : (
+                    "Sign Out"
+                  )}
+                </button>
+              )}
+            </div>
+
+            {/* Admin Links */}
+            {isAdminOrManager && (
+              <div className="border-t pt-4">
+                <div className="py-2 px-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Admin
+                </div>
+                <div className="space-y-1">
+                  {[
+                    {
+                      href: "/dashboard/admin/causes",
+                      title: "Manage Causes",
+                      icon: Megaphone,
+                    },
+                    {
+                      href: "/dashboard/admin/petitions",
+                      title: "Manage Petitions",
+                      icon: FileText,
+                    },
+                    {
+                      href: "/dashboard/admin/users",
+                      title: "Manage Users",
+                      icon: Users,
+                    },
+                    {
+                      href: "/dashboard/admin/analytics",
+                      title: "Analytics",
+                      icon: BarChart3,
+                    },
+                    {
+                      href: "/dashboard/admin/logs",
+                      title: "Logs",
+                      icon: Book,
+                    },
+                  ].map((adminItem) => {
+                    const AdminIcon = adminItem.icon;
+                    return (
+                      <Link
+                        key={adminItem.href}
+                        href={adminItem.href}
+                        className="flex items-center gap-3 py-2 px-2 text-sm text-foreground hover:text-blue-600 hover:bg-blue-600/5 rounded-md transition-colors"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        <AdminIcon className="h-4 w-4" />
+                        {adminItem.title}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </>

@@ -53,12 +53,74 @@ export function UserNav() {
     : "U";
 
   return (
-    <div className="pt-1.5">
-      <ProfileDropdown
-        data={profileData}
-        onSignOut={signOut}
-        menuItems={menuItems}
-      />
+    <div className=" pt-1.5">
+      <DropdownMenu open={open} onOpenChange={setOpen}>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            className="relative h-9 w-9 rounded-full border-[#150aec] border"
+            aria-label="User menu"
+          >
+            <Avatar className="h-9 w-9">
+              <AvatarImage
+                src={profile?.profile_photo || user.user_metadata?.avatar_url}
+                alt={user.email || ""}
+              />
+              <AvatarFallback>{initials}</AvatarFallback>
+            </Avatar>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="w-56" align="end" forceMount>
+          <DropdownMenuLabel className="font-normal">
+            <div className="flex flex-col space-y-1">
+              <p className="text-sm font-medium leading-none">
+                {profile?.full_name || user.email}
+              </p>
+              <p className="text-xs leading-none text-muted-foreground">
+                {user.email}
+              </p>
+            </div>
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          {/* Mobile-only dashboard link inside menu */}
+          <div className="">
+            <DropdownMenuItem asChild>
+              <Link href="/dashboard">Dashboard</Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/dashboard/settings">Settings</Link>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+          </div>
+
+          <DropdownMenuItem
+            onClick={async () => {
+              if (isSigningOut) return;
+
+              try {
+                setIsSigningOut(true);
+                setOpen(false); // Close dropdown immediately
+                await signOut();
+              } catch (error) {
+                console.error("Error signing out:", error);
+                setIsSigningOut(false);
+              }
+              // Note: setIsSigningOut(false) is not needed here as signOut will redirect
+            }}
+            disabled={isSigningOut}
+            className="hover:bg-[red] focus:bg-[red] transition-colors disabled:opacity-50"
+          >
+            {isSigningOut ? (
+              <span className="flex items-center gap-2">
+                <span className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                Signing out...
+              </span>
+            ) : (
+              "Log out"
+            )}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 }
