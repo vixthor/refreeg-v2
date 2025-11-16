@@ -1,4 +1,4 @@
-# RefreeG
+# RefreeG ![RefreeG Logo](public/logo.svg)
 
 [![Next.js](https://img.shields.io/badge/Next.js-15.2.4-black)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19-blue)](https://reactjs.org/)
