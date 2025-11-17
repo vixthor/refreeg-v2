@@ -160,13 +160,13 @@ export function Header() {
         //   href: "/crowdfund/community",
         //   icon: Users,
         // },
-        // {
-        //   title: "💸 Fees & Payouts",
-        //   description:
-        //     "Clear explanation of transaction fees, payout timelines, and how creators/nonprofits access their funds.",
-        //   href: "/crowdfund/fees",
-        //   icon: CircleDollarSign,
-        // },
+        {
+          title: "💸 Fees & Payouts",
+          description:
+            "Clear explanation of transaction fees, payout timelines, and how creators/nonprofits access their funds.",
+          href: "/crowdfund/fees",
+          icon: CircleDollarSign,
+        },
         // {
         //   title: "🛡️ Trust & Safety",
         //   description:
@@ -178,7 +178,7 @@ export function Header() {
           title: "📣 FAQ",
           description:
             "Get answers to the most common questions about crowdfunding on RefreeG.",
-          href: "/#faq",
+          href: "/faq",
           icon: HelpCircle,
         },
       ],
