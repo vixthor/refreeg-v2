@@ -29,7 +29,6 @@ export async function FeaturedPetitions() {
     (p) => (p.days_active ?? 0) > 0 && p.status !== ("expired" as any)
   );
 
-
   // ✅ Fetch signers for each petition
   const petitionsWithSigners = await Promise.all(
     featuredPetitions.map(async (petition) => {
@@ -41,6 +40,10 @@ export async function FeaturedPetitions() {
       return { ...petition, signers, percentSigned };
     })
   );
+
+  if (!featuredPetitions || featuredPetitions.length === 0) {
+    return <div></div>;
+  }
 
   return (
     <div className="space-y-10 relative py-12">
