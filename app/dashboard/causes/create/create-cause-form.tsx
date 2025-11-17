@@ -432,6 +432,7 @@ export default function CreateCauseForm() {
       await sendCauseUnderReviewEmail({
         causeName: causeData.title,
         reviewTimeframe: "3-5 business days",
+        dashboardUrl: `${window.location.origin}/dashboard/causes`, // Use actual dashboard URL
       });
       await createCause(user.id, causeData);
       localStorage.removeItem("causeDraft");

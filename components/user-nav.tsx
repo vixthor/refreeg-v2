@@ -97,14 +97,29 @@ export function UserNav() {
 
           <DropdownMenuItem
             onClick={async () => {
-              setIsSigningOut(true);
-              await signOut();
-              setIsSigningOut(false);
+              if (isSigningOut) return;
+
+              try {
+                setIsSigningOut(true);
+                setOpen(false); // Close dropdown immediately
+                await signOut();
+              } catch (error) {
+                console.error("Error signing out:", error);
+                setIsSigningOut(false);
+              }
+              // Note: setIsSigningOut(false) is not needed here as signOut will redirect
             }}
             disabled={isSigningOut}
             className="hover:bg-[red] focus:bg-[red] transition-colors disabled:opacity-50"
           >
-            {isSigningOut ? "Signing out..." : "Log out"}
+            {isSigningOut ? (
+              <span className="flex items-center gap-2">
+                <span className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                Signing out...
+              </span>
+            ) : (
+              "Log out"
+            )}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

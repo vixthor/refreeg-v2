@@ -160,13 +160,13 @@ export function Header() {
         //   href: "/crowdfund/community",
         //   icon: Users,
         // },
-        // {
-        //   title: "💸 Fees & Payouts",
-        //   description:
-        //     "Clear explanation of transaction fees, payout timelines, and how creators/nonprofits access their funds.",
-        //   href: "/crowdfund/fees",
-        //   icon: CircleDollarSign,
-        // },
+        {
+          title: "💸 Fees & Payouts",
+          description:
+            "Clear explanation of transaction fees, payout timelines, and how creators/nonprofits access their funds.",
+          href: "/crowdfund/fees",
+          icon: CircleDollarSign,
+        },
         // {
         //   title: "🛡️ Trust & Safety",
         //   description:
@@ -178,7 +178,7 @@ export function Header() {
           title: "📣 FAQ",
           description:
             "Get answers to the most common questions about crowdfunding on RefreeG.",
-          href: "/#faq",
+          href: "/faq",
           icon: HelpCircle,
         },
       ],
@@ -573,16 +573,32 @@ export function Header() {
               {!isLoading && user && (
                 <button
                   onClick={async () => {
-                    setIsSigningOut(true);
-                    await signOut?.();
-                    setIsSigningOut(false);
-                    setIsMenuOpen(false);
+                    if (isSigningOut) return;
+
+                    try {
+                      setIsSigningOut(true);
+                      setIsMenuOpen(false); // Close menu immediately
+                      if (signOut) {
+                        await signOut();
+                      }
+                    } catch (error) {
+                      console.error("Error signing out:", error);
+                      setIsSigningOut(false);
+                    }
+                    // Note: setIsSigningOut(false) is not needed here as signOut will redirect
                   }}
                   disabled={isSigningOut}
                   className="flex items-center gap-3 w-full py-3 px-2 text-foreground hover:text-red-600 rounded-md transition-colors font-medium disabled:opacity-50"
                 >
                   <LogOut className="h-4 w-4" />
-                  {isSigningOut ? "Signing out..." : "Sign Out"}
+                  {isSigningOut ? (
+                    <span className="flex items-center gap-2">
+                      <span className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                      Signing out...
+                    </span>
+                  ) : (
+                    "Sign Out"
+                  )}
                 </button>
               )}
             </div>
