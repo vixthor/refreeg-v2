@@ -61,32 +61,45 @@ export function DonationForm({
     startTime: null as number | null,
   });
 
+  // Note: Donations can continue even after the goal is reached
+  // The form is only disabled if the cause status is pending or rejected
   const isDisabled =
     status === "pending" || status === "rejected" ? true : false;
 
   // Track when user starts filling donation form
   useEffect(() => {
-    const hasStartedFilling = formData.amount || formData.name || formData.email;
-    
+    const hasStartedFilling =
+      formData.amount || formData.name || formData.email;
+
     if (hasStartedFilling && !donationAttempt.hasStarted) {
       setDonationAttempt({
         hasStarted: true,
         startTime: Date.now(),
       });
-      
+
       // Save donation attempt to localStorage
-      localStorage.setItem("donationAttempt", JSON.stringify({
-        causeId,
-        causeName,
-        causeUrl,
-        formData: {
-          amount: formData.amount,
-          // Don't save sensitive info like name/email for privacy
-        },
-        timestamp: Date.now(),
-      }));
+      localStorage.setItem(
+        "donationAttempt",
+        JSON.stringify({
+          causeId,
+          causeName,
+          causeUrl,
+          formData: {
+            amount: formData.amount,
+            // Don't save sensitive info like name/email for privacy
+          },
+          timestamp: Date.now(),
+        })
+      );
     }
-  }, [formData.amount, formData.name, formData.email, causeId, causeName, causeUrl]);
+  }, [
+    formData.amount,
+    formData.name,
+    formData.email,
+    causeId,
+    causeName,
+    causeUrl,
+  ]);
 
   // Track inactivity and send reminder
   useEffect(() => {
@@ -94,8 +107,9 @@ export function DonationForm({
 
     const setupInactivityTracking = () => {
       const savedAttempt = localStorage.getItem("donationAttempt");
-      const hasStartedFilling = formData.amount || formData.name || formData.email;
-      
+      const hasStartedFilling =
+        formData.amount || formData.name || formData.email;
+
       if ((savedAttempt || hasStartedFilling) && !isLoading) {
         // Reset timer on any form interaction
         const resetTimer = () => {
@@ -104,8 +118,8 @@ export function DonationForm({
         };
 
         // Set up event listeners for form interactions
-        const events = ['input', 'change', 'click', 'keydown'];
-        events.forEach(event => {
+        const events = ["input", "change", "click", "keydown"];
+        events.forEach((event) => {
           document.addEventListener(event, resetTimer, { passive: true });
         });
 
@@ -115,7 +129,7 @@ export function DonationForm({
         // Cleanup function
         return () => {
           clearTimeout(inactivityTimer);
-          events.forEach(event => {
+          events.forEach((event) => {
             document.removeEventListener(event, resetTimer);
           });
         };
@@ -130,10 +144,12 @@ export function DonationForm({
           const attemptData = JSON.parse(currentAttempt);
           await sendUnfinishedDonationEmail({
             causeName: attemptData.causeName || causeName,
-            continueUrl: `${window.location.origin}${attemptData.causeUrl || causeUrl}`
+            continueUrl: `${window.location.origin}${
+              attemptData.causeUrl || causeUrl
+            }`,
           });
           console.log("Unfinished donation reminder sent");
-          
+
           // Clear the attempt after sending reminder
           localStorage.removeItem("donationAttempt");
         } catch (error) {
@@ -144,7 +160,15 @@ export function DonationForm({
 
     const cleanup = setupInactivityTracking();
     return cleanup;
-  }, [formData.amount, formData.name, formData.email, isLoading, profile?.email, causeName, causeUrl]);
+  }, [
+    formData.amount,
+    formData.name,
+    formData.email,
+    isLoading,
+    profile?.email,
+    causeName,
+    causeUrl,
+  ]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -287,7 +311,7 @@ export function DonationForm({
           >
             Test Donation Email
           </Button> */}
-          
+
           <Button
             type="submit"
             disabled={isLoading || isDisabled}
