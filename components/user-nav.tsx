@@ -23,8 +23,6 @@ export function UserNav() {
   const [profile, setProfile] = useState<any>(null);
   // Add the useAdmin hook to check for admin/manager access
   const { isAdminOrManager, isLoading: adminLoading } = useAdmin(user?.id);
-  const [open, setOpen] = useState(false);
-  const [isSigningOut, setIsSigningOut] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
