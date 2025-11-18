@@ -342,18 +342,18 @@ export default async function CauseDetailPage({
                     </div>
                     <div className="relative flex justify-center text-xs uppercase">
                       <span className="bg-background px-2 text-muted-foreground">
-                        Or donate with
+                        Or donate with Naira
                       </span>
                     </div>
-                    <DonationForm
-                      causeId={cause.id}
-                      profile={profile}
-                      status={cause.status}
-                      subaccount={cause?.user.sub_account_code}
-                      causeName={cause.title} // Pass the cause name
-                      causeUrl={`/causes/${cause.id}`} // Pass the cause URL
-                    />
                   </div>
+                  <DonationForm
+                    causeId={cause.id}
+                    profile={profile}
+                    status={cause.status}
+                    subaccount={cause?.user.sub_account_code}
+                    causeName={cause.title}
+                    causeUrl={`/causes/${cause.id}`}
+                  />
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -369,8 +369,8 @@ export default async function CauseDetailPage({
                     profile={profile}
                     status={cause.status}
                     subaccount={cause?.user.sub_account_code}
-                    causeName={cause.title} // Pass the cause name
-                    causeUrl={`/causes/${cause.id}`} // Pass the cause URL
+                    causeName={cause.title}
+                    causeUrl={`/causes/${cause.id}`}
                   />
                 </div>
               )}

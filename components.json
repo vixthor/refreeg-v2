@@ -11,6 +11,7 @@
     "prefix": ""
   },
   "iconLibrary": "lucide",
+  "iconLibrary": "lucide",
   "aliases": {
     "components": "@/components",
     "utils": "@/lib/utils",
@@ -19,6 +20,7 @@
     "hooks": "@/hooks"
   },
   "registries": {
-    "@aceternity": "https://ui.aceternity.com/registry/{name}.json"
+    "@kokonutui": "https://kokonutui.com/r/{name}.json"
   }
 }
+
