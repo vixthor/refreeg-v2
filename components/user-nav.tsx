@@ -21,6 +21,9 @@ import { ShieldAlert } from "lucide-react";
 export function UserNav() {
   const { user, signOut } = useAuth();
   const [profile, setProfile] = useState<any>(null);
+  // Local UI state for dropdown open and signing out flag
+  const [open, setOpen] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
   // Add the useAdmin hook to check for admin/manager access
   const { isAdminOrManager, isLoading: adminLoading } = useAdmin(user?.id);
 
