@@ -12,6 +12,7 @@ import {
   sendLoginNotificationEmail,
   sendWelcomeEmailToUser,
 } from "@/services/mail";
+import { subscribeToConvertKit } from "@/services/convertkit";
 import { hasCompletedOnboarding } from "@/actions/profile-actions";
 
 // Helper to extract a simple device/OS string from user agent
@@ -46,7 +47,6 @@ export function useAuth() {
     };
 
     getUser();
-
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, session) => {
@@ -203,6 +203,26 @@ export function useAuth() {
         } catch (emailError) {
           console.error("Error sending welcome email:", emailError);
           // Don't fail signup if email fails
+        }
+
+        // Subscribe user to ConvertKit email list
+        try {
+          // Extract first name from full name
+          const firstName = fullName.split(" ")[0];
+          
+          await subscribeToConvertKit({
+            email,
+            first_name: firstName,
+            fields: {
+              account_type: accountType,
+              signup_date: new Date().toISOString(),
+            },
+          });
+          
+          console.log("Successfully subscribed user to ConvertKit:", email);
+        } catch (convertkitError) {
+          console.error("Error subscribing to ConvertKit:", convertkitError);
+          // Don't fail signup if ConvertKit subscription fails
         }
       }
 
