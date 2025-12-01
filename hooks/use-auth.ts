@@ -162,6 +162,7 @@ export function useAuth() {
         options: {
           data: {
             full_name: fullName,
+            account_type: accountType,
           },
         },
       });
@@ -175,55 +176,33 @@ export function useAuth() {
         return;
       }
 
-      // Create profile for the new user
-      if (data.user) {
-        const { error: profileError } = await supabase.from("profiles").insert({
-          id: data.user.id,
-          email: data.user.email,
-          full_name: fullName,
-          account_type: accountType,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
+      // Send welcome email after successful signup
+      try {
+        const profileSetupUrl = `${window.location.origin}/dashboard/settings`;
+        await sendWelcomeEmailToUser(email, fullName, profileSetupUrl);
+      } catch (emailError) {
+        console.error("Error sending welcome email:", emailError);
+        // Don't fail signup if email fails
+      }
+
+      // Subscribe user to ConvertKit email list
+      try {
+        // Extract first name from full name
+        const firstName = fullName.split(" ")[0];
+
+        await subscribeToConvertKit({
+          email,
+          first_name: firstName,
+          fields: {
+            account_type: accountType,
+            signup_date: new Date().toISOString(),
+          },
         });
 
-        if (profileError) {
-          console.error("Error creating profile:", profileError);
-          toast({
-            title: "Error creating profile",
-            description:
-              "Your account was created but there was an error setting up your profile.",
-            variant: "destructive",
-          });
-        }
-
-        // Send welcome email after successful signup and profile creation
-        try {
-          const profileSetupUrl = `${window.location.origin}/dashboard/settings`;
-          await sendWelcomeEmailToUser(email, fullName, profileSetupUrl);
-        } catch (emailError) {
-          console.error("Error sending welcome email:", emailError);
-          // Don't fail signup if email fails
-        }
-
-        // Subscribe user to ConvertKit email list
-        try {
-          // Extract first name from full name
-          const firstName = fullName.split(" ")[0];
-          
-          await subscribeToConvertKit({
-            email,
-            first_name: firstName,
-            fields: {
-              account_type: accountType,
-              signup_date: new Date().toISOString(),
-            },
-          });
-          
-          console.log("Successfully subscribed user to ConvertKit:", email);
-        } catch (convertkitError) {
-          console.error("Error subscribing to ConvertKit:", convertkitError);
-          // Don't fail signup if ConvertKit subscription fails
-        }
+        console.log("Successfully subscribed user to ConvertKit:", email);
+      } catch (convertkitError) {
+        console.error("Error subscribing to ConvertKit:", convertkitError);
+        // Don't fail signup if ConvertKit subscription fails
       }
 
       toast({
