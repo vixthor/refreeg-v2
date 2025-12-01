@@ -485,7 +485,7 @@ export async function isProfileComplete(
 
     const { data: profile, error } = await supabase
       .from("profiles")
-      .select("full_name, bio, profile_photo")
+      .select("full_name, profile_photo")
       .eq("id", userId)
       .single();
 
@@ -498,10 +498,6 @@ export async function isProfileComplete(
 
     if (!profile?.full_name || profile.full_name.trim() === "") {
       missingFields.push("full name");
-    }
-
-    if (!profile?.bio || profile.bio.trim() === "") {
-      missingFields.push("bio");
     }
 
     if (!profile?.profile_photo) {
