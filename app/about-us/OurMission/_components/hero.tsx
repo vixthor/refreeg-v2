@@ -39,7 +39,7 @@ export default function Hero() {
 
             {/* CTA Button */}
             <Link
-              href="/causes/create"
+              href="/dashboard/causes/create"
               className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 md:px-6 py-2.5 md:py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors duration-200 shadow-lg hover:shadow-xl text-sm md:text-base"
             >
               Start a cause
