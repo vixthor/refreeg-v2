@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import React from "react";
-import { Button } from "../ui/button";
+import Link from "next/link";
 import { motion } from "framer-motion";
 
 export default function Hero() {
@@ -119,7 +119,10 @@ export default function Hero() {
           whileTap={{ scale: 0.95 }}
           transition={{ type: "spring", stiffness: 300 }}
         >
-          <Button className="bg-[#008B73] hover:bg-green-700 text-white px-12 py-3 rounded-sm flex items-center justify-center mx-auto">
+          <Link
+            href="../dashboard/causes/create"
+            className="bg-[#008B73] hover:bg-green-700 text-white px-12 py-3 rounded-sm flex items-center justify-center mx-auto"
+          >
             Start a Business Campaign
             <Image
               src="/images/chevron-right-2.png"
@@ -128,7 +131,7 @@ export default function Hero() {
               alt="get started"
               className="ml-2"
             />
-          </Button>
+          </Link>
         </motion.div>
       </motion.div>
     </div>

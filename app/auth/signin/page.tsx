@@ -47,11 +47,11 @@ export default function SignInPage() {
       {/* Left side - White background with form */}
       <div className="flex md:w-2/5 w-full flex-col items-center justify-center bg-white px-8">
         <div className="w-full max-w-md">
-          <div className="mb-8">
-            <h1 className="text-2xl font-bold text-neutral-800">
+          <div className="mb-8 text-center md:text-left">
+            <h1 className="text-2xl md:text-4xl font-bold text-neutral-800">
               Welcome back
             </h1>
-            <p className="mt-2 text-sm text-neutral-600">
+            <p className="mt-2 text-sm md:text-lg text-neutral-600">
               Sign in to your account
             </p>
           </div>
