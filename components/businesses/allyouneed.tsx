@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Button } from "../ui/button";
+import Link from "next/link";
 import Image from "next/image";
 import { motion, Variants } from "framer-motion";
 
@@ -130,7 +130,10 @@ export default function AllYouNeed() {
         viewport={{ once: true }}
       >
         <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-          <Button className="bg-[#FAFAFA] border text-black px-10 py-4 flex items-center gap-2 rounded-full">
+          <Link
+            href="../dashboard/causes/create"
+            className="bg-[#FAFAFA] border text-black px-10 py-4 flex items-center gap-2 rounded-full"
+          >
             Get Started
             <Image
               src="/images/arrow-right.png"
@@ -138,7 +141,7 @@ export default function AllYouNeed() {
               width={20}
               alt="get started"
             />
-          </Button>
+          </Link>
         </motion.div>
       </motion.div>
     </div>
