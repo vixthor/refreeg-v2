@@ -2,7 +2,7 @@
 
 import { ArrowRight } from "lucide-react";
 import React from "react";
-import { Button } from "../ui/button";
+import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
 
@@ -30,10 +30,13 @@ export default function GrowYourBusiness() {
         </p>
 
         <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-          <Button className="bg-[#FAFAFA] border text-black px-10 py-4 flex items-center gap-2 rounded-full">
+          <Link
+            href="../dashboard/causes/create"
+            className="bg-[#FAFAFA] border text-black px-10 py-4 flex items-center gap-2 rounded-full"
+          >
             Get Started
             <ArrowRight size={16} />
-          </Button>
+          </Link>
         </motion.div>
       </motion.div>
 
