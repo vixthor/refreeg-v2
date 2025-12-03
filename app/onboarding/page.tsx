@@ -88,7 +88,8 @@ export default function OnboardingPage() {
         // This ensures forms show previously entered data
         setOnboardingData((prev) => ({
           ...prev,
-          accountType: existingData.accountType,
+          accountType:
+            existingData.accountType || user.user_metadata?.account_type || "",
           gender: existingData.gender,
           profile: {
             ...prev.profile,

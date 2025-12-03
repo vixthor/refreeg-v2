@@ -53,21 +53,39 @@ export default function Step1({
 
       {/* Options */}
       <div className="mt-8 w-full max-w-md space-y-3">
-        {accountOptions.map((opt) => (
-          <motion.button
-            key={opt.id}
-            onClick={() => setSelectedType(opt.id)}
-            whileTap={{ scale: 0.97 }}
-            className={`w-full rounded-full border px-5 py-4 text-center text-base font-medium transition-all
-              ${
-                selectedType === opt.id
-                  ? "bg-blue-50 border-blue-600 text-blue-700"
-                  : "border-gray-200 hover:bg-gray-50"
-              }`}
-          >
-            {opt.label}
-          </motion.button>
-        ))}
+        {accountOptions.map((opt) => {
+          const isSelected = selectedType === opt.id;
+
+          return (
+            <motion.button
+              key={opt.id}
+              onClick={() => setSelectedType(opt.id)}
+              whileTap={{ scale: 0.97 }}
+              className={`w-full flex items-center justify-center gap-4 rounded-full border px-5 py-4 text-base font-medium transition-all relative
+    ${
+      isSelected
+        ? "bg-blue-50 border-blue-600 text-blue-700"
+        : "border-gray-200 hover:bg-gray-50"
+    }`}
+            >
+              {/* Circle absolute left */}
+              <div
+                className={`flex items-center justify-center h-5 w-5 rounded-full border absolute left-5
+      ${isSelected ? "border-blue-600" : "border-gray-400"}`}
+              >
+                {isSelected && (
+                  <motion.div
+                    layoutId="innerCircle"
+                    className="h-3 w-3 rounded-full bg-blue-600"
+                  />
+                )}
+              </div>
+
+              {/* Centered label */}
+              <span className="mx-auto text-center">{opt.label}</span>
+            </motion.button>
+          );
+        })}
       </div>
 
       {/* Proceed Button */}
