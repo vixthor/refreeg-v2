@@ -3,6 +3,7 @@ import React from "react";
 import { Button } from "../ui/button";
 import { motion } from "framer-motion";
 import Image from "next/image";
+import Link from "next/link";
 
 export default function CreatorStory() {
   return (
@@ -31,10 +32,12 @@ export default function CreatorStory() {
         Your tag is your key to being seen and supported. Don’t 
         just dream it. Tag it. Fund it. Grow it.
       </div>
-      <Button className="mt-auto hover:underline left-0 px-0 py-3 outline-none border-0">
-        Get started today
-        <Image src="/images/chevronRight3.svg" height={20} width={20} alt="get started" />
-      </Button>
+      <Link href="/dashboard/causes/create">
+        <Button className="mt-auto hover:underline left-0 px-0 py-3 outline-none border-0">
+          Get started today
+          <Image src="/images/chevronRight3.svg" height={20} width={20} alt="get started" />
+        </Button>
+      </Link>
     </motion.div>
   );
 }

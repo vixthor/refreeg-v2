@@ -5,6 +5,7 @@ import React from "react";
 import { Button } from "../ui/button";
 import Image from "next/image";
 import { motion } from "framer-motion";
+import Link from "next/link";
 
 export default function DespairAndHope() {
   const containerVariants = {
@@ -63,10 +64,12 @@ export default function DespairAndHope() {
         </motion.p>
 
         <motion.div variants={itemVariants} whileHover={{ scale: 1.05 }}>
-          <Button className="bg-[#FAFAFA] hover:bg-[#0A0A0B] hover:text-white border text-black px-10 py-4 flex items-center gap-2 rounded-full transition-all duration-300">
-            Get Started
-            <ArrowRight size={16} />
-          </Button>
+          <Link href="/dashboard/causes/create">
+            <Button className="bg-[#FAFAFA] hover:bg-[#0A0A0B] hover:text-white border text-black px-10 py-4 flex items-center gap-2 rounded-full transition-all duration-300">
+              Get Started
+              <ArrowRight size={16} />
+            </Button>
+          </Link>
         </motion.div>
       </motion.div>
 
