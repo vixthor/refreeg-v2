@@ -21,10 +21,11 @@ import { ShieldAlert } from "lucide-react";
 export function UserNav() {
   const { user, signOut } = useAuth();
   const [profile, setProfile] = useState<any>(null);
-  // Add the useAdmin hook to check for admin/manager access
-  const { isAdminOrManager, isLoading: adminLoading } = useAdmin(user?.id);
+  // Local UI state for dropdown open and signing out flag
   const [open, setOpen] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
+  // Add the useAdmin hook to check for admin/manager access
+  const { isAdminOrManager, isLoading: adminLoading } = useAdmin(user?.id);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -97,14 +98,29 @@ export function UserNav() {
 
           <DropdownMenuItem
             onClick={async () => {
-              setIsSigningOut(true);
-              await signOut();
-              setIsSigningOut(false);
+              if (isSigningOut) return;
+
+              try {
+                setIsSigningOut(true);
+                setOpen(false); // Close dropdown immediately
+                await signOut();
+              } catch (error) {
+                console.error("Error signing out:", error);
+                setIsSigningOut(false);
+              }
+              // Note: setIsSigningOut(false) is not needed here as signOut will redirect
             }}
             disabled={isSigningOut}
-            className="hover:bg-[#0070E0] focus:bg-[#0070E0] transition-colors disabled:opacity-50"
+            className="hover:bg-[red] focus:bg-[red] transition-colors disabled:opacity-50"
           >
-            {isSigningOut ? "Signing out..." : "Log out"}
+            {isSigningOut ? (
+              <span className="flex items-center gap-2">
+                <span className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                Signing out...
+              </span>
+            ) : (
+              "Log out"
+            )}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

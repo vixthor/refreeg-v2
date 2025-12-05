@@ -12,7 +12,7 @@ import QuestionMarkIcon from "@mui/icons-material/QuestionMark";
 
 interface Step2Props {
   user: any;
-  onNext: () => void;
+  onNext: (gender: string) => void;
   onBack: () => void;
   onboardingData: any;
   updateOnboardingData: (key: string, value: any) => void;
@@ -39,7 +39,7 @@ export default function Step2({
   const handleNext = () => {
     if (!selectedGender) return;
     updateOnboardingData("gender", selectedGender);
-    onNext();
+    onNext(selectedGender);
   };
 
   return (

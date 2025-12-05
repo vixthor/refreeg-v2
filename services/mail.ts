@@ -91,12 +91,15 @@ export async function sendMail({
 export async function sendCauseUnderReviewEmail(context: {
   causeName: string;
   reviewTimeframe?: string;
+  dashboardUrl?: string;
 }) {
   const user = await getCurrentUser();
   if (!user) {
     throw new Error("User not found");
   }
   const profile = await getProfile(user.id);
+  const currentYear = new Date().getFullYear();
+
   return sendMail({
     to: profile?.email || "",
     subject: "Your Cause is Under Review",
@@ -106,6 +109,8 @@ export async function sendCauseUnderReviewEmail(context: {
       userName: profile?.full_name || "User",
       organizationName: "Refreeg",
       reviewTimeframe: context.reviewTimeframe || "3-5 business days",
+      dashboardUrl: context.dashboardUrl,
+      currentYear,
     },
   });
 }
@@ -140,6 +145,10 @@ export async function sendPetitionApprovedEmailForUser(
 ) {
   const profile = await getProfile(userId);
   if (!profile?.email) throw new Error("Recipient email not found");
+
+  const petitionLink =
+    "https://www.refreeg.com/dashboard/petitions?status=approved";
+
   return sendMail({
     to: profile.email,
     subject: "Your Petition Has Been Approved ✅",
@@ -148,6 +157,7 @@ export async function sendPetitionApprovedEmailForUser(
       ...context,
       userName: profile.full_name || "User",
       organizationName: "Refreeg",
+      petitionLink, // Add this
     },
   });
 }
@@ -159,6 +169,10 @@ export async function sendPetitionRejectedEmailForUser(
 ) {
   const profile = await getProfile(userId);
   if (!profile?.email) throw new Error("Recipient email not found");
+
+  const petitionResubmitLink =
+    "https://www.refreeg.com/dashboard/petitions?status=rejected";
+
   return sendMail({
     to: profile.email,
     subject: "Update on Your Petition ❌",
@@ -167,6 +181,7 @@ export async function sendPetitionRejectedEmailForUser(
       ...context,
       userName: profile.full_name || "User",
       organizationName: "Refreeg",
+      petitionResubmitLink, // Add this
     },
   });
 }
@@ -181,6 +196,9 @@ export async function sendBankAccountAddedEmail(context: {
     throw new Error("User not found");
   }
   const profile = await getProfile(user.id);
+
+  // Add current year to the context
+  const currentYear = new Date().getFullYear();
   return sendMail({
     to: profile?.email || "",
     subject: "Did You Just Add a Bank Account to RefreeG? 🏦",
@@ -188,7 +206,7 @@ export async function sendBankAccountAddedEmail(context: {
     context: {
       ...context,
       userName: profile?.full_name || "Refreegerian",
-      currentYear: new Date().getFullYear().toString(),
+      currentYear,
     },
   });
 }
@@ -206,6 +224,7 @@ export async function sendKycSubmittedEmail(
       userName,
       organizationName: "Refreeg",
       reviewTimeframe: "3-5 business days",
+      dashboardUrl: "https://www.refreeg.com/dashboard/settings?tab=kyc",
     },
   });
 }
@@ -221,6 +240,7 @@ export async function sendKycApprovedEmail(
     context: {
       userName,
       organizationName: "Refreeg",
+      createCauseUrl: "https://www.refreeg.com/dashboard/settings?tab=kyc",
     },
   });
 }
@@ -238,6 +258,7 @@ export async function sendKycRejectedEmail(
       userName,
       organizationName: "Refreeg",
       rejectionReason,
+      kycResubmitLink: "https://www.refreeg.com/dashboard/settings?tab=kyc",
     },
   });
 }
@@ -253,6 +274,7 @@ export async function sendLoginNotificationEmail(context: {
     throw new Error("User not found");
   }
   const profile = await getProfile(user.id);
+  const currentYear = new Date().getFullYear();
   return sendMail({
     to: profile?.email || "",
     subject: "New Login Notification",
@@ -263,6 +285,7 @@ export async function sendLoginNotificationEmail(context: {
       loginTime: context.loginTime || new Date().toLocaleString(),
       device: context.device || "Unknown Device",
       ipAddress: context.ipAddress || "Unknown IP",
+      currentYear,
     },
   });
 }
@@ -270,7 +293,7 @@ export async function sendLoginNotificationEmail(context: {
 export async function sendCauseEditedEmail({
   causeName,
   reviewTimeframe = "3-5 business days",
-  dashboardUrl = "https://refreeg.com/dashboard",
+  dashboardUrl,
 }: {
   causeName: string;
   reviewTimeframe?: string;
@@ -281,6 +304,10 @@ export async function sendCauseEditedEmail({
     throw new Error("User not found");
   }
   const profile = await getProfile(user.id);
+
+  // Add current year to the context
+  const currentYear = new Date().getFullYear();
+
   return sendMail({
     to: profile?.email || "",
     subject: "Cause Edited - Under Review",
@@ -290,6 +317,7 @@ export async function sendCauseEditedEmail({
       causeName,
       reviewTimeframe,
       dashboardUrl,
+      currentYear, // Add this line
     },
   });
 }
@@ -317,6 +345,7 @@ export async function sendIncompleteCauseSetupEmail(context: {
     throw new Error("User not found");
   }
   const profile = await getProfile(user.id);
+  const currentYear = new Date().getFullYear();
   return sendMail({
     to: profile?.email || "",
     subject: "Don't let your cause stop halfway 🌱",
@@ -324,7 +353,8 @@ export async function sendIncompleteCauseSetupEmail(context: {
     context: {
       ...context,
       userName: profile?.full_name || "User",
-      currentYear: new Date().getFullYear().toString(),
+      currentYear,
+      continueUrl: context.continueUrl,
     },
   });
 }
@@ -338,6 +368,7 @@ export async function sendIncompleteKycVerificationEmail(context: {
     throw new Error("User not found");
   }
   const profile = await getProfile(user.id);
+  const currentYear = new Date().getFullYear();
   return sendMail({
     to: profile?.email || "",
     subject: "Just one more step to unlock your account ✅",
@@ -345,7 +376,7 @@ export async function sendIncompleteKycVerificationEmail(context: {
     context: {
       ...context,
       userName: profile?.full_name || "User",
-      currentYear: new Date().getFullYear().toString(),
+      currentYear,
     },
   });
 }
@@ -359,6 +390,7 @@ export async function sendIncompletePetitionDraftEmail(context: {
     throw new Error("User not found");
   }
   const profile = await getProfile(user.id);
+  const currentYear = new Date().getFullYear();
   return sendMail({
     to: profile?.email || "",
     subject: "Your petition is waiting for you to finish it ✍️",
@@ -366,7 +398,8 @@ export async function sendIncompletePetitionDraftEmail(context: {
     context: {
       ...context,
       userName: profile?.full_name || "User",
-      currentYear: new Date().getFullYear().toString(),
+      currentYear,
+      continueUrl: context.continueUrl,
     },
   });
 }
@@ -381,6 +414,7 @@ export async function sendUnfinishedDonationEmail(context: {
     throw new Error("User not found");
   }
   const profile = await getProfile(user.id);
+  const currentYear = new Date().getFullYear();
   return sendMail({
     to: profile?.email || "",
     subject: `You were almost done supporting ${context.causeName} ❤️`,
@@ -388,7 +422,8 @@ export async function sendUnfinishedDonationEmail(context: {
     context: {
       ...context,
       userName: profile?.full_name || "there",
-      currentYear: new Date().getFullYear().toString(),
+      currentYear,
+      continueUrl: context.continueUrl,
     },
   });
 }
@@ -406,7 +441,7 @@ export async function sendWelcomeEmailToUser(
     context: {
       userName,
       profileSetupUrl,
-      currentYear: new Date().getFullYear().toString(),
+      currentYear: new Date().getFullYear(),
     },
   });
 }
@@ -428,7 +463,7 @@ export async function sendPetitionSignedEmailToUser(
       petitionName,
       petitionUrl,
       isAnonymous,
-      currentYear: new Date().getFullYear().toString(),
+      currentYear: new Date().getFullYear(),
     },
   });
 }
@@ -453,7 +488,7 @@ export async function sendNewSignatureNotificationEmail(
       signerName,
       message: message || "No message provided",
       hasMessage: !!message,
-      currentYear: new Date().getFullYear().toString(),
+      currentYear: new Date().getFullYear(), // Added currentYear
     },
   });
 }

@@ -15,6 +15,7 @@ import {
   getCurrentUser,
   getProfile,
   listDonationsForCause,
+  getProfileByUsername,
 } from "@/actions";
 import { notFound } from "next/navigation";
 import { ShareModal } from "@/components/share-modal";
@@ -70,6 +71,9 @@ export default async function CauseDetailPage({
   const creatorProfile = await getProfile(cause.user_id);
   const hasCreatorWallet = !!creatorProfile?.solana_wallet;
 
+  // Get creator's username for the profile URL
+  const creatorUsername = creatorProfile?.username;
+
   let socialMedia = {
     twitter: "",
     facebook: "",
@@ -124,6 +128,7 @@ export default async function CauseDetailPage({
       user: {
         full_name: d.name || "Anonymous",
         profile_photo: null,
+        username: null,
       },
       replies: [],
       replies_count: 0,
@@ -185,7 +190,11 @@ export default async function CauseDetailPage({
                 <span>
                   Created by{" "}
                   <Link
-                    href={`/profile/${cause.user_id}`}
+                    href={
+                      creatorUsername
+                        ? `/${creatorUsername}`
+                        : `/${cause.user_id}`
+                    }
                     className="hover:underline text-blue-600"
                   >
                     {cause.user.name}
@@ -253,7 +262,7 @@ export default async function CauseDetailPage({
                     <h3 className="text-xl font-semibold mb-2">
                       {section.heading}
                     </h3>
-                    <p className="text-muted-foreground">
+                    <p className="text-muted-foreground whitespace-pre-line">
                       {section.description}
                     </p>
                   </div>
@@ -333,18 +342,18 @@ export default async function CauseDetailPage({
                     </div>
                     <div className="relative flex justify-center text-xs uppercase">
                       <span className="bg-background px-2 text-muted-foreground">
-                        Or donate with
+                        Or donate with Naira
                       </span>
                     </div>
-                    <DonationForm
-                      causeId={cause.id}
-                      profile={profile}
-                      status={cause.status}
-                      subaccount={cause?.user.sub_account_code}
-                      causeName={cause.title} // Pass the cause name
-                      causeUrl={`/causes/${cause.id}`} // Pass the cause URL
-                    />
                   </div>
+                  <DonationForm
+                    causeId={cause.id}
+                    profile={profile}
+                    status={cause.status}
+                    subaccount={cause?.user.sub_account_code}
+                    causeName={cause.title}
+                    causeUrl={`/causes/${cause.id}`}
+                  />
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -360,8 +369,8 @@ export default async function CauseDetailPage({
                     profile={profile}
                     status={cause.status}
                     subaccount={cause?.user.sub_account_code}
-                    causeName={cause.title} // Pass the cause name
-                    causeUrl={`/causes/${cause.id}`} // Pass the cause URL
+                    causeName={cause.title}
+                    causeUrl={`/causes/${cause.id}`}
                   />
                 </div>
               )}

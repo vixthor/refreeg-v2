@@ -13,6 +13,8 @@ import {
   getCurrentUser,
   getProfile,
   listSignaturesForPetition,
+  getProfileByUsername,
+  checkUserSignature, // Add this import
 } from "@/actions";
 import { notFound } from "next/navigation";
 import { ShareModal } from "@/components/share-modal";
@@ -159,10 +161,19 @@ export default async function PetitionDetailPage({
     subaccount: myprofile?.sub_account_code || "",
   };
 
+  // Check if current user has already signed this petition
+  let hasSigned = false;
+  if (user) {
+    hasSigned = await checkUserSignature(petition.id, user.id);
+  }
+
   const baseUrl = getBaseURL();
   // Check if creator has a wallet
   const creatorProfile = await getProfile(petition.user_id);
   const hasCreatorWallet = !!creatorProfile?.solana_wallet;
+
+  // Get creator's username for the profile URL
+  const creatorUsername = creatorProfile?.username;
 
   // Parse social media links from JSON string
   let socialMedia = {
@@ -249,7 +260,11 @@ export default async function PetitionDetailPage({
                   <span>
                     Created by{" "}
                     <Link
-                      href={`/profile/${petition.user_id}`}
+                      href={
+                        creatorUsername
+                          ? `/${creatorUsername}`
+                          : `/profile/${petition.user_id}`
+                      }
                       className="hover:underline text-blue-600"
                     >
                       {petition.user?.name}
@@ -342,7 +357,7 @@ export default async function PetitionDetailPage({
                 petition.sections.map((section, index) => (
                   <div key={index} className="mt-4">
                     <h3 className="text-xl font-semibold">{section.heading}</h3>
-                    <p className="text-muted-foreground">
+                    <p className="text-muted-foreground whitespace-pre-line">
                       {section.description}
                     </p>
                   </div>
@@ -418,10 +433,11 @@ export default async function PetitionDetailPage({
                   profile={profile}
                   status={petition.status}
                   subaccount={petition?.user?.sub_account_code}
+                  hasSigned={hasSigned}
                   petitionData={{
                     title: petition.title,
                     creatorId: petition.user_id,
-                    creatorEmail: creatorProfile?.email || undefined, // Convert null to undefined
+                    creatorEmail: creatorProfile?.email || undefined,
                     creatorName: petition.user?.name,
                   }}
                 />

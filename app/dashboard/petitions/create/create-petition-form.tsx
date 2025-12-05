@@ -33,8 +33,11 @@ import { usePetition } from "@/hooks/use-petition";
 import { Progress } from "@/components/ui/progress";
 import { ImageUpload } from "@/components/ui/image-upload";
 import { categories } from "@/lib/categories";
-import { sendPetitionUnderReviewEmail, sendIncompletePetitionDraftEmail } from "@/services/mail";
-import { format, isBefore, differenceInDays } from "date-fns";
+import {
+  sendPetitionUnderReviewEmail,
+  sendIncompletePetitionDraftEmail,
+} from "@/services/mail";
+import { format, isBefore, differenceInDays, startOfDay } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import MultimediaCarousel from "@/components/MultimediaCarousel";
@@ -217,8 +220,9 @@ export default function CreatePetitionForm() {
 
     const setupInactivityTracking = () => {
       const hasDraft = localStorage.getItem("petitionDraft");
-      const hasStartedFilling = formData.title || formData.category || formData.goal;
-      
+      const hasStartedFilling =
+        formData.title || formData.category || formData.goal;
+
       if (hasDraft || hasStartedFilling) {
         // Reset timer on any form interaction
         const resetTimer = () => {
@@ -227,8 +231,8 @@ export default function CreatePetitionForm() {
         };
 
         // Set up event listeners for form interactions
-        const events = ['input', 'change', 'click', 'keydown'];
-        events.forEach(event => {
+        const events = ["input", "change", "click", "keydown"];
+        events.forEach((event) => {
           document.addEventListener(event, resetTimer, { passive: true });
         });
 
@@ -238,7 +242,7 @@ export default function CreatePetitionForm() {
         // Cleanup function
         return () => {
           clearTimeout(inactivityTimer);
-          events.forEach(event => {
+          events.forEach((event) => {
             document.removeEventListener(event, resetTimer);
           });
         };
@@ -251,7 +255,7 @@ export default function CreatePetitionForm() {
       if (currentDraft && user) {
         try {
           await sendIncompletePetitionDraftEmail({
-            continueUrl: `${window.location.origin}/dashboard/petitions/create`
+            continueUrl: `${window.location.origin}/dashboard/petitions/create`,
           });
           console.log("Incomplete petition reminder sent");
         } catch (error) {
@@ -388,8 +392,7 @@ export default function CreatePetitionForm() {
     e.preventDefault();
 
     if (!user) return;
-    // Only allow submit on last step
-
+    // Only allow submit on last step (step 5)
     if (currentStep < 5) {
       nextStep();
       return;
@@ -649,7 +652,9 @@ export default function CreatePetitionForm() {
                       mode="single"
                       selected={formData.startDate}
                       onSelect={(date) => handleDateChange(date, "startDate")}
-                      disabled={(date) => isBefore(date, new Date())}
+                      disabled={(date) =>
+                        isBefore(date, startOfDay(new Date()))
+                      }
                       initialFocus
                     />
                   </PopoverContent>
@@ -683,7 +688,7 @@ export default function CreatePetitionForm() {
                       selected={formData.endDate}
                       onSelect={(date) => handleDateChange(date, "endDate")}
                       disabled={(date) => {
-                        const isPast = isBefore(date, new Date());
+                        const isPast = isBefore(date, startOfDay(new Date()));
                         const isBeforeStart = formData.startDate
                           ? isBefore(date, formData.startDate)
                           : false;
@@ -921,7 +926,7 @@ export default function CreatePetitionForm() {
               {formData.sections.map((section, index) => (
                 <div key={index} className="space-y-2">
                   <h5 className="font-medium">{section.heading}</h5>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-muted-foreground whitespace-pre-line">
                     {section.description}
                   </p>
                 </div>
@@ -1011,7 +1016,7 @@ export default function CreatePetitionForm() {
             >
               Test Petition Email
             </Button> */}
-            
+
             {currentStep < 5 ? (
               <Button type="button" onClick={nextStep}>
                 Next

@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { Button } from "../ui/button";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import Image from "next/image";
 
@@ -31,10 +31,13 @@ export default function MoreOnBusiness() {
         for your business. With transparency, blockchain-backed trust, and yield
         opportunities, we give you the tools to build stronger.
       </div>
-      <Button className="bg-[#FAFAFA] border text-black px-10 py-4 flex items-center gap-2 rounded-full">
+      <Link
+        href="../dashboard/causes/create"
+        className="bg-[#FAFAFA] border text-black px-10 py-4 flex items-center gap-2 rounded-full"
+      >
         Get started today
         <Image src="/images/arrow-right.png" height={20} width={20} alt="get started" />
-      </Button>
+      </Link>
     </motion.div>
   );
 }
