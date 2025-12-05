@@ -1,22 +1,26 @@
-import { createClient } from '@/lib/supabase/server';
-import { NextResponse } from 'next/server';
+import { createClient } from "@/lib/supabase/server";
+import { NextResponse } from "next/server";
+import { ALL_COUNTRIES } from "@/app/utils/countryUtils";
 
 export async function GET() {
   try {
     const supabase = await createClient();
+
     const { data: countries, error } = await supabase
       .from("countries")
       .select("name")
       .order("name");
 
-    if (error) {
-      console.error("Supabase error:", error.message);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+    // If database query fails or returns no data, use static list
+    if (error || !countries || countries.length === 0) {
+      console.warn("Countries table not available or empty, using static list");
+      return NextResponse.json(ALL_COUNTRIES);
     }
 
-    return NextResponse.json(countries.map(c => c.name));
-  } catch (error: any) {
-    console.error("API route error:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(countries.map((country) => country.name));
+  } catch (error) {
+    // On any error, return the static list as fallback
+    console.warn("Countries API error, using static list:", error);
+    return NextResponse.json(ALL_COUNTRIES);
   }
 }

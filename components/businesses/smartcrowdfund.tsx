@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import React from "react";
-import { Button } from "../ui/button";
+import Link from "next/link";
 import { motion } from "framer-motion";
 
 // Animation variants for reuse
@@ -118,7 +118,10 @@ export default function SmartCrowdfund() {
             transition={{ delay: 0.4 }}
           >
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Button className="w-full bg-[#1FC16B] hover:bg-[#1fb867] border px-10 py-6 flex items-center justify-center gap-2 rounded-full shadow">
+              <Link
+                href="../dashboard/causes/create"
+                className="w-full bg-[#1FC16B] hover:bg-[#1fb867] border px-10 py-6 flex items-center justify-center gap-2 rounded-full shadow"
+              >
                 <Image
                   src="/briefcase.png"
                   height={20}
@@ -132,7 +135,7 @@ export default function SmartCrowdfund() {
                   width={20}
                   alt="get started"
                 />
-              </Button>
+              </Link>
             </motion.div>
           </motion.div>
         </motion.div>

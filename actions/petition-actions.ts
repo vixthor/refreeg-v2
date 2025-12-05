@@ -10,6 +10,7 @@ import type {
 } from "@/types";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "./auth-actions";
+import { isAdminOrManager } from "./role-actions";
 import {
   sendPetitionApprovedEmailForUser,
   sendPetitionRejectedEmailForUser,
@@ -48,8 +49,11 @@ export async function getPetition(
     (data?.status === "pending" || data?.status === "rejected") &&
     user?.id !== data?.user_id
   ) {
-    redirect("/");
-    return null;
+    const canView = user?.id ? await isAdminOrManager(user.id) : false;
+    if (!canView) {
+      redirect("/");
+      return null;
+    }
   }
   if (error) {
     if (error.code === "PGRST116") {
@@ -359,7 +363,8 @@ export async function listPetitions(
   if (options.status) {
     query = query.eq("status", options.status);
   } else {
-    // Default to approved petitions for public listing
+    // Default to approved petitions for public listing only when no status is specified
+    // Admin queries should show all petitions when no status filter is applied
     if (!options.userId) {
       query = query.eq("status", "approved");
     }
@@ -436,7 +441,8 @@ export async function countPetitions(
   if (options.status) {
     query = query.eq("status", options.status);
   } else {
-    // Default to approved petitions for public listing
+    // Default to approved petitions for public listing only when no status is specified
+    // Admin queries should show all petitions when no status filter is applied
     if (!options.userId) {
       query = query.eq("status", "approved");
     }
@@ -483,16 +489,19 @@ export async function updatePetitionStatus(
       throw editError;
     }
 
+    let updatedPetition;
+
     if (edit) {
-      // Copy edit fields into petitions
+      // Copy edit fields into petitions (including description)
       const updateData: any = {
         title: edit.title,
+        description: edit.description,
         category: edit.category,
         goal: edit.goal,
         image: edit.image,
         days_active: edit.days_active,
-        multimedia: edit.multimedia,
-        video_links: edit.video_links,
+        multimedia: edit.multimedia || [],
+        video_links: edit.video_links || [],
         status: "approved",
         updated_at: new Date().toISOString(),
       };
@@ -509,10 +518,48 @@ export async function updatePetitionStatus(
         );
         throw updateError;
       }
-      // Mark the edit as approved and delete it
+
+      // Replace petition sections with edit sections if any
+      const { data: editSections } = await supabase
+        .from("petition_edit_sections")
+        .select("id, heading, description")
+        .eq("petition_edit_id", edit.id);
+
+      if (editSections && editSections.length > 0) {
+        // delete existing sections
+        const { error: delErr } = await supabase
+          .from("petition_sections")
+          .delete()
+          .eq("petition_id", petitionId);
+        if (delErr) {
+          console.error("Failed to delete old petition sections", delErr);
+          throw delErr;
+        }
+
+        // insert new sections
+        const { error: insErr } = await supabase
+          .from("petition_sections")
+          .insert(
+            editSections.map((s: any) => ({
+              petition_id: petitionId,
+              heading: s.heading,
+              description: s.description,
+            }))
+          );
+        if (insErr) {
+          console.error("Failed to insert new petition sections", insErr);
+          throw insErr;
+        }
+      }
+
+      // Cleanup: delete edit sections and the edit row
+      await supabase
+        .from("petition_edit_sections")
+        .delete()
+        .eq("petition_edit_id", edit.id);
       await supabase.from("petition_edits").delete().eq("id", edit.id);
-      revalidatePath("/dashboard/admin/petitions");
-      return updated as Petition;
+
+      updatedPetition = updated;
     } else {
       // No edit found, approve the main petition directly
       const { data: updated, error: updateError } = await supabase
@@ -529,10 +576,24 @@ export async function updatePetitionStatus(
         console.error("Error approving petition:", updateError);
         throw updateError;
       }
-
-      revalidatePath("/dashboard/admin/petitions");
-      return updated as Petition;
+      updatedPetition = updated;
     }
+
+    // Send approval email
+    const { data: petition } = await supabase
+      .from("petitions")
+      .select("user_id, title, id")
+      .eq("id", petitionId)
+      .single();
+
+    if (petition) {
+      await sendPetitionApprovedEmailForUser(petition.user_id, {
+        petitionName: petition.title,
+      });
+    }
+
+    revalidatePath("/dashboard/admin/petitions");
+    return updatedPetition as Petition;
   }
 
   // If rejecting, mark the latest pending edit as rejected
@@ -545,13 +606,15 @@ export async function updatePetitionStatus(
       .order("created_at", { ascending: false })
       .limit(1)
       .single();
+
     if (edit && !editError) {
       await supabase
         .from("petition_edits")
         .update({ status: "rejected", rejection_reason: rejectionReason })
         .eq("id", edit.id);
     }
-    // Optionally, update the main petition status to rejected if needed (legacy)
+
+    // Update the main petition status to rejected
     const { data, error } = await supabase
       .from("petitions")
       .update({
@@ -562,10 +625,26 @@ export async function updatePetitionStatus(
       .eq("id", petitionId)
       .select()
       .single();
+
     if (error) {
       console.error("Error updating petition status:", error);
       throw error;
     }
+
+    // Send rejection email
+    const { data: petition } = await supabase
+      .from("petitions")
+      .select("user_id, title, id")
+      .eq("id", petitionId)
+      .single();
+
+    if (petition) {
+      await sendPetitionRejectedEmailForUser(petition.user_id, {
+        petitionName: petition.title,
+        rejectionReason: rejectionReason,
+      });
+    }
+
     revalidatePath("/dashboard/admin/petitions");
     return data as Petition;
   }

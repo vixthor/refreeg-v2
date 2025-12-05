@@ -9,7 +9,39 @@ import type {
 } from "@/types";
 
 /**
+ * Check if a user has already signed a petition
+ * @param petitionId - The ID of the petition to check
+ * @param userId - The ID of the user to check
+ */
+export async function checkUserSignature(
+  petitionId: string,
+  userId: string
+): Promise<boolean> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("signatures")
+    .select("id")
+    .eq("petition_id", petitionId)
+    .eq("user_id", userId)
+    .single();
+
+  if (error) {
+    if (error.code === "PGRST116") {
+      // No signature found
+      return false;
+    }
+    console.error("Error checking user signature:", error);
+    return false;
+  }
+
+  return !!data; // Return true if signature exists
+}
+
+/**
  * Create a new signature for a petition
+ * Note: Signatures can continue even after the petition goal is reached.
+ * There are no restrictions based on the number of signatures vs goal.
  * @param petitionId - The ID of the petition to sign
  */
 export async function createSignature(
@@ -18,6 +50,14 @@ export async function createSignature(
   signatureData: SignatureFormData
 ): Promise<Signature> {
   const supabase = await createClient();
+
+  // If user is logged in, check if they've already signed
+  if (userId) {
+    const hasSigned = await checkUserSignature(petitionId, userId);
+    if (hasSigned) {
+      throw new Error("You have already signed this petition");
+    }
+  }
 
   // Ensure a user (by name and email) signs only once
   const { count: existingCount, error: existingError } = await supabase

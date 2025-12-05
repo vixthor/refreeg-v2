@@ -8,7 +8,12 @@ import { toast } from "@/components/ui/use-toast";
 
 import { getCurrentUser } from "@/actions/auth-actions";
 import { updateProfile } from "@/actions";
-import { sendLoginNotificationEmail } from "@/services/mail";
+import {
+  sendLoginNotificationEmail,
+  sendWelcomeEmailToUser,
+} from "@/services/mail";
+import { subscribeToConvertKit } from "@/services/convertkit";
+import { hasCompletedOnboarding } from "@/actions/profile-actions";
 
 // Helper to extract a simple device/OS string from user agent
 function getDeviceInfo() {
@@ -42,7 +47,6 @@ export function useAuth() {
     };
 
     getUser();
-
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, session) => {
@@ -118,26 +122,10 @@ export function useAuth() {
       }
 
       // Check if user needs to complete onboarding
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select(
-          "full_name, phone, email, first_name, last_name, username, location"
-        )
-        .eq("id", currentUser.id)
-        .single();
+      // hasCompletedOnboarding handles grandfathering existing users automatically
+      const completedOnboarding = await hasCompletedOnboarding(currentUser.id);
 
-      // Check if all required fields from step 3 are present
-      const hasCompletedOnboarding = !!(
-        profile?.full_name &&
-        profile?.phone &&
-        profile?.email &&
-        profile?.first_name &&
-        profile?.last_name &&
-        profile?.username &&
-        profile?.location
-      );
-
-      if (!hasCompletedOnboarding) {
+      if (!completedOnboarding) {
         toast({
           title: "Complete your profile",
           description: "Please finish setting up your account.",
@@ -174,6 +162,7 @@ export function useAuth() {
         options: {
           data: {
             full_name: fullName,
+            account_type: accountType,
           },
         },
       });
@@ -187,31 +176,39 @@ export function useAuth() {
         return;
       }
 
-      // Create profile for the new user
-      if (data.user) {
-        const { error: profileError } = await supabase.from("profiles").insert({
-          id: data.user.id,
-          email: data.user.email,
-          full_name: fullName,
-          account_type: accountType,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
+      // Send welcome email after successful signup
+      try {
+        const profileSetupUrl = `${window.location.origin}/dashboard/settings`;
+        await sendWelcomeEmailToUser(email, fullName, profileSetupUrl);
+      } catch (emailError) {
+        console.error("Error sending welcome email:", emailError);
+        // Don't fail signup if email fails
+      }
+
+      // Subscribe user to ConvertKit email list
+      try {
+        // Extract first name from full name
+        const firstName = fullName.split(" ")[0];
+
+        await subscribeToConvertKit({
+          email,
+          first_name: firstName,
+          fields: {
+            account_type: accountType,
+            signup_date: new Date().toISOString(),
+          },
         });
 
-        if (profileError) {
-          console.error("Error creating profile:", profileError);
-          toast({
-            title: "Error creating profile",
-            description:
-              "Your account was created but there was an error setting up your profile.",
-            variant: "destructive",
-          });
-        }
+        console.log("Successfully subscribed user to ConvertKit:", email);
+      } catch (convertkitError) {
+        console.error("Error subscribing to ConvertKit:", convertkitError);
+        // Don't fail signup if ConvertKit subscription fails
       }
 
       toast({
         title: "Account created successfully",
-        description: "Welcome! Let's set up your profile.",
+        description:
+          "Welcome! Let's set up your profile. Check your email for a welcome message.",
       });
 
       // Redirect to onboarding for new users
@@ -253,11 +250,16 @@ export function useAuth() {
 
   const signOut = async () => {
     try {
-      // Immediately update UI state
-      setUser(null);
+      // Sign out from Supabase first
+      const { error } = await supabase.auth.signOut();
 
-      // Sign out from Supabase
-      await supabase.auth.signOut();
+      if (error) {
+        throw error;
+      }
+
+      // Update UI state after successful sign out
+      setUser(null);
+      setIsLoading(false);
 
       // Show success message
       toast({
@@ -267,13 +269,17 @@ export function useAuth() {
 
       // Navigate to home page
       router.push("/");
-    } catch (error) {
+      router.refresh(); // Refresh to clear any cached data
+    } catch (error: any) {
       console.error("Error signing out:", error);
+      // Don't update user state if sign out failed
       toast({
         title: "Error signing out",
-        description: "There was an error signing out. Please try again.",
+        description:
+          error?.message || "There was an error signing out. Please try again.",
         variant: "destructive",
       });
+      throw error; // Re-throw so calling components can handle it
     }
   };
 
