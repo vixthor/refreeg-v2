@@ -31,6 +31,18 @@ export async function GET(request: NextRequest) {
     } = await supabase.auth.getUser();
 
     if (user) {
+      try {
+        await supabase
+          .from("referrals")
+          .update({
+            registered: true,
+            referee_id: user.id,
+          })
+          .eq("referee_email", (user.email || "").toLowerCase());
+      } catch (error) {
+        console.error("Error updating referral after verification:", error);
+      }
+
       // Check if user has a profile
       const { data: profile } = await supabase
         .from("profiles")

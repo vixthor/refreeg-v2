@@ -1,81 +1,45 @@
 "use client";
 
 import React from "react";
-import SidebarItem from "./SidebarItem";
-import { Home, FileText, Users, HeartHandshake, LifeBuoy } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
-export default function Sidebar({
-  selected,
-  onSelect,
-  searchQuery
-}: {
+type SidebarItemProps = {
+  label: string;
   selected: string;
   onSelect: (label: string) => void;
-  searchQuery: string;
-}) {
-  const primary = [
-    { label: "Overview", icon: Home },
-    { label: "Introduction", icon: FileText },
-    { label: "For Fundraisers", icon: Users },
-  ];
+  icon?: LucideIcon;
+};
 
-  const secondary = [
-    { label: "For Donors", icon: HeartHandshake },
-    { label: "Support", icon: LifeBuoy },
-  ];
-
-  const allItems = [...primary, ...secondary];
-
-  const filtered =
-    searchQuery.trim()
-      ? allItems.filter((i) =>
-          i.label.toLowerCase().includes(searchQuery.toLowerCase())
-        )
-      : [];
+export default function SidebarItem({
+  label,
+  selected,
+  onSelect,
+  icon: Icon,
+}: SidebarItemProps) {
+  const active = selected === label;
 
   return (
-    <aside className="hidden md:block w-64 border-r bg-white py-6 px-3 overflow-y-auto">
-      {searchQuery.trim() ? (
-        <ul className="space-y-2">
-          {filtered.map((item) => (
-            <SidebarItem
-              key={item.label}
-              label={item.label}
-              icon={item.icon}
-              selected={selected}
-              onSelect={onSelect}
-            />
-          ))}
-        </ul>
-      ) : (
-        <>
-          <ul className="space-y-2">
-            {primary.map((item) => (
-              <SidebarItem
-                key={item.label}
-                label={item.label}
-                icon={item.icon}
-                selected={selected}
-                onSelect={onSelect}
-              />
-            ))}
-          </ul>
-
-          <hr className="my-5 border-gray-200" />
-
-          <ul className="space-y-2">
-            {secondary.map((item) => (
-              <SidebarItem
-                key={item.label}
-                label={item.label}
-                icon={item.icon}
-                selected={selected}
-                onSelect={onSelect}
-              />
-            ))}
-          </ul>
-        </>
-      )}
-    </aside>
+    <li>
+      <button
+        type="button"
+        onClick={() => onSelect(label)}
+        className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-[15px] transition-all
+          ${
+            active
+              ? "bg-[#0A2A5C] text-white font-semibold"
+              : "text-gray-800 hover:bg-slate-100"
+          }
+        `}
+      >
+        {Icon && (
+          <Icon
+            size={18}
+            className={active ? "text-white" : "text-gray-600"}
+          />
+        )}
+        <span>{label}</span>
+      </button>
+    </li>
   );
 }
+a
