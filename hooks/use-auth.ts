@@ -213,6 +213,8 @@ export function useAuth() {
 
       // Redirect to onboarding for new users
       router.push("/onboarding");
+
+      return { data, error };
     } catch (error: any) {
       toast({
         title: "Error signing up",
