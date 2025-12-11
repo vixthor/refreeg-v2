@@ -1,27 +1,43 @@
 "use client";
 
-import type React from "react";
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
+import { Eye, EyeOff } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
+
 import { useAuth } from "@/hooks/use-auth";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
-import { Icons } from "@/components/icons";
-import { AuthTestimonials } from "@/components/ui/auth-testimonials";
-import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { Eye, EyeOff } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { toast } from "@/components/ui/use-toast";
+import { AuthTestimonials } from "@/components/ui/auth-testimonials";
+
 
 export default function SignUpPage() {
+  const supabase = createClient();
+  const { signUp, signInWithGoogle } = useAuth();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const { signUp, signInWithGoogle } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
+
+  const [refFromUrl, setRefFromUrl] = useState<string | null>(null);
+
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const ref = params.get("ref");
+      if (ref) {
+        setRefFromUrl(ref);
+      }
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,7 +45,7 @@ export default function SignUpPage() {
     if (password !== confirmPassword) {
       toast({
         title: "Passwords do not match",
-        description: "Please make sure both passwords are the same.",
+        description: "Please confirm your password correctly.",
         variant: "destructive",
       });
       return;
@@ -37,26 +53,62 @@ export default function SignUpPage() {
 
     setIsLoading(true);
 
-    // Show loading toast
     toast({
       title: "Creating your account...",
-      description: "Please wait while we set up your RefreeG account.",
+      description: "Setting up your RefreeG account.",
     });
 
     try {
-      await signUp(email, password, "User", "individual");
+      const signUpEmail = email.trim();
+      const normalizedEmail = signUpEmail.toLowerCase();
 
-      // Success toast will be shown by the signUp function
-    } catch (error) {
-      // Error toast will be shown by the signUp function
+      if (refFromUrl) {
+        await supabase.from("referrals").insert({
+          referrer_id: refFromUrl,
+          referee_email: normalizedEmail,
+          registered: false,
+        });
+      }
+
+      const result = await signUp(signUpEmail, password, "User", "individual");
+
+      if (!result?.data?.user) {
+        return;
+      }
+
+      
+      if (refFromUrl) {
+        await supabase
+          .from("referrals")
+          .update({
+            registered: true,
+            referee_id: result.data.user.id,
+            reward: "5_pts",
+          })
+          .eq("referee_email", normalizedEmail)
+          .eq("referrer_id", refFromUrl);
+      }
+
+      toast({
+        title: "Account created!",
+        description: "Please verify your email to continue.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error?.message || "Could not create account",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
+
+
   return (
     <div className="flex h-screen w-screen">
-      {/* Left side - White background with form */}
+ 
       <div className="flex md:w-2/5 w-full flex-col items-center justify-center bg-white px-8">
         <div className="w-full max-w-md">
           <div className="mb-8 text-center md:text-left">
@@ -69,6 +121,7 @@ export default function SignUpPage() {
           </div>
 
           <form onSubmit={handleSubmit}>
+   
             <div className="mb-4">
               <LabelInputContainer>
                 <Label htmlFor="email">Email Address</Label>
@@ -82,6 +135,8 @@ export default function SignUpPage() {
                 />
               </LabelInputContainer>
             </div>
+
+         
             <div className="mb-4">
               <LabelInputContainer>
                 <Label htmlFor="password">Password</Label>
@@ -101,14 +156,16 @@ export default function SignUpPage() {
                     onClick={() => setShowPassword(!showPassword)}
                   >
                     {showPassword ? (
-                      <EyeOff className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+                      <EyeOff className="h-4 w-4 text-gray-400" />
                     ) : (
-                      <Eye className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+                      <Eye className="h-4 w-4 text-gray-400" />
                     )}
                   </button>
                 </div>
               </LabelInputContainer>
             </div>
+
+            
             <div className="mb-8">
               <LabelInputContainer>
                 <Label htmlFor="confirmPassword">Confirm Password</Label>
@@ -125,70 +182,63 @@ export default function SignUpPage() {
                   <button
                     type="button"
                     className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    onClick={() =>
+                      setShowConfirmPassword(!showConfirmPassword)
+                    }
                   >
                     {showConfirmPassword ? (
-                      <EyeOff className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+                      <EyeOff className="h-4 w-4 text-gray-400" />
                     ) : (
-                      <Eye className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+                      <Eye className="h-4 w-4 text-gray-400" />
                     )}
                   </button>
                 </div>
               </LabelInputContainer>
             </div>
 
+  
             <Button
-              className="group/btn relative h-10 w-full rounded-md font-medium text-white shadow-[0px_1px_0px_0px_#ffffff40_inset,0px_-1px_0px_0px_#ffffff40_inset] flex items-center justify-center gap-2"
               type="submit"
               disabled={isLoading}
-              variant="default"
+              className="group/btn relative h-10 w-full rounded-md font-medium text-white"
             >
-              <span>Sign up</span>
+              Sign Up
               <BottomGradient />
             </Button>
 
+            
             <div className="my-2 h-[1px] w-full bg-gradient-to-r from-transparent via-neutral-300 to-transparent" />
 
-            <div className="flex flex-col space-y-4">
-              <button
-                className="group/btn shadow-input relative flex h-10 w-full items-center justify-center space-x-2 rounded-md bg-gray-50 px-4 font-medium text-black"
-                type="button"
-                onClick={signInWithGoogle}
-                disabled={isLoading}
-              >
-                <Image
-                  src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
-                  alt="Google logo"
-                  width={18}
-                  height={18}
-                />
-                <span className="text-sm text-neutral-700">Google</span>
-                <BottomGradient />
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={signInWithGoogle}
+              disabled={isLoading}
+              className="flex h-10 w-full items-center justify-center gap-2 rounded-md bg-gray-50 shadow-input"
+            >
+              <Image
+                src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+                width={18}
+                height={18}
+                alt="Google"
+              />
+              <span className="text-sm text-neutral-700">Google</span>
+              <BottomGradient />
+            </button>
 
             <div className="mt-6 text-center text-sm text-neutral-600">
               Already have an account?{" "}
-              <Link
-                href="/auth/signin"
-                className="font-medium text-black hover:underline"
-              >
+              <Link href="/auth/signin" className="font-medium hover:underline">
                 Sign In
               </Link>
             </div>
+
             <div className="mt-2 text-sm text-center text-neutral-600">
               By signing up, you agree to our{" "}
-              <Link
-                href="/terms"
-                className="font-medium text-black hover:underline"
-              >
+              <Link href="/terms" className="font-medium hover:underline">
                 Terms of Service
               </Link>{" "}
               and{" "}
-              <Link
-                href="/privacy"
-                className="font-medium text-black hover:underline"
-              >
+              <Link href="/privacy" className="font-medium hover:underline">
                 Privacy Policy
               </Link>
             </div>
@@ -196,7 +246,7 @@ export default function SignUpPage() {
         </div>
       </div>
 
-      {/* Right side - Blue background with testimonial */}
+
       <div className="hidden md:flex md:w-3/5 items-center justify-center bg-[#003366] px-8">
         <AuthTestimonials />
       </div>
@@ -204,14 +254,11 @@ export default function SignUpPage() {
   );
 }
 
-const BottomGradient = () => {
-  return (
-    <>
-      <span className="absolute inset-x-0 -bottom-px block h-px w-full bg-gradient-to-r from-transparent via-cyan-500 to-transparent opacity-0 transition duration-500 group-hover/btn:opacity-100" />
-      <span className="absolute inset-x-10 -bottom-px mx-auto block h-px w-1/2 bg-gradient-to-r from-transparent via-indigo-500 to-transparent opacity-0 blur-sm transition duration-500 group-hover/btn:opacity-100" />
-    </>
-  );
-};
+const BottomGradient = () => (
+  <>
+    <span className="absolute inset-x-0 -bottom-px block h-px bg-gradient-to-r from-transparent via-cyan-500 to-transparent opacity-0 transition duration-500 group-hover/btn:opacity-100" />
+  </>
+);
 
 const LabelInputContainer = ({
   children,
@@ -219,10 +266,4 @@ const LabelInputContainer = ({
 }: {
   children: React.ReactNode;
   className?: string;
-}) => {
-  return (
-    <div className={cn("flex w-full flex-col space-y-2", className)}>
-      {children}
-    </div>
-  );
-};
+}) => <div className={cn("flex flex-col space-y-2", className)}>{children}</div>;
