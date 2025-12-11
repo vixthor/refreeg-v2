@@ -1,45 +1,46 @@
 "use client";
 
 import React from "react";
-import type { LucideIcon } from "lucide-react";
+import SidebarItem from "./SidebarItem";
+import { Home, FileText, Users, HeartHandshake, LifeBuoy } from "lucide-react";
 
-type SidebarItemProps = {
-  label: string;
-  selected: string;
-  onSelect: (label: string) => void;
-  icon?: LucideIcon;
-};
-
-export default function SidebarItem({
-  label,
+export default function Sidebar({
   selected,
   onSelect,
-  icon: Icon,
-}: SidebarItemProps) {
-  const active = selected === label;
+  searchQuery,
+}: {
+  selected: string;
+  onSelect: (label: string) => void;
+  searchQuery: string;
+}) {
+  const items = [
+    { label: "Overview", icon: Home },
+    { label: "Introduction", icon: FileText },
+    { label: "For Fundraisers", icon: Users },
+    { label: "For Donors", icon: HeartHandshake },
+    { label: "Support", icon: LifeBuoy },
+  ];
+
+  // Filter items based on search query
+  const filteredItems = items.filter((item) =>
+    item.label.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
-    <li>
-      <button
-        type="button"
-        onClick={() => onSelect(label)}
-        className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-[15px] transition-all
-          ${
-            active
-              ? "bg-[#0A2A5C] text-white font-semibold"
-              : "text-gray-800 hover:bg-slate-100"
-          }
-        `}
-      >
-        {Icon && (
-          <Icon
-            size={18}
-            className={active ? "text-white" : "text-gray-600"}
-          />
-        )}
-        <span>{label}</span>
-      </button>
-    </li>
+    <aside className="hidden md:block w-64 flex-shrink-0">
+      <nav className="sticky top-4">
+        <ul className="space-y-1">
+          {filteredItems.map((item) => (
+            <SidebarItem
+              key={item.label}
+              label={item.label}
+              icon={item.icon}
+              selected={selected}
+              onSelect={onSelect}
+            />
+          ))}
+        </ul>
+      </nav>
+    </aside>
   );
 }
-a
