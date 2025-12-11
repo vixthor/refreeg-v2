@@ -144,9 +144,9 @@ export default function GetStartedPage() {
 
           {/* FEATURE CARDS */}
           <section className="mt-10 grid grid-cols-1 sm:grid-cols-3 gap-6">
-            <FeatureCard img="/images/earn.png" text="Earn on-chain yields on donations." />
-            <FeatureCard img="/images/verify.png" text="Show transparency via blockchain." />
-            <FeatureCard img="/images/bell.png" text="Launch trusted causes that inspire action." />
+            <FeatureCard img="/images/docs/earn.png" text="Earn on-chain yields on donations." />
+            <FeatureCard img="/images/docs/verify.png" text="Show transparency via blockchain." />
+            <FeatureCard img="/images/docs/bell.png" text="Launch trusted causes that inspire action." />
           </section>
         </main>
       </div>
