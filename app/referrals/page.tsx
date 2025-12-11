@@ -59,8 +59,7 @@ const Step: React.FC<StepProps> = ({ src, alt, text, mobile = false }) => (
     className="flex flex-col items-center"
     initial="rest"
     whileHover="hover"
-    animate="rest"
-  >
+    animate="rest">
     <motion.div variants={mobile ? mobileHover : hoverSoft}>
       <Image src={src} width={70} height={70} alt={alt} />
     </motion.div>
@@ -77,8 +76,7 @@ const CopyToast: React.FC<{ visible: boolean }> = ({ visible }) => (
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 20, scale: 0.95 }}
         transition={{ duration: 0.25, ease: "easeOut" }}
-        className="fixed bottom-7 left-1/2 z-[50] -translate-x-1/2 rounded-full bg-black px-4 py-2 text-sm text-white shadow-lg"
-      >
+        className="fixed bottom-7 left-1/2 z-[50] -translate-x-1/2 rounded-full bg-black px-4 py-2 text-sm text-white shadow-lg">
         Copied!
       </motion.div>
     )}
@@ -155,18 +153,23 @@ export default function ReferralPage() {
             created_at,
             profiles:referee_id (
               full_name,
-              email,
-              avatar_url
+              email
             )
           `
         )
         .eq("referrer_id", currentUser.id);
-
+      console.log("ROWS:", rows);
       if (error) {
         console.error("REFERRAL QUERY ERROR:", error);
       }
 
-      const safeRows = (rows || []) as ReferralRow[];
+      // Handle profiles array from Supabase (even single relations return arrays)
+      const safeRows: ReferralRow[] = (rows || []).map((row: any) => ({
+        ...row,
+        profiles: Array.isArray(row.profiles)
+          ? row.profiles[0] || null
+          : row.profiles || null,
+      }));
 
       setReferrals(safeRows);
       setDebug((prev) => ({ ...prev, rowCount: safeRows.length }));
@@ -215,12 +218,10 @@ export default function ReferralPage() {
         variants={sectionVariant}
         initial="hidden"
         whileInView="show"
-        viewport={{ once: true }}
-      >
+        viewport={{ once: true }}>
         <motion.div
           variants={fadeUp}
-          className="inline-flex items-center gap-2 rounded-full border border-gray-300 bg-white px-5 py-1.5 shadow-sm"
-        >
+          className="inline-flex items-center gap-2 rounded-full border border-gray-300 bg-white px-5 py-1.5 shadow-sm">
           <motion.div {...floating}>
             <Image
               src="/images/referrals/Users.png"
@@ -234,15 +235,13 @@ export default function ReferralPage() {
 
         <motion.h1
           variants={fadeUp}
-          className="mt-6 text-3xl font-bold md:text-4xl"
-        >
+          className="mt-6 text-3xl font-bold md:text-4xl">
           RefreeG’s Referral Program
         </motion.h1>
 
         <motion.p
           variants={fadeUp}
-          className="mx-auto mt-3 max-w-xl text-sm text-gray-600 md:text-base"
-        >
+          className="mx-auto mt-3 max-w-xl text-sm text-gray-600 md:text-base">
           At RefreeG, we believe in the power of community-driven change. Invite
           people you trust, support meaningful campaigns, and grow your impact
           together.
@@ -250,8 +249,7 @@ export default function ReferralPage() {
 
         <motion.button
           variants={fadeUp}
-          className="mt-6 rounded-md bg-[#0B3B8A] px-6 py-2 text-white shadow transition hover:bg-[#0D46A5] active:scale-95 active:bg-[#0A336D]"
-        >
+          className="mt-6 rounded-md bg-[#0B3B8A] px-6 py-2 text-white shadow transition hover:bg-[#0D46A5] active:scale-95 active:bg-[#0A336D]">
           View All Rewards
         </motion.button>
       </motion.section>
@@ -262,17 +260,13 @@ export default function ReferralPage() {
         variants={sectionVariant}
         initial="hidden"
         whileInView="show"
-        viewport={{ once: true, amount: 0.3 }}
-      >
+        viewport={{ once: true, amount: 0.3 }}>
         <motion.div
           variants={fadeUp}
-          className="rounded-2xl bg-white p-8 shadow md:p-10"
-        >
-   <h2 className="mb-10 text-[26px] md:text-[32px] font-bold text-center w-full">
-  How it works
-</h2>
-
-
+          className="rounded-2xl bg-white p-8 shadow md:p-10">
+          <h2 className="mb-10 text-[26px] md:text-[32px] font-bold text-center w-full">
+            How it works
+          </h2>
 
           {/* Desktop timeline */}
           <div className="hidden items-start justify-between md:flex">
@@ -284,8 +278,7 @@ export default function ReferralPage() {
 
             <motion.div
               className="mt-10 flex w-[18%] items-center justify-center"
-              variants={fadeUp}
-            >
+              variants={fadeUp}>
               <motion.div
                 className="h-1 w-full max-w-[180px] origin-left rounded-full bg-blue-600"
                 variants={lineGrow}
@@ -303,8 +296,7 @@ export default function ReferralPage() {
 
             <motion.div
               className="mt-10 flex w-[18%] items-center justify-center"
-              variants={fadeUp}
-            >
+              variants={fadeUp}>
               <motion.div
                 className="h-1 w-full max-w-[180px] origin-left rounded-full bg-blue-600"
                 variants={lineGrow}
@@ -324,8 +316,7 @@ export default function ReferralPage() {
           {/* Mobile stacked steps */}
           <motion.div
             className="mt-10 flex flex-col items-center gap-14 md:hidden"
-            variants={stagger}
-          >
+            variants={stagger}>
             <Step
               mobile
               src="/images/referrals/message-notification.png"
@@ -356,8 +347,7 @@ export default function ReferralPage() {
               {/* Link box */}
               <motion.div
                 variants={fadeUp}
-                className="flex w-full items-center justify-between rounded-lg border bg-white px-4 py-2 shadow-sm"
-              >
+                className="flex w-full items-center justify-between rounded-lg border bg-white px-4 py-2 shadow-sm">
                 <span className="truncate text-sm">
                   {referralLink || "Loading your referral link..."}
                 </span>
@@ -365,8 +355,7 @@ export default function ReferralPage() {
                 <button
                   onClick={handleCopy}
                   disabled={!referralLink}
-                  className="active:scale-95 disabled:opacity-60"
-                >
+                  className="active:scale-95 disabled:opacity-60">
                   <Image
                     src="/images/referrals/Copysimple.png"
                     width={25}
@@ -381,8 +370,7 @@ export default function ReferralPage() {
                 variants={fadeUp}
                 onClick={handleInviteFriends}
                 disabled={!referralLink}
-                className="w-full rounded-md bg-[#0B3B8A] px-6 py-2 text-white shadow transition hover:bg-[#0D46A5] active:scale-95 active:bg-[#0A336D] disabled:opacity-60 md:w-auto"
-              >
+                className="w-full rounded-md bg-[#0B3B8A] px-6 py-2 text-white shadow transition hover:bg-[#0D46A5] active:scale-95 active:bg-[#0A336D] disabled:opacity-60 md:w-auto">
                 Invite Friends
               </motion.button>
 
@@ -393,8 +381,7 @@ export default function ReferralPage() {
                   scale: [1, 1.05, 1],
                   transition: { duration: 2.8, repeat: Infinity },
                 }}
-                className="flex items-center justify-center rounded-xl bg-white p-3 shadow"
-              >
+                className="flex items-center justify-center rounded-xl bg-white p-3 shadow">
                 {referralLink && <QRCode value={referralLink} size={75} />}
               </motion.div>
             </div>
@@ -408,15 +395,17 @@ export default function ReferralPage() {
         variants={sectionVariant}
         initial="hidden"
         whileInView="show"
-        viewport={{ once: true, amount: 0.3 }}
-      >
+        viewport={{ once: true, amount: 0.3 }}>
         <motion.div
           variants={stagger}
-          className="grid grid-cols-2 gap-4 md:grid-cols-4"
-        >
+          className="grid grid-cols-2 gap-4 md:grid-cols-4">
           {[
             { img: "gaming-prize.png", label: "Your Tier", value: tier },
-            { img: "arrows-in-cardinal.png", label: "Ref Points", value: points },
+            {
+              img: "arrows-in-cardinal.png",
+              label: "Ref Points",
+              value: points,
+            },
             { img: "cloud-network.png", label: "Invites Sent", value: invites },
             { img: "share-network.png", label: "Sign Ups", value: signUps },
           ].map((item) => (
@@ -427,8 +416,7 @@ export default function ReferralPage() {
                 y: -4,
                 boxShadow: "0 16px 30px rgba(0,0,0,0.06)",
               }}
-              className="flex flex-col items-center rounded-2xl bg-white p-5 shadow"
-            >
+              className="flex flex-col items-center rounded-2xl bg-white p-5 shadow">
               <motion.div {...floating}>
                 <Image
                   src={`/images/referrals/${item.img}`}
@@ -450,12 +438,10 @@ export default function ReferralPage() {
         variants={sectionVariant}
         initial="hidden"
         whileInView="show"
-        viewport={{ once: true, amount: 0.3 }}
-      >
+        viewport={{ once: true, amount: 0.3 }}>
         <motion.div
           className="overflow-hidden rounded-2xl bg-white shadow"
-          variants={fadeUp}
-        >
+          variants={fadeUp}>
           {/* Header */}
           <div className="grid grid-cols-4 bg-[#0065FF] px-4 py-3 text-sm font-medium text-white">
             <span>Friends Account</span>
@@ -487,8 +473,7 @@ export default function ReferralPage() {
                 return (
                   <div
                     key={ref.id}
-                    className="grid grid-cols-4 px-4 py-3 text-sm text-gray-700"
-                  >
+                    className="grid grid-cols-4 px-4 py-3 text-sm text-gray-700">
                     <div className="flex flex-col">
                       <span className="truncate font-medium">{name}</span>
                       <span className="truncate text-xs text-gray-500">
@@ -517,16 +502,14 @@ export default function ReferralPage() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-[200] flex items-center justify-center bg-black/40 backdrop-blur-sm"
-            onClick={() => setShareOpen(false)}
-          >
+            onClick={() => setShareOpen(false)}>
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
               transition={{ duration: 0.2 }}
               onClick={(e) => e.stopPropagation()}
-              className="w-[90%] max-w-sm rounded-2xl bg-white p-6 shadow-xl"
-            >
+              className="w-[90%] max-w-sm rounded-2xl bg-white p-6 shadow-xl">
               <h2 className="mb-1 text-center text-lg font-semibold">
                 Share Your Link
               </h2>
@@ -545,8 +528,7 @@ export default function ReferralPage() {
                   )}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#25D366] py-2 text-sm font-medium text-white transition hover:bg-[#1EB257]"
-                >
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#25D366] py-2 text-sm font-medium text-white transition hover:bg-[#1EB257]">
                   <span>Share on WhatsApp</span>
                 </a>
 
@@ -554,31 +536,26 @@ export default function ReferralPage() {
                   href={`mailto:?subject=${encodeURIComponent(
                     "Join me on RefreeG"
                   )}&body=${encodeURIComponent(referralLink)}`}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#2563EB] py-2 text-sm font-medium text-white transition hover:bg-[#1D4ED8]"
-                >
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#2563EB] py-2 text-sm font-medium text-white transition hover:bg-[#1D4ED8]">
                   <span>Share via Email</span>
                 </a>
 
                 <button
                   onClick={handleCopy}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-gray-900 py-2 text-sm font-medium text-white transition hover:bg-gray-800"
-                >
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-gray-900 py-2 text-sm font-medium text-white transition hover:bg-gray-800">
                   <span>Copy Link</span>
                 </button>
               </div>
 
               <button
                 onClick={() => setShareOpen(false)}
-                className="mt-4 w-full text-center text-xs text-gray-500 hover:underline"
-              >
+                className="mt-4 w-full text-center text-xs text-gray-500 hover:underline">
                 Cancel
               </button>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
-
-      
     </main>
   );
 }
