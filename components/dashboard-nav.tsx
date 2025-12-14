@@ -81,6 +81,11 @@ const adminNavItems = [
     href: "/dashboard/admin/logs",
     icon: ClipboardCheckIcon,
   },
+  {
+    title:"Referrals",
+    href: "/referrals",
+    icon: Users,
+  }
 ];
 
 export function DashboardNav({
