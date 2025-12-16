@@ -230,6 +230,12 @@ export function Header() {
           href: "/about-us/faq",
           icon: Heart,
         },
+        {
+          title:"Referrals",
+          description: "Refer a friend to RefreeG and earn rewards.",
+          href: "/referrals",
+          icon: Users,
+        }
       ],
     },
   ];

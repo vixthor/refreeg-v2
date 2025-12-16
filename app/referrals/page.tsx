@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import QRCode from "react-qr-code";
 import { AnimatePresence, motion } from "framer-motion";
+import { Copy } from "lucide-react";
 
 import {
   sectionVariant,
@@ -356,12 +357,7 @@ export default function ReferralPage() {
                   onClick={handleCopy}
                   disabled={!referralLink}
                   className="active:scale-95 disabled:opacity-60">
-                  <Image
-                    src="/images/referrals/Copysimple.png"
-                    width={25}
-                    height={25}
-                    alt="copy"
-                  />
+                  <Copy className="h-6 w-6 text-gray-600" />
                 </button>
               </motion.div>
 
