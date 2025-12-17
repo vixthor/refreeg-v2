@@ -37,12 +37,16 @@ export default function Numbers() {
 
   const item = {
     hidden: { opacity: 0, y: 40 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } as any },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.6, ease: "easeOut" } as any,
+    },
   };
 
   return (
     <motion.div
-      className="w-full flex flex-row justify-between items-center px-4 sm:px-6 lg:px-12 py-10 text-black overflow-hidden"
+      className="w-full flex flex-col md:flex-row justify-between items-center px-4 sm:px-6 lg:px-12 py-10 text-black overflow-hidden"
       variants={container}
       initial="hidden"
       whileInView="visible"
