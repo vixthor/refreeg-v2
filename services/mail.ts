@@ -492,3 +492,59 @@ export async function sendNewSignatureNotificationEmail(
     },
   });
 }
+
+// Send KYC submission notification to admins and managers
+export async function sendKycSubmissionAdminNotification(
+  userEmail: string,
+  userName: string,
+  userId: string,
+  kycReviewUrl: string
+) {
+  const { getAdminManagerEmails } = await import("@/actions/role-actions");
+  const adminManagerEmails = await getAdminManagerEmails();
+
+  if (adminManagerEmails.length === 0) {
+    console.warn("No admin/manager emails found to send KYC notification");
+    return { success: false, error: "No admin/manager emails found" };
+  }
+
+  // Send email to all admins and managers
+  const emailPromises = adminManagerEmails.map((email) =>
+    sendMail({
+      to: email,
+      subject: "New KYC Submission Requires Review - Refreeg",
+      templateName: "kyc-submission-admin-notification",
+      context: {
+        adminName: "Admin/Manager",
+        userName,
+        userEmail,
+        kycReviewUrl,
+        organizationName: "Refreeg",
+        currentYear: new Date().getFullYear(),
+      },
+    })
+  );
+
+  try {
+    const results = await Promise.allSettled(emailPromises);
+    const successful = results.filter((r) => r.status === "fulfilled").length;
+    const failed = results.filter((r) => r.status === "rejected").length;
+
+    console.log(
+      `KYC admin notification sent: ${successful} successful, ${failed} failed`
+    );
+
+    return {
+      success: successful > 0,
+      sent: successful,
+      failed,
+    };
+  } catch (error) {
+    console.error("Error sending KYC admin notifications:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Failed to send notifications",
+    };
+  }
+}

@@ -53,7 +53,7 @@ export async function middleware(request: NextRequest) {
       // Check if KYC exists
       if (!kycVerification) {
         return NextResponse.redirect(
-          new URL("/dashboard/settings?error=kyc_required", request.url)
+          new URL("/dashboard/settings/kyc?error=kyc_required", request.url)
         );
       }
 
@@ -61,7 +61,7 @@ export async function middleware(request: NextRequest) {
       if (kycVerification.status !== "approved") {
         return NextResponse.redirect(
           new URL(
-            `/dashboard/settings?error=kyc_${kycVerification.status}`,
+            `/dashboard/settings/kyc?error=kyc_${kycVerification.status}`,
             request.url
           )
         );
@@ -70,7 +70,10 @@ export async function middleware(request: NextRequest) {
       const { isComplete } = await isProfileComplete(user.id);
       if (!isComplete) {
         return NextResponse.redirect(
-          new URL("/dashboard/settings?error=profile_incomplete", request.url)
+          new URL(
+            "/dashboard/settings/profile?error=profile_incomplete",
+            request.url
+          )
         );
       }
     }
