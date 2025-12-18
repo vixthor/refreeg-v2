@@ -332,3 +332,49 @@ export async function getAllUsers(): Promise<UserWithRole[]> {
     created_at: profile.created_at,
   }));
 }
+
+/**
+ * Get all admin and manager email addresses
+ */
+export async function getAdminManagerEmails(): Promise<string[]> {
+  const supabase = await createClient();
+
+  try {
+    // Get all roles that are admin or manager
+    const { data: roles, error: rolesError } = await supabase
+      .from("roles")
+      .select("user_id")
+      .in("role", ["admin", "manager"]);
+
+    if (rolesError) {
+      console.error("Error fetching admin/manager roles:", rolesError);
+      return [];
+    }
+
+    if (!roles || roles.length === 0) {
+      return [];
+    }
+
+    // Get email addresses for these users
+    const userIds = roles.map((role) => role.user_id);
+    const { data: profiles, error: profilesError } = await supabase
+      .from("profiles")
+      .select("email")
+      .in("id", userIds);
+
+    if (profilesError) {
+      console.error("Error fetching admin/manager emails:", profilesError);
+      return [];
+    }
+
+    // Filter out null/empty emails and return array
+    return (
+      profiles
+        ?.map((profile) => profile.email)
+        .filter((email): email is string => !!email) || []
+    );
+  } catch (error) {
+    console.error("Error in getAdminManagerEmails:", error);
+    return [];
+  }
+}

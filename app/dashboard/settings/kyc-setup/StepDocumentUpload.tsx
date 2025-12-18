@@ -99,11 +99,13 @@ export default function StepDocumentUpload({
           <input {...getInputProps()} />
           {file ? (
             file.type.startsWith("image/") ? (
-              <img
-                src={URL.createObjectURL(file)}
-                alt="Preview"
-                className="w-full h-full rounded object-cover"
-              />
+              <div className="w-full h-full bg-gray-100 rounded-xl flex items-center justify-center p-3">
+                <img
+                  src={URL.createObjectURL(file)}
+                  alt="Preview"
+                  className="max-w-full max-h-full object-contain rounded"
+                />
+              </div>
             ) : (
               <div className="flex flex-col items-center gap-2">
                 <svg width="48" height="48" fill="none" viewBox="0 0 24 24">

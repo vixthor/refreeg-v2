@@ -7,6 +7,7 @@ import {
   sendKycSubmittedEmail,
   sendKycApprovedEmail,
   sendKycRejectedEmail,
+  sendKycSubmissionAdminNotification,
 } from "@/services/mail";
 
 export async function uploadKycDocument(
@@ -120,6 +121,17 @@ export async function uploadKycDocument(
         if (profile?.email) {
           await sendKycSubmittedEmail(profile.email, personalData.fullName);
         }
+
+        // Send notification to admins/managers
+        const baseUrl =
+          process.env.NEXT_PUBLIC_APP_URL || "https://www.refreeg.com";
+        const kycReviewUrl = `${baseUrl}/dashboard/admin/users/kyc/${userId}`;
+        await sendKycSubmissionAdminNotification(
+          profile?.email || "",
+          personalData.fullName,
+          userId,
+          kycReviewUrl
+        );
       } catch (emailError) {
         console.error("Error sending KYC submission email:", emailError);
         // Don't fail the KYC submission if email fails
@@ -206,6 +218,17 @@ export async function uploadKycDocument(
         if (profile?.email) {
           await sendKycSubmittedEmail(profile.email, personalData.fullName);
         }
+
+        // Send notification to admins/managers
+        const baseUrl =
+          process.env.NEXT_PUBLIC_APP_URL || "https://www.refreeg.com";
+        const kycReviewUrl = `${baseUrl}/dashboard/admin/users/kyc/${userId}`;
+        await sendKycSubmissionAdminNotification(
+          profile?.email || "",
+          personalData.fullName,
+          userId,
+          kycReviewUrl
+        );
       } catch (emailError) {
         console.error("Error sending KYC submission email:", emailError);
         // Don't fail the KYC submission if email fails

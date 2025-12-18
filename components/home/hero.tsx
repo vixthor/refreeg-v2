@@ -146,12 +146,15 @@ const Hero = () => {
       {/* TEXT */}
       <div className="flex flex-col gap-4 max-w-[925px] w-full justify-center items-center text-center">
         <motion.div
-          className="flex gap-2 items-center py-2 px-3 bg-[#FAFAFA] border border-[#E8E8E8] rounded-3xl"
+          className="flex flex-row flex-wrap items-center gap-2 py-2 px-3"
           {...slideUp(0.1)}
         >
           <Image src="/Users.svg" alt="Users icon" width={20} height={20} />
-          <P>Join thousands already fundraising on RefreeG</P>
+          <p className="whitespace-nowrap text-sm">
+            Join thousands already fundraising on RefreeG
+          </p>
         </motion.div>
+
         <motion.div {...slideUp(0.2)}>
           <H1 className="font-bold">
             Empower Communities, Build a Better World

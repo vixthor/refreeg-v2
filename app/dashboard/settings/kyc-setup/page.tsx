@@ -118,7 +118,7 @@ export default function KycSetupPage() {
       if (currentKycDraft && user) {
         try {
           await sendIncompleteKycVerificationEmail({
-            continueUrl: `${window.location.origin}/dashboard/settings?tab=kyc`,
+            continueUrl: `${window.location.origin}/dashboard/settings/kyc`,
           });
           console.log("Incomplete KYC reminder sent");
         } catch (error) {
