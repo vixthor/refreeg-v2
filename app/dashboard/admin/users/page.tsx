@@ -44,6 +44,7 @@ import { CopyEmail } from "@/components/copy-email";
 import type { UserWithRole } from "@/types";
 import { getUserRole, listUsersWithRoles } from "@/actions/role-actions";
 import Link from "next/link";
+import { ExportCSVButton } from "./components/export-csv-button";
 
 export default async function AdminUsersPage({
   searchParams,
@@ -133,7 +134,10 @@ export default async function AdminUsersPage({
         <CardHeader>
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <CardTitle>Users</CardTitle>
-            <UserSearch defaultValue={params.search} />
+            <div className="flex items-center gap-2">
+              <ExportCSVButton />
+              <UserSearch defaultValue={params.search} />
+            </div>
           </div>
         </CardHeader>
         <CardContent>

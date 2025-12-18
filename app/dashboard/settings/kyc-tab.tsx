@@ -37,6 +37,8 @@ export function KycTab({ profile, user }: KycTabProps) {
   const [kycData, setKycData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+
   const router = useRouter();
 
   useEffect(() => {
@@ -256,13 +258,16 @@ export function KycTab({ profile, user }: KycTabProps) {
                       </a>
                     </div>
                   ) : (
-                    <div className="border rounded-lg p-4 bg-gray-50 flex flex-col items-center">
+                    <div
+                      className="border rounded-lg p-4 bg-gray-50 flex flex-col items-center cursor-zoom-in"
+                      onClick={() => setPreviewOpen(true)}
+                    >
                       <Image
                         src={kycData.document_url}
                         alt="KYC Document"
                         width={400}
                         height={300}
-                        className="object-contain rounded shadow-sm hover:shadow-md transition-shadow max-h-64"
+                        className="object-contain rounded shadow-sm max-h-64"
                       />
                       <p className="text-sm text-blue-600 mt-2 text-center">
                         Click image to view full size
@@ -273,6 +278,32 @@ export function KycTab({ profile, user }: KycTabProps) {
               ) : (
                 <div className="border rounded-lg p-8 bg-gray-50 text-center text-gray-500">
                   No document uploaded
+                </div>
+              )}
+
+              {previewOpen && (
+                <div
+                  className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
+                  onClick={() => setPreviewOpen(false)}
+                >
+                  <div
+                    className="relative max-w-5xl w-full max-h-[90vh]"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <Image
+                      src={kycData.document_url}
+                      alt="Full size document"
+                      fill
+                      className="object-contain rounded-lg bg-black"
+                    />
+
+                    <button
+                      onClick={() => setPreviewOpen(false)}
+                      className="absolute top-4 right-4 bg-black/70 text-white rounded-full w-9 h-9 flex items-center justify-center hover:bg-black"
+                    >
+                      ✕
+                    </button>
+                  </div>
                 </div>
               )}
 
