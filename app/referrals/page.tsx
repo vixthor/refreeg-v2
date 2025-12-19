@@ -183,9 +183,15 @@ export default function ReferralPage() {
       setSignUps(totalSignUps);
       setPoints(totalPoints);
 
-      setTier(
-        totalPoints >= 150 ? "Tier 3" : totalPoints >= 50 ? "Tier 2" : "Tier 1"
-      );
+      // Updated Tier Logic to match your 205/505 requirements
+      let currentTier = "Tier 1";
+      if (totalPoints >= 505) {
+        currentTier = "Tier 3";
+      } else if (totalPoints >= 205) {
+        currentTier = "Tier 2";
+      }
+
+      setTier(currentTier);
     };
 
     loadData();
@@ -366,7 +372,7 @@ export default function ReferralPage() {
                 variants={fadeUp}
                 onClick={handleInviteFriends}
                 disabled={!referralLink}
-                className="w-full rounded-md bg-[#0B3B8A] px-6 py-2 text-white shadow transition hover:bg-[#0D46A5] active:scale-95 active:bg-[#0A336D] disabled:opacity-60 md:w-auto">
+                className="w-full whitespace-nowrap rounded-md bg-[#0B3B8A] px-6 py-2 text-white shadow transition hover:bg-[#0D46A5] active:scale-95 active:bg-[#0A336D] disabled:opacity-60 md:w-auto">
                 Invite Friends
               </motion.button>
 
