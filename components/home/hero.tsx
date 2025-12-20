@@ -6,7 +6,7 @@ import { H1, P } from "@/components/typograpy";
 import { Button } from "../ui/button";
 import Link from "next/link";
 import { motion, useAnimation } from "framer-motion";
-import { useAnimateInView } from "@/hooks/use-animate-In-view"; // your hook
+import { useAnimateInView } from "@/hooks/use-animate-In-view";
 
 const HERO_IMAGES = ["/hero1.png", "/hero2.jpg", "/hero3.png", "/hero4.png"];
 const SLIDER_SPEED = 50;

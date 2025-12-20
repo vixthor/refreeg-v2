@@ -104,11 +104,13 @@ export function UserNav() {
                 setIsSigningOut(true);
                 setOpen(false); // Close dropdown immediately
                 await signOut();
+                // signOut will redirect using window.location, so state reset not needed
               } catch (error) {
                 console.error("Error signing out:", error);
                 setIsSigningOut(false);
+                // Reset dropdown state on error so user can try again
+                setOpen(false);
               }
-              // Note: setIsSigningOut(false) is not needed here as signOut will redirect
             }}
             disabled={isSigningOut}
             className="hover:bg-[red] focus:bg-[red] transition-colors disabled:opacity-50"

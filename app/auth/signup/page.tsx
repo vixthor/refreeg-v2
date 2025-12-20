@@ -14,7 +14,6 @@ import { cn } from "@/lib/utils";
 import { toast } from "@/components/ui/use-toast";
 import { AuthTestimonials } from "@/components/ui/auth-testimonials";
 
-
 export default function SignUpPage() {
   const supabase = createClient();
   const { signUp, signInWithGoogle } = useAuth();
@@ -27,7 +26,6 @@ export default function SignUpPage() {
   const [isLoading, setIsLoading] = useState(false);
 
   const [refFromUrl, setRefFromUrl] = useState<string | null>(null);
-
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -76,7 +74,6 @@ export default function SignUpPage() {
         return;
       }
 
-      
       if (refFromUrl) {
         await supabase
           .from("referrals")
@@ -104,11 +101,8 @@ export default function SignUpPage() {
     }
   };
 
-
-
   return (
     <div className="flex h-screen w-screen">
- 
       <div className="flex md:w-2/5 w-full flex-col items-center justify-center bg-white px-8">
         <div className="w-full max-w-md">
           <div className="mb-8 text-center md:text-left">
@@ -121,7 +115,6 @@ export default function SignUpPage() {
           </div>
 
           <form onSubmit={handleSubmit}>
-   
             <div className="mb-4">
               <LabelInputContainer>
                 <Label htmlFor="email">Email Address</Label>
@@ -136,7 +129,6 @@ export default function SignUpPage() {
               </LabelInputContainer>
             </div>
 
-         
             <div className="mb-4">
               <LabelInputContainer>
                 <Label htmlFor="password">Password</Label>
@@ -165,7 +157,6 @@ export default function SignUpPage() {
               </LabelInputContainer>
             </div>
 
-            
             <div className="mb-8">
               <LabelInputContainer>
                 <Label htmlFor="confirmPassword">Confirm Password</Label>
@@ -182,9 +173,7 @@ export default function SignUpPage() {
                   <button
                     type="button"
                     className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                    onClick={() =>
-                      setShowConfirmPassword(!showConfirmPassword)
-                    }
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   >
                     {showConfirmPassword ? (
                       <EyeOff className="h-4 w-4 text-gray-400" />
@@ -196,7 +185,6 @@ export default function SignUpPage() {
               </LabelInputContainer>
             </div>
 
-  
             <Button
               type="submit"
               disabled={isLoading}
@@ -206,9 +194,9 @@ export default function SignUpPage() {
               <BottomGradient />
             </Button>
 
-            
             <div className="my-2 h-[1px] w-full bg-gradient-to-r from-transparent via-neutral-300 to-transparent" />
 
+            {/*
             <button
               type="button"
               onClick={signInWithGoogle}
@@ -224,6 +212,7 @@ export default function SignUpPage() {
               <span className="text-sm text-neutral-700">Google</span>
               <BottomGradient />
             </button>
+            */}
 
             <div className="mt-6 text-center text-sm text-neutral-600">
               Already have an account?{" "}
@@ -246,7 +235,6 @@ export default function SignUpPage() {
         </div>
       </div>
 
-
       <div className="hidden md:flex md:w-3/5 items-center justify-center bg-[#003366] px-8">
         <AuthTestimonials />
       </div>
@@ -266,4 +254,6 @@ const LabelInputContainer = ({
 }: {
   children: React.ReactNode;
   className?: string;
-}) => <div className={cn("flex flex-col space-y-2", className)}>{children}</div>;
+}) => (
+  <div className={cn("flex flex-col space-y-2", className)}>{children}</div>
+);

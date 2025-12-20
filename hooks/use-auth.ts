@@ -263,15 +263,9 @@ export function useAuth() {
       setUser(null);
       setIsLoading(false);
 
-      // Show success message
-      toast({
-        title: "Signed out",
-        description: "You have been signed out successfully.",
-      });
-
-      // Navigate to home page
-      router.push("/");
-      router.refresh(); // Refresh to clear any cached data
+      // Use window.location for a hard redirect to ensure state is cleared
+      // This is more reliable than router.push for signout
+      window.location.href = "/";
     } catch (error: any) {
       console.error("Error signing out:", error);
       // Don't update user state if sign out failed
