@@ -23,37 +23,69 @@ export function SettingsItem({
       className={cn(
         "group relative flex items-center justify-between rounded-lg",
         "py-4 px-4",
-        "border",
-        "transition-colors duration-300",
-        "hover:border-gray-400 hover:shadow-sm"
+        "border border-gray-200",
+        "bg-white",
+        "transition-all duration-200 ease-out",
+
+        // Hover
+        "hover:bg-gray-50 hover:border-gray-300 hover:shadow-sm",
+
+        // Active (click)
+        "active:scale-[0.98] active:bg-gray-100",
+
+        // Focus (keyboard accessibility)
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
       )}
     >
+      {/* Left accent bar */}
+      <span
+        className={cn(
+          "absolute left-0 top-0 h-full w-1 rounded-l-lg",
+          "bg-transparent",
+          "transition-colors duration-200",
+          "group-hover:bg-blue-500"
+        )}
+      />
+
       <div
         className={cn(
           "flex items-center gap-4 flex-1 min-w-0",
-          "transition-transform duration-300 ease-out",
+          "transition-transform duration-200 ease-out",
           "group-hover:translate-x-1"
         )}
       >
         {icon && (
-          <div className="text-muted-foreground transition-colors duration-300 group-hover:text-foreground">
+          <div
+            className={cn(
+              "text-gray-400",
+              "transition-colors duration-200",
+              "group-hover:text-blue-600"
+            )}
+          >
             {icon}
           </div>
         )}
 
         <div className="flex-1 min-w-0">
-          <h3 className="font-medium text-base group-hover:text-foreground transition-colors">
+          <h3
+            className={cn(
+              "font-medium text-base text-gray-900",
+              "transition-colors duration-200"
+            )}
+          >
             {title}
           </h3>
-          <p className="text-sm text-muted-foreground mt-1">{description}</p>
+          <p className="text-sm text-gray-500 mt-1 group-hover:text-gray-600">
+            {description}
+          </p>
         </div>
       </div>
 
       <ChevronRight
         className={cn(
-          "h-5 w-5 ml-4 text-muted-foreground",
-          "transition-all duration-300",
-          "group-hover:text-foreground group-hover:translate-x-1"
+          "h-5 w-5 ml-4 text-gray-400",
+          "transition-all duration-200",
+          "group-hover:text-blue-600 group-hover:translate-x-1"
         )}
       />
     </Link>
