@@ -122,7 +122,7 @@ export default function ReferralPage() {
 
       setDebug({
         userId: currentUser.id,
-        userEmail: (currentUser as any).email ?? null,
+        userEmail: currentUser.email ?? null,
         rowCount: 0,
       });
 
@@ -152,7 +152,7 @@ export default function ReferralPage() {
             registered,
             reward,
             created_at,
-            profiles:referee_id (
+            profiles:referee_id!inner (
               full_name,
               email
             )
@@ -349,7 +349,7 @@ export default function ReferralPage() {
               <motion.div
                 variants={fadeUp}
                 className="flex w-full items-center justify-between rounded-lg border bg-white px-4 py-2 shadow-sm">
-                <span className="truncate text-sm">
+                <span className="truncate text-sm font-medium text-gray-600">
                   {referralLink || "Loading your referral link..."}
                 </span>
 
