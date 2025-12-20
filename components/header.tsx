@@ -231,11 +231,11 @@ export function Header() {
           icon: Heart,
         },
         {
-          title:"Referrals",
+          title: "Referrals",
           description: "Refer a friend to RefreeG and earn rewards.",
           href: "/referrals",
           icon: Users,
-        }
+        },
       ],
     },
   ];
@@ -590,8 +590,9 @@ export function Header() {
                     } catch (error) {
                       console.error("Error signing out:", error);
                       setIsSigningOut(false);
+                      // Reset menu state on error so user can try again
                     }
-                    // Note: setIsSigningOut(false) is not needed here as signOut will redirect
+                    // signOut will redirect using window.location, so state reset not needed on success
                   }}
                   disabled={isSigningOut}
                   className="flex items-center gap-3 w-full py-3 px-2 text-foreground hover:text-red-600 rounded-md transition-colors font-medium disabled:opacity-50"
