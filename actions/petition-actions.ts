@@ -15,6 +15,7 @@ import {
   sendPetitionApprovedEmailForUser,
   sendPetitionRejectedEmailForUser,
 } from "@/services/mail";
+import { sendPetitionSubmissionAdminNotification } from "@/services/mail";
 
 /**
  * Get a petition by ID
@@ -229,6 +230,31 @@ export async function createPetition(
       console.error("Error creating sections:", sectionsError);
       throw sectionsError;
     }
+  }
+
+  // Notify admins/managers about the new petition submission
+  try {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("full_name, email")
+      .eq("id", userId)
+      .single();
+
+    if (profile?.email) {
+      const baseUrl =
+        process.env.NEXT_PUBLIC_APP_URL || "https://www.refreeg.com";
+      const reviewUrl = `${baseUrl}/dashboard/admin/petitions?tab=pending`;
+
+      await sendPetitionSubmissionAdminNotification(
+        profile.full_name || "User",
+        profile.email,
+        petitionData.title,
+        reviewUrl
+      );
+    }
+  } catch (error) {
+    console.error("Error sending petition admin notification:", error);
+    // Do not throw; email failure should not break petition creation
   }
 
   revalidatePath("/dashboard/petitions");
