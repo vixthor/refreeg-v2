@@ -173,11 +173,20 @@ export async function createOnboardingProfile(
 ): Promise<Profile> {
   const supabase = await createClient();
 
-  // Upload profile photo if provided, otherwise use OAuth avatar
-  let profilePhotoUrl: string | null = null;
+  // 1️⃣ Fetch existing profile first (important)
+  const { data: existingProfile } = await supabase
+    .from("profiles")
+    .select("profile_photo")
+    .eq("id", userId)
+    .maybeSingle();
+
+  // 2️⃣ Resolve profile photo safely
+  let profilePhotoUrl: string | null = existingProfile?.profile_photo ?? null;
+
   if (profileData.profilePhoto) {
     const fileName = `${userId}-${Date.now()}-${profileData.profilePhoto.name}`;
-    const { data: uploadData, error: uploadError } = await supabase.storage
+
+    const { error: uploadError } = await supabase.storage
       .from("profile-photos")
       .upload(fileName, profileData.profilePhoto, {
         cacheControl: "3600",
@@ -192,46 +201,50 @@ export async function createOnboardingProfile(
     const { data: urlData } = supabase.storage
       .from("profile-photos")
       .getPublicUrl(fileName);
+
     profilePhotoUrl = urlData.publicUrl;
-  } else if (oauthAvatarUrl) {
-    // Use OAuth avatar URL if no custom photo uploaded
+  } else if (!profilePhotoUrl && oauthAvatarUrl) {
+    // Only use OAuth avatar if user has no existing photo
     profilePhotoUrl = oauthAvatarUrl;
   }
 
-  const fullName = `${profileData.firstName} ${profileData.lastName}`.trim();
+  const fullName = `${profileData.firstName ?? ""} ${
+    profileData.lastName ?? ""
+  }`.trim();
 
-  // Start with basic required fields
-  const insertData: any = {
+  // 3️⃣ Build update payload carefully (NO NULL OVERWRITES)
+  const updateData: any = {
     id: userId,
-    email: profileData.email,
-    full_name: fullName,
-    phone: profileData.phone,
-    profile_photo: profilePhotoUrl,
-    created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
+    onboarding_completed: true,
   };
 
-  // Try to add new fields, but don't fail if they don't exist
+  if (profileData.email) updateData.email = profileData.email;
+  if (profileData.phone) updateData.phone = profileData.phone;
+  if (fullName) updateData.full_name = fullName;
+  if (profilePhotoUrl) updateData.profile_photo = profilePhotoUrl;
+
   try {
-    if (profileData.firstName) insertData.first_name = profileData.firstName;
-    if (profileData.lastName) insertData.last_name = profileData.lastName;
-    if (profileData.username) insertData.username = profileData.username;
-    if (profileData.location) insertData.location = profileData.location;
+    if (profileData.firstName) updateData.first_name = profileData.firstName;
+    if (profileData.lastName) updateData.last_name = profileData.lastName;
+    if (profileData.username) updateData.username = profileData.username;
+    if (profileData.location) updateData.location = profileData.location;
     if (profileData.accountType)
-      insertData.account_type = profileData.accountType;
-    if (profileData.gender) insertData.gender = profileData.gender;
+      updateData.account_type = profileData.accountType;
+    if (profileData.gender) updateData.gender = profileData.gender;
   } catch (e) {
     console.warn("Some fields may not exist in database schema:", e);
   }
 
+  // 4️⃣ Use upsert safely
   const { data, error } = await supabase
     .from("profiles")
-    .upsert(insertData)
+    .upsert(updateData, { onConflict: "id" })
     .select()
     .single();
 
   if (error) {
-    console.error("Error creating profile:", error);
+    console.error("Error creating/updating profile:", error);
     throw new Error(`Failed to create profile: ${error.message}`);
   }
 

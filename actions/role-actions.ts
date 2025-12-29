@@ -191,6 +191,7 @@ export async function listUsersWithRoles(): Promise<UserWithRole[]> {
       id,
       full_name,
       email,
+      username,
       is_blocked,
       created_at
     `
@@ -257,6 +258,7 @@ export async function listUsersWithRoles(): Promise<UserWithRole[]> {
         role: userRole,
         is_blocked: profile.is_blocked || false,
         full_name: profile.full_name || null,
+        username: profile.username || null,
         created_at: profile.created_at,
         kyc_status: kycData?.status || null,
         kyc_verification_id: kycData?.id || null,

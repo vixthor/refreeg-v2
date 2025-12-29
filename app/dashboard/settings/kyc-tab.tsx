@@ -133,7 +133,7 @@ export function KycTab({ profile, user }: KycTabProps) {
           <CardDescription>Your identity verification status</CardDescription>
         </CardHeader>
         <CardContent className="pt-6">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-col md:flex-row justify-between mb-4">
             <p className="text-sm text-gray-600">{getStatusMessage()}</p>
             {getStatusBadge()}
           </div>

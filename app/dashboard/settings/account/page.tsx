@@ -10,20 +10,14 @@ export default function AccountSettingsPage() {
 
   if (isLoading) {
     return (
-      <SettingsShell
-        title="Account Management"
-        description="Manage your account settings."
-      >
+      <SettingsShell>
         <Skeleton className="h-[400px] w-full" />
       </SettingsShell>
     );
   }
 
   return (
-    <SettingsShell
-      title="Account Management"
-      description="Delete your account and manage account settings."
-    >
+    <SettingsShell>
       {user && <DeleteAccountButton userId={user.id} />}
     </SettingsShell>
   );
