@@ -5,9 +5,6 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { toast } from "@/components/ui/use-toast";
-
-import { getCurrentUser } from "@/actions/auth-actions";
-import { updateProfile } from "@/actions";
 import {
   sendLoginNotificationEmail,
   sendWelcomeEmailToUser,
@@ -34,32 +31,44 @@ export function useAuth() {
   const supabase = createClient();
 
   useEffect(() => {
-    const getUser = async () => {
-      try {
-        const currentUser = await getCurrentUser();
-        setUser(currentUser);
-      } catch (error) {
-        console.error("Error getting current user:", error);
-        setUser(null);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    let isMounted = true;
 
-    getUser();
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (session) {
+    const applyInitialSession = async () => {
+      try {
         const {
-          data: { user },
-          error,
-        } = await supabase.auth.getUser();
-        if (!error && user) {
-          setUser(user);
+          data: { session },
+        } = await supabase.auth.getSession();
+
+        if (!isMounted) return;
+
+        if (session?.user) {
+          setUser(session.user);
         } else {
           setUser(null);
         }
+      } catch (error) {
+        console.error("Error getting initial auth session:", error);
+        if (isMounted) {
+          setUser(null);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    // Initial load
+    setIsLoading(true);
+    applyInitialSession();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!isMounted) return;
+
+      if (session?.user) {
+        setUser(session.user);
       } else {
         setUser(null);
       }
@@ -67,6 +76,7 @@ export function useAuth() {
     });
 
     return () => {
+      isMounted = false;
       subscription.unsubscribe();
     };
   }, [supabase.auth]);
@@ -252,23 +262,16 @@ export function useAuth() {
 
   const signOut = async () => {
     try {
-      // Sign out from Supabase first
       const { error } = await supabase.auth.signOut();
 
       if (error) {
         throw error;
       }
 
-      // Update UI state after successful sign out
-      setUser(null);
-      setIsLoading(false);
-
-      // Use window.location for a hard redirect to ensure state is cleared
-      // This is more reliable than router.push for signout
-      window.location.href = "/";
+      // Let onAuthStateChange update user/isLoading; just navigate.
+      router.replace("/");
     } catch (error: any) {
       console.error("Error signing out:", error);
-      // Don't update user state if sign out failed
       toast({
         title: "Error signing out",
         description:

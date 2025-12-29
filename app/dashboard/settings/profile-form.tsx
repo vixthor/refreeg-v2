@@ -43,7 +43,11 @@ interface ProfileFormProps {
 
 export function ProfileForm({ profile, user }: ProfileFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formErrors, setFormErrors] = useState<{ phone?: string }>({});
+  const [formErrors, setFormErrors] = useState<{
+    phone?: string;
+    full_name?: string;
+    username?: string;
+  }>({});
   const [formData, setFormData] = useState({
     full_name: profile?.full_name || "",
     email: profile?.email || user?.email || "",
@@ -182,7 +186,7 @@ export function ProfileForm({ profile, user }: ProfileFormProps) {
   return (
     <Card>
       <CardHeader>
-        <div className="flex justify-between items-start">
+        <div className="flex justify-between items-start md:flex-row flex-col gap-2">
           <div>
             <CardTitle>Profile</CardTitle>
             <CardDescription>Update your personal information.</CardDescription>
@@ -313,28 +317,16 @@ export function ProfileForm({ profile, user }: ProfileFormProps) {
           </div>
 
           {/* Phone Number */}
-          <div className="space-y-2">
-            <Label htmlFor="phone">Phone Number</Label>
-            <Input
-              id="phone"
-              name="phone"
-              placeholder="Your phone number"
-              value={formData.phone}
-              inputMode="numeric"
-              onChange={(e) => {
-                const onlyNumbers = e.target.value.replace(/\D/g, "");
-                setFormData({ ...formData, phone: onlyNumbers });
-
-                // Clear phone error while typing
-                if (formErrors.phone) {
-                  setFormErrors((prev) => ({ ...prev, phone: undefined }));
-                }
-              }}
-            />
-            {formErrors.phone && (
-              <p className="text-sm text-red-500">{formErrors.phone}</p>
-            )}
-          </div>
+          <Input
+            id="phone"
+            name="phone"
+            value={formData.phone}
+            disabled
+            className="bg-muted cursor-not-allowed"
+          />
+          <p className="text-xs text-muted-foreground">
+            Phone number cannot be changed.
+          </p>
 
           {/* Bio */}
           <div className="space-y-2">

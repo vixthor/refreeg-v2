@@ -18,10 +18,7 @@ export default function BankSettingsPage() {
 
   if (profileLoading) {
     return (
-      <SettingsShell
-        title="Bank Details"
-        description="Manage your bank account for receiving donations."
-      >
+      <SettingsShell>
         <Skeleton className="h-[400px] w-full" />
       </SettingsShell>
     );
@@ -29,10 +26,7 @@ export default function BankSettingsPage() {
 
   if (profileError) {
     return (
-      <SettingsShell
-        title="Bank Details"
-        description="Manage your bank account for receiving donations."
-      >
+      <SettingsShell>
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Error</AlertTitle>
@@ -43,10 +37,7 @@ export default function BankSettingsPage() {
   }
 
   return (
-    <SettingsShell
-      title="Bank Details"
-      description="Add your bank account details for receiving donations."
-    >
+    <SettingsShell>
       {profile && user && <BankDetailsForm profile={profile} user={user} />}
     </SettingsShell>
   );
