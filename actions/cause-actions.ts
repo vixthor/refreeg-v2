@@ -10,6 +10,7 @@ import type {
 } from "@/types";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "./auth-actions";
+import { sendCauseSubmissionAdminNotification } from "@/services/mail";
 
 /**
  * Get a cause by ID
@@ -222,6 +223,31 @@ export async function createCause(
     }
   }
 
+  // Notify admins/managers about the new cause submission
+  try {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("full_name, email")
+      .eq("id", userId)
+      .single();
+
+    if (profile?.email) {
+      const baseUrl =
+        process.env.NEXT_PUBLIC_APP_URL || "https://www.refreeg.com";
+      const reviewUrl = `${baseUrl}/dashboard/admin/causes?tab=pending`;
+
+      await sendCauseSubmissionAdminNotification(
+        profile.full_name || "User",
+        profile.email,
+        causeData.title,
+        reviewUrl
+      );
+    }
+  } catch (error) {
+    console.error("Error sending cause admin notification:", error);
+    // Do not throw; email failure should not break cause creation
+  }
+
   revalidatePath("/dashboard/causes");
   return cause as Cause;
 }
@@ -391,10 +417,7 @@ export async function listCauses(
     try {
       // Update status to expired in DB for those items
       const ids = nowExpired.map((c) => c.id);
-      await supabase
-        .from("causes")
-        .update({ status: "expired" })
-        .in("id", ids);
+      await supabase.from("causes").update({ status: "expired" }).in("id", ids);
     } catch (e) {
       console.error("Failed to auto-expire causes:", e);
     }

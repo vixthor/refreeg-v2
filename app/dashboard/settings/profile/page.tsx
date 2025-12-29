@@ -53,10 +53,7 @@ export default function ProfileSettingsPage() {
 
   if (profileLoading) {
     return (
-      <SettingsShell
-        title="Profile"
-        description="Update your personal information."
-      >
+      <SettingsShell>
         <Skeleton className="h-[400px] w-full" />
       </SettingsShell>
     );
@@ -64,10 +61,7 @@ export default function ProfileSettingsPage() {
 
   if (profileError) {
     return (
-      <SettingsShell
-        title="Profile"
-        description="Update your personal information."
-      >
+      <SettingsShell>
         <div className="text-sm text-muted-foreground">
           An error occurred. Please refresh the page.
         </div>
@@ -76,10 +70,7 @@ export default function ProfileSettingsPage() {
   }
 
   return (
-    <SettingsShell
-      title="Profile"
-      description="Update your personal information and profile details."
-    >
+    <SettingsShell>
       {profile && user && (
         <ProfileForm
           profile={{
