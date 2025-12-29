@@ -105,10 +105,7 @@ export default function KycSettingsPage() {
 
   if (profileLoading || isKycLoading) {
     return (
-      <SettingsShell
-        title="KYC Verification"
-        description="Complete identity verification to list causes."
-      >
+      <SettingsShell>
         <Skeleton className="h-[400px] w-full" />
       </SettingsShell>
     );
@@ -116,10 +113,7 @@ export default function KycSettingsPage() {
 
   if (profileError) {
     return (
-      <SettingsShell
-        title="KYC Verification"
-        description="Complete identity verification to list causes."
-      >
+      <SettingsShell>
         <div className="text-sm text-muted-foreground">
           An error occurred. Please refresh the page.
         </div>
@@ -128,10 +122,7 @@ export default function KycSettingsPage() {
   }
 
   return (
-    <SettingsShell
-      title="KYC Verification"
-      description="Complete identity verification to list causes and access all features."
-    >
+    <SettingsShell>
       {profile && user && <KycTab profile={profile} user={user} />}
     </SettingsShell>
   );

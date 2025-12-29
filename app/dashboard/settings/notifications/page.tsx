@@ -5,10 +5,7 @@ import { SettingsShell } from "../components/settings-shell";
 
 export default function NotificationsSettingsPage() {
   return (
-    <SettingsShell
-      title="Notifications"
-      description="Configure your notification preferences."
-    >
+    <SettingsShell>
       <div className="rounded-lg border bg-card text-card-foreground shadow-sm">
         <div className="p-6 space-y-4">
           <h2 className="text-lg font-semibold">Notification Settings</h2>
