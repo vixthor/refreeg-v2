@@ -263,6 +263,122 @@ export async function sendKycRejectedEmail(
   });
 }
 
+// Send cause submission notification to admins and managers
+export async function sendCauseSubmissionAdminNotification(
+  userName: string,
+  userEmail: string,
+  causeTitle: string,
+  reviewUrl: string
+) {
+  const { getAdminManagerEmails } = await import("@/actions/role-actions");
+  const adminManagerEmails = await getAdminManagerEmails();
+
+  if (adminManagerEmails.length === 0) {
+    console.warn("No admin/manager emails found to send cause notification");
+    return { success: false, error: "No admin/manager emails found" };
+  }
+
+  const currentYear = new Date().getFullYear();
+
+  const emailPromises = adminManagerEmails.map((email) =>
+    sendMail({
+      to: email,
+      subject: "New Cause Submission Requires Review - Refreeg",
+      templateName: "cause-submission-admin-notification",
+      context: {
+        adminName: "Admin/Manager",
+        userName,
+        userEmail,
+        causeTitle,
+        reviewUrl,
+        organizationName: "Refreeg",
+        currentYear,
+      },
+    })
+  );
+
+  try {
+    const results = await Promise.allSettled(emailPromises);
+    const successful = results.filter((r) => r.status === "fulfilled").length;
+    const failed = results.filter((r) => r.status === "rejected").length;
+
+    console.log(
+      `Cause admin notification sent: ${successful} successful, ${failed} failed`
+    );
+
+    return {
+      success: successful > 0,
+      sent: successful,
+      failed,
+    };
+  } catch (error) {
+    console.error("Error sending cause admin notifications:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Failed to send notifications",
+    };
+  }
+}
+
+// Send petition submission notification to admins and managers
+export async function sendPetitionSubmissionAdminNotification(
+  userName: string,
+  userEmail: string,
+  petitionTitle: string,
+  reviewUrl: string
+) {
+  const { getAdminManagerEmails } = await import("@/actions/role-actions");
+  const adminManagerEmails = await getAdminManagerEmails();
+
+  if (adminManagerEmails.length === 0) {
+    console.warn("No admin/manager emails found to send petition notification");
+    return { success: false, error: "No admin/manager emails found" };
+  }
+
+  const currentYear = new Date().getFullYear();
+
+  const emailPromises = adminManagerEmails.map((email) =>
+    sendMail({
+      to: email,
+      subject: "New Petition Submission Requires Review - Refreeg",
+      templateName: "petition-submission-admin-notification",
+      context: {
+        adminName: "Admin/Manager",
+        userName,
+        userEmail,
+        petitionTitle,
+        reviewUrl,
+        organizationName: "Refreeg",
+        currentYear,
+      },
+    })
+  );
+
+  try {
+    const results = await Promise.allSettled(emailPromises);
+    const successful = results.filter((r) => r.status === "fulfilled").length;
+    const failed = results.filter((r) => r.status === "rejected").length;
+
+    console.log(
+      `Petition admin notification sent: ${successful} successful, ${failed} failed`
+    );
+
+    return {
+      success: successful > 0,
+      sent: successful,
+      failed,
+    };
+  } catch (error) {
+    console.error("Error sending petition admin notifications:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Failed to send notifications",
+    };
+  }
+}
+
 // Convenience function for sending login notification emails
 export async function sendLoginNotificationEmail(context: {
   ipAddress?: string;
