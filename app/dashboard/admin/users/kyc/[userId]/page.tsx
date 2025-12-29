@@ -313,7 +313,7 @@ export default async function KycReviewPage({
                 </div>
               ) : (
                 <div className="border rounded-lg p-4 bg-gray-50 flex items-center gap-4">
-                  <span className="inline-block w-8 h-8 bg-gray-200 flex items-center justify-center rounded">
+                  <span className=" w-8 h-8 bg-gray-200 flex items-center justify-center rounded">
                     <svg width="24" height="24" fill="none" viewBox="0 0 24 24">
                       <path
                         d="M6 2a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8.828A2 2 0 0 0 19.414 7.414l-4.828-4.828A2 2 0 0 0 12.172 2H6zm7 1.414L18.586 9H15a2 2 0 0 1-2-2V3.414z"

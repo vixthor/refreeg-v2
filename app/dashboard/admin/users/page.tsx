@@ -169,7 +169,7 @@ export default async function AdminUsersPage({
                       <TableCell>
                         <div className="flex flex-col">
                           <Link
-                            href={`/profile/${userItem.id}`}
+                            href={`/${userItem.username || userItem.id}`}
                             className="font-medium hover:underline"
                           >
                             {userItem.full_name || "Unnamed User"}
