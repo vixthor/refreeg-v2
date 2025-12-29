@@ -33,12 +33,13 @@ type StepProps = {
 type ReferralRow = {
   id: string;
   referrer_id?: string | null;
+  referee_id?: string | null;
   registered: boolean | null;
   referee_email: string | null;
   created_at: string | null;
   reward?: string | null;
   profiles?: {
-    full_name: string | null;
+    first_name: string | null;
     email: string | null;
     avatar_url: string | null;
   } | null;
@@ -90,6 +91,7 @@ const CopyToast: React.FC<{ visible: boolean }> = ({ visible }) => (
 
 export default function ReferralPage() {
   const { user } = useAuth();
+  const supabase = createClient();
 
   const [referralLink, setReferralLink] = useState("");
   const [copied, setCopied] = useState(false);
@@ -101,6 +103,7 @@ export default function ReferralPage() {
 
   const [referrals, setReferrals] = useState<ReferralRow[]>([]);
   const [shareOpen, setShareOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const [debug, setDebug] = useState<DebugInfo>({ rowCount: 0 });
 
@@ -110,88 +113,119 @@ export default function ReferralPage() {
 
   useEffect(() => {
     const loadData = async () => {
-      const supabase = createClient();
+      setLoading(true);
+      try {
+        // If useAuth hasn't loaded yet, fallback to Supabase auth
+        const {
+          data: { user: authUser },
+        } = await supabase.auth.getUser();
 
-      // If useAuth hasn't loaded yet, fallback to Supabase auth
-      const {
-        data: { user: authUser },
-      } = await supabase.auth.getUser();
+        const currentUser = user || authUser;
+        if (!currentUser?.id) {
+          setLoading(false);
+          return;
+        }
 
-      const currentUser = user || authUser;
-      if (!currentUser?.id) return;
+        setDebug({
+          userId: currentUser.id,
+          userEmail: currentUser.email ?? null,
+          rowCount: 0,
+        });
 
-      setDebug({
-        userId: currentUser.id,
-        userEmail: currentUser.email ?? null,
-        rowCount: 0,
-      });
+        // 1) Get referral code from profiles, fallback to user id
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("referral_code")
+          .eq("id", currentUser.id)
+          .single();
 
-      // 1) Get referral code from profiles, fallback to user id
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("referral_code")
-        .eq("id", currentUser.id)
-        .single();
+        const code = profile?.referral_code || currentUser.id;
 
-      const code = profile?.referral_code || currentUser.id;
+        const baseUrl =
+          process.env.NEXT_PUBLIC_SITE_URL ||
+          (typeof window !== "undefined" ? window.location.origin : "");
 
-      const baseUrl =
-        process.env.NEXT_PUBLIC_SITE_URL ||
-        (typeof window !== "undefined" ? window.location.origin : "");
+        setReferralLink(`${baseUrl}/auth/signup?ref=${code}`);
 
-      setReferralLink(`${baseUrl}/auth/signup?ref=${code}`);
+        // 2) Load referral rows without implicit profile join
+        const { data: rows, error } = await supabase
+          .from("referrals")
+          .select(
+            `
+              id,
+              referrer_id,
+              referee_email,
+              registered,
+              reward,
+              created_at,
+              referee_id
+            `
+          )
+          .eq("referrer_id", currentUser.id)
+          .order("created_at", { ascending: false });
 
-      // 2) Load referral rows with joined profile
-      const { data: rows, error } = await supabase
-        .from("referrals")
-        .select(
-          `
-            id,
-            referrer_id,
-            referee_email,
-            registered,
-            reward,
-            created_at,
-            profiles:referee_id!inner (
-              full_name,
-              email
-            )
-          `
-        )
-        .eq("referrer_id", currentUser.id);
-      console.log("ROWS:", rows);
-      if (error) {
-        console.error("REFERRAL QUERY ERROR:", error);
+        if (error) {
+          console.error("REFERRAL QUERY ERROR:", error);
+        }
+
+        const baseRows: ReferralRow[] = rows || [];
+
+        // 3) Fetch profile names manually when referee_id exists
+        let enrichedRows: ReferralRow[] = baseRows;
+        const refereeIds = baseRows
+          .map((row) => row.referee_id)
+          .filter((id): id is string => !!id);
+
+        if (refereeIds.length > 0) {
+          const { data: profilesData } = await supabase
+            .from("profiles")
+            .select("id, first_name, email")
+            .in("id", refereeIds);
+
+          const profileMap: Record<
+            string,
+            { first_name: string | null; email: string | null; avatar_url: string | null }
+          > = {};
+
+          (profilesData || []).forEach((p) => {
+            profileMap[p.id] = {
+              first_name: p.first_name ?? null,
+              email: p.email ?? null,
+              avatar_url: null,
+            };
+          });
+
+          enrichedRows = baseRows.map((row) => ({
+            ...row,
+            profiles: row.referee_id ? profileMap[row.referee_id] || null : null,
+          }));
+        }
+
+        setReferrals(enrichedRows);
+        setDebug((prev) => ({ ...prev, rowCount: enrichedRows.length }));
+
+        // 4) Compute stats
+        const totalSignUps = enrichedRows.filter((r) => r.registered).length;
+        const totalPoints = totalSignUps * 5;
+
+        setInvites(enrichedRows.length);
+        setSignUps(totalSignUps);
+        setPoints(totalPoints);
+
+        // Updated Tier Logic to match your 205/505 requirements
+        let currentTier = "Tier 1";
+        if (totalPoints >= 505) {
+          currentTier = "Tier 3";
+        } else if (totalPoints >= 205) {
+          currentTier = "Tier 2";
+        }
+
+        setTier(currentTier);
+      } catch (err) {
+        console.error("Unexpected error loading referrals:", err);
+      } finally {
+        setLoading(false);
       }
-
-      // Handle profiles array from Supabase (even single relations return arrays)
-      const safeRows: ReferralRow[] = (rows || []).map((row: any) => ({
-        ...row,
-        profiles: Array.isArray(row.profiles)
-          ? row.profiles[0] || null
-          : row.profiles || null,
-      }));
-
-      setReferrals(safeRows);
-      setDebug((prev) => ({ ...prev, rowCount: safeRows.length }));
-
-      // 3) Compute stats
-      const totalSignUps = safeRows.filter((r) => r.registered).length;
-      const totalPoints = totalSignUps * 5;
-
-      setInvites(safeRows.length);
-      setSignUps(totalSignUps);
-      setPoints(totalPoints);
-
-      // Updated Tier Logic to match your 205/505 requirements
-      let currentTier = "Tier 1";
-      if (totalPoints >= 505) {
-        currentTier = "Tier 3";
-      } else if (totalPoints >= 205) {
-        currentTier = "Tier 2";
-      }
-
-      setTier(currentTier);
     };
 
     loadData();
@@ -445,7 +479,7 @@ export default function ReferralPage() {
           className="overflow-hidden rounded-2xl bg-white shadow"
           variants={fadeUp}>
           {/* Header */}
-          <div className="grid grid-cols-4 bg-[#0065FF] px-4 py-3 text-sm font-medium text-white">
+          <div className="grid grid-cols-4 bg-[#0065FF] px-3 py-2 text-[11px] font-medium text-white md:px-4 md:py-3 md:text-sm">
             <span>Friends Account</span>
             <span>Registered</span>
             <span>Reg Date</span>
@@ -456,35 +490,58 @@ export default function ReferralPage() {
           <div className="h-[2px] w-full bg-black/40" />
 
           {/* Body */}
-          {referrals.length === 0 ? (
-            <div className="py-10 text-center text-base font-semibold text-gray-500">
-              No Data
+          {loading ? (
+            <div className="py-10 text-center text-sm text-gray-500">
+              Loading data...
+            </div>
+          ) : referrals.length === 0 ? (
+            <div className="py-10 text-center text-sm text-gray-500">
+              No referrals yet
             </div>
           ) : (
             <div className="divide-y divide-gray-200">
               {referrals.map((ref) => {
                 const profile = ref.profiles;
-                const name = profile?.full_name || "Pending user";
-                const email = profile?.email || ref.referee_email || "Unknown";
+                const name =
+                  profile?.first_name ||
+                  ref.referee_email?.split("@")[0] ||
+                  "Pending User";
+                const email = ref.referee_email || "Unknown";
                 const registered = !!ref.registered;
                 const date = ref.created_at
                   ? new Date(ref.created_at).toLocaleDateString()
                   : "—";
-                const reward = registered ? "5 pts" : "—";
+                const reward = registered ? "+5 pts" : "Pending";
 
                 return (
                   <div
                     key={ref.id}
-                    className="grid grid-cols-4 px-4 py-3 text-sm text-gray-700">
+                    className="grid grid-cols-4 items-center gap-2 px-3 py-2 text-[11px] text-gray-700 md:px-4 md:py-3 md:text-sm">
                     <div className="flex flex-col">
-                      <span className="truncate font-medium">{name}</span>
-                      <span className="truncate text-xs text-gray-500">
+                      <span className="truncate font-medium text-xs md:text-sm">
+                        {name}
+                      </span>
+                      <span className="truncate text-[10px] text-gray-500 md:text-xs">
                         {email}
                       </span>
                     </div>
-                    <span>{registered ? "Yes" : "No"}</span>
-                    <span>{date}</span>
-                    <span>{reward}</span>
+                    <span
+                      className={`text-xs font-semibold md:text-sm ${
+                        registered
+                          ? "text-green-700 [text-shadow:0_0_14px_rgba(34,197,94,0.7)]"
+                          : "text-gray-600 [text-shadow:0_0_14px_rgba(107,114,128,0.5)]"
+                      }`}>
+                      {registered ? "Yes" : "No"}
+                    </span>
+                    <span className="text-xs md:text-sm">{date}</span>
+                    <span
+                      className={`text-xs font-semibold md:text-sm ${
+                        registered
+                          ? "text-green-700 [text-shadow:0_0_14px_rgba(34,197,94,0.7)]"
+                          : "text-gray-600 [text-shadow:0_0_14px_rgba(107,114,128,0.5)]"
+                      }`}>
+                      {reward}
+                    </span>
                   </div>
                 );
               })}
