@@ -2,7 +2,6 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import type { AnalyticsData } from "@/actions/admin-analytics-actions";
 import {
   Card,
   CardContent,
@@ -13,17 +12,19 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/use-auth";
 import { useAdmin } from "@/hooks/use-admin";
+import { useAdminAnalytics } from "@/hooks/use-admin-analytics";
 import { BarChart, Users, DollarSign, TrendingUp } from "lucide-react";
 import { AnalyticsCard } from "@/components/analytics-card";
 
-export default function AdminAnalytics({
-  analytics,
-}: {
-  analytics: AnalyticsData;
-}) {
+export default function AdminAnalytics() {
   const router = useRouter();
   const { user } = useAuth();
   const { isAdminOrManager, isLoading: adminLoading } = useAdmin(user?.id);
+  const {
+    data: analytics,
+    isLoading: analyticsLoading,
+    error: analyticsError,
+  } = useAdminAnalytics();
 
   useEffect(() => {
     if (!adminLoading && !isAdminOrManager && user) {
@@ -31,7 +32,7 @@ export default function AdminAnalytics({
     }
   }, [user, adminLoading, isAdminOrManager, router]);
 
-  if (adminLoading) {
+  if (adminLoading || analyticsLoading) {
     return <div className="flex justify-center p-8">Loading...</div>;
   }
 
@@ -43,6 +44,30 @@ export default function AdminAnalytics({
           <CardDescription>
             You do not have permission to access this page.
           </CardDescription>
+        </CardHeader>
+      </Card>
+    );
+  }
+
+  if (analyticsError) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Error</CardTitle>
+          <CardDescription>
+            Failed to load analytics data: {analyticsError}
+          </CardDescription>
+        </CardHeader>
+      </Card>
+    );
+  }
+
+  if (!analytics) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>No Data</CardTitle>
+          <CardDescription>Unable to load analytics data.</CardDescription>
         </CardHeader>
       </Card>
     );
@@ -61,25 +86,21 @@ export default function AdminAnalytics({
         <AnalyticsCard
           title="Total Donations"
           value={analytics.totalDonations.current}
-          description={analytics.totalDonations.percentageChange}
           icon={DollarSign}
         />
         <AnalyticsCard
           title="Total Users"
           value={String(analytics.totalUsers.current)}
-          description={analytics.totalUsers.percentageChange}
           icon={Users}
         />
         <AnalyticsCard
           title="Active Causes"
           value={String(analytics.activeCauses.current)}
-          description={analytics.activeCauses.percentageChange}
           icon={TrendingUp}
         />
         <AnalyticsCard
           title="Pending Approvals"
           value={String(analytics.pendingApprovals.current)}
-          description={analytics.pendingApprovals.percentageChange}
           icon={BarChart}
         />
       </div>
