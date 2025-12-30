@@ -25,7 +25,7 @@ export default function AdminAnalytics() {
     isLoading: analyticsLoading,
     error: analyticsError,
   } = useAdminAnalytics();
-
+console.log(analytics);
   useEffect(() => {
     if (!adminLoading && !isAdminOrManager && user) {
       router.push("/dashboard");
