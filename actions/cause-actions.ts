@@ -10,6 +10,7 @@ import type {
 } from "@/types";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "./auth-actions";
+import { isAdminOrManager } from "./role-actions";
 import { sendCauseSubmissionAdminNotification } from "@/services/mail";
 
 /**
@@ -39,9 +40,13 @@ export async function getCause(causeId: string): Promise<CauseWithUser | null> {
     .eq("id", causeId)
     .single();
 
+  // Check if user is admin or manager
+  const isAdmin = user?.id ? await isAdminOrManager(user.id) : false;
+
   if (
     (data?.status === "pending" || data?.status === "rejected") &&
-    user?.id !== data?.user_id
+    user?.id !== data?.user_id &&
+    !isAdmin
   ) {
     redirect("/");
     return null;
