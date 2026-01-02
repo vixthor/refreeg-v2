@@ -11,18 +11,19 @@ export function AuthTestimonials() {
     },
     {
       quote:
+        "RefreeG stands out for its clarity and trust. You instantly feel safe crowdfunding with it.",
+      name: "Chukwunomso Amadike-Unaogu",
+      designation: "CPO, Refreeg",
+      src: "/auth/nomso.jpg",
+    },
+    {
+      quote:
         "There’s something refreshing about RefreeG — it feels genuine. The design is clean, the experience smooth, and the mission inspiring.",
       name: "Fedjost Ayomide",
       designation: "Fullstack Developer",
       src: "/auth/tyrone.jpg",
     },
-    {
-      quote:
-        "RefreeG stands out for its clarity and trust. You instantly feel safe using it — no clutter, no confusion, just pure purpose.",
-      name: "Chukwunomso Amadike-Unaogu",
-      designation: "Frontend Developer – Next.js and React.js",
-      src: "/auth/nomso.jpg",
-    },
+
     {
       quote:
         "Every detail of RefreeG feels intentional — from the onboarding to the dashboard. It’s the kind of platform you instantly trust.",
