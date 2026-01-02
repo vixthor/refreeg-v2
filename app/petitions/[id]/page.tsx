@@ -96,7 +96,7 @@ export default async function PetitionDetailPage({
 }: {
   params: { id: string };
 }) {
-  const { id } = params;
+  const { id } = await params;
 
   const petition = await getPetition(id);
   if (!petition) {
