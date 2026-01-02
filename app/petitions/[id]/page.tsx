@@ -32,6 +32,7 @@ import Link from "next/link";
 import MultimediaCarousel from "@/components/MultimediaCarousel";
 import { SignersList } from "@/components/signers-list";
 import { CommentsSection } from "@/components/comments/comment-section";
+import { Signature } from "@/types";
 
 // Mock data for a petition
 const mockPetition = {
@@ -95,13 +96,16 @@ export default async function PetitionDetailPage({
 }: {
   params: { id: string };
 }) {
-  const myparams = params;
-  const petition = await getPetition(myparams.id);
+  const { id } = await params;
+
+  const petition = await getPetition(id);
   if (!petition) {
     notFound();
   }
 
   const signers = await listSignaturesForPetition(petition.id);
+  const amount = signers.reduce((total, s) => total + (s.amount || 0), 0);
+
   let comments: any[] = [];
   try {
     const { listPetitionComments } = await import(
@@ -147,11 +151,13 @@ export default async function PetitionDetailPage({
     }
   );
 
-  // Calculate signature progress based on number of signers
+  // Calculate signature progress based on number of signatures amount
+  // Calculate signature progress based on total donated amount
   const percentRaised = Math.min(
-    Math.round(((signers?.length || 0) / petition.goal) * 100),
+    Math.round((amount / petition.goal) * 100),
     100
   );
+
   const user = await getCurrentUser();
   const myprofile = user ? await getProfile(user.id) : undefined;
   const profile = {
@@ -247,10 +253,11 @@ export default async function PetitionDetailPage({
             <TabsList>
               <TabsTrigger value="about">About</TabsTrigger>
               <TabsTrigger value="signers">
-                Signers ({signers.length})
+                Signatures ({amount.toLocaleString()})
               </TabsTrigger>
+
               <TabsTrigger value="comments">
-                Comments ({mergedComments.length})
+                Comments ({mergedComments.length.toLocaleString()})
               </TabsTrigger>
             </TabsList>
             <TabsContent value="about" className="space-y-4">
@@ -363,8 +370,8 @@ export default async function PetitionDetailPage({
                   </div>
                 ))}
             </TabsContent>
-            <TabsContent value="signers">
-              <SignersList signers={signers} />
+            <TabsContent value="signers" className="cursor-none">
+              <SignersList signers={signers} petitionTitle={petition.title} />
             </TabsContent>
             <TabsContent value="comments" className="space-y-4">
               <CommentsSection
@@ -388,7 +395,7 @@ export default async function PetitionDetailPage({
             <CardContent className="space-y-6">
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="font-medium">{signers.length}</span>
+                  <span className="font-medium">{amount.toLocaleString()}</span>
                   <span className="text-muted-foreground">
                     of {petition.goal.toLocaleString()}
                   </span>
@@ -402,7 +409,7 @@ export default async function PetitionDetailPage({
               <div className="text-sm">
                 <div className="flex justify-between py-1">
                   <span>Total signers</span>
-                  <span className="font-medium">{signers.length}</span>
+                  <span className="font-medium">{amount.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between py-1 border-t">
                   <span>Days Left</span>
@@ -421,29 +428,21 @@ export default async function PetitionDetailPage({
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Sign a Petition</CardTitle>
-              <CardDescription></CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-4">
-                <SignatureForm
-                  petitionId={petition.id}
-                  profile={profile}
-                  status={petition.status}
-                  subaccount={petition?.user?.sub_account_code}
-                  hasSigned={hasSigned}
-                  petitionData={{
-                    title: petition.title,
-                    creatorId: petition.user_id,
-                    creatorEmail: creatorProfile?.email || undefined,
-                    creatorName: petition.user?.name,
-                  }}
-                />
-              </div>
-            </CardContent>
-          </Card>
+          <div className="space-y-4">
+            <SignatureForm
+              petitionId={petition.id}
+              profile={profile}
+              status={petition.status}
+              subaccount={petition?.user?.sub_account_code}
+              hasSigned={hasSigned}
+              petitionData={{
+                title: petition.title,
+                creatorId: petition.user_id,
+                creatorEmail: creatorProfile?.email || undefined,
+                creatorName: petition.user?.name,
+              }}
+            />
+          </div>
         </div>
       </div>
     </div>
