@@ -19,10 +19,7 @@ import { Icons } from "@/components/icons";
 import { useAuth } from "@/hooks/use-auth";
 import { useSignature } from "@/hooks/use-signature";
 import { useProfile } from "@/hooks/use-profile";
-import {
-  sendPetitionSignedEmailToUser,
-  sendNewSignatureNotificationEmail,
-} from "@/services/mail";
+import { sendPetitionSignedEmailToUser } from "@/services/mail";
 import { ShareModal } from "@/components/share-modal"; // Add this import
 import { getBaseURL } from "@/lib/utils"; // Add this import
 
@@ -126,29 +123,8 @@ export function SignatureForm({
         console.error("Failed to send confirmation email:", emailError);
       }
 
-      // Send notification to petition creator
-      if (
-        petitionData.creatorEmail &&
-        petitionData.creatorName &&
-        petitionData.title
-      ) {
-        try {
-          await sendNewSignatureNotificationEmail(
-            petitionData.creatorEmail,
-            petitionData.creatorName,
-            petitionData.title,
-            `${window.location.origin}/petitions/${petitionId}`,
-            formData.isAnonymous ? "Anonymous Supporter" : formData.name,
-            formData.message
-          );
-          console.log("New signature notification sent to creator");
-        } catch (notificationError) {
-          console.error(
-            "Failed to send creator notification:",
-            notificationError
-          );
-        }
-      }
+      // Note: Notification to petition creator is now handled in the backend
+      // when the petition goal is reached, not on every signature
     } catch (error) {
       console.error("Error submitting signature:", error);
       setFriendlyError("We couldn't process your signature. Please try again.");
