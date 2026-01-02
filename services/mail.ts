@@ -609,6 +609,30 @@ export async function sendNewSignatureNotificationEmail(
   });
 }
 
+// Send notification to petition creator when petition goal is reached
+export async function sendPetitionGoalReachedEmail(
+  creatorEmail: string,
+  creatorName: string,
+  petitionName: string,
+  petitionUrl: string,
+  totalSignatures: number,
+  goalAmount: number
+) {
+  return sendMail({
+    to: creatorEmail,
+    subject: `🎉 Your petition "${petitionName}" has reached its goal!`,
+    templateName: "petition-goal-reached",
+    context: {
+      creatorName,
+      petitionName,
+      petitionUrl,
+      totalSignatures,
+      goalAmount,
+      currentYear: new Date().getFullYear(),
+    },
+  });
+}
+
 // Send KYC submission notification to admins and managers
 export async function sendKycSubmissionAdminNotification(
   userEmail: string,
