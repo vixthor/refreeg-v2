@@ -14,13 +14,12 @@ function AdBanner({
   dataAdSlot = "7642796033",
   dataAdFormat = "auto",
   dataFullWidthResponsive = true,
-  className = "", // Add default empty string
-  style = {}, // Add default empty object
+  className = "",
+  style = {},
 }: AdBannerProps) {
   const adRef = useRef<HTMLModElement>(null);
 
   useEffect(() => {
-    // Inject the AdSense script only if it hasn't been added yet
     const scriptId = "adsbygoogle-js";
     if (!document.getElementById(scriptId)) {
       const script = document.createElement("script");
@@ -32,12 +31,10 @@ function AdBanner({
       document.body.appendChild(script);
     }
 
-    // Try to push the ad
     try {
       // @ts-ignore
       (window.adsbygoogle = window.adsbygoogle || []).push({});
     } catch (error: any) {
-      // Optional: handle error
       console.error(error.message);
     }
   }, []);

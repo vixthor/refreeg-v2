@@ -17,9 +17,6 @@ import {
 } from "@/services/mail";
 import { sendPetitionSubmissionAdminNotification } from "@/services/mail";
 
-/**
- * Get a petition by ID
- */
 export async function getPetition(
   petitionId: string
 ): Promise<PetitionWithUser | null> {
@@ -64,7 +61,6 @@ export async function getPetition(
     throw error;
   }
 
-  // Transform the response to match our PetitionWithUser type
   const petition = {
     ...data,
     user: {
@@ -77,16 +73,12 @@ export async function getPetition(
     video_links: data.video_links || [],
   } as unknown as PetitionWithUser;
 
-  // Remove the nested objects that we've flattened
   delete (petition as any).profiles;
   delete (petition as any).petition_sections;
 
   return petition;
 }
 
-/**
- * Upload an image to Supabase storage
- */
 async function uploadImageToSupabase(
   file: File,
   userId: string,
@@ -94,18 +86,15 @@ async function uploadImageToSupabase(
 ): Promise<string> {
   const supabase = await createClient();
 
-  // Generate a unique filename and sanitize it by removing special characters
   const sanitizedOriginalName = file.name.replace(/[^\w\s.-]/g, "_");
   const fileName = `${userId}-${Date.now()}-${type}-${sanitizedOriginalName}`;
 
-  // Choose the appropriate storage bucket based on the file type
   const bucket = file.type.startsWith("video/")
     ? "petition-videos"
     : "profile-photos";
 
   console.log("bucket", bucket);
 
-  // Upload the file to Supabase Storage
   const { data: uploadData, error: uploadError } = await supabase.storage
     .from(bucket)
     .upload(fileName, file, {
@@ -118,23 +107,18 @@ async function uploadImageToSupabase(
     throw uploadError;
   }
 
-  // Get the public URL
   const { data: urlData } = supabase.storage
     .from(bucket)
     .getPublicUrl(fileName);
   return urlData.publicUrl;
 }
 
-/**
- * Create a new petition
- */
 export async function createPetition(
   userId: string,
   petitionData: PetitionFormData
 ): Promise<Petition> {
   const supabase = await createClient();
 
-  // Upload cover image if provided
   let coverImageUrl = null;
   if (petitionData.coverImage) {
     coverImageUrl = await uploadImageToSupabase(
@@ -146,10 +130,8 @@ export async function createPetition(
 
   console.log("Uploaded");
 
-  // Calculate days_active from start and end dates
   let daysActive = null;
   if (petitionData.startDate && petitionData.endDate) {
-    // Ensure we have valid Date objects
     const startDate =
       petitionData.startDate instanceof Date
         ? petitionData.startDate
@@ -159,7 +141,6 @@ export async function createPetition(
         ? petitionData.endDate
         : new Date(petitionData.endDate);
 
-    // Validate that the dates are valid
     if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
       throw new Error("Invalid date format provided");
     }
@@ -169,7 +150,6 @@ export async function createPetition(
     );
   }
 
-  // Upload multimedia files if they exist
   let multimediaUrls: string[] = [];
   if (
     petitionData.multimedia &&
@@ -188,7 +168,6 @@ export async function createPetition(
     }
   }
 
-  // Start a transaction
   const { data: petition, error: petitionError } = await supabase
     .from("petitions")
     .insert({
@@ -200,10 +179,10 @@ export async function createPetition(
         typeof petitionData.goal === "string"
           ? Number.parseFloat(petitionData.goal)
           : petitionData.goal,
-      status: "pending", // All petitions start as pending
-      image: coverImageUrl, // Store the cover image URL
-      days_active: daysActive, // Store the calculated days active
-      multimedia: multimediaUrls, // Store multimedia URLs as JSON array
+      status: "pending",
+      image: coverImageUrl,
+      days_active: daysActive,
+      multimedia: multimediaUrls,
       video_links: petitionData.video_links || [],
     })
     .select()
@@ -214,7 +193,6 @@ export async function createPetition(
     throw petitionError;
   }
 
-  // Insert sections if they exist
   if (petitionData.sections && petitionData.sections.length > 0) {
     const sections = petitionData.sections.map((section) => ({
       petition_id: petition.id,
@@ -232,7 +210,6 @@ export async function createPetition(
     }
   }
 
-  // Notify admins/managers about the new petition submission
   try {
     const { data: profile } = await supabase
       .from("profiles")
@@ -254,16 +231,12 @@ export async function createPetition(
     }
   } catch (error) {
     console.error("Error sending petition admin notification:", error);
-    // Do not throw; email failure should not break petition creation
   }
 
   revalidatePath("/dashboard/petitions");
   return petition as Petition;
 }
 
-/**
- * Update a petition
- */
 export async function updatePetition(
   petitionId: string,
   userId: string,
@@ -275,10 +248,8 @@ export async function updatePetition(
     ? await uploadImageToSupabase(petitionData.coverImage, userId, "cover")
     : petitionData.image;
 
-  // Calculate days_active from start and end dates
   let daysActive = null;
   if (petitionData.startDate && petitionData.endDate) {
-    // Ensure we have valid Date objects
     const startDate =
       petitionData.startDate instanceof Date
         ? petitionData.startDate
@@ -288,7 +259,6 @@ export async function updatePetition(
         ? petitionData.endDate
         : new Date(petitionData.endDate);
 
-    // Validate that the dates are valid
     if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
       throw new Error("Invalid date format provided");
     }
@@ -298,7 +268,6 @@ export async function updatePetition(
     );
   }
 
-  // Upload multimedia files if they exist
   let multimediaUrls: string[] = [];
   if (
     petitionData.multimedia &&
@@ -317,7 +286,6 @@ export async function updatePetition(
     }
   }
 
-  // Prepare the edit row for petition_edits
   const editData: any = {
     original_petition_id: petitionId,
     user_id: userId,
@@ -346,7 +314,6 @@ export async function updatePetition(
     throw error;
   }
 
-  // Insert sections if they exist
   if (petitionData.sections && petitionData.sections.length > 0) {
     const sections = petitionData.sections.map((section) => ({
       petition_edit_id: data.id,
@@ -368,9 +335,6 @@ export async function updatePetition(
   return data;
 }
 
-/**
- * List petitions with filtering options
- */
 export async function listPetitions(
   options: PetitionFilterOptions = {}
 ): Promise<Petition[]> {
@@ -381,7 +345,6 @@ export async function listPetitions(
     .select("*,profiles(full_name,email,profile_photo)")
     .order("created_at", { ascending: false });
 
-  // Apply filters
   if (options.category && options.category !== "all") {
     query = query.eq("category", options.category);
   }
@@ -389,8 +352,6 @@ export async function listPetitions(
   if (options.status) {
     query = query.eq("status", options.status);
   } else {
-    // Default to approved petitions for public listing only when no status is specified
-    // Admin queries should show all petitions when no status filter is applied
     if (!options.userId) {
       query = query.eq("status", "approved");
     }
@@ -400,7 +361,6 @@ export async function listPetitions(
     query = query.eq("user_id", options.userId);
   }
 
-  // Apply pagination
   if (options.limit) {
     query = query.limit(options.limit);
   }
@@ -415,14 +375,11 @@ export async function listPetitions(
   const { data, error } = await query;
 
   if (error) {
-    // Log the whole error object, fallback to string if empty
     console.error("Error listing petitions:", error || "Unknown error");
     throw error;
   }
 
   const petitions = (data as Petition[]) || [];
-
-  // Auto-mark expired (days_active <= 0) and filter from public listings
   const nowExpired = petitions.filter(
     (p) => (p.days_active ?? 0) <= 0 && p.status === ("approved" as any)
   );
@@ -447,9 +404,6 @@ export async function listPetitions(
   return result;
 }
 
-/**
- * Count petitions with filtering options
- */
 export async function countPetitions(
   options: PetitionFilterOptions = {}
 ): Promise<number> {
@@ -459,7 +413,6 @@ export async function countPetitions(
     .from("petitions")
     .select("id", { count: "exact", head: true });
 
-  // Apply filters
   if (options.category && options.category !== "all") {
     query = query.eq("category", options.category);
   }
@@ -467,8 +420,6 @@ export async function countPetitions(
   if (options.status) {
     query = query.eq("status", options.status);
   } else {
-    // Default to approved petitions for public listing only when no status is specified
-    // Admin queries should show all petitions when no status filter is applied
     if (!options.userId) {
       query = query.eq("status", "approved");
     }
@@ -488,9 +439,6 @@ export async function countPetitions(
   return count || 0;
 }
 
-/**
- * Approve or reject a petition (admin function)
- */
 export async function updatePetitionStatus(
   petitionId: string,
   status: "approved" | "rejected",
@@ -498,9 +446,7 @@ export async function updatePetitionStatus(
 ): Promise<Petition> {
   const supabase = await createClient();
 
-  // If approving, check for a pending edit
   if (status === "approved") {
-    // Get the latest pending edit for this petition
     const { data: edit, error: editError } = await supabase
       .from("petition_edits")
       .select("*")
@@ -518,7 +464,6 @@ export async function updatePetitionStatus(
     let updatedPetition;
 
     if (edit) {
-      // Copy edit fields into petitions (including description)
       const updateData: any = {
         title: edit.title,
         description: edit.description,
@@ -545,14 +490,12 @@ export async function updatePetitionStatus(
         throw updateError;
       }
 
-      // Replace petition sections with edit sections if any
       const { data: editSections } = await supabase
         .from("petition_edit_sections")
         .select("id, heading, description")
         .eq("petition_edit_id", edit.id);
 
       if (editSections && editSections.length > 0) {
-        // delete existing sections
         const { error: delErr } = await supabase
           .from("petition_sections")
           .delete()
@@ -562,7 +505,6 @@ export async function updatePetitionStatus(
           throw delErr;
         }
 
-        // insert new sections
         const { error: insErr } = await supabase
           .from("petition_sections")
           .insert(
@@ -578,7 +520,6 @@ export async function updatePetitionStatus(
         }
       }
 
-      // Cleanup: delete edit sections and the edit row
       await supabase
         .from("petition_edit_sections")
         .delete()
@@ -587,7 +528,6 @@ export async function updatePetitionStatus(
 
       updatedPetition = updated;
     } else {
-      // No edit found, approve the main petition directly
       const { data: updated, error: updateError } = await supabase
         .from("petitions")
         .update({
@@ -605,7 +545,6 @@ export async function updatePetitionStatus(
       updatedPetition = updated;
     }
 
-    // Send approval email
     const { data: petition } = await supabase
       .from("petitions")
       .select("user_id, title, id")
@@ -622,7 +561,6 @@ export async function updatePetitionStatus(
     return updatedPetition as Petition;
   }
 
-  // If rejecting, mark the latest pending edit as rejected
   if (status === "rejected") {
     const { data: edit, error: editError } = await supabase
       .from("petition_edits")
@@ -640,7 +578,6 @@ export async function updatePetitionStatus(
         .eq("id", edit.id);
     }
 
-    // Update the main petition status to rejected
     const { data, error } = await supabase
       .from("petitions")
       .update({
@@ -657,7 +594,6 @@ export async function updatePetitionStatus(
       throw error;
     }
 
-    // Send rejection email
     const { data: petition } = await supabase
       .from("petitions")
       .select("user_id, title, id")
@@ -678,9 +614,6 @@ export async function updatePetitionStatus(
   throw new Error(`Invalid status value: ${status}`);
 }
 
-/**
- * Get all pending petition edits for admin review
- */
 export async function getPetitionEdits(): Promise<any[]> {
   const supabase = await createClient();
 
@@ -712,9 +645,6 @@ export async function getPetitionEdits(): Promise<any[]> {
   return data || [];
 }
 
-/**
- * Get all petitions for a specific user
- */
 export async function getUserPetitions(userId: string): Promise<Petition[]> {
   const supabase = await createClient();
 
@@ -744,7 +674,6 @@ export async function getUserPetitionsWithStatus(
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
 
-  // Only apply status filter if status is provided and not empty
   if (status && status !== "all") {
     query = query.eq("status", status);
   }
@@ -773,13 +702,9 @@ export async function deletePetition(petitionId: string): Promise<void> {
   }
 }
 
-/**
- * Save a petition share to the database
- */
 export async function savePetitionShare(petitionId: string): Promise<void> {
   const supabase = await createClient();
 
-  // Start a transaction
   const { error: shareError, data: petitionData } = await supabase
     .from("petitions")
     .select("shared")

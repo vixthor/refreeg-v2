@@ -54,7 +54,6 @@ import {
   Button as HeroButton,
 } from "@heroui/react";
 
-// Define types for navigation items
 interface NavLink {
   title: string;
   type: "link";
@@ -252,13 +251,11 @@ export function Header() {
           className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-2 md:p-4"
         >
           <div className="flex items-center justify-between w-full">
-            {/* Left: Logo + Desktop Nav */}
             <div className="flex items-center gap-4">
               <NavbarBrand>
                 <Logo />
               </NavbarBrand>
 
-              {/* Desktop Navigation */}
               <div className="hidden md:flex gap-0 items-center">
                 {navItems.map((item) => {
                   if (item.type === "link") {
@@ -318,7 +315,6 @@ export function Header() {
                                       href={dropdownItem.href}
                                       className="flex items-start gap-3 w-full group"
                                     >
-                                      {/* <DropdownIcon className="h-5 w-5 text-gray-400 mt-0.5 flex-shrink-0 group-hover:text-blue-600 transition-colors" /> */}
                                       <div className="flex-1">
                                         <p className="font-medium text-sm group-hover:text-blue-700 transition-colors">
                                           {dropdownItem.title}
@@ -342,10 +338,8 @@ export function Header() {
               </div>
             </div>
 
-            {/* Right Side Actions */}
             <div className="flex items-center gap-2">
               {(() => {
-                // Define color themes per page
                 const pathname = usePathname();
 
                 const themeMap: Record<
@@ -395,7 +389,6 @@ export function Header() {
                   },
                 };
 
-                // Pick active theme or fallback to neutral
                 const theme = themeMap[pathname] || {
                   border: "border-secondary",
                   text: "text-secondary",
@@ -416,7 +409,6 @@ export function Header() {
                       </Button>
                     </Link>
 
-                    {/* Auth */}
                     {!isLoading && !user ? (
                       <Link href="/auth/signin">
                         <Button size="sm" variant="default" className={``}>
@@ -430,7 +422,6 @@ export function Header() {
                 );
               })()}
 
-              {/* Mobile Toggle */}
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
                 className="p-2 text-foreground hover:bg-gray-100 rounded-md transition-colors md:hidden"
@@ -446,7 +437,6 @@ export function Header() {
           </div>
         </Navbar>
 
-        {/* Mobile Menu */}
         <div
           className={`md:hidden fixed top-[64px] left-0 right-0 bottom-0
     bg-background/70 
@@ -461,7 +451,6 @@ export function Header() {
   `}
         >
           <div className="container py-6 space-y-4 max-h-[calc(100vh-64px)] overflow-y-auto">
-            {/* Main Nav */}
             <div className="space-y-1">
               {navItems.map((item) => {
                 if (item.type === "link") {
@@ -502,7 +491,6 @@ export function Header() {
                             : "max-h-0 opacity-0"
                         }`}
                       >
-                        {/* Mobile Dropdown Header with Icon */}
                         <div className="ml-4 mt-2 mb-3 flex items-center gap-2 px-3 py-2 bg-blue-50 rounded-md">
                           <item.icon className="h-4 w-4 text-blue-600" />
                           <span className="text-sm font-medium text-blue-800">
@@ -545,7 +533,6 @@ export function Header() {
               })}
             </div>
 
-            {/* Actions */}
             <div className="border-t pt-4 space-y-2">
               <Link
                 href="/dashboard/causes/create"
@@ -583,16 +570,14 @@ export function Header() {
 
                     try {
                       setIsSigningOut(true);
-                      setIsMenuOpen(false); // Close menu immediately
+                      setIsMenuOpen(false);
                       if (signOut) {
                         await signOut();
                       }
                     } catch (error) {
                       console.error("Error signing out:", error);
                       setIsSigningOut(false);
-                      // Reset menu state on error so user can try again
                     }
-                    // signOut will redirect using window.location, so state reset not needed on success
                   }}
                   disabled={isSigningOut}
                   className="flex items-center gap-3 w-full py-3 px-2 text-foreground hover:text-red-600 rounded-md transition-colors font-medium disabled:opacity-50"
@@ -610,7 +595,6 @@ export function Header() {
               )}
             </div>
 
-            {/* Admin Links */}
             {isAdminOrManager && (
               <div className="border-t pt-4">
                 <div className="py-2 px-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">

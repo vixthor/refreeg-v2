@@ -1,15 +1,13 @@
-// app/profile/[username]/page.tsx
 import {
   getProfile,
   getUserCauses,
   listUserDonations,
   getUserPetitions,
-  getProfileByUsername, // You'll need to create this function
+  getProfileByUsername,
 } from "@/actions";
 import { getCurrentUser } from "@/actions/auth-actions";
 import PublicProfile from "@/components/PublicProfile";
 
-// Type definitions for our parameters
 type PageParams = {
   username: string;
 };
@@ -26,17 +24,15 @@ export default async function PublicProfilePage({
   const { username } = await params;
 
   const currentUser = await getCurrentUser();
-  
-  // Fetch profile by username instead of userId
+
   const profile = await getProfileByUsername(username);
   if (!profile) {
     return <div className="text-center py-12">User not found</div>;
   }
 
-  const userId = profile.id; // Use the actual user ID for subsequent queries
+  const userId = profile.id;
   const isOwner = currentUser?.id === userId;
 
-  // Fetch data using the actual user ID
   const causes = await getUserCauses(userId).then((causes) =>
     causes.filter((cause) => cause.status === "approved")
   );
