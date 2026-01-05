@@ -82,7 +82,6 @@ export async function listCommentsForCause(causeId: string) {
 
   if (error) throw error;
 
-  // Get replies count for each comment
   const commentsWithReplies = await Promise.all(
     data.map(async (comment) => {
       const supabase = await createClient();

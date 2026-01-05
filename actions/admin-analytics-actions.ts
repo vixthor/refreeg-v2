@@ -33,18 +33,13 @@ export interface CauseCategory {
   count: number;
 }
 
-/**
- * Get admin analytics data with current and previous period comparisons
- */
 export async function getAdminAnalytics(): Promise<AnalyticsData> {
   const supabase = await createClient();
 
-  // Get current date for current month range (for users)
   const now = new Date();
   const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
   try {
-    // Fetch current data
     const [
       currentDonationsResult,
       currentCryptoDonationsResult,
@@ -52,29 +47,23 @@ export async function getAdminAnalytics(): Promise<AnalyticsData> {
       currentCausesResult,
       currentPendingResult,
     ] = await Promise.all([
-      // All regular donations (not just current month)
       supabase.from("donations").select("amount").eq("status", "completed"),
 
-      // All crypto donations (not just current month)
       supabase
         .from("crypto_donations")
         .select("amount_in_naira")
         .eq("status", "completed"),
 
-      // Current month users
       supabase
         .from("profiles")
         .select("id", { count: "exact" })
         .gte("created_at", currentMonthStart.toISOString()),
 
-      // All active causes (all approved causes) - select all to ensure data is returned
       supabase.from("causes").select("id, status").eq("status", "approved"),
 
-      // All pending approvals (all pending causes) - select all to ensure data is returned
       supabase.from("causes").select("id, status").eq("status", "pending"),
     ]);
 
-    // Log errors and data if any
     if (currentDonationsResult.error) {
       console.error("Error fetching donations:", currentDonationsResult.error);
     }
@@ -108,7 +97,6 @@ export async function getAdminAnalytics(): Promise<AnalyticsData> {
       );
     }
 
-    // Calculate total donations (regular + crypto)
     const currentRegularTotal =
       currentDonationsResult.data?.reduce((sum, d) => sum + d.amount, 0) || 0;
     const currentCryptoTotal =
@@ -138,9 +126,6 @@ export async function getAdminAnalytics(): Promise<AnalyticsData> {
   }
 }
 
-/**
- * Get donation trends over the last 12 months
- */
 export async function getDonationTrends(): Promise<DonationTrend[]> {
   const supabase = await createClient();
 
@@ -162,10 +147,8 @@ export async function getDonationTrends(): Promise<DonationTrend[]> {
         .eq("status", "completed"),
     ]);
 
-    // Combine and group by month
     const monthlyData: Record<string, number> = {};
 
-    // Process regular donations
     regularDonations.data?.forEach((donation) => {
       const date = new Date(donation.created_at);
       const monthKey = `${date.getFullYear()}-${String(
@@ -174,7 +157,6 @@ export async function getDonationTrends(): Promise<DonationTrend[]> {
       monthlyData[monthKey] = (monthlyData[monthKey] || 0) + donation.amount;
     });
 
-    // Process crypto donations
     cryptoDonations.data?.forEach((donation) => {
       const date = new Date(donation.created_at);
       const monthKey = `${date.getFullYear()}-${String(
@@ -184,7 +166,6 @@ export async function getDonationTrends(): Promise<DonationTrend[]> {
         (monthlyData[monthKey] || 0) + (donation.amount_in_naira || 0);
     });
 
-    // Convert to array and sort
     return Object.entries(monthlyData)
       .map(([month, amount]) => ({ month, amount }))
       .sort((a, b) => a.month.localeCompare(b.month));
@@ -194,9 +175,6 @@ export async function getDonationTrends(): Promise<DonationTrend[]> {
   }
 }
 
-/**
- * Get user growth trends over the last 12 months
- */
 export async function getUserGrowth(): Promise<UserGrowth[]> {
   const supabase = await createClient();
 
@@ -211,7 +189,6 @@ export async function getUserGrowth(): Promise<UserGrowth[]> {
 
     if (error) throw error;
 
-    // Group by month
     const monthlyGrowth: Record<string, number> = {};
 
     users?.forEach((user) => {
@@ -231,9 +208,6 @@ export async function getUserGrowth(): Promise<UserGrowth[]> {
   }
 }
 
-/**
- * Get cause categories distribution
- */
 export async function getCauseCategories(): Promise<CauseCategory[]> {
   const supabase = await createClient();
 
@@ -244,8 +218,6 @@ export async function getCauseCategories(): Promise<CauseCategory[]> {
       .eq("status", "approved");
 
     if (error) throw error;
-
-    // Group by category
     const categoryCount: Record<string, number> = {};
 
     causes?.forEach((cause) => {

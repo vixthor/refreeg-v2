@@ -16,15 +16,13 @@ import { useAuth } from "@/hooks/use-auth";
 import { useAdmin } from "@/hooks/use-admin";
 import { getProfile } from "@/actions/profile-actions";
 import Link from "next/link";
-import { ShieldAlert } from "lucide-react";
+import { ShieldAlert, CheckCircle } from "lucide-react";
 
 export function UserNav() {
   const { user, signOut } = useAuth();
   const [profile, setProfile] = useState<any>(null);
-  // Local UI state for dropdown open and signing out flag
   const [open, setOpen] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
-  // Add the useAdmin hook to check for admin/manager access
   const { isAdminOrManager, isLoading: adminLoading } = useAdmin(user?.id);
 
   useEffect(() => {
@@ -55,8 +53,10 @@ export function UserNav() {
         .toUpperCase()
     : "U";
 
+  const isVerified = profile?.is_verified || false;
+
   return (
-    <div className=" pt-1.5">
+    <div className="pt-1.5">
       <DropdownMenu open={open} onOpenChange={setOpen}>
         <DropdownMenuTrigger asChild>
           <Button
@@ -71,30 +71,123 @@ export function UserNav() {
               />
               <AvatarFallback>{initials}</AvatarFallback>
             </Avatar>
+
+            {isVerified && (
+              <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5 border border-gray-300 shadow-sm">
+                <CheckCircle className="h-3.5 w-3.5 text-blue-500 fill-blue-100" />
+              </div>
+            )}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-56" align="end" forceMount>
           <DropdownMenuLabel className="font-normal">
             <div className="flex flex-col space-y-1">
-              <p className="text-sm font-medium leading-none">
-                {profile?.full_name || user.email}
-              </p>
+              <div className="flex items-center gap-1.5">
+                <p className="text-sm font-medium leading-none">
+                  {profile?.full_name || user.email}
+                </p>
+                {isVerified && (
+                  <CheckCircle className="h-3.5 w-3.5 text-blue-500 fill-blue-100" />
+                )}
+              </div>
               <p className="text-xs leading-none text-muted-foreground">
                 {user.email}
               </p>
+
+              {isVerified && (
+                <div className="flex items-center gap-1 mt-1">
+                  <span className="text-[10px] px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full border border-blue-100">
+                    ✓ Verified Account
+                  </span>
+                </div>
+              )}
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          {/* Mobile-only dashboard link inside menu */}
-          <div className="">
-            <DropdownMenuItem asChild>
-              <Link href="/dashboard">Dashboard</Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link href="/dashboard/settings">Settings</Link>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-          </div>
+
+          {isAdminOrManager && (
+            <>
+              <div className="px-2 py-1.5">
+                <div className="flex items-center gap-1.5 text-xs text-amber-700 bg-amber-50 px-2 py-1 rounded border border-amber-100">
+                  <ShieldAlert className="h-3 w-3" />
+                  <span>Admin Access</span>
+                </div>
+              </div>
+              <DropdownMenuSeparator />
+            </>
+          )}
+
+          <DropdownMenuGroup>
+            <div className="">
+              <DropdownMenuItem asChild>
+                <Link href="/dashboard" className="cursor-pointer">
+                  Dashboard
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/dashboard/settings" className="cursor-pointer">
+                  Settings
+                </Link>
+              </DropdownMenuItem>
+              {!isVerified && (
+                <DropdownMenuItem asChild>
+                  <Link
+                    href="/dashboard/settings/kyc"
+                    className="cursor-pointer"
+                  >
+                    <div className="flex items-center justify-between w-full">
+                      <span>Get Verified</span>
+                      <span className="text-xs text-amber-600 font-medium">
+                        Not Verified
+                      </span>
+                    </div>
+                  </Link>
+                </DropdownMenuItem>
+              )}
+
+              <DropdownMenuSeparator />
+            </div>
+          </DropdownMenuGroup>
+
+          {isAdminOrManager && (
+            <>
+              <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
+                Admin Panel
+              </DropdownMenuLabel>
+              <DropdownMenuGroup>
+                <DropdownMenuItem asChild>
+                  <Link
+                    href="/dashboard/admin/causes"
+                    className="cursor-pointer"
+                  >
+                    Manage Causes
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link
+                    href="/dashboard/admin/users"
+                    className="cursor-pointer"
+                  >
+                    Manage Users
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link
+                    href="/dashboard/admin/petitions"
+                    className="cursor-pointer"
+                  >
+                    Manage Petitions
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/dashboard/admin/kyc" className="cursor-pointer">
+                    KYC Reviews
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+              <DropdownMenuSeparator />
+            </>
+          )}
 
           <DropdownMenuItem
             onClick={async () => {
@@ -102,13 +195,11 @@ export function UserNav() {
 
               try {
                 setIsSigningOut(true);
-                setOpen(false); // Close dropdown immediately
+                setOpen(false);
                 await signOut();
-                // signOut will redirect using window.location, so state reset not needed
               } catch (error) {
                 console.error("Error signing out:", error);
                 setIsSigningOut(false);
-                // Reset dropdown state on error so user can try again
                 setOpen(false);
               }
             }}
