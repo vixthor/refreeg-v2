@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { FC } from "react";
 import Link from "next/link";   
-import { ChevronRight } from "lucide-react"; // Import the ChevronRight2 image
+import { ChevronRight } from "lucide-react";
 import { H3, P } from "./typograpy";
 
 interface CauseDescriptionProps {
