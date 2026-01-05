@@ -93,7 +93,6 @@ export async function FeaturedCauses() {
                 >
                   <AnimatedCard>
                     <Card className="overflow-hidden cursor-pointer transition hover:shadow-2xl shadow-lg h-[420px] flex flex-col border border-gray-300">
-                      {/* Image */}
                       <div className="aspect-video w-full overflow-hidden">
                         <img
                           src={cause.image || "/placeholder.svg"}
@@ -102,7 +101,6 @@ export async function FeaturedCauses() {
                         />
                       </div>
 
-                      {/* Content */}
                       <CardHeader className="flex flex-col flex-1 p-4">
                         <CardTitle>
                           <H4 className="line-clamp-2">{cause.title}</H4>
@@ -120,7 +118,6 @@ export async function FeaturedCauses() {
                         </div>
                       </CardHeader>
 
-                      {/* Progress + Footer */}
                       <div className="mt-auto w-full">
                         <CardContent>
                           <div className="space-y-2">
