@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Users, CreditCard, FileText } from "lucide-react";
 import { motion } from "framer-motion";
 import Statistics from "@/components/home/statistics";
+import Link from "next/link";
 
 const SLIDE_UP_DURATION = 0.8;
 
@@ -278,38 +278,40 @@ export default function Hero() {
                 </p>
               </motion.div>
 
-              <motion.button
-                className="bg-purple-600 hover:bg-purple-700 text-white font-semibold px-6 py-3 md:px-8 md:py-4 rounded-lg text-base md:text-lg shadow-lg relative z-20"
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{
-                  opacity: 1,
-                  scale: 1,
-                  y: [0, -5, 0],
-                }}
-                transition={{
-                  duration: SLIDE_UP_DURATION,
-                  delay: 0.7,
-                  ease: [0.4, 0, 0.2, 1] as const,
-                  y: {
-                    duration: 2,
-                    repeat: Infinity,
-                    repeatType: "reverse",
-                    ease: "easeInOut",
-                  },
-                }}
-                whileHover={{
-                  scale: 1.05,
-                  y: -3,
-                  transition: {
-                    duration: 0.3,
-                    y: { duration: 0.5, ease: "easeInOut" },
-                  },
-                }}
-                whileTap={{ scale: 0.95 }}
-              >
-                Start Your Nonprofit Campaign
-                <span className="ml-2">→</span>
-              </motion.button>
+              <Link href="/dashboard/causes/create" passHref>
+                <motion.button
+                  className="bg-purple-600 hover:bg-purple-700 text-white font-semibold px-6 py-3 md:px-8 md:py-4 rounded-lg text-base md:text-lg shadow-lg relative z-20 cursor-pointer"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{
+                    opacity: 1,
+                    scale: 1,
+                    y: [0, -5, 0],
+                  }}
+                  transition={{
+                    duration: SLIDE_UP_DURATION,
+                    delay: 0.7,
+                    ease: [0.4, 0, 0.2, 1] as const,
+                    y: {
+                      duration: 2,
+                      repeat: Infinity,
+                      repeatType: "reverse",
+                      ease: "easeInOut",
+                    },
+                  }}
+                  whileHover={{
+                    scale: 1.05,
+                    y: -3,
+                    transition: {
+                      duration: 0.3,
+                      y: { duration: 0.5, ease: "easeInOut" },
+                    },
+                  }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  Start Your Nonprofit Campaign
+                  <span className="ml-2">→</span>
+                </motion.button>
+              </Link>
             </div>
           </div>
         </div>
