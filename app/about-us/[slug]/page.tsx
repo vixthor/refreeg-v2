@@ -1,5 +1,4 @@
-// app/blog/page.tsx
-import { blogs } from "@/lib/blog"; // Adjust the path to your blogs array
+import { blogs } from "@/lib/blog";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -9,20 +8,16 @@ export default function BlogPage({
 }: {
   params: { [key: string]: string };
 }) {
-  // Extract the slug from searchParams
   const slug = params.slug as string;
 
-  // Find the blog with the matching title
   const blog = blogs.find((blog) => blog.slug === slug);
 
-  // If the blog is not found, show a 404 message
   if (!blog) {
-    notFound(); // Redirects to app/(home)/not-found.tsx automatically
+    notFound();
   }
 
   return (
     <div className="w-full px-4 md:px-16 lg:px-32 py-12 bg-white">
-      {/* Main Blog Content */}
       <section className="text-center">
         <h2 className="text-gray-700 text-sm uppercase tracking-widest mb-2">
           Why You Should Use Us
@@ -52,7 +47,6 @@ export default function BlogPage({
         </Link>
       </section>
 
-      {/* Real-Time Tracking Section (Conditional Rendering) */}
       {blog.realTimeTracking && (
         <section className="mt-16 text-center">
           <h1 className="text-3xl font-bold mb-6">

@@ -1,4 +1,3 @@
-// Helper to extract a simple device/OS string from user agent
 "use client";
 
 import { useEffect, useState } from "react";
@@ -12,7 +11,6 @@ import {
 import { subscribeToConvertKit } from "@/services/convertkit";
 import { hasCompletedOnboarding } from "@/actions/profile-actions";
 
-// Helper to extract a simple device/OS string from user agent
 function getDeviceInfo() {
   if (typeof window === "undefined") return "Unknown Device";
   const ua = window.navigator.userAgent;
@@ -58,7 +56,6 @@ export function useAuth() {
       }
     };
 
-    // Initial load
     setIsLoading(true);
     applyInitialSession();
 
@@ -97,7 +94,6 @@ export function useAuth() {
         return;
       }
 
-      // Get device and IP address (best effort, client-side)
       const device = getDeviceInfo();
       let ipAddress = "Unknown IP";
       try {
@@ -110,14 +106,12 @@ export function useAuth() {
         // Ignore IP fetch errors
       }
 
-      // Send login notification email (fire and forget)
       sendLoginNotificationEmail({
         loginTime: new Date().toLocaleString(),
         device,
         ipAddress,
       }).catch((e) => console.error("Login notification email error:", e));
 
-      // Get the current user after successful sign in
       const {
         data: { user: currentUser },
       } = await supabase.auth.getUser();
@@ -131,8 +125,6 @@ export function useAuth() {
         return;
       }
 
-      // Check if user needs to complete onboarding
-      // hasCompletedOnboarding handles grandfathering existing users automatically
       const completedOnboarding = await hasCompletedOnboarding(currentUser.id);
 
       if (!completedOnboarding) {
@@ -186,18 +178,14 @@ export function useAuth() {
         return;
       }
 
-      // Send welcome email after successful signup
       try {
         const profileSetupUrl = `${window.location.origin}/dashboard/settings`;
         await sendWelcomeEmailToUser(email, fullName, profileSetupUrl);
       } catch (emailError) {
         console.error("Error sending welcome email:", emailError);
-        // Don't fail signup if email fails
       }
 
-      // Subscribe user to ConvertKit email list
       try {
-        // Extract first name from full name
         const firstName = fullName.split(" ")[0];
 
         await subscribeToConvertKit({
@@ -212,7 +200,6 @@ export function useAuth() {
         console.log("Successfully subscribed user to ConvertKit:", email);
       } catch (convertkitError) {
         console.error("Error subscribing to ConvertKit:", convertkitError);
-        // Don't fail signup if ConvertKit subscription fails
       }
 
       toast({
@@ -221,7 +208,6 @@ export function useAuth() {
           "Welcome! Let's set up your profile. Check your email for a welcome message.",
       });
 
-      // Redirect to onboarding for new users
       router.push("/onboarding");
 
       return { data, error };
@@ -268,7 +254,6 @@ export function useAuth() {
         throw error;
       }
 
-      // Let onAuthStateChange update user/isLoading; just navigate.
       router.replace("/");
     } catch (error: any) {
       console.error("Error signing out:", error);
@@ -278,13 +263,12 @@ export function useAuth() {
           error?.message || "There was an error signing out. Please try again.",
         variant: "destructive",
       });
-      throw error; // Re-throw so calling components can handle it
+      throw error;
     }
   };
 
   const resetPassword = async (email: string) => {
     try {
-      // Updated to go through callback route with type parameter
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/auth/callback?type=recovery`,
       });

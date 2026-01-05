@@ -3,9 +3,6 @@
 import { listUsersWithRoles } from "@/actions/role-actions";
 import type { UserWithRole } from "@/types";
 
-/**
- * Export active users data to CSV format
- */
 export async function exportUsersToCSV(): Promise<{
   csv: string;
   error: string | null;
@@ -13,10 +10,8 @@ export async function exportUsersToCSV(): Promise<{
   try {
     const users = await listUsersWithRoles();
 
-    // Filter only active users (not blocked)
     const activeUsers = users.filter((user) => !user.is_blocked);
 
-    // CSV Headers
     const headers = [
       "ID",
       "Full Name",
@@ -26,7 +21,6 @@ export async function exportUsersToCSV(): Promise<{
       "Joined Date",
     ];
 
-    // CSV Rows
     const rows = activeUsers.map((user: UserWithRole) => {
       return [
         user.id,
@@ -36,7 +30,6 @@ export async function exportUsersToCSV(): Promise<{
         user.kyc_status || "Not Submitted",
         new Date(user.created_at).toLocaleDateString(),
       ].map((field) => {
-        // Escape commas and quotes in CSV
         const stringField = String(field);
         if (stringField.includes(",") || stringField.includes('"')) {
           return `"${stringField.replace(/"/g, '""')}"`;
@@ -45,7 +38,6 @@ export async function exportUsersToCSV(): Promise<{
       });
     });
 
-    // Combine headers and rows
     const csvContent = [
       headers.join(","),
       ...rows.map((row) => row.join(",")),

@@ -61,7 +61,7 @@ type FormData = {
   startDate: Date | undefined;
   endDate: Date | undefined;
   multimedia: File[];
-  videoLinks: string[]; // NEW
+  videoLinks: string[];
 };
 
 type FormErrors = {
@@ -85,7 +85,7 @@ type CauseFormData = {
   startDate: Date | undefined;
   endDate: Date | undefined;
   multimedia: File[];
-  video_links: string[]; // NEW
+  video_links: string[];
 };
 
 const validateForm = (formData: FormData): FormErrors => {
@@ -127,7 +127,6 @@ const validateForm = (formData: FormData): FormErrors => {
     }
   }
 
-  // Validate sections
   if (formData.sections && formData.sections.length > 0) {
     const sectionErrorsArray = formData.sections.map((section) => {
       const sectionErrors: { heading?: string; description?: string } = {};
@@ -138,14 +137,12 @@ const validateForm = (formData: FormData): FormErrors => {
       return sectionErrors;
     });
 
-    // Only add sections errors if there are actual errors
     if (sectionErrorsArray.some((err) => Object.keys(err).length > 0)) {
       errors.sections = sectionErrorsArray;
     }
   }
 
-  // Check total multimedia size
-  const MAX_TOTAL_SIZE = 100 * 1024 * 1024; // 100MB in bytes
+  const MAX_TOTAL_SIZE = 100 * 1024 * 1024;
   const totalSize =
     formData.multimedia && formData.multimedia.length > 0
       ? formData.multimedia.reduce((acc, file) => acc + file.size, 0)
@@ -172,13 +169,12 @@ export default function CreateCauseForm() {
     startDate: undefined,
     endDate: undefined,
     multimedia: [],
-    videoLinks: [], // NEW
+    videoLinks: [],
   });
   const [errors, setErrors] = useState<FormErrors>({});
   const [videoLinkInput, setVideoLinkInput] = useState("");
   const [videoLinkError, setVideoLinkError] = useState<string | null>(null);
 
-  // Auto-save draft to localStorage
   useEffect(() => {
     const savedDraft = localStorage.getItem("causeDraft");
     if (savedDraft) {
@@ -193,13 +189,12 @@ export default function CreateCauseForm() {
           ? new Date(parsedDraft.endDate)
           : undefined,
         multimedia: [],
-        videoLinks: parsedDraft.videoLinks || [], // NEW
+        videoLinks: parsedDraft.videoLinks || [],
       }));
     }
   }, []);
 
   useEffect(() => {
-    // Don't save files to localStorage, and properly serialize dates
     const { coverImage, multimedia, ...dataToSave } = formData;
     const serializedData = {
       ...dataToSave,
@@ -211,7 +206,6 @@ export default function CreateCauseForm() {
     localStorage.setItem("causeDraft", JSON.stringify(serializedData));
   }, [formData]);
 
-  // Track inactivity and send reminder email after 24 hours
   useEffect(() => {
     let inactivityTimer: NodeJS.Timeout;
 
@@ -221,22 +215,18 @@ export default function CreateCauseForm() {
         formData.title || formData.category || formData.goal;
 
       if (hasDraft || hasStartedFilling) {
-        // Reset timer on any form interaction
         const resetTimer = () => {
           clearTimeout(inactivityTimer);
-          inactivityTimer = setTimeout(sendReminder, 24 * 60 * 60 * 1000); // 24 hours
+          inactivityTimer = setTimeout(sendReminder, 24 * 60 * 60 * 1000);
         };
 
-        // Set up event listeners for form interactions
         const events = ["input", "change", "click", "keydown"];
         events.forEach((event) => {
           document.addEventListener(event, resetTimer, { passive: true });
         });
 
-        // Start the initial timer
         resetTimer();
 
-        // Cleanup function
         return () => {
           clearTimeout(inactivityTimer);
           events.forEach((event) => {
@@ -247,7 +237,6 @@ export default function CreateCauseForm() {
     };
 
     const sendReminder = async () => {
-      // Check if cause still isn't submitted
       const currentDraft = localStorage.getItem("causeDraft");
       if (currentDraft && user) {
         try {
@@ -268,7 +257,7 @@ export default function CreateCauseForm() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    // Clear error when user starts typing
+
     if (errors[name as keyof FormErrors]) {
       setErrors((prev) => ({ ...prev, [name]: undefined }));
     }
@@ -276,7 +265,7 @@ export default function CreateCauseForm() {
 
   const handleSelectChange = (name: string, value: string) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
-    // Clear error when user makes a selection
+
     if (errors[name as keyof FormErrors]) {
       setErrors((prev) => ({ ...prev, [name]: undefined }));
     }
@@ -287,14 +276,14 @@ export default function CreateCauseForm() {
     field: "startDate" | "endDate"
   ) => {
     setFormData((prev) => ({ ...prev, [field]: date }));
-    // Clear error when user selects a date
+
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: undefined }));
     }
   };
 
   const handleImageUpload = (files: File[]) => {
-    const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB in bytes
+    const MAX_FILE_SIZE = 100 * 1024 * 1024;
     const file = files[0];
 
     if (file && file.size > MAX_FILE_SIZE) {
@@ -312,7 +301,7 @@ export default function CreateCauseForm() {
   };
 
   const handleMultimediaUpload = (files: File[]) => {
-    const MAX_TOTAL_SIZE = 100 * 1024 * 1024; // 100MB in bytes
+    const MAX_TOTAL_SIZE = 100 * 1024 * 1024;
     const currentSize =
       formData.multimedia && formData.multimedia.length > 0
         ? formData.multimedia.reduce((acc, file) => acc + file.size, 0)
@@ -358,14 +347,12 @@ export default function CreateCauseForm() {
           !currentErrors.title && !currentErrors.category && !currentErrors.goal
         );
       case 2:
-        // Check for section errors
         if (currentErrors.sections) {
-          // If there are section errors, check if any sections have errors
           return !currentErrors.sections.some(
             (err) => err.heading || err.description
           );
         }
-        // If there are no section errors in the currentErrors object, validate directly
+
         return formData.sections.every(
           (section) =>
             section.heading.trim() !== "" && section.description.trim() !== ""
@@ -389,7 +376,6 @@ export default function CreateCauseForm() {
     e.preventDefault();
 
     if (!user) return;
-    // Only allow submit on last step
 
     if (currentStep < 5) {
       nextStep();
@@ -399,10 +385,8 @@ export default function CreateCauseForm() {
     setSubmitting(true);
     const validationErrors = validateForm(formData);
 
-    // Check if there are any validation errors
     const hasErrors = Object.keys(validationErrors).some((key) => {
       if (key === "sections" && validationErrors.sections) {
-        // For sections, check if any section has actual errors
         return validationErrors.sections.some(
           (section) => Object.keys(section).length > 0
         );
@@ -426,13 +410,13 @@ export default function CreateCauseForm() {
       startDate: formData.startDate,
       endDate: formData.endDate,
       multimedia: formData.multimedia,
-      video_links: formData.videoLinks, // <-- map to backend
+      video_links: formData.videoLinks,
     };
     try {
       await sendCauseUnderReviewEmail({
         causeName: causeData.title,
         reviewTimeframe: "3-5 business days",
-        dashboardUrl: `${window.location.origin}/dashboard/causes`, // Use actual dashboard URL
+        dashboardUrl: `${window.location.origin}/dashboard/causes`,
       });
       await createCause(user.id, causeData);
       localStorage.removeItem("causeDraft");
@@ -809,7 +793,7 @@ export default function CreateCauseForm() {
                   </div>
                 )}
             </div>
-            {/* Video Links */}
+            =
             <div className="mt-8 space-y-2">
               <Label>Video Links (YouTube, TikTok, etc.)</Label>
               <div className="flex gap-2">
@@ -823,7 +807,6 @@ export default function CreateCauseForm() {
                 <Button
                   type="button"
                   onClick={() => {
-                    // Basic URL validation
                     try {
                       const url = new URL(videoLinkInput);
                       if (!/^https?:\/\//.test(videoLinkInput)) {
@@ -1004,24 +987,6 @@ export default function CreateCauseForm() {
             Back
           </Button>
           <div className="flex gap-2">
-            {/* REMOVE THIS TEST BUTTON IN PRODUCTION */}
-            {/* <Button 
-              type="button" 
-              variant="outline" 
-              onClick={async () => {
-                try {
-                  await sendIncompleteCauseSetupEmail({
-                    continueUrl: `${window.location.origin}/create-cause`
-                  });
-                  alert("Test email sent successfully!");
-                } catch (error) {
-                  alert("Failed to send test email");
-                }
-              }}
-            >
-              Test Incomplete Cause Email
-            </Button> */}
-
             {currentStep < 5 ? (
               <Button type="button" onClick={nextStep}>
                 Next

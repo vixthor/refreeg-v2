@@ -1,7 +1,5 @@
-// User roles
 export type UserRole = "admin" | "manager" | "user";
 
-// Role
 export interface Role {
   id: string;
   user_id: string;
@@ -10,7 +8,6 @@ export interface Role {
   updated_at: string;
 }
 
-// User with role
 export interface UserWithRole {
   id: string;
   email: string;

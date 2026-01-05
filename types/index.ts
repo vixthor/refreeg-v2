@@ -1,4 +1,3 @@
-// Export all types from their respective files
 export * from "./common-types";
 export * from "./profile-types";
 export * from "./cause-types";

@@ -10,7 +10,6 @@ export function useCause() {
   const router = useRouter();
   const queryClient = useQueryClient();
 
-  // CREATE
   const createMutation = useMutation({
     mutationFn: ({
       userId,
@@ -36,7 +35,6 @@ export function useCause() {
     },
   });
 
-  // UPDATE
   const updateMutation = useMutation({
     mutationFn: ({
       causeId,
@@ -64,7 +62,6 @@ export function useCause() {
     },
   });
 
-  // DELETE
   const deleteMutation = useMutation({
     mutationFn: (causeId: string) => deleteCause(causeId),
     onSuccess: () => {
@@ -84,7 +81,6 @@ export function useCause() {
     },
   });
 
-  // Wrappers
   const createUserCause = async (userId: string, causeData: CauseFormData) => {
     return createMutation.mutateAsync({ userId, causeData });
   };

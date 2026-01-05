@@ -8,7 +8,7 @@ import Hero from "@/components/businesses/hero";
 
 export default function Business() {
   return (
-    <div className="flex flex-col gap-6 md:gap-10 lg:gap-16"> {/* 👈 adds vertical space */}
+    <div className="flex flex-col gap-6 md:gap-10 lg:gap-16">
       <Hero />
       <Numbers />
       <SmartCrowdfund />
