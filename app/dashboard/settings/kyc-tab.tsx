@@ -123,7 +123,6 @@ export function KycTab({ profile, user }: KycTabProps) {
 
   return (
     <div className="space-y-6">
-      {/* Status Card */}
       <Card className="shadow-lg">
         <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50">
           <CardTitle className="flex items-center gap-3">
@@ -147,7 +146,6 @@ export function KycTab({ profile, user }: KycTabProps) {
         </CardContent>
       </Card>
 
-      {/* KYC Details */}
       {kycData && (
         <Card className="shadow-lg">
           <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50">
@@ -160,9 +158,7 @@ export function KycTab({ profile, user }: KycTabProps) {
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-6">
-            {/* Personal & Address Info */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Personal */}
               <div className="space-y-4">
                 <h4 className="font-semibold text-sm text-gray-600 uppercase tracking-wide">
                   Personal Information
@@ -190,7 +186,6 @@ export function KycTab({ profile, user }: KycTabProps) {
                 </div>
               </div>
 
-              {/* Address */}
               <div className="space-y-4">
                 <h4 className="font-semibold text-sm text-gray-600 uppercase tracking-wide">
                   Address Information
@@ -235,7 +230,6 @@ export function KycTab({ profile, user }: KycTabProps) {
 
             <Separator className="my-6" />
 
-            {/* Document Preview */}
             <div className="space-y-4">
               <h4 className="font-semibold text-sm text-gray-600 uppercase tracking-wide">
                 Document Preview
@@ -333,7 +327,6 @@ export function KycTab({ profile, user }: KycTabProps) {
         </Card>
       )}
 
-      {/* Action Buttons */}
       <Card className="shadow-lg">
         <CardContent className="pt-6">
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
