@@ -5,7 +5,8 @@ import { toast } from "@/components/ui/use-toast";
 
 export function useNotifications() {
   const [isSupported, setIsSupported] = useState(false);
-  const [permission, setPermission] = useState<NotificationPermission>("default");
+  const [permission, setPermission] =
+    useState<NotificationPermission>("default");
 
   useEffect(() => {
     setIsSupported("Notification" in window);
@@ -16,7 +17,7 @@ export function useNotifications() {
 
   const requestPermission = async () => {
     if (!isSupported) return false;
-    
+
     try {
       const permission = await Notification.requestPermission();
       setPermission(permission);

@@ -23,7 +23,6 @@ export default async function EditPetitionPage({
     redirect("/dashboard/petitions");
   }
 
-  // Check if the user owns this petition
   if (petition.user_id !== user.id) {
     redirect("/dashboard/petitions");
   }

@@ -29,10 +29,7 @@ export function useBank({ initialData, userId }: UseBankProps) {
   const [hasUserInteracted, setHasUserInteracted] = useState(false);
   const lastInitialDataRef = useRef<string>("");
 
-  // Update form data when initialData changes (e.g., when profile is loaded/refreshed)
-  // Only update if user hasn't interacted with the form yet, to avoid overwriting user input
   useEffect(() => {
-    // Create a key from initialData to detect changes
     const currentKey = JSON.stringify({
       account_number: initialData?.account_number,
       bank_name: initialData?.bank_name,
@@ -40,7 +37,6 @@ export function useBank({ initialData, userId }: UseBankProps) {
       sub_account_code: initialData?.sub_account_code,
     });
 
-    // Only update if initialData has actually changed and user hasn't interacted
     if (
       initialData &&
       !hasUserInteracted &&
@@ -56,7 +52,6 @@ export function useBank({ initialData, userId }: UseBankProps) {
     }
   }, [initialData, hasUserInteracted]);
 
-  // Fetch banks using useEffect
   useEffect(() => {
     const fetchBanks = async () => {
       setIsLoadingBanks(true);
@@ -69,7 +64,7 @@ export function useBank({ initialData, userId }: UseBankProps) {
         }
 
         const banksList = result.data;
-        // Deduplicate banks list
+
         const uniqueBanks = banksList.reduce(
           (
             acc: { name: string; code: string }[],
@@ -99,7 +94,6 @@ export function useBank({ initialData, userId }: UseBankProps) {
     fetchBanks();
   }, []);
 
-  // Account verification function
   const verifyAccount = useCallback(
     async (accountNumber: string, bankCode: string) => {
       try {
@@ -143,10 +137,7 @@ export function useBank({ initialData, userId }: UseBankProps) {
     []
   );
 
-  // Improved useEffect for account verification
-  // Only verify when user actively changes the fields, not on initial load
   useEffect(() => {
-    // Skip verification if user hasn't interacted with the form yet (initial load)
     if (!hasUserInteracted) return;
 
     if (formData.accountNumber && formData.bankName && banks.length > 0) {
@@ -209,10 +200,8 @@ export function useBank({ initialData, userId }: UseBankProps) {
         sub_account_code: sub_account_code.subaccount_code,
       });
 
-      // Update React Query cache with the updated profile
       queryClient.setQueryData(["profile", userId], updatedProfile);
 
-      // Reset user interaction flag so form can sync with updated profile data
       setHasUserInteracted(false);
       lastInitialDataRef.current = JSON.stringify({
         account_number: updatedProfile.account_number,

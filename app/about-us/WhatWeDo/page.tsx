@@ -5,12 +5,12 @@ import WhyChooseRefreeg from "./_components/WhyChooseRefreeg";
 import MakeaDifference from "./_components/MakeaDifference";
 
 export default function WhatWeDo() {
-    return (
-        <div className="w-full">
-            <Hero />
-            <WhyChooseRefreeg />
-            <MakeaDifference />
-            <HowDoWeAchieveThis />        
-        </div>
-    )
+  return (
+    <div className="w-full">
+      <Hero />
+      <WhyChooseRefreeg />
+      <MakeaDifference />
+      <HowDoWeAchieveThis />
+    </div>
+  );
 }

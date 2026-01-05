@@ -6,7 +6,6 @@ function OurStory() {
   return (
     <section className=" text-white py-16 px-4">
       <div className="container mx-auto bg-[#0F2A4E] p-8 md:p-12 rounded-lg h-auto max-w-6xl">
-        {/* Header: badge + title above both columns */}
         <div className="mb-12 flex flex-col items-center justify-center space-x-4">
           <div className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-full text-sm font-medium">
             <FaStairs className="w-6 h-6" />
@@ -17,9 +16,7 @@ function OurStory() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-          {/* Left Content */}
           <div className="space-y-8">
-            {/* Story Content */}
             <div className="space-y-4 text-gray-300 leading-relaxed text-md">
               <p>
                 RefreeG was born out of a simple yet powerful idea— to create a
@@ -52,7 +49,6 @@ function OurStory() {
             </div>
           </div>
 
-          {/* Right Content - Illustration */}
           <div className="flex items-center justify-center lg:justify-end">
             <div className="relative w-full max-w-lg h-64 md:h-80 lg:h-96">
               <Image

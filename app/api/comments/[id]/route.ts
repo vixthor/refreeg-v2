@@ -24,7 +24,6 @@ export async function DELETE(
     const isPetition = entityType === "petition";
     const table = isPetition ? "petition_comments" : "comments";
 
-    // Check if comment exists and user owns it
     const { data: comment, error: fetchError } = await supabase
       .from(table)
       .select("user_id")
@@ -42,10 +41,8 @@ export async function DELETE(
       );
     }
 
-    // Delete all replies first
     await supabase.from(table).delete().eq("parent_id", commentId);
 
-    // Then delete the comment
     const { error } = await supabase.from(table).delete().eq("id", commentId);
 
     if (error) throw error;
@@ -91,7 +88,6 @@ export async function PUT(
     const isPetition = entityType === "petition";
     const table = isPetition ? "petition_comments" : "comments";
 
-    // Check if comment exists and user owns it
     const { data: comment, error: fetchError } = await supabase
       .from(table)
       .select("user_id")
