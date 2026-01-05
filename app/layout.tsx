@@ -8,6 +8,7 @@ import { Footer } from "@/components/footer";
 import { Toaster } from "@/components/ui/toaster";
 import { Providers } from "./providers";
 import NavigationLoader from "@/components/NavigationLoader";
+import { KYCBanner } from "@/components/kyc-banner"; // Add this import
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -18,10 +19,8 @@ export default function RootLayout({
 }) {
   const pathname = usePathname();
 
-  // Define routes where you DON'T want Header and Footer
   const noLayoutRoutes = ["/auth/signin", "/auth/signup", "/onboarding"];
 
-  // Check if current path matches one of them
   const hideLayout = noLayoutRoutes.some((route) => pathname.startsWith(route));
 
   return (
@@ -29,6 +28,8 @@ export default function RootLayout({
       <body className={inter.className}>
         <Providers>
           {!hideLayout && <Header />}
+          {/* Add KYC Banner here - will show on all pages for unverified users */}
+          {!hideLayout && <KYCBanner />}
           <div className="flex min-h-screen flex-col">
             <NavigationLoader />
             <main className="flex-1">{children}</main>
