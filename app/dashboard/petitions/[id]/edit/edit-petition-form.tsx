@@ -47,6 +47,7 @@ import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const currencies = [{ id: "SIGNATURES", name: "Signatures" }];
+const MAX_DURATION_DAYS = 180;
 
 type FormData = {
   title: string;
@@ -437,7 +438,7 @@ export default function EditPetitionForm({ petition }: EditPetitionFormProps) {
               <h3 className="text-lg font-medium">Petition Duration</h3>
               <p className="text-sm text-muted-foreground">
                 Select when your petition should start and end. Maximum duration
-                is 60 days.
+                is <strong>{MAX_DURATION_DAYS} days</strong>.
               </p>
             </div>
 
@@ -855,8 +856,8 @@ function validateForm(formData: FormData): FormErrors {
     errors.endDate = "End date is required";
   } else if (formData.startDate && formData.endDate) {
     const daysDiff = differenceInDays(formData.endDate, formData.startDate);
-    if (daysDiff > 60) {
-      errors.endDate = "Petition duration cannot exceed 60 days";
+    if (daysDiff > MAX_DURATION_DAYS) {
+      errors.endDate = `Petition duration cannot exceed ${MAX_DURATION_DAYS} days`;
     }
     if (daysDiff < 1) {
       errors.endDate = "End date must be after start date";

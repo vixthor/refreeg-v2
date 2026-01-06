@@ -48,6 +48,7 @@ import MultimediaCarousel from "@/components/MultimediaCarousel";
 import { sendCauseEditedEmail } from "@/services/mail";
 
 const currencies = [{ id: "NGN", name: "Naira (₦)" }];
+const MAX_DURATION_DAYS = 180;
 
 type FormData = {
   title: string;
@@ -434,8 +435,8 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
             <div className="space-y-2">
               <h3 className="text-lg font-medium">Cause Duration</h3>
               <p className="text-sm text-muted-foreground">
-                Select when your cause should start and end. Maximum duration is
-                60 days.
+                Select when your cause should start and end. Maximum duration is{" "}
+                <strong>{MAX_DURATION_DAYS} days</strong>.
               </p>
             </div>
 
@@ -844,8 +845,8 @@ function validateForm(formData: FormData): FormErrors {
     errors.endDate = "End date is required";
   } else if (formData.startDate && formData.endDate) {
     const daysDiff = differenceInDays(formData.endDate, formData.startDate);
-    if (daysDiff > 60) {
-      errors.endDate = "Cause duration cannot exceed 60 days";
+    if (daysDiff > MAX_DURATION_DAYS) {
+      errors.endDate = `Cause duration cannot exceed ${MAX_DURATION_DAYS} days`;
     }
     if (daysDiff < 1) {
       errors.endDate = "End date must be after start date";

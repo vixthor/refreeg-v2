@@ -43,6 +43,7 @@ import { cn } from "@/lib/utils";
 import MultimediaCarousel from "@/components/MultimediaCarousel";
 
 const currencies = [{ id: "SIGNATURES", name: "Signatures" }];
+const MAX_DURATION_DAYS = 180;
 
 type FormData = {
   title: string;
@@ -121,8 +122,8 @@ const validateForm = (formData: FormData): FormErrors => {
     errors.endDate = "End date is required";
   } else if (formData.startDate && formData.endDate) {
     const daysDiff = differenceInDays(formData.endDate, formData.startDate);
-    if (daysDiff > 60) {
-      errors.endDate = "Petition duration cannot exceed 60 days";
+    if (daysDiff > MAX_DURATION_DAYS) {
+      errors.endDate = `Petition duration cannot exceed ${MAX_DURATION_DAYS} days`;
     }
     if (daysDiff < 1) {
       errors.endDate = "End date must be after start date";
@@ -609,7 +610,7 @@ export default function CreatePetitionForm() {
               <h3 className="text-lg font-medium">Petition Duration</h3>
               <p className="text-sm text-muted-foreground">
                 Select when your petition should start and end. Maximum duration
-                is 60 days.
+                is <strong>{MAX_DURATION_DAYS} days</strong>.
               </p>
             </div>
 
@@ -677,10 +678,11 @@ export default function CreatePetitionForm() {
                         const isBeforeStart = formData.startDate
                           ? isBefore(date, formData.startDate)
                           : false;
-                        const isOver60Days = formData.startDate
-                          ? differenceInDays(date, formData.startDate) > 60
+                        const isOverMaxDays = formData.startDate
+                          ? differenceInDays(date, formData.startDate) >
+                            MAX_DURATION_DAYS
                           : false;
-                        return isPast || isBeforeStart || isOver60Days;
+                        return isPast || isBeforeStart || isOverMaxDays;
                       }}
                       initialFocus
                     />
