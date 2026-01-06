@@ -32,7 +32,6 @@ const MobileSlider = () => {
 
   if (isInView) {
     (async () => {
-      // All images appear together
       await Promise.all(
         imageControls.map((c) =>
           c.start({
@@ -43,7 +42,6 @@ const MobileSlider = () => {
         )
       );
 
-      // Slider movement for mobile
       const totalWidth = HERO_IMAGES.length * (200 + IMAGE_GAP);
       sliderControls.start({
         x: -totalWidth,
@@ -89,7 +87,6 @@ const DesktopSlider = () => {
 
   if (isInView) {
     (async () => {
-      // Sequential appearance
       for (let control of imageControls) {
         await control.start({
           opacity: 1,
@@ -98,7 +95,6 @@ const DesktopSlider = () => {
         });
       }
 
-      // Slider movement for desktop
       const totalWidth = HERO_IMAGES.length * (325 + IMAGE_GAP);
       sliderControls.start({
         x: -totalWidth,
@@ -143,7 +139,6 @@ const Hero = () => {
       className="w-full bg-background flex flex-col items-center justify-center mb-10"
       id="home"
     >
-      {/* TEXT */}
       <div className="flex flex-col gap-4 max-w-[925px] w-full justify-center items-center text-center">
         <motion.div
           className="flex flex-row flex-wrap items-center gap-2 py-2 px-3"
@@ -197,14 +192,12 @@ const Hero = () => {
         </div>
       </div>
 
-      {/* SLIDER */}
       <div className="relative w-full bg-white overflow-hidden py-12">
         <div className="relative z-10 w-full overflow-hidden">
-          {/* Mobile version */}
           <div className="block md:hidden">
             <MobileSlider />
           </div>
-          {/* Desktop version */}
+
           <div className="hidden md:block">
             <DesktopSlider />
           </div>

@@ -26,9 +26,7 @@ import {
 export async function TrendingCauses() {
   const trendingCauses = (await listCauses())
     .filter((c) => (c.days_active ?? 0) > 0 && c.status !== ("expired" as any))
-    .sort(
-    (a, b) => b.raised - a.raised
-  );
+    .sort((a, b) => b.raised - a.raised);
 
   if (!trendingCauses || trendingCauses.length === 0) {
     return (

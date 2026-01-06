@@ -23,7 +23,6 @@ export async function GET(request: Request) {
 
     if (error) throw error;
 
-    // Get replies count for each reply (for nested replies)
     const repliesWithCounts = await Promise.all(
       (replies || []).map(async (reply) => {
         const { count } = await supabase

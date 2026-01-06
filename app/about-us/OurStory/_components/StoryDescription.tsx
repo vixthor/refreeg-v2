@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { FC } from "react";
 import Link from "next/link";
-import { ChevronRight } from "lucide-react"; // Import the ChevronRight2 image
+import { ChevronRight } from "lucide-react";
 import { H3, P } from "@/components/typograpy";
 
 interface StoryDescriptionProps {
@@ -11,7 +11,12 @@ interface StoryDescriptionProps {
   linkHref: string;
 }
 
-export const StoryDescription: FC<StoryDescriptionProps> = ({ imageSrc, title, points, linkHref }) => (
+export const StoryDescription: FC<StoryDescriptionProps> = ({
+  imageSrc,
+  title,
+  points,
+  linkHref,
+}) => (
   <div className="lg:flex text-left md:text-center lg:text-center mb-16 pb-10 border-b justify-between">
     <div className="self-center hidden lg:block">
       <Image src={imageSrc} alt={title} width={20} height={20} />
@@ -32,7 +37,10 @@ export const StoryDescription: FC<StoryDescriptionProps> = ({ imageSrc, title, p
       ))}
     </div>
     <div className="flex justify-center items-center mt-3">
-      <Link href={linkHref} className="flex self-center underline text-blue-900 text-lg font-semibold">
+      <Link
+        href={linkHref}
+        className="flex self-center underline text-blue-900 text-lg font-semibold"
+      >
         Get Started <ChevronRight />
       </Link>
     </div>

@@ -179,7 +179,6 @@ async function checkAndSendPetitionGoalReachedEmail(petitionId: string) {
 
     if (creatorProfile?.email && creatorProfile?.full_name) {
       try {
-        // Get petition title for the email
         const { data: petitionWithTitle } = await supabase
           .from("petitions")
           .select("title")
@@ -260,7 +259,6 @@ export async function listUserSignatures(
     .order("created_at", { ascending: false });
 
   if (timeframe === "recent") {
-    // Get signatures from the last 30 days
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     query = query.gte("created_at", thirtyDaysAgo.toISOString());
@@ -272,8 +270,6 @@ export async function listUserSignatures(
     console.error("Error listing user signatures:", error);
     throw error;
   }
-
-  // Transform the response to match our SignatureWithPetition type
   return data.map((item) => ({
     ...item,
     petition: {

@@ -13,7 +13,6 @@ import { toast } from "@/components/ui/use-toast";
 export function useProfile(userId: string | undefined) {
   const queryClient = useQueryClient();
 
-  // Query for fetching profile data
   const {
     data: profile,
     isLoading,
@@ -24,7 +23,6 @@ export function useProfile(userId: string | undefined) {
     enabled: !!userId,
   });
 
-  // Mutation for updating profile
   const updateProfileMutation = useMutation({
     mutationFn: (profileData: ProfileFormData) =>
       updateProfile(userId!, profileData),
@@ -42,7 +40,6 @@ export function useProfile(userId: string | undefined) {
         errorMessage =
           "Username is already taken. Please choose a different username.";
       } else if (error.message && typeof error.message === "string") {
-        // Use the error message if it's a string, but limit length
         errorMessage =
           error.message.length > 100
             ? "An error occurred while updating your profile."
@@ -57,7 +54,6 @@ export function useProfile(userId: string | undefined) {
     },
   });
 
-  // Mutation for updating profile photo
   const updateProfilePhotoMutation = useMutation({
     mutationFn: (file: File) => updateProfilePhoto(userId!, file),
     onSuccess: (photoUrl) => {
@@ -80,7 +76,6 @@ export function useProfile(userId: string | undefined) {
     },
   });
 
-  // Mutation for updating bank details
   const updateBankDetailsMutation = useMutation({
     mutationFn: (bankData: BankDetailsFormData) =>
       updateBankDetails(userId!, bankData),

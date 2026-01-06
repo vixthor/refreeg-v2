@@ -16,7 +16,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create subaccount using server-side Paystack service
     const subaccount = await Paystack.createSubaccount(data);
 
     return NextResponse.json({

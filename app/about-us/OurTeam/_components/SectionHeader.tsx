@@ -2,7 +2,6 @@
 
 import { motion } from "framer-motion";
 
-// Animation variants
 const fadeInUp = {
   hidden: { opacity: 0, y: 30 },
   show: (i: number) => ({
@@ -13,29 +12,36 @@ const fadeInUp = {
 };
 
 type SectionHeaderProps = {
-  title: string
-  highlight?: string
-  subtitle?: string
-  align?: 'left' | 'center' | 'right'
-  className?: string
-  titleClassName?: string
-  subtitleClassName?: string
-}
+  title: string;
+  highlight?: string;
+  subtitle?: string;
+  align?: "left" | "center" | "right";
+  className?: string;
+  titleClassName?: string;
+  subtitleClassName?: string;
+};
 
 export default function SectionHeader({
   title,
   highlight,
   subtitle,
-  align = 'center',
-  className = '',
-  titleClassName = '',
-  subtitleClassName = '',
+  align = "center",
+  className = "",
+  titleClassName = "",
+  subtitleClassName = "",
 }: SectionHeaderProps) {
-  const alignment = align === 'left' ? 'items-start text-left' : align === 'right' ? 'items-end text-right' : 'items-center text-center'
+  const alignment =
+    align === "left"
+      ? "items-start text-left"
+      : align === "right"
+      ? "items-end text-right"
+      : "items-center text-center";
 
   return (
-    <div className={`flex flex-col ${alignment} justify-center gap-[15px] ${className}`}>
-      <motion.h2 
+    <div
+      className={`flex flex-col ${alignment} justify-center gap-[15px] ${className}`}
+    >
+      <motion.h2
         className={`text-[64px] font-montserrat font-bold ${titleClassName}`}
         custom={0}
         variants={fadeInUp}
@@ -44,10 +50,10 @@ export default function SectionHeader({
         viewport={{ once: true }}
       >
         {title}
-        {highlight ? <span className='text-gray-400'> {highlight}</span> : null}
+        {highlight ? <span className="text-gray-400"> {highlight}</span> : null}
       </motion.h2>
       {subtitle ? (
-        <motion.p 
+        <motion.p
           className={`text-2xl ${subtitleClassName}`}
           custom={1}
           variants={fadeInUp}
@@ -59,5 +65,5 @@ export default function SectionHeader({
         </motion.p>
       ) : null}
     </div>
-  )
+  );
 }

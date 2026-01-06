@@ -47,6 +47,7 @@ import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const currencies = [{ id: "SIGNATURES", name: "Signatures" }];
+const MAX_DURATION_DAYS = 180;
 
 type FormData = {
   title: string;
@@ -110,7 +111,7 @@ export default function EditPetitionForm({ petition }: EditPetitionFormProps) {
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    // Clear error when user starts typing
+
     if (errors[name as keyof FormErrors]) {
       setErrors((prev) => ({ ...prev, [name]: undefined }));
     }
@@ -118,14 +119,14 @@ export default function EditPetitionForm({ petition }: EditPetitionFormProps) {
 
   const handleSelectChange = (name: string, value: string) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
-    // Clear error when user makes a selection
+
     if (errors[name as keyof FormErrors]) {
       setErrors((prev) => ({ ...prev, [name]: undefined }));
     }
   };
 
   const handleImageUpload = (files: File[]) => {
-    const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB in bytes
+    const MAX_FILE_SIZE = 100 * 1024 * 1024;
     const file = files[0];
 
     if (file && file.size > MAX_FILE_SIZE) {
@@ -152,7 +153,7 @@ export default function EditPetitionForm({ petition }: EditPetitionFormProps) {
     field: "startDate" | "endDate"
   ) => {
     setFormData((prev) => ({ ...prev, [field]: date }));
-    // Clear error when user selects a date
+
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: undefined }));
     }
@@ -186,7 +187,7 @@ export default function EditPetitionForm({ petition }: EditPetitionFormProps) {
   };
 
   const handleMultimediaUpload = (files: File[]) => {
-    const MAX_TOTAL_SIZE = 100 * 1024 * 1024; // 100MB in bytes
+    const MAX_TOTAL_SIZE = 100 * 1024 * 1024;
     const currentSize =
       formData.multimedia && formData.multimedia.length > 0
         ? formData.multimedia.reduce((acc, file) => acc + file.size, 0)
@@ -232,14 +233,12 @@ export default function EditPetitionForm({ petition }: EditPetitionFormProps) {
           !currentErrors.title && !currentErrors.category && !currentErrors.goal
         );
       case 2:
-        // Check for section errors
         if (currentErrors.sections) {
-          // If there are section errors, check if any sections have errors
           return !currentErrors.sections.some(
             (err) => err.heading || err.description
           );
         }
-        // If there are no section errors in the currentErrors object, validate directly
+
         return formData.sections.every(
           (section) =>
             section.heading.trim() !== "" && section.description.trim() !== ""
@@ -249,7 +248,7 @@ export default function EditPetitionForm({ petition }: EditPetitionFormProps) {
       case 4:
         return !currentErrors.coverImage;
       case 5:
-        return true; // Media step is optional
+        return true;
       default:
         return true;
     }
@@ -265,7 +264,6 @@ export default function EditPetitionForm({ petition }: EditPetitionFormProps) {
     e.preventDefault();
     if (!user) return;
 
-    // Only allow submit on last step (step 6)
     if (currentStep < 6) {
       nextStep();
       return;
@@ -273,10 +271,8 @@ export default function EditPetitionForm({ petition }: EditPetitionFormProps) {
 
     const validationErrors = validateForm(formData);
 
-    // Check if there are any validation errors
     const hasErrors = Object.keys(validationErrors).some((key) => {
       if (key === "sections" && validationErrors.sections) {
-        // For sections, check if any section has actual errors
         return validationErrors.sections.some(
           (section) => Object.keys(section).length > 0
         );
@@ -442,7 +438,7 @@ export default function EditPetitionForm({ petition }: EditPetitionFormProps) {
               <h3 className="text-lg font-medium">Petition Duration</h3>
               <p className="text-sm text-muted-foreground">
                 Select when your petition should start and end. Maximum duration
-                is 60 days.
+                is <strong>{MAX_DURATION_DAYS} days</strong>.
               </p>
             </div>
 
@@ -617,7 +613,7 @@ export default function EditPetitionForm({ petition }: EditPetitionFormProps) {
                   </div>
                 )}
             </div>
-            {/* Video Links */}
+
             <div className="mt-8 space-y-2">
               <Label>Video Links (YouTube, TikTok, etc.)</Label>
               <div className="flex gap-2">
@@ -631,7 +627,6 @@ export default function EditPetitionForm({ petition }: EditPetitionFormProps) {
                 <Button
                   type="button"
                   onClick={() => {
-                    // Basic URL validation
                     try {
                       const url = new URL(videoLinkInput);
                       if (!/^https?:\/\//.test(videoLinkInput)) {
@@ -828,7 +823,6 @@ function validateForm(formData: FormData): FormErrors {
     errors.title = "Title must be at least 5 characters long";
   }
 
-  // Validate sections
   if (formData.sections && formData.sections.length > 0) {
     const sectionErrorsArray = formData.sections.map((section) => {
       const sectionErrors: { heading?: string; description?: string } = {};
@@ -839,7 +833,6 @@ function validateForm(formData: FormData): FormErrors {
       return sectionErrors;
     });
 
-    // Only add sections errors if there are actual errors
     if (sectionErrorsArray.some((err) => Object.keys(err).length > 0)) {
       errors.sections = sectionErrorsArray;
     }
@@ -863,8 +856,8 @@ function validateForm(formData: FormData): FormErrors {
     errors.endDate = "End date is required";
   } else if (formData.startDate && formData.endDate) {
     const daysDiff = differenceInDays(formData.endDate, formData.startDate);
-    if (daysDiff > 60) {
-      errors.endDate = "Petition duration cannot exceed 60 days";
+    if (daysDiff > MAX_DURATION_DAYS) {
+      errors.endDate = `Petition duration cannot exceed ${MAX_DURATION_DAYS} days`;
     }
     if (daysDiff < 1) {
       errors.endDate = "End date must be after start date";

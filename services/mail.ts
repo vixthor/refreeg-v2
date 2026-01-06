@@ -16,7 +16,7 @@ export async function getDeviceInfo() {
   if (/Linux/.test(ua)) return "Linux";
   return "Other";
 }
-// Configure mail transporter
+
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || "smtp.gmail.com",
   port: Number(process.env.SMTP_PORT) || 587,
@@ -27,17 +27,14 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-// Template directory path
 const TEMPLATE_DIR = path.join(process.cwd(), "services", "templates");
 
-// Load template function
 function loadTemplate(templateName: string): HandlebarsTemplateDelegate {
   const templatePath = path.join(TEMPLATE_DIR, `${templateName}.html`);
   const templateSource = fs.readFileSync(templatePath, "utf-8");
   return Handlebars.compile(templateSource);
 }
 
-// Mail sending interface
 interface SendMailOptions {
   to: string;
   subject: string;
@@ -48,7 +45,6 @@ interface SendMailOptions {
   bcc?: string[];
 }
 
-// Send email function
 export async function sendMail({
   to,
   subject,
@@ -61,15 +57,12 @@ export async function sendMail({
   bcc,
 }: SendMailOptions) {
   try {
-    // Load and compile the template
     const template = loadTemplate(templateName);
     const html = template(context);
 
     console.log("Email template loaded:", html);
-
     console.log("Sending email with context:", context);
 
-    // Send email
     const info = await transporter.sendMail({
       from,
       to,
@@ -87,7 +80,6 @@ export async function sendMail({
   }
 }
 
-// Convenience function for sending "cause under review" emails
 export async function sendCauseUnderReviewEmail(context: {
   causeName: string;
   reviewTimeframe?: string;
@@ -115,7 +107,6 @@ export async function sendCauseUnderReviewEmail(context: {
   });
 }
 
-// Convenience function for sending "petition under review" emails
 export async function sendPetitionUnderReviewEmail(context: {
   petitionName: string;
   reviewTimeframe?: string;
@@ -138,7 +129,6 @@ export async function sendPetitionUnderReviewEmail(context: {
   });
 }
 
-// Send petition approved email to a specific user (by userId)
 export async function sendPetitionApprovedEmailForUser(
   userId: string,
   context: { petitionName: string }
@@ -157,12 +147,11 @@ export async function sendPetitionApprovedEmailForUser(
       ...context,
       userName: profile.full_name || "User",
       organizationName: "Refreeg",
-      petitionLink, // Add this
+      petitionLink,
     },
   });
 }
 
-// Send petition rejected email to a specific user (by userId)
 export async function sendPetitionRejectedEmailForUser(
   userId: string,
   context: { petitionName: string; rejectionReason?: string }
@@ -181,7 +170,7 @@ export async function sendPetitionRejectedEmailForUser(
       ...context,
       userName: profile.full_name || "User",
       organizationName: "Refreeg",
-      petitionResubmitLink, // Add this
+      petitionResubmitLink,
     },
   });
 }
@@ -196,8 +185,6 @@ export async function sendBankAccountAddedEmail(context: {
     throw new Error("User not found");
   }
   const profile = await getProfile(user.id);
-
-  // Add current year to the context
   const currentYear = new Date().getFullYear();
   return sendMail({
     to: profile?.email || "",
@@ -211,7 +198,6 @@ export async function sendBankAccountAddedEmail(context: {
   });
 }
 
-// KYC Email Notifications
 export async function sendKycSubmittedEmail(
   userEmail: string,
   userName: string
@@ -263,7 +249,6 @@ export async function sendKycRejectedEmail(
   });
 }
 
-// Send cause submission notification to admins and managers
 export async function sendCauseSubmissionAdminNotification(
   userName: string,
   userEmail: string,
@@ -321,7 +306,6 @@ export async function sendCauseSubmissionAdminNotification(
   }
 }
 
-// Send petition submission notification to admins and managers
 export async function sendPetitionSubmissionAdminNotification(
   userName: string,
   userEmail: string,
@@ -379,7 +363,6 @@ export async function sendPetitionSubmissionAdminNotification(
   }
 }
 
-// Convenience function for sending login notification emails
 export async function sendLoginNotificationEmail(context: {
   ipAddress?: string;
   device?: string;
@@ -420,8 +403,6 @@ export async function sendCauseEditedEmail({
     throw new Error("User not found");
   }
   const profile = await getProfile(user.id);
-
-  // Add current year to the context
   const currentYear = new Date().getFullYear();
 
   return sendMail({
@@ -433,7 +414,7 @@ export async function sendCauseEditedEmail({
       causeName,
       reviewTimeframe,
       dashboardUrl,
-      currentYear, // Add this line
+      currentYear,
     },
   });
 }
@@ -452,7 +433,6 @@ export const sendTestEmail = async (email: string) => {
   });
 };
 
-// Send incomplete cause setup reminder email
 export async function sendIncompleteCauseSetupEmail(context: {
   continueUrl: string;
 }) {
@@ -475,7 +455,6 @@ export async function sendIncompleteCauseSetupEmail(context: {
   });
 }
 
-// Send incomplete KYC verification reminder email
 export async function sendIncompleteKycVerificationEmail(context: {
   continueUrl: string;
 }) {
@@ -497,7 +476,6 @@ export async function sendIncompleteKycVerificationEmail(context: {
   });
 }
 
-// Send incomplete petition draft reminder email
 export async function sendIncompletePetitionDraftEmail(context: {
   continueUrl: string;
 }) {
@@ -520,7 +498,6 @@ export async function sendIncompletePetitionDraftEmail(context: {
   });
 }
 
-// Send unfinished donation attempt reminder email
 export async function sendUnfinishedDonationEmail(context: {
   causeName: string;
   continueUrl: string;
@@ -544,7 +521,6 @@ export async function sendUnfinishedDonationEmail(context: {
   });
 }
 
-// Send welcome email to specific user (for use in signup flow)
 export async function sendWelcomeEmailToUser(
   userEmail: string,
   userName: string,
@@ -562,7 +538,6 @@ export async function sendWelcomeEmailToUser(
   });
 }
 
-// Send petition signed email to specific user
 export async function sendPetitionSignedEmailToUser(
   userEmail: string,
   userName: string,
@@ -584,7 +559,6 @@ export async function sendPetitionSignedEmailToUser(
   });
 }
 
-// Send notification to petition creator when someone signs
 export async function sendNewSignatureNotificationEmail(
   creatorEmail: string,
   creatorName: string,
@@ -604,12 +578,11 @@ export async function sendNewSignatureNotificationEmail(
       signerName,
       message: message || "No message provided",
       hasMessage: !!message,
-      currentYear: new Date().getFullYear(), // Added currentYear
+      currentYear: new Date().getFullYear(),
     },
   });
 }
 
-// Send notification to petition creator when petition goal is reached
 export async function sendPetitionGoalReachedEmail(
   creatorEmail: string,
   creatorName: string,
@@ -633,7 +606,6 @@ export async function sendPetitionGoalReachedEmail(
   });
 }
 
-// Send KYC submission notification to admins and managers
 export async function sendKycSubmissionAdminNotification(
   userEmail: string,
   userName: string,
@@ -648,7 +620,6 @@ export async function sendKycSubmissionAdminNotification(
     return { success: false, error: "No admin/manager emails found" };
   }
 
-  // Send email to all admins and managers
   const emailPromises = adminManagerEmails.map((email) =>
     sendMail({
       to: email,
