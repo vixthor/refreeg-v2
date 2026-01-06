@@ -19,7 +19,6 @@ export const usePayment = (): UsePaymentReturn => {
       setIsLoading(true);
       setError(null);
 
-      // Call our API route instead of the service directly
       const response = await fetch("/api/payments/initialize", {
         method: "POST",
         headers: {
@@ -34,10 +33,8 @@ export const usePayment = (): UsePaymentReturn => {
         throw new Error(result.error || "Failed to initialize payment");
       }
 
-      // Store the reference in localStorage for verification after redirect
       localStorage.setItem("payment_reference", result.data.reference);
 
-      // Redirect to Paystack payment page
       window.location.href = result.data.authorization_url;
     } catch (error) {
       console.error("Payment initialization failed:", error);
@@ -59,7 +56,6 @@ export const usePayment = (): UsePaymentReturn => {
         setIsLoading(true);
         setError(null);
 
-        // Call our API route instead of the service directly
         const response = await fetch("/api/payments/verify", {
           method: "POST",
           headers: {
@@ -75,7 +71,6 @@ export const usePayment = (): UsePaymentReturn => {
         }
 
         if (result.verified) {
-          // Clear the stored reference
           localStorage.removeItem("payment_reference");
           return true;
         } else {

@@ -25,7 +25,6 @@ export default function SignInPage() {
     e.preventDefault();
     setIsLoading(true);
 
-    // Show loading toast
     toast({
       title: "Signing you in...",
       description: "Please wait while we authenticate your account.",
@@ -33,10 +32,7 @@ export default function SignInPage() {
 
     try {
       await signIn(email, password);
-
-      // Success toast will be shown by the signIn function
     } catch (error) {
-      // Error toast will be shown by the signIn function
     } finally {
       setIsLoading(false);
     }
@@ -44,7 +40,6 @@ export default function SignInPage() {
 
   return (
     <div className="flex h-screen w-screen">
-      {/* Left side - White background with form */}
       <div className="flex md:w-2/5 w-full flex-col items-center justify-center bg-white px-8">
         <div className="w-full max-w-md">
           <div className="mb-8 text-center md:text-left">
@@ -167,7 +162,6 @@ export default function SignInPage() {
         </div>
       </div>
 
-      {/* Right side - Blue background with testimonial */}
       <div className="hidden md:flex md:w-3/5 items-center justify-center bg-[#003366] px-8">
         <AuthTestimonials />
       </div>

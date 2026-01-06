@@ -1,4 +1,3 @@
-// app/dashboard/crypto/page.tsx
 "use client";
 
 import {
@@ -23,9 +22,7 @@ export default function CryptoPage() {
       </div>
 
       <div className="grid gap-4 sm:gap-6">
-        <SolanaWalletForm />
-
-        {/* Additional crypto information */}
+        <SolanaWalletForm />=
         <Card>
           <CardHeader>
             <CardTitle className="text-lg sm:text-xl">

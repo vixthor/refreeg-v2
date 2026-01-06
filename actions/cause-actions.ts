@@ -40,7 +40,6 @@ export async function getCause(causeId: string): Promise<CauseWithUser | null> {
     .eq("id", causeId)
     .single();
 
-  // Check if user is admin or manager
   const isAdmin = user?.id ? await isAdminOrManager(user.id) : false;
 
   if (
@@ -59,7 +58,6 @@ export async function getCause(causeId: string): Promise<CauseWithUser | null> {
     throw error;
   }
 
-  // Transform the response to match our CauseWithUser type
   const cause = {
     ...data,
     user: {
@@ -73,7 +71,6 @@ export async function getCause(causeId: string): Promise<CauseWithUser | null> {
     video_links: data.video_links || [],
   } as unknown as CauseWithUser;
 
-  // Remove the nested objects that we've flattened
   delete (cause as any).profiles;
   delete (cause as any).cause_sections;
 
@@ -90,18 +87,15 @@ async function uploadImageToSupabase(
 ): Promise<string> {
   const supabase = await createClient();
 
-  // Generate a unique filename and sanitize it by removing special characters
   const sanitizedOriginalName = file.name.replace(/[^\w\s.-]/g, "_");
   const fileName = `${userId}-${Date.now()}-${type}-${sanitizedOriginalName}`;
 
-  // Choose the appropriate storage bucket based on the file type
   const bucket = file.type.startsWith("video/")
     ? "cause-videos"
     : "profile-photos";
 
   console.log("bucket", bucket);
 
-  // Upload the file to Supabase Storage
   const { data: uploadData, error: uploadError } = await supabase.storage
     .from(bucket)
     .upload(fileName, file, {
@@ -114,7 +108,6 @@ async function uploadImageToSupabase(
     throw uploadError;
   }
 
-  // Get the public URL
   const { data: urlData } = supabase.storage
     .from(bucket)
     .getPublicUrl(fileName);
@@ -130,7 +123,6 @@ export async function createCause(
 ): Promise<Cause> {
   const supabase = await createClient();
 
-  // Upload cover image if provided
   let coverImageUrl = null;
   if (causeData.coverImage) {
     coverImageUrl = await uploadImageToSupabase(
@@ -142,10 +134,8 @@ export async function createCause(
 
   console.log("Uploaded");
 
-  // Calculate days_active from start and end dates
   let daysActive = null;
   if (causeData.startDate && causeData.endDate) {
-    // Ensure we have valid Date objects
     const startDate =
       causeData.startDate instanceof Date
         ? causeData.startDate
@@ -155,7 +145,6 @@ export async function createCause(
         ? causeData.endDate
         : new Date(causeData.endDate);
 
-    // Validate that the dates are valid
     if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
       throw new Error("Invalid date format provided");
     }
@@ -165,7 +154,6 @@ export async function createCause(
     );
   }
 
-  // Upload multimedia files if they exist
   let multimediaUrls: string[] = [];
   if (
     causeData.multimedia &&
@@ -184,22 +172,21 @@ export async function createCause(
     }
   }
 
-  // Start a transaction
   const { data: cause, error: causeError } = await supabase
     .from("causes")
     .insert({
       user_id: userId,
       title: causeData.title,
-      // description: causeData.description, // <-- ensure this is included
+
       category: causeData.category,
       goal:
         typeof causeData.goal === "string"
           ? Number.parseFloat(causeData.goal)
           : causeData.goal,
-      status: "pending", // All causes start as pending
-      image: coverImageUrl, // Store the cover image URL
-      days_active: daysActive, // Store the calculated days active
-      multimedia: multimediaUrls, // Store image URLs as JSON array
+      status: "pending",
+      image: coverImageUrl,
+      days_active: daysActive,
+      multimedia: multimediaUrls,
       video_links: causeData.video_links || [],
     })
     .select()
@@ -210,7 +197,6 @@ export async function createCause(
     throw causeError;
   }
 
-  // Insert sections if they exist
   if (causeData.sections && causeData.sections.length > 0) {
     const sections = causeData.sections.map((section) => ({
       cause_id: cause.id,
@@ -228,7 +214,6 @@ export async function createCause(
     }
   }
 
-  // Notify admins/managers about the new cause submission
   try {
     const { data: profile } = await supabase
       .from("profiles")
@@ -250,7 +235,6 @@ export async function createCause(
     }
   } catch (error) {
     console.error("Error sending cause admin notification:", error);
-    // Do not throw; email failure should not break cause creation
   }
 
   revalidatePath("/dashboard/causes");
@@ -271,7 +255,6 @@ export async function updateCause(
     ? await uploadImageToSupabase(causeData.coverImage, userId, "cover")
     : causeData.image || null;
 
-  // Calculate days_active if dates are provided
   let daysActive = null;
   if (causeData.startDate && causeData.endDate) {
     const startDate =
@@ -292,7 +275,6 @@ export async function updateCause(
     );
   }
 
-  // Upload multimedia files if they exist
   let multimediaUrls: string[] = [];
   if (
     causeData.multimedia &&
@@ -311,7 +293,6 @@ export async function updateCause(
     }
   }
 
-  // Prepare the edit row for cause_edits
   const editData: any = {
     original_cause_id: causeId,
     user_id: userId,
@@ -339,7 +320,6 @@ export async function updateCause(
     throw error;
   }
 
-  // Insert sections if they exist
   if (causeData.sections && causeData.sections.length > 0) {
     const sections = causeData.sections.map((section) => ({
       cause_edit_id: data.id,
@@ -374,7 +354,6 @@ export async function listCauses(
     .select("*,profiles(full_name,email,profile_photo)")
     .order("created_at", { ascending: false });
 
-  // Apply filters
   if (options.category && options.category !== "all") {
     query = query.eq("category", options.category);
   }
@@ -382,7 +361,6 @@ export async function listCauses(
   if (options.status) {
     query = query.eq("status", options.status);
   } else {
-    // Default to approved causes for public listing
     if (!options.userId) {
       query = query.eq("status", "approved");
     }
@@ -392,7 +370,6 @@ export async function listCauses(
     query = query.eq("user_id", options.userId);
   }
 
-  // Apply pagination
   if (options.limit) {
     query = query.limit(options.limit);
   }
@@ -413,14 +390,12 @@ export async function listCauses(
 
   const causes = (data as Cause[]) || [];
 
-  // Auto-mark expired (days_active <= 0) and filter from public listings
   const nowExpired = causes.filter(
     (c) => (c.days_active ?? 0) <= 0 && c.status === ("approved" as any)
   );
 
   if (nowExpired.length > 0) {
     try {
-      // Update status to expired in DB for those items
       const ids = nowExpired.map((c) => c.id);
       await supabase.from("causes").update({ status: "expired" }).in("id", ids);
     } catch (e) {
@@ -428,7 +403,7 @@ export async function listCauses(
     }
   }
 
-  const isOwnerScoped = !!options.userId; // owner dashboard should still see their items
+  const isOwnerScoped = !!options.userId;
   const result = isOwnerScoped
     ? causes
     : causes.filter((c) => c.status !== ("expired" as any));
@@ -448,7 +423,6 @@ export async function countCauses(
     .from("causes")
     .select("id", { count: "exact", head: true });
 
-  // Apply filters
   if (options.category && options.category !== "all") {
     query = query.eq("category", options.category);
   }
@@ -456,7 +430,6 @@ export async function countCauses(
   if (options.status) {
     query = query.eq("status", options.status);
   } else {
-    // Default to approved causes for public listing
     if (!options.userId) {
       query = query.eq("status", "approved");
     }
@@ -487,7 +460,6 @@ export async function updateCauseStatus(
   const supabase = await createClient();
 
   if (status === "approved") {
-    // Get the latest pending edit for this cause
     const { data: edit, error: editError } = await supabase
       .from("cause_edits")
       .select("*")
@@ -503,7 +475,6 @@ export async function updateCauseStatus(
     }
 
     if (edit) {
-      // Copy edit fields into causes
       const updateData: any = {
         title: edit.title,
         category: edit.category,
@@ -528,13 +499,11 @@ export async function updateCauseStatus(
         throw updateError;
       }
 
-      // Remove the approved edit row
       await supabase.from("cause_edits").delete().eq("id", edit.id);
 
       revalidatePath("/dashboard/admin/causes");
       return updated as Cause;
     } else {
-      // No edit found, approve the main cause directly
       const { data: updated, error: updateError } = await supabase
         .from("causes")
         .update({
@@ -556,7 +525,6 @@ export async function updateCauseStatus(
   }
 
   if (status === "rejected") {
-    // Get the latest pending edit
     const { data: edit, error: editError } = await supabase
       .from("cause_edits")
       .select("*")
@@ -573,7 +541,6 @@ export async function updateCauseStatus(
         .eq("id", edit.id);
     }
 
-    // Optionally mark the main cause as rejected too
     const { data, error } = await supabase
       .from("causes")
       .update({
@@ -663,7 +630,6 @@ export async function getUserCausesWithStatus(
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
 
-  // Only apply status filter if status is provided and not empty
   if (status && status !== "all") {
     query = query.eq("status", status);
   }
@@ -695,7 +661,6 @@ export async function deleteCause(causeId: string): Promise<void> {
 export async function saveCauseShare(causeId: string): Promise<void> {
   const supabase = await createClient();
 
-  // Start a transaction
   const { error: shareError, data: causeData } = await supabase
     .from("causes")
     .select("shared")

@@ -27,17 +27,13 @@ export function SettingsItem({
         "bg-white",
         "transition-all duration-200 ease-out",
 
-        // Hover
         "hover:bg-gray-50 hover:border-gray-300 hover:shadow-sm",
 
-        // Active (click)
         "active:scale-[0.98] active:bg-gray-100",
 
-        // Focus (keyboard accessibility)
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
       )}
     >
-      {/* Left accent bar */}
       <span
         className={cn(
           "absolute left-0 top-0 h-full w-1 rounded-l-lg",

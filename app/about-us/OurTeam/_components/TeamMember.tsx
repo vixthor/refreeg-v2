@@ -1,10 +1,9 @@
 "use client";
 
-import Image from 'next/image'
-import React from 'react'
+import Image from "next/image";
+import React from "react";
 import { motion } from "framer-motion";
 
-// Animation variants
 const fadeInUp = {
   hidden: { opacity: 0, y: 30 },
   show: (i: number) => ({
@@ -15,22 +14,21 @@ const fadeInUp = {
 };
 
 type TeamMemberProps = {
-  imageSrc: string
-  name: string
-  role: string
-  location?: string
-  width?: number
-  height?: number
-  // Positioning relative to parent (ensure parent has position: relative)
-  position?: React.CSSProperties['position']
-  top?: React.CSSProperties['top']
-  right?: React.CSSProperties['right']
-  bottom?: React.CSSProperties['bottom']
-  left?: React.CSSProperties['left']
-  zIndex?: number
-  className?: string
-  style?: React.CSSProperties
-}
+  imageSrc: string;
+  name: string;
+  role: string;
+  location?: string;
+  width?: number;
+  height?: number;
+  position?: React.CSSProperties["position"];
+  top?: React.CSSProperties["top"];
+  right?: React.CSSProperties["right"];
+  bottom?: React.CSSProperties["bottom"];
+  left?: React.CSSProperties["left"];
+  zIndex?: number;
+  className?: string;
+  style?: React.CSSProperties;
+};
 
 export default function TeamMember({
   imageSrc,
@@ -40,16 +38,8 @@ export default function TeamMember({
   width = 302,
   height = 302,
 }: TeamMemberProps) {
-  const {
-    position,
-    top,
-    right,
-    bottom,
-    left,
-    zIndex,
-    className,
-    style,
-  } = arguments[0] as TeamMemberProps
+  const { position, top, right, bottom, left, zIndex, className, style } =
+    arguments[0] as TeamMemberProps;
 
   const positioningStyle: React.CSSProperties = {
     position,
@@ -59,11 +49,13 @@ export default function TeamMember({
     left,
     zIndex,
     ...style,
-  }
+  };
 
   return (
     <motion.div
-      className={`flex flex-col items-center justify-center gap-[12px] ${className ?? ''}`}
+      className={`flex flex-col items-center justify-center gap-[12px] ${
+        className ?? ""
+      }`}
       style={positioningStyle}
       custom={0}
       variants={fadeInUp}
@@ -79,13 +71,15 @@ export default function TeamMember({
         height={height}
         className="rounded-full shadow-lg aspect-square"
       />
-      <div className='text-center'>
-        <h3 className='text-lg sm:text-xl md:text-2xl font-semibold'>{name}</h3>
-        <p className='text-sm sm:text-base text-gray-500'>{role}</p>
+      <div className="text-center">
+        <h3 className="text-lg sm:text-xl md:text-2xl font-semibold">{name}</h3>
+        <p className="text-sm sm:text-base text-gray-500">{role}</p>
         {location && (
-          <p className='text-xs sm:text-sm md:text-base text-gray-400 mt-1'>{location}</p>
+          <p className="text-xs sm:text-sm md:text-base text-gray-400 mt-1">
+            {location}
+          </p>
         )}
       </div>
     </motion.div>
-  )
+  );
 }

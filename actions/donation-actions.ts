@@ -4,11 +4,6 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import type { Donation, DonationWithCause, DonationFormData } from "@/types";
 
-/**
- * Create a new donation
- * Note: Donations can continue even after the cause goal is reached.
- * There are no restrictions based on the raised amount vs goal.
- */
 export async function createDonation(
   causeId: string,
   userId: string | null,
@@ -32,7 +27,7 @@ export async function createDonation(
       email: donationData.email,
       message: donationData.message || null,
       is_anonymous: donationData.isAnonymous,
-      status: "completed", // For now, all donations are immediately completed
+      status: "completed",
     })
     .select()
     .single();
@@ -52,9 +47,6 @@ export async function createDonation(
   return data as Donation;
 }
 
-/**
- * List donations for a cause
- */
 export async function listDonationsForCause(
   causeId: string
 ): Promise<Donation[]> {
@@ -74,9 +66,6 @@ export async function listDonationsForCause(
   return data as Donation[];
 }
 
-/**
- * List donations for a user
- */
 export async function listUserDonations(
   userId: string,
   timeframe: "all" | "recent" = "all"
@@ -98,7 +87,6 @@ export async function listUserDonations(
     .order("created_at", { ascending: false });
 
   if (timeframe === "recent") {
-    // Get donations from the last 30 days
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     query = query.gte("created_at", thirtyDaysAgo.toISOString());
@@ -111,7 +99,6 @@ export async function listUserDonations(
     throw error;
   }
 
-  // Transform the response to match our DonationWithCause type
   return data.map((item) => ({
     ...item,
     cause: {

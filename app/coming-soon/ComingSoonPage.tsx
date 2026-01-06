@@ -1,4 +1,3 @@
-// components/ComingSoonPage.tsx
 "use client";
 import React from "react";
 import { ArrowLeft, Sparkles, Clock } from "lucide-react";
@@ -20,7 +19,6 @@ const ComingSoonPage: React.FC<ComingSoonPageProps> = ({
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
       <div className="max-w-2xl w-full">
-        {/* Back Button */}
         <Link
           href="/"
           className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-8 transition-colors w-fit"
@@ -29,9 +27,7 @@ const ComingSoonPage: React.FC<ComingSoonPageProps> = ({
           <span>Back to Home</span>
         </Link>
 
-        {/* Main Content */}
         <div className="bg-white rounded-3xl shadow-xl p-8 md:p-12 text-center">
-          {/* Animated Icon */}
           <div className="relative inline-block mb-6">
             <div className="text-7xl md:text-8xl animate-bounce">{emoji}</div>
             <div className="absolute -top-2 -right-2">
@@ -39,28 +35,25 @@ const ComingSoonPage: React.FC<ComingSoonPageProps> = ({
             </div>
           </div>
 
-          {/* Title */}
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
             Coming Soon
           </h1>
 
-          {/* Subtitle */}
-          <h2 className={`text-xl md:text-2xl ${titleColor} mb-3 font-semibold`}>
+          <h2
+            className={`text-xl md:text-2xl ${titleColor} mb-3 font-semibold`}
+          >
             {pageTitle}
           </h2>
 
-          {/* Description */}
           <p className="text-gray-600 text-lg mb-8 max-w-xl mx-auto">
             {pageDescription}
           </p>
 
-          {/* Status Badge */}
           <div className="inline-flex items-center gap-2 bg-blue-100 text-blue-700 px-4 py-2 rounded-full mb-8">
             <Clock size={16} />
             <span className="text-sm font-medium">Under Development</span>
           </div>
 
-          {/* Signup Prompt */}
           <div className="max-w-md mx-auto">
             <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-6 mb-6">
               <p className="text-blue-700 font-medium">
@@ -78,7 +71,6 @@ const ComingSoonPage: React.FC<ComingSoonPageProps> = ({
             </div>
           </div>
 
-          {/* Progress Indicator */}
           <div className="mt-8 pt-8 border-t border-gray-200">
             <div className="flex justify-center items-center gap-2 text-gray-600">
               <div className="flex gap-1">

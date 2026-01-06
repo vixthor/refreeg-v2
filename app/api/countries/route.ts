@@ -11,7 +11,6 @@ export async function GET() {
       .select("name")
       .order("name");
 
-    // If database query fails or returns no data, use static list
     if (error || !countries || countries.length === 0) {
       console.warn("Countries table not available or empty, using static list");
       return NextResponse.json(ALL_COUNTRIES);
@@ -19,7 +18,6 @@ export async function GET() {
 
     return NextResponse.json(countries.map((country) => country.name));
   } catch (error) {
-    // On any error, return the static list as fallback
     console.warn("Countries API error, using static list:", error);
     return NextResponse.json(ALL_COUNTRIES);
   }

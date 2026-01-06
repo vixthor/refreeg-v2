@@ -3,7 +3,6 @@ import Paystack from "@/services/paystack";
 
 export async function GET(request: NextRequest) {
   try {
-    // Fetch banks list using server-side Paystack service
     const banks = await Paystack.listBanks();
 
     return NextResponse.json({

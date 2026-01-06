@@ -1,6 +1,5 @@
 import type { PetitionStatus } from "./common-types";
 
-// Petition
 export interface Petition {
   id: string;
   user_id: string;
@@ -39,7 +38,6 @@ export interface PetitionWithSubHeading extends Petition {
   sub_heading: subHeadingWithSubDescription[];
 }
 
-// Petition with user information
 export interface PetitionWithUser extends Petition {
   user: {
     name: string;
@@ -47,13 +45,11 @@ export interface PetitionWithUser extends Petition {
   };
 }
 
-// Category
 export interface Category {
   id: string;
   name: string;
 }
 
-// Petition form data
 export interface PetitionFormData {
   title: string;
   description: string;

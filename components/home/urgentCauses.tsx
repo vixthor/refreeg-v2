@@ -43,7 +43,6 @@ export async function UrgentCauses() {
     (cause) => !urgentCauses.includes(cause)
   );
 
-  // Merge: urgent first, then the rest
   const combinedCauses = [...urgentCauses, ...normalCauses];
 
   if (combinedCauses.length === 0) {
