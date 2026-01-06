@@ -4,9 +4,11 @@ import { NextRequest, NextResponse } from "next/server";
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
-    
-    // Get the current user
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
     if (userError || !user) {
       return NextResponse.json(
         { error: "User not authenticated" },
@@ -14,7 +16,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Parse the request body
     const body = await request.json();
     const {
       cause_id,
@@ -25,15 +26,20 @@ export async function POST(request: NextRequest) {
       recipient_address,
     } = body;
 
-    // Validate required fields
-    if (!cause_id || !tx_signature || !amount_in_sol || !amount_in_naira || !wallet_address || !recipient_address) {
+    if (
+      !cause_id ||
+      !tx_signature ||
+      !amount_in_sol ||
+      !amount_in_naira ||
+      !wallet_address ||
+      !recipient_address
+    ) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
       );
     }
 
-    // Insert the donation record
     const { data: insertData, error: insertError } = await supabase
       .from("crypto_donations")
       .insert([
@@ -62,7 +68,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Update the cause's raised amount
     const { data: updateData, error: updateError } = await supabase.rpc(
       "increment_cause_raised",
       {
@@ -83,11 +88,10 @@ export async function POST(request: NextRequest) {
       donation_id: insertData.id,
       message: "Donation logged and cause updated successfully",
     });
-
   } catch (error) {
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
     );
   }
-} 
+}

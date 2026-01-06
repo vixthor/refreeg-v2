@@ -8,7 +8,7 @@ import { NotificationProvider } from "@/components/notification-provider";
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 30 * 60 * 1000, //30 minutes
+      staleTime: 30 * 60 * 1000,
     },
   },
 });

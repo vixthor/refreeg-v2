@@ -20,7 +20,6 @@ export default async function CausesPage({
 
   return (
     <div className="relative">
-      {/* Main content with conditional shifting */}
       <div
         className={`transition-all duration-300 ease-in-out ${
           isFilterOpen ? "ml-80" : "ml-0"
@@ -80,7 +79,6 @@ export default async function CausesPage({
         </div>
       </div>
 
-      {/* Blur effect overlay when filter is open */}
       {isFilterOpen && (
         <div className="fixed top-0 right-0 w-96 h-[1886px] origin-top-left -rotate-90 bg-[radial-gradient(ellipse_323.09%_608.83%_at_48.81%_50.00%,_rgba(255,_255,_255,_0.70)_0%,_white_100%)] rounded-full blur-lg pointer-events-none z-30" />
       )}

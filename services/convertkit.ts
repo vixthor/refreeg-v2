@@ -2,7 +2,7 @@
 
 /**
  * ConvertKit API Integration
- * 
+ *
  * This service handles subscribing users to ConvertKit email lists.
  * ConvertKit API Documentation: https://developers.convertkit.com/
  */

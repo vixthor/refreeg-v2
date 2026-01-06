@@ -21,7 +21,6 @@ export default function PaymentVerification() {
 
   useEffect(() => {
     const verifyPaymentStatus = async () => {
-      // Prevent multiple verification attempts
       if (hasVerified || !reference) {
         if (!reference) {
           setVerificationStatus("failed");

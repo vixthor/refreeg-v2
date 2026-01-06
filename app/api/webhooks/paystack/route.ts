@@ -4,11 +4,10 @@ import { calculateServiceFee } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/server";
 import crypto from "crypto";
 
-// Define types for Paystack webhook data
 interface PaystackWebhookData {
   event: string;
   data: {
-    reference: string; // Paystack transaction reference
+    reference: string;
     metadata: {
       user_id: string;
       cause_id: string;
@@ -33,7 +32,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Verify webhook signature for security
     const signature = request.headers.get("x-paystack-signature");
     if (!signature) {
       return new NextResponse(
@@ -44,7 +42,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Verify the signature using the secret key
     const secretKey = process.env.PAYSTACK_SECRET_KEY;
     if (!secretKey) {
       console.error("PAYSTACK_SECRET_KEY not found in environment variables");
@@ -73,7 +70,6 @@ export async function POST(request: Request) {
 
     const webhookData = JSON.parse(payload) as PaystackWebhookData;
 
-    // Validate required fields
     if (
       !webhookData?.event ||
       !webhookData?.data?.metadata ||
@@ -90,7 +86,6 @@ export async function POST(request: Request) {
     const { event, data } = webhookData;
     const { metadata, reference } = data;
 
-    // Validate metadata fields
     if (!metadata?.cause_id || !metadata?.amount || !metadata?.customer_name) {
       return new NextResponse(
         JSON.stringify({

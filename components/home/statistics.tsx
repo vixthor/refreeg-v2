@@ -59,9 +59,7 @@ export default function Statistics() {
               <stat.icon className={`w-6 h-6 text-${stat.color}-600`} />
             </div>
           </motion.div>
-          <h3 className="text-2xl font-bold text-gray-800 mb-2">
-            {stat.text}
-          </h3>
+          <h3 className="text-2xl font-bold text-gray-800 mb-2">{stat.text}</h3>
         </motion.div>
       ))}
     </motion.div>
