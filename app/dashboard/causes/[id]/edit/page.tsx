@@ -25,7 +25,6 @@ export default async function EditCausePage({
     redirect("/dashboard/causes");
   }
 
-  // Check if the user owns this cause
   if (cause.user_id !== user.id) {
     redirect("/dashboard/causes");
   }

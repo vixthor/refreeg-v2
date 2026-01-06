@@ -7,6 +7,7 @@ The ConvertKit integration has been successfully implemented. Follow these steps
 ## Setup Steps
 
 ### 1. Get ConvertKit Credentials
+
 - [ ] Log in to [ConvertKit](https://app.convertkit.com)
 - [ ] Go to Settings → Advanced → API
 - [ ] Copy your API Key
@@ -14,6 +15,7 @@ The ConvertKit integration has been successfully implemented. Follow these steps
 - [ ] Note your Form ID (from Forms section)
 
 ### 2. Configure Environment Variables
+
 - [ ] Create or open `.env.local` file in project root
 - [ ] Add the following variables:
   ```env
@@ -25,6 +27,7 @@ The ConvertKit integration has been successfully implemented. Follow these steps
 - [ ] Restart your development server
 
 ### 3. Test the Integration
+
 - [ ] Run `npm run dev`
 - [ ] Go to signup page
 - [ ] Create a test account with a real email you can check
@@ -33,6 +36,7 @@ The ConvertKit integration has been successfully implemented. Follow these steps
 - [ ] Verify the new subscriber appears with correct data
 
 ### 4. Production Deployment
+
 - [ ] Add the same environment variables to your production environment
   - Vercel: Project Settings → Environment Variables
   - Other platforms: Follow their env var configuration docs
@@ -42,7 +46,9 @@ The ConvertKit integration has been successfully implemented. Follow these steps
 ## What Was Implemented
 
 ### New Files Created
+
 1. **`services/convertkit.ts`** - ConvertKit API service
+
    - `subscribeToConvertKit()` - Main subscription function
    - `addTagsToSubscriber()` - Add tags to existing subscribers
    - `updateSubscriberFields()` - Update custom fields
@@ -52,6 +58,7 @@ The ConvertKit integration has been successfully implemented. Follow these steps
 3. **`CONVERTKIT_SETUP.md`** - Comprehensive documentation
 
 ### Modified Files
+
 1. **`hooks/use-auth.ts`** - Added ConvertKit subscription to signup flow
    - Imports ConvertKit service
    - Calls subscription after successful account creation
@@ -60,6 +67,7 @@ The ConvertKit integration has been successfully implemented. Follow these steps
 ## How It Works
 
 When a user signs up:
+
 1. ✅ Supabase account created
 2. ✅ Profile created in database
 3. ✅ Welcome email sent
@@ -69,6 +77,7 @@ When a user signs up:
 ## Data Sent to ConvertKit
 
 For each new user:
+
 - Email address
 - First name (extracted from full name)
 - Custom field: `account_type` (individual/organization)
@@ -77,6 +86,7 @@ For each new user:
 ## Error Handling
 
 ✅ **Safe Implementation**: ConvertKit subscription errors will NOT prevent signup
+
 - Errors are logged to console
 - User account is still created
 - User can proceed normally
@@ -84,6 +94,7 @@ For each new user:
 ## Optional: Set Up Custom Fields in ConvertKit
 
 To fully utilize the data:
+
 1. Go to ConvertKit → Settings → Custom Fields
 2. Add these fields:
    - `account_type` (text)
@@ -93,6 +104,7 @@ To fully utilize the data:
 ## Next Steps (Optional)
 
 Consider adding ConvertKit subscriptions for:
+
 - KYC verification completion (add tag)
 - First donation (add tag + update field)
 - Cause creation (add tag)
@@ -103,12 +115,14 @@ See `CONVERTKIT_SETUP.md` for advanced usage examples.
 ## Troubleshooting
 
 **Users not appearing in ConvertKit?**
+
 - Check `.env.local` has correct values
 - Verify API credentials in ConvertKit
 - Check console logs for errors
 - Ensure form is published in ConvertKit
 
 **Need help?**
+
 - Review `CONVERTKIT_SETUP.md` for detailed documentation
 - Check ConvertKit API docs: https://developers.convertkit.com/
 

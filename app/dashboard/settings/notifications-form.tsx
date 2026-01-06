@@ -1,11 +1,11 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { Switch } from "@/components/ui/switch"
-import { Label } from "@/components/ui/label"
-import { toast } from "@/components/ui/use-toast"
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
+import { useState, useEffect } from "react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { toast } from "@/components/ui/use-toast";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,46 +14,47 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+} from "@/components/ui/alert-dialog";
 
 export function NotificationsForm() {
-  const [permission, setPermission] = useState<NotificationPermission>("default")
-  const [isSupported, setIsSupported] = useState<boolean | null>(null)
-  const [showDisableInstructions, setShowDisableInstructions] = useState(false)
+  const [permission, setPermission] =
+    useState<NotificationPermission>("default");
+  const [isSupported, setIsSupported] = useState<boolean | null>(null);
+  const [showDisableInstructions, setShowDisableInstructions] = useState(false);
 
   useEffect(() => {
-    setIsSupported("Notification" in window)
+    setIsSupported("Notification" in window);
     if ("Notification" in window) {
-      setPermission(Notification.permission)
+      setPermission(Notification.permission);
     }
-  }, [])
+  }, []);
 
   const handleEnableNotifications = async () => {
-    if (!isSupported) return
-    
-    const result = await Notification.requestPermission()
-    setPermission(result)
-    
+    if (!isSupported) return;
+
+    const result = await Notification.requestPermission();
+    setPermission(result);
+
     if (result === "granted") {
       toast({
         title: "Notifications enabled",
         description: "You'll receive browser notifications",
-      })
+      });
     } else {
       toast({
         title: "Permission denied",
         description: "Enable Notifications in your browser",
         variant: "destructive",
-      })
+      });
     }
-  }
+  };
 
   const handleDisableClick = () => {
-    setShowDisableInstructions(true)
-  }
+    setShowDisableInstructions(true);
+  };
 
   if (isSupported === null) {
-    return null
+    return null;
   }
 
   if (!isSupported) {
@@ -64,7 +65,7 @@ export function NotificationsForm() {
           Notifications not supported in your browser
         </p>
       </div>
-    )
+    );
   }
 
   return (
@@ -76,9 +77,7 @@ export function NotificationsForm() {
               id="notifications"
               checked={true}
               onCheckedChange={handleDisableClick}
-              className={cn(
-                "data-[state=checked]:bg-emerald-500",
-              )}
+              className={cn("data-[state=checked]:bg-emerald-500")}
             />
             <Label htmlFor="notifications">Enabled</Label>
           </>
@@ -88,16 +87,17 @@ export function NotificationsForm() {
               id="notifications"
               checked={false}
               onCheckedChange={handleEnableNotifications}
-              className={cn(
-                "data-[state=unchecked]:bg-rose-500"
-              )}
+              className={cn("data-[state=unchecked]:bg-rose-500")}
             />
             <Label htmlFor="notifications">Enable Notifications</Label>
           </>
         )}
       </div>
 
-      <AlertDialog open={showDisableInstructions} onOpenChange={setShowDisableInstructions}>
+      <AlertDialog
+        open={showDisableInstructions}
+        onOpenChange={setShowDisableInstructions}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Disable Notifications</AlertDialogTitle>
@@ -116,5 +116,5 @@ export function NotificationsForm() {
         </AlertDialogContent>
       </AlertDialog>
     </>
-  )
+  );
 }

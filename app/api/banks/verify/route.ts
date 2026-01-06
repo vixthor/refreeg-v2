@@ -14,8 +14,6 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-
-    // Verify account using server-side Paystack service
     const verification = await Paystack.verifyAccountNumber(
       accountNumber,
       bankCode

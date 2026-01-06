@@ -50,7 +50,6 @@ export default function WhyItStandsOut() {
         </P>
       </motion.div>
 
-      {/* Title */}
       <motion.div
         initial={{ opacity: 0, y: 40 }}
         animate={isInView ? { opacity: 1, y: 0 } : {}}
@@ -61,7 +60,6 @@ export default function WhyItStandsOut() {
         </H2>
       </motion.div>
 
-      {/* Features */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-12 max-w-6xl mx-auto">
         {features.map((feature, idx) => {
           const itemRef = useRef(null);

@@ -1,7 +1,6 @@
 import React from "react";
 import Image from "next/image";
 
-// Template for steps
 const steps = [
   {
     label: "Identity Information",
@@ -31,13 +30,11 @@ export default function KycStep({ currentStep }: { currentStep: number }) {
 
   return (
     <div className="flex flex-col md:flex-row w-full bg-white min-h-screen">
-      {/* Step content */}
       <main className="flex-1 flex flex-col px-6">
         <p className="text-sm  font-semibold mb-2">Step {currentStep + 1}</p>
         <h2 className="text-2xl font-semibold mb-4">{step.title}</h2>
         <p className="text-gray-600 mb-6 max-w-xl">{step.description}</p>
 
-        {/* Progress Bars */}
         <div className="flex gap-2 mb-10 w-full max-w-sm">
           {steps.map((_, idx) => (
             <div
@@ -49,7 +46,6 @@ export default function KycStep({ currentStep }: { currentStep: number }) {
           ))}
         </div>
 
-        {/* Step Illustration */}
         <div className="flex justify-center md:justify-start">
           <Image
             src={step.image}

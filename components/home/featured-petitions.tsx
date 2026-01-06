@@ -29,7 +29,6 @@ export async function FeaturedPetitions() {
     (p) => (p.days_active ?? 0) > 0 && p.status !== ("expired" as any)
   );
 
-  // ✅ Fetch signers for each petition
   const petitionsWithSigners = await Promise.all(
     featuredPetitions.map(async (petition) => {
       const signers = await listSignaturesForPetition(petition.id);

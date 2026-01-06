@@ -26,7 +26,6 @@ export function useSignature() {
         description: "Your contribution will make a difference.",
       });
 
-      // Refresh the page to show the new signature
       router.refresh();
       return true;
     } catch (error: any) {

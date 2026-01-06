@@ -7,16 +7,15 @@ import OurJourney from "./_components/OurJourney";
 import ImpactHighlights from "./_components/ImpactHighlights";
 import MoreThanCrowdfunding from "./_components/MoreThanCrowdfunding";
 
-
 export default function WhatWeDo() {
-    return (
-        <div className="w-full">
-            <Hero />
-            <ImpactHighlights />
-            <WhoWeAre/>
-            <WhyRefreegExists/>
-            <OurJourney/>
-            <MoreThanCrowdfunding />
-        </div>
-    )
+  return (
+    <div className="w-full">
+      <Hero />
+      <ImpactHighlights />
+      <WhoWeAre />
+      <WhyRefreegExists />
+      <OurJourney />
+      <MoreThanCrowdfunding />
+    </div>
+  );
 }

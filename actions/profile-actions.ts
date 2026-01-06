@@ -9,9 +9,6 @@ import type {
   OnboardingProfileData,
 } from "@/types";
 
-/**
- * Get a user's profile
- */
 export async function getProfile(userId: string): Promise<Profile | null> {
   const supabase = await createClient();
 
@@ -32,17 +29,11 @@ export async function getProfile(userId: string): Promise<Profile | null> {
   return data as Profile;
 }
 
-/**
- * Check if a user has bank details
- */
 export async function hasBankDetails(userId: string): Promise<boolean> {
   const profile = await getProfile(userId);
   return !!(profile && profile.account_number && profile.bank_name);
 }
 
-/**
- * Update a user's profile
- */
 export async function updateProfile(
   userId: string,
   profileData: ProfileFormData
@@ -84,9 +75,6 @@ export async function updateProfile(
   return data as Profile;
 }
 
-/**
- * Update a user's profile photo
- */
 export async function updateProfilePhoto(
   userId: string,
   photoFile: File
@@ -132,9 +120,6 @@ export async function updateProfilePhoto(
   return publicUrl;
 }
 
-/**
- * Update a user's bank details
- */
 export async function updateBankDetails(
   userId: string,
   bankData: BankDetailsFormData
@@ -163,9 +148,6 @@ export async function updateBankDetails(
   return data as Profile;
 }
 
-/**
- * Create a new profile during onboarding
- */
 export async function createOnboardingProfile(
   userId: string,
   profileData: OnboardingProfileData,
@@ -173,14 +155,12 @@ export async function createOnboardingProfile(
 ): Promise<Profile> {
   const supabase = await createClient();
 
-  // 1️⃣ Fetch existing profile first (important)
   const { data: existingProfile } = await supabase
     .from("profiles")
     .select("profile_photo")
     .eq("id", userId)
     .maybeSingle();
 
-  // 2️⃣ Resolve profile photo safely
   let profilePhotoUrl: string | null = existingProfile?.profile_photo ?? null;
 
   if (profileData.profilePhoto) {
@@ -204,7 +184,6 @@ export async function createOnboardingProfile(
 
     profilePhotoUrl = urlData.publicUrl;
   } else if (!profilePhotoUrl && oauthAvatarUrl) {
-    // Only use OAuth avatar if user has no existing photo
     profilePhotoUrl = oauthAvatarUrl;
   }
 
@@ -212,7 +191,6 @@ export async function createOnboardingProfile(
     profileData.lastName ?? ""
   }`.trim();
 
-  // 3️⃣ Build update payload carefully (NO NULL OVERWRITES)
   const updateData: any = {
     id: userId,
     updated_at: new Date().toISOString(),
@@ -236,7 +214,6 @@ export async function createOnboardingProfile(
     console.warn("Some fields may not exist in database schema:", e);
   }
 
-  // 4️⃣ Use upsert safely
   const { data, error } = await supabase
     .from("profiles")
     .upsert(updateData, { onConflict: "id" })
@@ -253,13 +230,6 @@ export async function createOnboardingProfile(
   return data as Profile;
 }
 
-/**
- * Check if user has completed onboarding
- *
- * IMPORTANT: We grandfather in existing users who signed up before the onboarding feature
- * was implemented. These users don't have the onboarding fields but should still be
- * able to use the platform. Only truly new users (after onboarding feature) must complete onboarding.
- */
 export async function hasCompletedOnboarding(userId: string): Promise<boolean> {
   try {
     const supabase = await createClient();
@@ -276,8 +246,6 @@ export async function hasCompletedOnboarding(userId: string): Promise<boolean> {
       return false;
     }
 
-    // Grandfather in existing users: If user has basic profile data but lacks onboarding fields,
-    // they're an existing user who signed up before onboarding was implemented
     const hasBasicProfile = !!(profile.full_name && profile.email);
 
     const hasOnboardingFields = !!(
@@ -288,7 +256,6 @@ export async function hasCompletedOnboarding(userId: string): Promise<boolean> {
       profile.phone
     );
 
-    // If user has basic profile but not onboarding fields, they're an existing user - consider onboarding complete
     if (hasBasicProfile && !hasOnboardingFields) {
       console.log(
         `Grandfathered existing user ${userId} - has basic profile but no onboarding fields`
@@ -296,7 +263,6 @@ export async function hasCompletedOnboarding(userId: string): Promise<boolean> {
       return true;
     }
 
-    // New users must have all onboarding fields
     return hasOnboardingFields;
   } catch (error) {
     console.error("Error checking onboarding completion:", error);
@@ -304,10 +270,6 @@ export async function hasCompletedOnboarding(userId: string): Promise<boolean> {
   }
 }
 
-/**
- * Determine the current onboarding step based on existing profile data
- * Returns the step number (1-5) where the user should resume
- */
 export async function getCurrentOnboardingStep(
   userId: string
 ): Promise<number> {
@@ -323,20 +285,17 @@ export async function getCurrentOnboardingStep(
       .single();
 
     if (error || !profile) {
-      return 1; // Start from step 1 if no profile exists
+      return 1;
     }
 
-    // Step 1: Check if account_type is set
     if (!profile.account_type) {
       return 1;
     }
 
-    // Step 2: Check if gender is set
     if (!profile.gender) {
       return 2;
     }
 
-    // Step 3: Check if all profile fields are set
     const hasProfileData = !!(
       profile.first_name &&
       profile.last_name &&
@@ -350,7 +309,6 @@ export async function getCurrentOnboardingStep(
       return 3;
     }
 
-    // If all steps 1-3 are complete, user can proceed to step 4 (KYC)
     return 4;
   } catch (error) {
     console.error("Error determining onboarding step:", error);
@@ -358,9 +316,6 @@ export async function getCurrentOnboardingStep(
   }
 }
 
-/**
- * Fetch existing onboarding data from database for prefilling forms
- */
 export async function getOnboardingData(userId: string): Promise<{
   accountType: string;
   gender: string;
@@ -386,7 +341,6 @@ export async function getOnboardingData(userId: string): Promise<{
       .single();
 
     if (error || !profile) {
-      // Return empty data if no profile exists
       return {
         accountType: "",
         gender: "",
@@ -431,9 +385,6 @@ export async function getOnboardingData(userId: string): Promise<{
   }
 }
 
-/**
- * Save step 1 progress (account type)
- */
 export async function saveStep1Progress(
   userId: string,
   accountType: string
@@ -459,9 +410,6 @@ export async function saveStep1Progress(
   }
 }
 
-/**
- * Save step 2 progress (gender)
- */
 export async function saveStep2Progress(
   userId: string,
   gender: string
@@ -487,9 +435,6 @@ export async function saveStep2Progress(
   }
 }
 
-/**
- * Check if profile is complete
- */
 export async function isProfileComplete(
   userId: string
 ): Promise<{ isComplete: boolean; missingFields: string[] }> {
@@ -527,13 +472,6 @@ export async function isProfileComplete(
   }
 }
 
-/* ------------------------------------------------------------------
-   KYC ACTIONS
------------------------------------------------------------------- */
-
-/**
- * Check if a user has a KYC verification
- */
 export async function hasKycVerification(userId: string) {
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -545,7 +483,6 @@ export async function hasKycVerification(userId: string) {
   if (error && error.code !== "PGRST116") throw error;
   if (!data) return null;
 
-  // Map storage path in document_url to public URL for consumers
   if (data.document_url) {
     const { data: urlData } = supabase.storage
       .from("kyc-documents")
@@ -558,9 +495,6 @@ export async function hasKycVerification(userId: string) {
   return data;
 }
 
-/**
- * Update a KYC verification status
- */
 export async function updateKycStatus(
   verificationId: string,
   status: "approved" | "rejected",
@@ -582,7 +516,6 @@ export async function updateKycStatus(
   return data;
 }
 
-// actions/profile-actions.ts
 export async function getProfileByUsername(
   username: string
 ): Promise<Profile | null> {

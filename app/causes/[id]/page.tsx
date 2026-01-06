@@ -71,7 +71,6 @@ export default async function CauseDetailPage({
   const creatorProfile = await getProfile(cause.user_id);
   const hasCreatorWallet = !!creatorProfile?.solana_wallet;
 
-  // Get creator's username for the profile URL
   const creatorUsername = creatorProfile?.username;
 
   let socialMedia = {
@@ -113,14 +112,13 @@ export default async function CauseDetailPage({
     message: donor.message || "",
   }));
 
-  // Map donor messages to comment shape
   const donorMessages = donors
     .filter((d) => d.message && d.message.trim() !== "")
     .map((d) => ({
       id: `donor-${d.id}`,
       cause_id: d.cause_id,
       user_id: d.user_id || "anonymous",
-      content: d.message || "", // Ensure string
+      content: d.message || "",
       created_at: d.created_at,
       updated_at: d.created_at,
       is_edited: false,
@@ -134,7 +132,6 @@ export default async function CauseDetailPage({
       replies_count: 0,
     }));
 
-  // Merge and sort
   const mergedComments = [...comments, ...donorMessages].sort(
     (a, b) =>
       new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
@@ -153,7 +150,6 @@ export default async function CauseDetailPage({
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-6">
           {(() => {
-            // Combine multimedia (images) and video_links (video URLs)
             const allMedia = [
               ...(cause.multimedia || []),
               ...(cause.video_links || []),

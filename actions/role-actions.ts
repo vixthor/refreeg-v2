@@ -6,9 +6,6 @@ import type { UserRole, UserWithRole } from "@/types";
 
 const DEFAULT_ADMIN_EMAIL = "kingraj1344@gmail.com";
 
-/**
- * Get all role information for a user in a single query
- */
 export async function getUserRoleInfo(userId: string): Promise<{
   isAdmin: boolean;
   isManager: boolean;
@@ -39,25 +36,16 @@ export async function getUserRoleInfo(userId: string): Promise<{
   };
 }
 
-/**
- * Check if a user is an admin
- */
 export async function isAdmin(userId: string): Promise<boolean> {
   const { isAdmin } = await getUserRoleInfo(userId);
   return isAdmin;
 }
 
-/**
- * Check if a user is a manager
- */
 export async function isManager(userId: string): Promise<boolean> {
   const { isManager } = await getUserRoleInfo(userId);
   return isManager;
 }
 
-/**
- * Check if a user is an admin or manager
- */
 export async function isAdminOrManager(userId: string): Promise<boolean> {
   const supabase = await createClient();
 
@@ -75,24 +63,17 @@ export async function isAdminOrManager(userId: string): Promise<boolean> {
   return data?.role === "admin" || data?.role === "manager";
 }
 
-/**
- * Get a user's role
- */
 export async function getUserRole(userId: string): Promise<UserRole> {
   const { role } = await getUserRoleInfo(userId);
   return role;
 }
 
-/**
- * Set a user's role
- */
 export async function setUserRole(
   userId: string,
   role: UserRole
 ): Promise<boolean> {
   const supabase = await createClient();
 
-  // Get the current user's ID
   const {
     data: { user },
     error: userError,
@@ -103,7 +84,6 @@ export async function setUserRole(
     return false;
   }
 
-  // Check if the current user is an admin by checking their role directly
   const { data: currentUserRole } = await supabase
     .from("roles")
     .select("role")
@@ -115,7 +95,6 @@ export async function setUserRole(
     return false;
   }
 
-  // Check if the user already has a role
   const { data: existingRole } = await supabase
     .from("roles")
     .select("id")
@@ -125,7 +104,6 @@ export async function setUserRole(
   let result;
 
   if (existingRole) {
-    // Update existing role
     result = await supabase
       .from("roles")
       .update({
@@ -134,7 +112,6 @@ export async function setUserRole(
       })
       .eq("user_id", userId);
   } else {
-    // Insert new role
     result = await supabase.from("roles").insert({
       user_id: userId,
       role,
@@ -152,13 +129,9 @@ export async function setUserRole(
   return true;
 }
 
-/**
- * List all users with their roles and latest KYC status
- */
 export async function listUsersWithRoles(): Promise<UserWithRole[]> {
   const supabase = await createClient();
 
-  // Get the current user
   const {
     data: { user },
     error: userError,

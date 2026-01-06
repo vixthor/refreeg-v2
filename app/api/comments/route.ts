@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) throw error;
-    // attach profile
+
     const { data: profile } = await supabase
       .from("profiles")
       .select("full_name, profile_photo, username")
@@ -82,7 +82,6 @@ export async function GET(request: NextRequest) {
 
     if (error) throw error;
 
-    // attach profiles in bulk
     const userIds = Array.from(
       new Set((comments || []).map((c: any) => c.user_id))
     );

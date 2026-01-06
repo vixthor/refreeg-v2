@@ -15,7 +15,8 @@ RefreeG is a blockchain-powered crowdfunding platform designed to empower commun
 
 ## 🌟 Features
 
-- **Blockchain Transparency**: Every donation is recorded on the blockchain for immutable tracking and accountability.
+<!-- - **Blockchain Transparency**: Every donation is recorded on the blockchain for immutable tracking and accountability. -->
+
 - **Global Accessibility**: Support causes from anywhere in the world with our secure, web-based platform.
 - **Crypto & Fiat Donations**: Donate using traditional methods (Paystack) or cryptocurrencies (Ethereum, Solana, etc.).
 - **Petition System**: Start or sign petitions to drive awareness and change on social, political, or community issues.

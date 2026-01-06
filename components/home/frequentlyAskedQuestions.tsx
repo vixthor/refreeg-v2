@@ -6,7 +6,7 @@ import { Accordion } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { faqs } from "@/lib/dummyData";
 import { cn } from "@/lib/utils";
-import FAQItem from "./components/FaqItems"; // New component for FAQ items
+import FAQItem from "./components/FaqItems";
 import { useAnimateInView } from "@/hooks/use-animate-In-view";
 
 const categories = [
