@@ -50,6 +50,7 @@ import { cn } from "@/lib/utils";
 import MultimediaCarousel from "@/components/MultimediaCarousel";
 
 const currencies = [{ id: "NGN", name: "Naira (₦)" }];
+const MAX_DURATION_DAYS = 180;
 
 type FormData = {
   title: string;
@@ -119,8 +120,8 @@ const validateForm = (formData: FormData): FormErrors => {
     errors.endDate = "End date is required";
   } else if (formData.startDate && formData.endDate) {
     const daysDiff = differenceInDays(formData.endDate, formData.startDate);
-    if (daysDiff > 60) {
-      errors.endDate = "Cause duration cannot exceed 60 days";
+    if (daysDiff > MAX_DURATION_DAYS) {
+      errors.endDate = `Cause duration cannot exceed ${MAX_DURATION_DAYS} days`;
     }
     if (daysDiff < 1) {
       errors.endDate = "End date must be after start date";
@@ -625,8 +626,8 @@ export default function CreateCauseForm() {
             <div className="space-y-2">
               <h3 className="text-lg font-medium">Cause Duration</h3>
               <p className="text-sm text-muted-foreground">
-                Select when your cause should start and end. Maximum duration is
-                60 days.
+                Select when your cause should start and end. Maximum duration is{" "}
+                <strong>{MAX_DURATION_DAYS} days</strong>.
               </p>
             </div>
 
@@ -694,10 +695,11 @@ export default function CreateCauseForm() {
                         const isBeforeStart = formData.startDate
                           ? isBefore(date, formData.startDate)
                           : false;
-                        const isOver60Days = formData.startDate
-                          ? differenceInDays(date, formData.startDate) > 60
+                        const isOverMaxDays = formData.startDate
+                          ? differenceInDays(date, formData.startDate) >
+                            MAX_DURATION_DAYS
                           : false;
-                        return isPast || isBeforeStart || isOver60Days;
+                        return isPast || isBeforeStart || isOverMaxDays;
                       }}
                       initialFocus
                     />
