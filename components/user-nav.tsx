@@ -212,7 +212,7 @@ export function UserNav() {
                 Signing out...
               </span>
             ) : (
-              "Log out"
+              "Sign Out"
             )}
           </DropdownMenuItem>
         </DropdownMenuContent>
