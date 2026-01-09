@@ -32,6 +32,10 @@ import {
   Shield,
   UserCog,
   ClipboardCheckIcon,
+  Book,
+  Users2,
+  LightbulbIcon,
+  Heart,
 } from "lucide-react";
 import {
   Navbar,
@@ -121,6 +125,14 @@ export function Header() {
           href: "/disaster-relief",
           icon: FileText,
         },
+        // NOT ACCURATE TO DESIGN; CHECK DESKTOP AND MOBILE VIEW - HASSAN
+        // {
+        //   title: "🎨 RefreeG for Creators",
+        //   description:
+        //     "Turn your influence into impact. Get your unique tag, share your story, and receive donations directly from your fans in fiat or crypto.",
+        //   href: "/creators",
+        //   icon: FileText,
+        // },
         {
           title: "🏥 RefreeG for Healthcare",
           description:
@@ -171,6 +183,43 @@ export function Header() {
           href: "/about-us/OurMission",
           icon: TargetIcon,
         },
+
+        // DON'T UNCOMMENT THIS, THE PAGES ARE NOT INCOMPLETE. - HASSAN
+        // {
+        //   title: "📢Our Story",
+        //   description:
+        //     "Raise more, reach more. Build trust with transparent fundraising tools.",
+        //   href: "/about-us/OurStory",
+        //   icon: Book,
+        // },
+        // {
+        //   title: "🔨Our Impact",
+        //   description:
+        //     "See how to discover causes, donate securely in fiat or crypto, and follow progress transparently.",
+        //   href: "/about-us/OurImpact",
+        //   icon: BarChart3,
+        // },
+        // {
+        //   title: "🧑‍🤝‍🧑Who Are We Made By",
+        //   description:
+        //     "Clear explanation of transaction fees, payout timelines, and how creators/nonprofits access their funds.",
+        //   href: "/about-us/OurTeam",
+        //   icon: Users2,
+        // },
+        // {
+        //   title: "💡 What We Do",
+        //   description:
+        //     "Read about our fraud checks, KYC verification, and commitment to protecting both donors and cause.",
+        //   href: "/about-us/WhatWeDo",
+        //   icon: LightbulbIcon,
+        // },
+        // {
+        //   title: "📣FAQ",
+        //   description:
+        //     "Get answers to the most common questions about crowdfunding on RefreeG.",
+        //   href: "/about-us/faq",
+        //   icon: Heart,
+        // },
       ],
     },
   ];
