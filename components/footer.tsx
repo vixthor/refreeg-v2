@@ -10,7 +10,6 @@ import {
 } from "react-icons/fa6";
 import { Linkedin, Youtube } from "lucide-react";
 import React from "react";
-import GetMail from "./GetMail";
 import { contactLinks, legalLinks, quickLinks, socialLinks } from "@/lib/links";
 
 const SocialLink = ({
