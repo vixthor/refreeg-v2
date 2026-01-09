@@ -15,32 +15,23 @@ import {
   X,
   Megaphone,
   FileText,
-  Info,
   LogOut,
-  HeartHandshake,
   Users,
-  Globe,
-  BookOpen,
-  Lightbulb,
-  Target,
   CircleDollarSign,
+  Target,
   TargetIcon,
-  Heart,
+  Lightbulb,
+  HelpCircle,
+  Star,
+  HandHeart,
+  Home,
+  Settings,
+  Wallet,
+  Share2,
   BarChart3,
   Shield,
-  Book,
-  Star,
-  Rocket,
-  HelpCircle,
-  Calendar,
-  MapPin,
-  Users2,
-  Globe2,
-  LightbulbIcon,
-  Search,
-  Sparkles,
-  PlayCircle,
-  HandHeart,
+  UserCog,
+  ClipboardCheckIcon,
 } from "lucide-react";
 import {
   Navbar,
@@ -83,6 +74,8 @@ export function Header() {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [isSigningOut, setIsSigningOut] = useState(false);
 
+  const isDashboardRoute = pathname.startsWith("/dashboard");
+
   useEffect(() => {
     if (isMenuOpen) {
       document.body.style.overflow = "hidden";
@@ -95,7 +88,7 @@ export function Header() {
     };
   }, [isMenuOpen]);
 
-  const navItems: NavItem[] = [
+  const publicNavItems: NavItem[] = [
     {
       title: "Explore Causes",
       href: "/causes",
@@ -128,15 +121,6 @@ export function Header() {
           href: "/disaster-relief",
           icon: FileText,
         },
-
-        // NOT ACCURATE TO DESIGN; CHECK MOBILE VIEW
-        // {
-        //   title: "🎨 RefreeG for Creators",
-        //   description:
-        //     "Turn your influence into impact. Get your unique tag, share your story, and receive donations directly from your fans in fiat or crypto.",
-        //   href: "/creators",
-        //   icon: FileText,
-        // },
         {
           title: "🏥 RefreeG for Healthcare",
           description:
@@ -187,44 +171,73 @@ export function Header() {
           href: "/about-us/OurMission",
           icon: TargetIcon,
         },
-
-        // DON'T UNCOMMENT THIS, THE PAGES ARE NOT INCOMPLETE.
-        // {
-        //   title: "📢Our Story",
-        //   description:
-        //     "Raise more, reach more. Build trust with transparent fundraising tools.",
-        //   href: "/about-us/OurStory",
-        //   icon: Book,
-        // },
-        // {
-        //   title: "🔨Our Impact",
-        //   description:
-        //     "See how to discover causes, donate securely in fiat or crypto, and follow progress transparently.",
-        //   href: "/about-us/OurImpact",
-        //   icon: BarChart3,
-        // },
-        // {
-        //   title: "🧑‍🤝‍🧑Who Are We Made By",
-        //   description:
-        //     "Clear explanation of transaction fees, payout timelines, and how creators/nonprofits access their funds.",
-        //   href: "/about-us/OurTeam",
-        //   icon: Users2,
-        // },
-        // {
-        //   title: "💡 What We Do",
-        //   description:
-        //     "Read about our fraud checks, KYC verification, and commitment to protecting both donors and cause.",
-        //   href: "/about-us/WhatWeDo",
-        //   icon: LightbulbIcon,
-        // },
-        // {
-        //   title: "📣FAQ",
-        //   description:
-        //     "Get answers to the most common questions about crowdfunding on RefreeG.",
-        //   href: "/about-us/faq",
-        //   icon: Heart,
-        // },
       ],
+    },
+  ];
+
+  const userDashboardItems = [
+    {
+      title: "Overview",
+      href: "/dashboard",
+      icon: Home,
+    },
+    {
+      title: "My Causes",
+      href: "/dashboard/causes",
+      icon: FileText,
+    },
+    {
+      title: "My Petitions",
+      href: "/dashboard/petitions",
+      icon: FileText,
+    },
+    {
+      title: "My Donations",
+      href: "/dashboard/donations",
+      icon: Users,
+    },
+    {
+      title: "Crypto Wallet",
+      href: "/dashboard/crypto",
+      icon: Wallet,
+    },
+    {
+      title: "Settings",
+      href: "/dashboard/settings",
+      icon: Settings,
+    },
+    {
+      title: "Referrals",
+      href: "/referrals",
+      icon: Share2,
+    },
+  ];
+
+  const adminDashboardItems = [
+    {
+      title: "Manage Causes",
+      href: "/dashboard/admin/causes",
+      icon: FileText,
+    },
+    {
+      title: "Manage Petitions",
+      href: "/dashboard/admin/petitions",
+      icon: FileText,
+    },
+    {
+      title: "Manage Users",
+      href: "/dashboard/admin/users",
+      icon: UserCog,
+    },
+    {
+      title: "Analytics",
+      href: "/dashboard/admin/analytics",
+      icon: BarChart3,
+    },
+    {
+      title: "Logs",
+      href: "/dashboard/admin/logs",
+      icon: ClipboardCheckIcon,
     },
   ];
 
@@ -246,7 +259,7 @@ export function Header() {
               </NavbarBrand>
 
               <div className="hidden md:flex gap-0 items-center">
-                {navItems.map((item) => {
+                {publicNavItems.map((item) => {
                   if (item.type === "link") {
                     return (
                       <NavbarItem
@@ -293,7 +306,6 @@ export function Header() {
                               showDivider
                             >
                               {item.items.map((dropdownItem) => {
-                                const DropdownIcon = dropdownItem.icon;
                                 return (
                                   <DropdownItem
                                     key={dropdownItem.href}
@@ -329,8 +341,6 @@ export function Header() {
 
             <div className="flex items-center gap-2">
               {(() => {
-                const pathname = usePathname();
-
                 const themeMap: Record<
                   string,
                   {
@@ -400,7 +410,7 @@ export function Header() {
 
                     {!isLoading && !user ? (
                       <Link href="/auth/signin">
-                        <Button size="sm" variant="default" className={``}>
+                        <Button size="sm" variant="default">
                           Sign In
                         </Button>
                       </Link>
@@ -426,7 +436,6 @@ export function Header() {
           </div>
         </Navbar>
 
-        {/* Mobile Menu */}
         <div
           className={`md:hidden fixed top-[64px] left-0 right-0 bottom-0
     bg-background/95 
@@ -440,11 +449,69 @@ export function Header() {
     }
   `}
         >
-          {/* Scrollable container */}
           <div className="h-full overflow-y-auto overscroll-contain">
             <div className="container py-6 space-y-4">
+              {!isLoading && user && isDashboardRoute && (
+                <div className="space-y-1 pb-4 border-b">
+                  <div className="py-2 px-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    Dashboard
+                  </div>
+                  {userDashboardItems.map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        className={`flex items-center gap-3 py-3 px-2 text-foreground hover:text-blue-600 hover:bg-blue-600/5 rounded-md transition-all duration-200 ${
+                          pathname === item.href ||
+                          pathname.startsWith(`${item.href}/`)
+                            ? "text-blue-600 font-medium bg-blue-600/10"
+                            : ""
+                        }`}
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        <Icon className="h-4 w-4" />
+                        {item.title}
+                      </Link>
+                    );
+                  })}
+
+                  {/* Admin Section */}
+                  {isAdminOrManager && (
+                    <div className="pt-4 border-t mt-4">
+                      <div className="py-2 px-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                        <Shield className="h-3 w-3" />
+                        Admin
+                      </div>
+                      {adminDashboardItems.map((item) => {
+                        const Icon = item.icon;
+                        return (
+                          <Link
+                            key={item.href}
+                            href={item.href}
+                            className={`flex items-center gap-3 py-3 px-2 text-foreground hover:text-blue-600 hover:bg-blue-600/5 rounded-md transition-all duration-200 ${
+                              pathname === item.href ||
+                              pathname.startsWith(`${item.href}/`)
+                                ? "text-blue-600 font-medium bg-blue-600/10"
+                                : ""
+                            }`}
+                            onClick={() => setIsMenuOpen(false)}
+                          >
+                            <Icon className="h-4 w-4" />
+                            {item.title}
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div className="space-y-1">
-                {navItems.map((item) => {
+                <div className="py-2 px-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Explore
+                </div>
+                {publicNavItems.map((item) => {
                   if (item.type === "link") {
                     return (
                       <Link
@@ -477,7 +544,6 @@ export function Header() {
                           />
                         </button>
 
-                        {/* Dropdown content with scrolling */}
                         <div
                           className={`overflow-hidden transition-all duration-300 ease-in-out ${
                             openDropdown === item.title
@@ -492,7 +558,6 @@ export function Header() {
                             </span>
                           </div>
 
-                          {/* Inner scrollable area for dropdown items */}
                           <div className="ml-4 space-y-3 max-h-[400px] overflow-y-auto overscroll-contain pr-2">
                             {item.items.map((subItem) => {
                               const Icon = subItem.icon;
@@ -529,6 +594,9 @@ export function Header() {
               </div>
 
               <div className="border-t pt-4 space-y-2">
+                <div className="py-2 px-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Quick Actions
+                </div>
                 <Link
                   href="/dashboard/causes/create"
                   className="flex items-center gap-3 py-3 px-2 text-foreground hover:text-blue-600 rounded-md transition-colors font-medium"
@@ -547,14 +615,14 @@ export function Header() {
                   Create a Petition
                 </Link>
 
-                {!isLoading && user && (
+                {!isLoading && user && !isDashboardRoute && (
                   <Link
                     href="/dashboard"
                     className="flex items-center gap-3 py-3 px-2 text-foreground hover:text-blue-600 rounded-md transition-colors font-medium"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     <LayoutDashboard className="h-4 w-4" />
-                    Dashboard
+                    Go to Dashboard
                   </Link>
                 )}
 
@@ -589,56 +657,6 @@ export function Header() {
                   </button>
                 )}
               </div>
-
-              {isAdminOrManager && (
-                <div className="border-t pt-4">
-                  <div className="py-2 px-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Admin
-                  </div>
-                  <div className="space-y-1">
-                    {[
-                      {
-                        href: "/dashboard/admin/causes",
-                        title: "Manage Causes",
-                        icon: Megaphone,
-                      },
-                      {
-                        href: "/dashboard/admin/petitions",
-                        title: "Manage Petitions",
-                        icon: FileText,
-                      },
-                      {
-                        href: "/dashboard/admin/users",
-                        title: "Manage Users",
-                        icon: Users,
-                      },
-                      {
-                        href: "/dashboard/admin/analytics",
-                        title: "Analytics",
-                        icon: BarChart3,
-                      },
-                      {
-                        href: "/dashboard/admin/logs",
-                        title: "Logs",
-                        icon: Book,
-                      },
-                    ].map((adminItem) => {
-                      const AdminIcon = adminItem.icon;
-                      return (
-                        <Link
-                          key={adminItem.href}
-                          href={adminItem.href}
-                          className="flex items-center gap-3 py-2 px-2 text-sm text-foreground hover:text-blue-600 hover:bg-blue-600/5 rounded-md transition-colors"
-                          onClick={() => setIsMenuOpen(false)}
-                        >
-                          <AdminIcon className="h-4 w-4" />
-                          {adminItem.title}
-                        </Link>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </div>
