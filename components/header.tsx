@@ -128,6 +128,8 @@ export function Header() {
           href: "/disaster-relief",
           icon: FileText,
         },
+
+        // NOT ACCURATE TO DESIGN; CHECK MOBILE VIEW
         // {
         //   title: "🎨 RefreeG for Creators",
         //   description:

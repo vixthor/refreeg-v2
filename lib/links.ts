@@ -38,7 +38,7 @@ export const legalLinks = [
   {
     key: 2,
     label: "Terms of service",
-    route: "/terms-of-service",
+    route: "/terms",
   },
 ];
 
