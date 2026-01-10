@@ -7,6 +7,7 @@ import type {
   SignatureWithPetition,
   SignatureFormData,
 } from "@/types";
+import { sendPetitionGoalReachedEmail } from "@/services/mail";
 
 /**
  * Check if a user has already signed a petition
@@ -115,7 +116,99 @@ export async function createSignature(
     revalidatePath("/dashboard/signatures");
   }
 
+  // Check if this signature caused the petition to reach its goal
+  await checkAndSendPetitionGoalReachedEmail(petitionId);
+
   return data as Signature;
+}
+
+/**
+ * Check if a petition has reached its goal and send notification if so
+ * @param petitionId - The ID of the petition to check
+ */
+async function checkAndSendPetitionGoalReachedEmail(petitionId: string) {
+  const supabase = await createClient();
+
+  // Get the petition details including goal
+  const { data: petition, error: petitionError } = await supabase
+    .from("petitions")
+    .select("id, goal, user_id")
+    .eq("id", petitionId)
+    .single();
+
+  if (petitionError) {
+    console.error("Error fetching petition for goal check:", petitionError);
+    return;
+  }
+
+  if (!petition) {
+    console.warn("Petition not found for goal check");
+    return;
+  }
+
+  // Get the total signatures amount for this petition
+  const { data: signatures, error: signaturesError } = await supabase
+    .from("signatures")
+    .select("amount")
+    .eq("petition_id", petitionId);
+
+  if (signaturesError) {
+    console.error("Error fetching signatures for goal check:", signaturesError);
+    return;
+  }
+
+  // Calculate total amount
+  const totalAmount = signatures.reduce(
+    (sum, sig) => sum + (sig.amount || 0),
+    0
+  );
+
+  // Check if goal is reached (only if goal is defined and greater than 0)
+  if (petition.goal && petition.goal > 0 && totalAmount >= petition.goal) {
+    // Get creator's email
+    const { data: creatorProfile, error: profileError } = await supabase
+      .from("profiles")
+      .select("email, full_name")
+      .eq("id", petition.user_id)
+      .single();
+
+    if (profileError) {
+      console.error("Error fetching creator profile:", profileError);
+      return;
+    }
+
+    if (creatorProfile?.email && creatorProfile?.full_name) {
+      try {
+        const { data: petitionWithTitle } = await supabase
+          .from("petitions")
+          .select("title")
+          .eq("id", petitionId)
+          .single();
+
+        const petitionTitle = petitionWithTitle?.title || "Your Petition";
+        const petitionUrl = `${
+          process.env.NEXT_PUBLIC_APP_URL || "https://www.refreeg.com"
+        }/petitions/${petitionId}`;
+
+        await sendPetitionGoalReachedEmail(
+          creatorProfile.email,
+          creatorProfile.full_name,
+          petitionTitle,
+          petitionUrl,
+          totalAmount,
+          petition.goal
+        );
+        console.log(
+          `Petition goal reached notification sent to creator for petition ${petitionId}`
+        );
+      } catch (emailError) {
+        console.error(
+          "Failed to send petition goal reached email:",
+          emailError
+        );
+      }
+    }
+  }
 }
 
 /**
@@ -166,7 +259,6 @@ export async function listUserSignatures(
     .order("created_at", { ascending: false });
 
   if (timeframe === "recent") {
-    // Get signatures from the last 30 days
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     query = query.gte("created_at", thirtyDaysAgo.toISOString());
@@ -178,8 +270,6 @@ export async function listUserSignatures(
     console.error("Error listing user signatures:", error);
     throw error;
   }
-
-  // Transform the response to match our SignatureWithPetition type
   return data.map((item) => ({
     ...item,
     petition: {

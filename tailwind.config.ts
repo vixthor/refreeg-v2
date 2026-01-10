@@ -20,7 +20,17 @@ const config: Config = {
     },
     extend: {
       fontFamily: {
-        montserrat: ["Montserrat", "ui-sans-serif", "system-ui", "-apple-system", "Segoe UI", "Roboto", "Helvetica Neue", "Arial", "sans-serif"],
+        montserrat: [
+          "Montserrat",
+          "ui-sans-serif",
+          "system-ui",
+          "-apple-system",
+          "Segoe UI",
+          "Roboto",
+          "Helvetica Neue",
+          "Arial",
+          "sans-serif",
+        ],
       },
       colors: {
         customBlueGray: "#323F49",

@@ -12,7 +12,6 @@ export default function HowitWorksYT() {
 
   return (
     <section ref={ref} className="bg-[#002D62] py-12 mt-12">
-      {/* Pill */}
       <motion.div
         initial={{ opacity: 0, y: 40 }}
         animate={isInView ? { opacity: 1, y: 0 } : {}}
@@ -25,7 +24,6 @@ export default function HowitWorksYT() {
         </P>
       </motion.div>
 
-      {/* Heading */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={isInView ? { opacity: 1, y: 0 } : {}}
@@ -37,7 +35,6 @@ export default function HowitWorksYT() {
         </H2>
       </motion.div>
 
-      {/* Video */}
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={isInView ? { opacity: 1, scale: 1 } : {}}

@@ -6,7 +6,6 @@ export async function POST(request: NextRequest) {
   try {
     const data: TransactionData = await request.json();
 
-    // Validate required fields
     if (!data.amount || !data.email || !data.causeId) {
       return NextResponse.json(
         { error: "Missing required fields" },
@@ -14,7 +13,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Initialize transaction using server-side service
     const response = await Paystack.initializeTransaction(data);
 
     return NextResponse.json({

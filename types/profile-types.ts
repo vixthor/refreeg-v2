@@ -1,4 +1,3 @@
-// User profile
 export interface Profile {
   id: string;
   email: string | null;
@@ -43,7 +42,6 @@ export interface Profile {
   crypto_wallets?: string;
 }
 
-// Onboarding profile data
 export interface OnboardingProfileData {
   firstName: string;
   lastName: string;

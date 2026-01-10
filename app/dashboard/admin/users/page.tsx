@@ -44,6 +44,7 @@ import { CopyEmail } from "@/components/copy-email";
 import type { UserWithRole } from "@/types";
 import { getUserRole, listUsersWithRoles } from "@/actions/role-actions";
 import Link from "next/link";
+import { ExportCSVButton } from "./components/export-csv-button";
 
 export default async function AdminUsersPage({
   searchParams,
@@ -61,7 +62,6 @@ export default async function AdminUsersPage({
     redirect("/signin");
   }
 
-  // Check if user is admin or manager
   const user = await getUserRole(currentuser.id);
 
   if (!user || (user !== "admin" && user !== "manager")) {
@@ -77,10 +77,7 @@ export default async function AdminUsersPage({
     );
   }
 
-  // Fetch users using server action
   const users = await listUsersWithRoles();
-
-  // Filter users based on search query if provided
 
   const filteredUsers = params.search
     ? users.filter(
@@ -90,7 +87,6 @@ export default async function AdminUsersPage({
       )
     : users;
 
-  // Find users with KYC status 'pending'
   const kycAttentionUsers = filteredUsers.filter(
     (u) => u.kyc_status === "pending"
   );
@@ -104,7 +100,6 @@ export default async function AdminUsersPage({
         </p>
       </div>
 
-      {/* KYC Notification Banner */}
       {kycAttentionUsers.length > 0 && (
         <div className="rounded-md bg-yellow-50 border border-yellow-300 p-4 flex items-center gap-4">
           <Shield className="h-6 w-6 text-yellow-600" />
@@ -133,7 +128,10 @@ export default async function AdminUsersPage({
         <CardHeader>
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <CardTitle>Users</CardTitle>
-            <UserSearch defaultValue={params.search} />
+            <div className="flex items-center gap-2">
+              <ExportCSVButton />
+              <UserSearch defaultValue={params.search} />
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -165,7 +163,7 @@ export default async function AdminUsersPage({
                       <TableCell>
                         <div className="flex flex-col">
                           <Link
-                            href={`/profile/${userItem.id}`}
+                            href={`/${userItem.username || userItem.id}`}
                             className="font-medium hover:underline"
                           >
                             {userItem.full_name || "Unnamed User"}
@@ -207,13 +205,11 @@ export default async function AdminUsersPage({
                         {format(new Date(userItem.created_at), "MMM d, yyyy")}
                       </TableCell>
                       <TableCell>
-                        {/* KYC Shield Icon with color and dot overlay */}
                         <a
                           href={`/dashboard/admin/users/kyc/${userItem.id}`}
                           className="inline-block relative group"
                           title="Review KYC"
                         >
-                          {/* Shield color logic */}
                           {userItem.kyc_status === "approved" ? (
                             <Shield className="h-6 w-6 text-green-500" />
                           ) : userItem.kyc_status === "rejected" ? (
@@ -223,7 +219,7 @@ export default async function AdminUsersPage({
                           ) : (
                             <Shield className="h-6 w-6 text-gray-400" />
                           )}
-                          {/* Red dot overlay if pending */}
+
                           {userItem.kyc_status === "pending" && (
                             <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500 border-2 border-white" />
                           )}

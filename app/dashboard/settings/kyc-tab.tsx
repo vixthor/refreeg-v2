@@ -37,6 +37,8 @@ export function KycTab({ profile, user }: KycTabProps) {
   const [kycData, setKycData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+
   const router = useRouter();
 
   useEffect(() => {
@@ -121,7 +123,6 @@ export function KycTab({ profile, user }: KycTabProps) {
 
   return (
     <div className="space-y-6">
-      {/* Status Card */}
       <Card className="shadow-lg">
         <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50">
           <CardTitle className="flex items-center gap-3">
@@ -131,7 +132,7 @@ export function KycTab({ profile, user }: KycTabProps) {
           <CardDescription>Your identity verification status</CardDescription>
         </CardHeader>
         <CardContent className="pt-6">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-col md:flex-row justify-between mb-4">
             <p className="text-sm text-gray-600">{getStatusMessage()}</p>
             {getStatusBadge()}
           </div>
@@ -145,7 +146,6 @@ export function KycTab({ profile, user }: KycTabProps) {
         </CardContent>
       </Card>
 
-      {/* KYC Details */}
       {kycData && (
         <Card className="shadow-lg">
           <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50">
@@ -158,9 +158,7 @@ export function KycTab({ profile, user }: KycTabProps) {
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-6">
-            {/* Personal & Address Info */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Personal */}
               <div className="space-y-4">
                 <h4 className="font-semibold text-sm text-gray-600 uppercase tracking-wide">
                   Personal Information
@@ -188,7 +186,6 @@ export function KycTab({ profile, user }: KycTabProps) {
                 </div>
               </div>
 
-              {/* Address */}
               <div className="space-y-4">
                 <h4 className="font-semibold text-sm text-gray-600 uppercase tracking-wide">
                   Address Information
@@ -233,7 +230,6 @@ export function KycTab({ profile, user }: KycTabProps) {
 
             <Separator className="my-6" />
 
-            {/* Document Preview */}
             <div className="space-y-4">
               <h4 className="font-semibold text-sm text-gray-600 uppercase tracking-wide">
                 Document Preview
@@ -256,13 +252,16 @@ export function KycTab({ profile, user }: KycTabProps) {
                       </a>
                     </div>
                   ) : (
-                    <div className="border rounded-lg p-4 bg-gray-50 flex flex-col items-center">
+                    <div
+                      className="border rounded-lg p-4 bg-gray-50 flex flex-col items-center cursor-zoom-in"
+                      onClick={() => setPreviewOpen(true)}
+                    >
                       <Image
                         src={kycData.document_url}
                         alt="KYC Document"
                         width={400}
                         height={300}
-                        className="object-contain rounded shadow-sm hover:shadow-md transition-shadow max-h-64"
+                        className="object-contain rounded shadow-sm max-h-64"
                       />
                       <p className="text-sm text-blue-600 mt-2 text-center">
                         Click image to view full size
@@ -273,6 +272,32 @@ export function KycTab({ profile, user }: KycTabProps) {
               ) : (
                 <div className="border rounded-lg p-8 bg-gray-50 text-center text-gray-500">
                   No document uploaded
+                </div>
+              )}
+
+              {previewOpen && (
+                <div
+                  className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
+                  onClick={() => setPreviewOpen(false)}
+                >
+                  <div
+                    className="relative max-w-5xl w-full max-h-[90vh]"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <Image
+                      src={kycData.document_url}
+                      alt="Full size document"
+                      fill
+                      className="object-contain rounded-lg bg-black"
+                    />
+
+                    <button
+                      onClick={() => setPreviewOpen(false)}
+                      className="absolute top-4 right-4 bg-black/70 text-white rounded-full w-9 h-9 flex items-center justify-center hover:bg-black"
+                    >
+                      ✕
+                    </button>
+                  </div>
                 </div>
               )}
 
@@ -302,7 +327,6 @@ export function KycTab({ profile, user }: KycTabProps) {
         </Card>
       )}
 
-      {/* Action Buttons */}
       <Card className="shadow-lg">
         <CardContent className="pt-6">
           <div className="flex flex-col sm:flex-row gap-4 justify-center">

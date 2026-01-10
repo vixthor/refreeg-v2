@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -15,32 +15,27 @@ import {
   X,
   Megaphone,
   FileText,
-  Info,
   LogOut,
-  HeartHandshake,
   Users,
-  Globe,
-  BookOpen,
-  Lightbulb,
-  Target,
   CircleDollarSign,
+  Target,
   TargetIcon,
-  Heart,
+  Lightbulb,
+  HelpCircle,
+  Star,
+  HandHeart,
+  Home,
+  Settings,
+  Wallet,
+  Share2,
   BarChart3,
   Shield,
+  UserCog,
+  ClipboardCheckIcon,
   Book,
-  Star,
-  Rocket,
-  HelpCircle,
-  Calendar,
-  MapPin,
   Users2,
-  Globe2,
   LightbulbIcon,
-  Search,
-  Sparkles,
-  PlayCircle,
-  HandHeart,
+  Heart,
 } from "lucide-react";
 import {
   Navbar,
@@ -54,7 +49,6 @@ import {
   Button as HeroButton,
 } from "@heroui/react";
 
-// Define types for navigation items
 interface NavLink {
   title: string;
   type: "link";
@@ -86,7 +80,21 @@ export function Header() {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [isSigningOut, setIsSigningOut] = useState(false);
 
-  const navItems: NavItem[] = [
+  const isDashboardRoute = pathname.startsWith("/dashboard");
+
+  useEffect(() => {
+    if (isMenuOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [isMenuOpen]);
+
+  const publicNavItems: NavItem[] = [
     {
       title: "Explore Causes",
       href: "/causes",
@@ -119,13 +127,14 @@ export function Header() {
           href: "/disaster-relief",
           icon: FileText,
         },
-        {
-          title: "🎨 RefreeG for Creators",
-          description:
-            "Turn your influence into impact. Get your unique tag, share your story, and receive donations directly from your fans in fiat or crypto.",
-          href: "/creators",
-          icon: FileText,
-        },
+        // NOT ACCURATE TO DESIGN; CHECK DESKTOP AND MOBILE VIEW - HASSAN
+        // {
+        //   title: "🎨 RefreeG for Creators",
+        //   description:
+        //     "Turn your influence into impact. Get your unique tag, share your story, and receive donations directly from your fans in fiat or crypto.",
+        //   href: "/creators",
+        //   icon: FileText,
+        // },
         {
           title: "🏥 RefreeG for Healthcare",
           description:
@@ -148,20 +157,6 @@ export function Header() {
           href: "/dashboard/causes/create",
           icon: Star,
         },
-        // {
-        //   title: "🚀 Crowdfunding tips",
-        //   description:
-        //     "Raise more, reach more. Build trust with transparent fundraising tools.",
-        //   href: "/crowdfund/education",
-        //   icon: Rocket,
-        // },
-        // {
-        //   title: "📢 For Supporters",
-        //   description:
-        //     "See how to discover causes, donate securely in fiat or crypto, and follow progress transparently.",
-        //   href: "/crowdfund/community",
-        //   icon: Users,
-        // },
         {
           title: "💸 Fees & Payouts",
           description:
@@ -169,18 +164,11 @@ export function Header() {
           href: "/crowdfund/fees",
           icon: CircleDollarSign,
         },
-        // {
-        //   title: "🛡️ Trust & Safety",
-        //   description:
-        //     "Read about our fraud checks, KYC verification, and commitment to protecting both donors and cause.",
-        //   href: "/crowdfund/trust",
-        //   icon: Shield,
-        // },
         {
           title: "📣 FAQ",
           description:
             "Get answers to the most common questions about crowdfunding on RefreeG.",
-          href: "/faq",
+          href: "/#faq",
           icon: HelpCircle,
         },
       ],
@@ -197,42 +185,110 @@ export function Header() {
           href: "/about-us/OurMission",
           icon: TargetIcon,
         },
-        {
-          title: "📢Our Story",
-          description:
-            "Raise more, reach more. Build trust with transparent fundraising tools.",
-          href: "/about-us/OurStory",
-          icon: Book,
-        },
-        {
-          title: "🔨Our Impact",
-          description:
-            "See how to discover causes, donate securely in fiat or crypto, and follow progress transparently.",
-          href: "/about-us/OurImpact",
-          icon: BarChart3,
-        },
-        {
-          title: "🧑‍🤝‍🧑Who Are We Made By",
-          description:
-            "Clear explanation of transaction fees, payout timelines, and how creators/nonprofits access their funds.",
-          href: "/about-us/OurTeam",
-          icon: Users2,
-        },
-        {
-          title: "💡 What We Do",
-          description:
-            "Read about our fraud checks, KYC verification, and commitment to protecting both donors and cause.",
-          href: "/about-us/WhatWeDo",
-          icon: LightbulbIcon,
-        },
-        {
-          title: "📣FAQ",
-          description:
-            "Get answers to the most common questions about crowdfunding on RefreeG.",
-          href: "/about-us/faq",
-          icon: Heart,
-        },
+
+        // DON'T UNCOMMENT THIS, THE PAGES ARE NOT INCOMPLETE. - HASSAN
+        // {
+        //   title: "📢Our Story",
+        //   description:
+        //     "Raise more, reach more. Build trust with transparent fundraising tools.",
+        //   href: "/about-us/OurStory",
+        //   icon: Book,
+        // },
+        // {
+        //   title: "🔨Our Impact",
+        //   description:
+        //     "See how to discover causes, donate securely in fiat or crypto, and follow progress transparently.",
+        //   href: "/about-us/OurImpact",
+        //   icon: BarChart3,
+        // },
+        // {
+        //   title: "🧑‍🤝‍🧑Who Are We Made By",
+        //   description:
+        //     "Clear explanation of transaction fees, payout timelines, and how creators/nonprofits access their funds.",
+        //   href: "/about-us/OurTeam",
+        //   icon: Users2,
+        // },
+        // {
+        //   title: "💡 What We Do",
+        //   description:
+        //     "Read about our fraud checks, KYC verification, and commitment to protecting both donors and cause.",
+        //   href: "/about-us/WhatWeDo",
+        //   icon: LightbulbIcon,
+        // },
+        // {
+        //   title: "📣FAQ",
+        //   description:
+        //     "Get answers to the most common questions about crowdfunding on RefreeG.",
+        //   href: "/about-us/faq",
+        //   icon: Heart,
+        // },
       ],
+    },
+  ];
+
+  const userDashboardItems = [
+    {
+      title: "Overview",
+      href: "/dashboard",
+      icon: Home,
+    },
+    {
+      title: "My Causes",
+      href: "/dashboard/causes",
+      icon: FileText,
+    },
+    {
+      title: "My Petitions",
+      href: "/dashboard/petitions",
+      icon: FileText,
+    },
+    {
+      title: "My Donations",
+      href: "/dashboard/donations",
+      icon: Users,
+    },
+    {
+      title: "Crypto Wallet",
+      href: "/dashboard/crypto",
+      icon: Wallet,
+    },
+    {
+      title: "Settings",
+      href: "/dashboard/settings",
+      icon: Settings,
+    },
+    {
+      title: "Referrals",
+      href: "/referrals",
+      icon: Share2,
+    },
+  ];
+
+  const adminDashboardItems = [
+    {
+      title: "Manage Causes",
+      href: "/dashboard/admin/causes",
+      icon: FileText,
+    },
+    {
+      title: "Manage Petitions",
+      href: "/dashboard/admin/petitions",
+      icon: FileText,
+    },
+    {
+      title: "Manage Users",
+      href: "/dashboard/admin/users",
+      icon: UserCog,
+    },
+    {
+      title: "Analytics",
+      href: "/dashboard/admin/analytics",
+      icon: BarChart3,
+    },
+    {
+      title: "Logs",
+      href: "/dashboard/admin/logs",
+      icon: ClipboardCheckIcon,
     },
   ];
 
@@ -263,15 +319,13 @@ const scheduleCloseMenu = () => {
           className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-2 md:p-4"
         >
           <div className="flex items-center justify-between w-full">
-            {/* Left: Logo + Desktop Nav */}
             <div className="flex items-center gap-4">
               <NavbarBrand>
                 <Logo />
               </NavbarBrand>
 
-              {/* Desktop Navigation */}
               <div className="hidden md:flex gap-0 items-center">
-                {navItems.map((item) => {
+                {publicNavItems.map((item) => {
                   if (item.type === "link") {
                     return (
                       <NavbarItem
@@ -358,12 +412,8 @@ const scheduleCloseMenu = () => {
               </div>
             </div>
 
-            {/* Right Side Actions */}
             <div className="flex items-center gap-2">
               {(() => {
-                // Define color themes per page
-                const pathname = usePathname();
-
                 const themeMap: Record<
                   string,
                   {
@@ -411,7 +461,6 @@ const scheduleCloseMenu = () => {
                   },
                 };
 
-                // Pick active theme or fallback to neutral
                 const theme = themeMap[pathname] || {
                   border: "border-secondary",
                   text: "text-secondary",
@@ -432,10 +481,9 @@ const scheduleCloseMenu = () => {
                       </Button>
                     </Link>
 
-                    {/* Auth */}
                     {!isLoading && !user ? (
                       <Link href="/auth/signin">
-                        <Button size="sm" variant="default" className={``}>
+                        <Button size="sm" variant="default">
                           Sign In
                         </Button>
                       </Link>
@@ -446,7 +494,6 @@ const scheduleCloseMenu = () => {
                 );
               })()}
 
-              {/* Mobile Toggle */}
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
                 className="p-2 text-foreground hover:bg-gray-100 rounded-md transition-colors md:hidden"
@@ -462,12 +509,11 @@ const scheduleCloseMenu = () => {
           </div>
         </Navbar>
 
-        {/* Mobile Menu */}
         <div
           className={`md:hidden fixed top-[64px] left-0 right-0 bottom-0
-    bg-background/70 
+    bg-background/95 
     backdrop-blur-md 
-    supports-[backdrop-filter]:bg-background/60 
+    supports-[backdrop-filter]:bg-background/90 
     border-b shadow-lg z-40 transition-all duration-300 ease-in-out
     ${
       isMenuOpen
@@ -476,205 +522,215 @@ const scheduleCloseMenu = () => {
     }
   `}
         >
-          <div className="container py-6 space-y-4 max-h-[calc(100vh-64px)] overflow-y-auto">
-            {/* Main Nav */}
-            <div className="space-y-1">
-              {navItems.map((item) => {
-                if (item.type === "link") {
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      className={`flex items-center py-3 px-2 text-foreground hover:text-blue-600 hover:bg-blue-600/5 rounded-md transition-all duration-200 ${
-                        pathname === item.href
-                          ? "text-blue-600 font-medium bg-blue-600/10"
-                          : ""
-                      }`}
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      {item.title}
-                    </Link>
-                  );
-                } else {
-                  return (
-                    <div key={item.title} className="border-t pt-4">
-                      <button
-                        className="w-full flex justify-between items-center py-3 px-2 text-foreground font-medium hover:bg-blue-600/5 rounded-md transition-colors"
-                        onClick={() => toggleDropdown(item.title)}
-                      >
-                        {item.title}
-                        <ChevronDown
-                          className={`h-4 w-4 transition-transform duration-200 ${
-                            openDropdown === item.title
-                              ? "rotate-180"
-                              : "rotate-0"
-                          }`}
-                        />
-                      </button>
-                      <div
-                        className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                          openDropdown === item.title
-                            ? "max-h-96 opacity-100"
-                            : "max-h-0 opacity-0"
-                        }`}
-                      >
-                        {/* Mobile Dropdown Header with Icon */}
-                        <div className="ml-4 mt-2 mb-3 flex items-center gap-2 px-3 py-2 bg-blue-50 rounded-md">
-                          <item.icon className="h-4 w-4 text-blue-600" />
-                          <span className="text-sm font-medium text-blue-800">
-                            {item.header}
-                          </span>
-                        </div>
-
-                        <div className="ml-4 space-y-3">
-                          {item.items.map((subItem) => {
-                            const Icon = subItem.icon;
-                            return (
-                              <Link
-                                key={subItem.href}
-                                href={subItem.href}
-                                className="block py-2 px-3 text-sm hover:text-blue-600 hover:bg-blue-600/5 rounded-md transition-all duration-200"
-                                onClick={() => {
-                                  setIsMenuOpen(false);
-                                  setOpenDropdown(null);
-                                }}
-                              >
-                                <div className="flex items-start gap-2">
-                                  <Icon className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
-                                  <div>
-                                    <p className="font-medium">
-                                      {subItem.title}
-                                    </p>
-                                    <p className="text-muted-foreground text-xs mt-1">
-                                      {subItem.description}
-                                    </p>
-                                  </div>
-                                </div>
-                              </Link>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                }
-              })}
-            </div>
-
-            {/* Actions */}
-            <div className="border-t pt-4 space-y-2">
-              <Link
-                href="/dashboard/causes/create"
-                className="flex items-center gap-3 py-3 px-2 text-foreground hover:text-blue-600 rounded-md transition-colors font-medium"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                <Megaphone className="h-4 w-4" />
-                List a Cause
-              </Link>
-
-              <Link
-                href="/dashboard/petitions/create"
-                className="flex items-center gap-3 py-3 px-2 text-foreground hover:text-blue-600 rounded-md transition-colors font-medium"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                <FileText className="h-4 w-4" />
-                Create a Petition
-              </Link>
-
-              {!isLoading && user && (
-                <Link
-                  href="/dashboard"
-                  className="flex items-center gap-3 py-3 px-2 text-foreground hover:text-blue-600 rounded-md transition-colors font-medium"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  <LayoutDashboard className="h-4 w-4" />
-                  Dashboard
-                </Link>
-              )}
-
-              {!isLoading && user && (
-                <button
-                  onClick={async () => {
-                    if (isSigningOut) return;
-
-                    try {
-                      setIsSigningOut(true);
-                      setIsMenuOpen(false); // Close menu immediately
-                      if (signOut) {
-                        await signOut();
-                      }
-                    } catch (error) {
-                      console.error("Error signing out:", error);
-                      setIsSigningOut(false);
-                    }
-                    // Note: setIsSigningOut(false) is not needed here as signOut will redirect
-                  }}
-                  disabled={isSigningOut}
-                  className="flex items-center gap-3 w-full py-3 px-2 text-foreground hover:text-red-600 rounded-md transition-colors font-medium disabled:opacity-50"
-                >
-                  <LogOut className="h-4 w-4" />
-                  {isSigningOut ? (
-                    <span className="flex items-center gap-2">
-                      <span className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                      Signing out...
-                    </span>
-                  ) : (
-                    "Sign Out"
-                  )}
-                </button>
-              )}
-            </div>
-
-            {/* Admin Links */}
-            {isAdminOrManager && (
-              <div className="border-t pt-4">
-                <div className="py-2 px-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Admin
-                </div>
-                <div className="space-y-1">
-                  {[
-                    {
-                      href: "/dashboard/admin/causes",
-                      title: "Manage Causes",
-                      icon: Megaphone,
-                    },
-                    {
-                      href: "/dashboard/admin/petitions",
-                      title: "Manage Petitions",
-                      icon: FileText,
-                    },
-                    {
-                      href: "/dashboard/admin/users",
-                      title: "Manage Users",
-                      icon: Users,
-                    },
-                    {
-                      href: "/dashboard/admin/analytics",
-                      title: "Analytics",
-                      icon: BarChart3,
-                    },
-                    {
-                      href: "/dashboard/admin/logs",
-                      title: "Logs",
-                      icon: Book,
-                    },
-                  ].map((adminItem) => {
-                    const AdminIcon = adminItem.icon;
+          <div className="h-full overflow-y-auto overscroll-contain">
+            <div className="container py-6 space-y-4">
+              {!isLoading && user && isDashboardRoute && (
+                <div className="space-y-1 pb-4 border-b">
+                  <div className="py-2 px-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    Dashboard
+                  </div>
+                  {userDashboardItems.map((item) => {
+                    const Icon = item.icon;
                     return (
                       <Link
-                        key={adminItem.href}
-                        href={adminItem.href}
-                        className="flex items-center gap-3 py-2 px-2 text-sm text-foreground hover:text-blue-600 hover:bg-blue-600/5 rounded-md transition-colors"
+                        key={item.href}
+                        href={item.href}
+                        className={`flex items-center gap-3 py-3 px-2 text-foreground hover:text-blue-600 hover:bg-blue-600/5 rounded-md transition-all duration-200 ${
+                          pathname === item.href ||
+                          pathname.startsWith(`${item.href}/`)
+                            ? "text-blue-600 font-medium bg-blue-600/10"
+                            : ""
+                        }`}
                         onClick={() => setIsMenuOpen(false)}
                       >
-                        <AdminIcon className="h-4 w-4" />
-                        {adminItem.title}
+                        <Icon className="h-4 w-4" />
+                        {item.title}
                       </Link>
                     );
                   })}
+
+                  {/* Admin Section */}
+                  {isAdminOrManager && (
+                    <div className="pt-4 border-t mt-4">
+                      <div className="py-2 px-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                        <Shield className="h-3 w-3" />
+                        Admin
+                      </div>
+                      {adminDashboardItems.map((item) => {
+                        const Icon = item.icon;
+                        return (
+                          <Link
+                            key={item.href}
+                            href={item.href}
+                            className={`flex items-center gap-3 py-3 px-2 text-foreground hover:text-blue-600 hover:bg-blue-600/5 rounded-md transition-all duration-200 ${
+                              pathname === item.href ||
+                              pathname.startsWith(`${item.href}/`)
+                                ? "text-blue-600 font-medium bg-blue-600/10"
+                                : ""
+                            }`}
+                            onClick={() => setIsMenuOpen(false)}
+                          >
+                            <Icon className="h-4 w-4" />
+                            {item.title}
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
+              )}
+
+              <div className="space-y-1">
+                <div className="py-2 px-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Explore
+                </div>
+                {publicNavItems.map((item) => {
+                  if (item.type === "link") {
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        className={`flex items-center py-3 px-2 text-foreground hover:text-blue-600 hover:bg-blue-600/5 rounded-md transition-all duration-200 ${
+                          pathname === item.href
+                            ? "text-blue-600 font-medium bg-blue-600/10"
+                            : ""
+                        }`}
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        {item.title}
+                      </Link>
+                    );
+                  } else {
+                    return (
+                      <div key={item.title} className="border-t pt-4">
+                        <button
+                          className="w-full flex justify-between items-center py-3 px-2 text-foreground font-medium hover:bg-blue-600/5 rounded-md transition-colors"
+                          onClick={() => toggleDropdown(item.title)}
+                        >
+                          {item.title}
+                          <ChevronDown
+                            className={`h-4 w-4 transition-transform duration-200 ${
+                              openDropdown === item.title
+                                ? "rotate-180"
+                                : "rotate-0"
+                            }`}
+                          />
+                        </button>
+
+                        <div
+                          className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                            openDropdown === item.title
+                              ? "max-h-[600px] opacity-100"
+                              : "max-h-0 opacity-0"
+                          }`}
+                        >
+                          <div className="ml-4 mt-2 mb-3 flex items-center gap-2 px-3 py-2 bg-blue-50 rounded-md">
+                            <item.icon className="h-4 w-4 text-blue-600" />
+                            <span className="text-sm font-medium text-blue-800">
+                              {item.header}
+                            </span>
+                          </div>
+
+                          <div className="ml-4 space-y-3 max-h-[400px] overflow-y-auto overscroll-contain pr-2">
+                            {item.items.map((subItem) => {
+                              const Icon = subItem.icon;
+                              return (
+                                <Link
+                                  key={subItem.href}
+                                  href={subItem.href}
+                                  className="block py-2 px-3 text-sm hover:text-blue-600 hover:bg-blue-600/5 rounded-md transition-all duration-200"
+                                  onClick={() => {
+                                    setIsMenuOpen(false);
+                                    setOpenDropdown(null);
+                                  }}
+                                >
+                                  <div className="flex items-start gap-2">
+                                    <Icon className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                                    <div>
+                                      <p className="font-medium">
+                                        {subItem.title}
+                                      </p>
+                                      <p className="text-muted-foreground text-xs mt-1">
+                                        {subItem.description}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </Link>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
+                })}
               </div>
-            )}
+
+              <div className="border-t pt-4 space-y-2">
+                <div className="py-2 px-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Quick Actions
+                </div>
+                <Link
+                  href="/dashboard/causes/create"
+                  className="flex items-center gap-3 py-3 px-2 text-foreground hover:text-blue-600 rounded-md transition-colors font-medium"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <Megaphone className="h-4 w-4" />
+                  List a Cause
+                </Link>
+
+                <Link
+                  href="/dashboard/petitions/create"
+                  className="flex items-center gap-3 py-3 px-2 text-foreground hover:text-blue-600 rounded-md transition-colors font-medium"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <FileText className="h-4 w-4" />
+                  Create a Petition
+                </Link>
+
+                {!isLoading && user && !isDashboardRoute && (
+                  <Link
+                    href="/dashboard"
+                    className="flex items-center gap-3 py-3 px-2 text-foreground hover:text-blue-600 rounded-md transition-colors font-medium"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <LayoutDashboard className="h-4 w-4" />
+                    Go to Dashboard
+                  </Link>
+                )}
+
+                {!isLoading && user && (
+                  <button
+                    onClick={async () => {
+                      if (isSigningOut) return;
+
+                      try {
+                        setIsSigningOut(true);
+                        setIsMenuOpen(false);
+                        if (signOut) {
+                          await signOut();
+                        }
+                      } catch (error) {
+                        console.error("Error signing out:", error);
+                        setIsSigningOut(false);
+                      }
+                    }}
+                    disabled={isSigningOut}
+                    className="flex items-center gap-3 w-full py-3 px-2 text-foreground hover:text-red-600 rounded-md transition-colors font-medium disabled:opacity-50"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    {isSigningOut ? (
+                      <span className="flex items-center gap-2">
+                        <span className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                        Signing out...
+                      </span>
+                    ) : (
+                      "Sign Out"
+                    )}
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>

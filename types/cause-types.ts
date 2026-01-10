@@ -1,6 +1,5 @@
 import type { CauseStatus } from "./common-types";
 
-// Cause
 export interface Cause {
   id: string;
   user_id: string;
@@ -15,8 +14,8 @@ export interface Cause {
   updated_at: string;
   image?: string | null;
   days_active?: number | null;
-  multimedia?: string[]; // Array of image URLs
-  video_links?: string[]; // Array of video URLs
+  multimedia?: string[];
+  video_links?: string[];
   profiles?: {
     full_name: string;
     email: string;
@@ -42,7 +41,6 @@ export interface CauseWithSubHeading extends Cause {
   sub_heading: subHeadingWithSubDescription[];
 }
 
-// Cause with user information
 export interface CauseWithUser extends Cause {
   user: {
     name: string;
@@ -52,13 +50,11 @@ export interface CauseWithUser extends Cause {
   };
 }
 
-// Category
 export interface Category {
   id: string;
   name: string;
 }
 
-// Cause form data
 export interface CauseFormData {
   title: string;
   description: string;
@@ -69,6 +65,6 @@ export interface CauseFormData {
   sections?: { heading: string; description: string }[];
   startDate?: Date | undefined;
   endDate?: Date | undefined;
-  multimedia: File[]; // Image files only
-  video_links?: string[]; // Video URLs
+  multimedia: File[];
+  video_links?: string[];
 }
