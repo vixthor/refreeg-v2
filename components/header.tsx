@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -77,6 +77,8 @@ interface NavDropdown {
 type NavItem = NavLink | NavDropdown;
 
 export function Header() {
+  const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   const pathname = usePathname();
   const { user, isLoading, signOut } = useAuth();
   const { isAdminOrManager } = useAdmin(user?.id);
@@ -238,6 +240,21 @@ export function Header() {
     setOpenDropdown(openDropdown === title ? null : title);
   };
 
+  const openMenu = (title: string) => {
+  if (closeTimeoutRef.current) {
+    clearTimeout(closeTimeoutRef.current);
+    closeTimeoutRef.current = null;
+  }
+  setOpenDropdown(title);
+};
+
+const scheduleCloseMenu = () => {
+  closeTimeoutRef.current = setTimeout(() => {
+    setOpenDropdown(null);
+  }, 200); // 👈 adjust delay (150–300ms is ideal)
+};
+
+
   return (
     <>
       <div className="sticky top-0 left-0 right-0 z-50">
@@ -279,8 +296,8 @@ export function Header() {
                         <div
                           key={item.title}
                           className="relative"
-                          onMouseEnter={() => setOpenDropdown(item.title)}
-                          onMouseLeave={() => setOpenDropdown(null)}
+                          onMouseEnter={() => openMenu(item.title)}
+                          onMouseLeave={scheduleCloseMenu}
                         >
                           <HeroButton
                             variant="light"
@@ -301,6 +318,8 @@ export function Header() {
                           {/* Dropdown on hover */}
                           {openDropdown === item.title && (
                             <div
+                              onMouseEnter={() => openMenu(item.title)}
+                              onMouseLeave={scheduleCloseMenu}
                               className={`absolute top-full mt-2 bg-white shadow-xl rounded-lg border border-gray-100 z-50 animate-in fade-in-50 slide-in-from-top-1 duration-150
                                 ${item.title.includes("About") ? "right-0 left-auto" : "left-0"}
                                 max-w-[90vw] overflow-hidden`}

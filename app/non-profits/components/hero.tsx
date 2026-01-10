@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Users, CreditCard, FileText } from "lucide-react";
+// import { Users, CreditCard, FileText } from "lucide-react";
 import { motion } from "framer-motion";
-import Statistics from "@/components/home/statistics";
+// import Statistics from "@/components/home/statistics";
+import Numbers from "@/components/numbers";
 
 const SLIDE_UP_DURATION = 0.8;
 const STAGGER_DELAY = 0.15;
@@ -62,7 +63,7 @@ export default function Hero() {
 
       <div className="relative max-w-7xl mx-auto">
         {/* Hero Images */}
-        <div className="relative flex justify-center items-center min-h-[500px] md:min-h-[600px]">
+        <div className="relative flex justify-center items-center min-h-[500px] md:min-h-[600px] mb-10">
           {/* Top Left - Disaster Relief */}
           <motion.div
             className="absolute top-4 left-4 md:top-0 md:left-20 w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 lg:w-48 lg:h-48"
@@ -332,7 +333,7 @@ export default function Hero() {
         </div>
 
         {/* Statistics */}
-        <Statistics />
+        <Numbers />
       </div>
     </section>
   );
