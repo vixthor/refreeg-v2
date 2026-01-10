@@ -337,6 +337,29 @@ export async function updateCause(
     }
   }
 
+  try {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("full_name, email")
+      .eq("id", userId)
+      .single();
+
+    if (profile?.email) {
+      const baseUrl =
+        process.env.NEXT_PUBLIC_APP_URL || "https://www.refreeg.com";
+      const reviewUrl = `${baseUrl}/dashboard/admin/causes`;
+
+      await sendCauseSubmissionAdminNotification(
+        profile.full_name || "User",
+        profile.email,
+        causeData.title || "Cause Edit",
+        reviewUrl
+      );
+    }
+  } catch (error) {
+    console.error("Error sending cause edit admin notification:", error);
+  }
+
   revalidatePath("/dashboard/causes");
   return data;
 }
