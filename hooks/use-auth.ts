@@ -1,13 +1,9 @@
-// Helper to extract a simple device/OS string from user agent
 "use client";
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { toast } from "@/components/ui/use-toast";
-
-import { getCurrentUser } from "@/actions/auth-actions";
-import { updateProfile } from "@/actions";
 import {
   sendLoginNotificationEmail,
   sendWelcomeEmailToUser,
@@ -15,7 +11,6 @@ import {
 import { subscribeToConvertKit } from "@/services/convertkit";
 import { hasCompletedOnboarding } from "@/actions/profile-actions";
 
-// Helper to extract a simple device/OS string from user agent
 function getDeviceInfo() {
   if (typeof window === "undefined") return "Unknown Device";
   const ua = window.navigator.userAgent;
@@ -34,32 +29,43 @@ export function useAuth() {
   const supabase = createClient();
 
   useEffect(() => {
-    const getUser = async () => {
-      try {
-        const currentUser = await getCurrentUser();
-        setUser(currentUser);
-      } catch (error) {
-        console.error("Error getting current user:", error);
-        setUser(null);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    let isMounted = true;
 
-    getUser();
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (session) {
+    const applyInitialSession = async () => {
+      try {
         const {
-          data: { user },
-          error,
-        } = await supabase.auth.getUser();
-        if (!error && user) {
-          setUser(user);
+          data: { session },
+        } = await supabase.auth.getSession();
+
+        if (!isMounted) return;
+
+        if (session?.user) {
+          setUser(session.user);
         } else {
           setUser(null);
         }
+      } catch (error) {
+        console.error("Error getting initial auth session:", error);
+        if (isMounted) {
+          setUser(null);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    setIsLoading(true);
+    applyInitialSession();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!isMounted) return;
+
+      if (session?.user) {
+        setUser(session.user);
       } else {
         setUser(null);
       }
@@ -67,6 +73,7 @@ export function useAuth() {
     });
 
     return () => {
+      isMounted = false;
       subscription.unsubscribe();
     };
   }, [supabase.auth]);
@@ -87,7 +94,6 @@ export function useAuth() {
         return;
       }
 
-      // Get device and IP address (best effort, client-side)
       const device = getDeviceInfo();
       let ipAddress = "Unknown IP";
       try {
@@ -100,14 +106,12 @@ export function useAuth() {
         // Ignore IP fetch errors
       }
 
-      // Send login notification email (fire and forget)
       sendLoginNotificationEmail({
         loginTime: new Date().toLocaleString(),
         device,
         ipAddress,
       }).catch((e) => console.error("Login notification email error:", e));
 
-      // Get the current user after successful sign in
       const {
         data: { user: currentUser },
       } = await supabase.auth.getUser();
@@ -121,8 +125,6 @@ export function useAuth() {
         return;
       }
 
-      // Check if user needs to complete onboarding
-      // hasCompletedOnboarding handles grandfathering existing users automatically
       const completedOnboarding = await hasCompletedOnboarding(currentUser.id);
 
       if (!completedOnboarding) {
@@ -176,18 +178,14 @@ export function useAuth() {
         return;
       }
 
-      // Send welcome email after successful signup
       try {
         const profileSetupUrl = `${window.location.origin}/dashboard/settings`;
         await sendWelcomeEmailToUser(email, fullName, profileSetupUrl);
       } catch (emailError) {
         console.error("Error sending welcome email:", emailError);
-        // Don't fail signup if email fails
       }
 
-      // Subscribe user to ConvertKit email list
       try {
-        // Extract first name from full name
         const firstName = fullName.split(" ")[0];
 
         await subscribeToConvertKit({
@@ -202,7 +200,6 @@ export function useAuth() {
         console.log("Successfully subscribed user to ConvertKit:", email);
       } catch (convertkitError) {
         console.error("Error subscribing to ConvertKit:", convertkitError);
-        // Don't fail signup if ConvertKit subscription fails
       }
 
       toast({
@@ -211,8 +208,9 @@ export function useAuth() {
           "Welcome! Let's set up your profile. Check your email for a welcome message.",
       });
 
-      // Redirect to onboarding for new users
       router.push("/onboarding");
+
+      return { data, error };
     } catch (error: any) {
       toast({
         title: "Error signing up",
@@ -250,42 +248,27 @@ export function useAuth() {
 
   const signOut = async () => {
     try {
-      // Sign out from Supabase first
       const { error } = await supabase.auth.signOut();
 
       if (error) {
         throw error;
       }
 
-      // Update UI state after successful sign out
-      setUser(null);
-      setIsLoading(false);
-
-      // Show success message
-      toast({
-        title: "Signed out",
-        description: "You have been signed out successfully.",
-      });
-
-      // Navigate to home page
-      router.push("/");
-      router.refresh(); // Refresh to clear any cached data
+      router.replace("/");
     } catch (error: any) {
       console.error("Error signing out:", error);
-      // Don't update user state if sign out failed
       toast({
         title: "Error signing out",
         description:
           error?.message || "There was an error signing out. Please try again.",
         variant: "destructive",
       });
-      throw error; // Re-throw so calling components can handle it
+      throw error;
     }
   };
 
   const resetPassword = async (email: string) => {
     try {
-      // Updated to go through callback route with type parameter
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/auth/callback?type=recovery`,
       });

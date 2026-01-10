@@ -1,4 +1,3 @@
-// blogs.ts
 export const blogs = [
   {
     title: "Blockchain Transparency",
@@ -281,7 +280,7 @@ export const blogs = [
       By empowering individuals with vocational skills, we help create a 
       workforce that drives economic growth and reduces dependency on aid.
     `,
-  },  
+  },
   {
     title: "Healthcare Support",
     slug: "healthcare-support",

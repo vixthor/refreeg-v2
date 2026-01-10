@@ -12,7 +12,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verify transaction using server-side service
     const isSuccessful = await Paystack.verifyTransaction(reference);
 
     return NextResponse.json({

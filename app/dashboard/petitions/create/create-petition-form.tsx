@@ -43,6 +43,7 @@ import { cn } from "@/lib/utils";
 import MultimediaCarousel from "@/components/MultimediaCarousel";
 
 const currencies = [{ id: "SIGNATURES", name: "Signatures" }];
+const MAX_DURATION_DAYS = 180;
 
 type FormData = {
   title: string;
@@ -121,15 +122,14 @@ const validateForm = (formData: FormData): FormErrors => {
     errors.endDate = "End date is required";
   } else if (formData.startDate && formData.endDate) {
     const daysDiff = differenceInDays(formData.endDate, formData.startDate);
-    if (daysDiff > 60) {
-      errors.endDate = "Petition duration cannot exceed 60 days";
+    if (daysDiff > MAX_DURATION_DAYS) {
+      errors.endDate = `Petition duration cannot exceed ${MAX_DURATION_DAYS} days`;
     }
     if (daysDiff < 1) {
       errors.endDate = "End date must be after start date";
     }
   }
 
-  // Validate sections
   if (formData.sections && formData.sections.length > 0) {
     const sectionErrorsArray = formData.sections.map((section) => {
       const sectionErrors: { heading?: string; description?: string } = {};
@@ -140,14 +140,12 @@ const validateForm = (formData: FormData): FormErrors => {
       return sectionErrors;
     });
 
-    // Only add sections errors if there are actual errors
     if (sectionErrorsArray.some((err) => Object.keys(err).length > 0)) {
       errors.sections = sectionErrorsArray;
     }
   }
 
-  // Check total multimedia size
-  const MAX_TOTAL_SIZE = 100 * 1024 * 1024; // 100MB in bytes
+  const MAX_TOTAL_SIZE = 100 * 1024 * 1024;
   const totalSize =
     formData.multimedia && formData.multimedia.length > 0
       ? formData.multimedia.reduce((acc, file) => acc + file.size, 0)
@@ -181,7 +179,6 @@ export default function CreatePetitionForm() {
   const [videoLinkInput, setVideoLinkInput] = useState("");
   const [videoLinkError, setVideoLinkError] = useState<string | null>(null);
 
-  // Auto-save draft to localStorage
   useEffect(() => {
     const savedDraft = localStorage.getItem("petitionDraft");
     if (savedDraft) {
@@ -202,7 +199,6 @@ export default function CreatePetitionForm() {
   }, []);
 
   useEffect(() => {
-    // Don't save files to localStorage, and properly serialize dates
     const { coverImage, multimedia, ...dataToSave } = formData;
     const serializedData = {
       ...dataToSave,
@@ -214,7 +210,6 @@ export default function CreatePetitionForm() {
     localStorage.setItem("petitionDraft", JSON.stringify(serializedData));
   }, [formData]);
 
-  // Track inactivity and send reminder email after 24 hours
   useEffect(() => {
     let inactivityTimer: NodeJS.Timeout;
 
@@ -224,22 +219,18 @@ export default function CreatePetitionForm() {
         formData.title || formData.category || formData.goal;
 
       if (hasDraft || hasStartedFilling) {
-        // Reset timer on any form interaction
         const resetTimer = () => {
           clearTimeout(inactivityTimer);
-          inactivityTimer = setTimeout(sendReminder, 24 * 60 * 60 * 1000); // 24 hours
+          inactivityTimer = setTimeout(sendReminder, 24 * 60 * 60 * 1000);
         };
 
-        // Set up event listeners for form interactions
         const events = ["input", "change", "click", "keydown"];
         events.forEach((event) => {
           document.addEventListener(event, resetTimer, { passive: true });
         });
 
-        // Start the initial timer
         resetTimer();
 
-        // Cleanup function
         return () => {
           clearTimeout(inactivityTimer);
           events.forEach((event) => {
@@ -250,7 +241,6 @@ export default function CreatePetitionForm() {
     };
 
     const sendReminder = async () => {
-      // Check if petition still isn't submitted
       const currentDraft = localStorage.getItem("petitionDraft");
       if (currentDraft && user) {
         try {
@@ -271,7 +261,7 @@ export default function CreatePetitionForm() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    // Clear error when user starts typing
+
     if (errors[name as keyof FormErrors]) {
       setErrors((prev) => ({ ...prev, [name]: undefined }));
     }
@@ -279,7 +269,7 @@ export default function CreatePetitionForm() {
 
   const handleSelectChange = (name: string, value: string) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
-    // Clear error when user makes a selection
+
     if (errors[name as keyof FormErrors]) {
       setErrors((prev) => ({ ...prev, [name]: undefined }));
     }
@@ -290,14 +280,14 @@ export default function CreatePetitionForm() {
     field: "startDate" | "endDate"
   ) => {
     setFormData((prev) => ({ ...prev, [field]: date }));
-    // Clear error when user selects a date
+
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: undefined }));
     }
   };
 
   const handleImageUpload = (files: File[]) => {
-    const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB in bytes
+    const MAX_FILE_SIZE = 100 * 1024 * 1024;
     const file = files[0];
 
     if (file && file.size > MAX_FILE_SIZE) {
@@ -315,7 +305,7 @@ export default function CreatePetitionForm() {
   };
 
   const handleMultimediaUpload = (files: File[]) => {
-    const MAX_TOTAL_SIZE = 100 * 1024 * 1024; // 100MB in bytes
+    const MAX_TOTAL_SIZE = 100 * 1024 * 1024;
     const currentSize =
       formData.multimedia && formData.multimedia.length > 0
         ? formData.multimedia.reduce((acc, file) => acc + file.size, 0)
@@ -361,14 +351,12 @@ export default function CreatePetitionForm() {
           !currentErrors.title && !currentErrors.category && !currentErrors.goal
         );
       case 2:
-        // Check for section errors
         if (currentErrors.sections) {
-          // If there are section errors, check if any sections have errors
           return !currentErrors.sections.some(
             (err) => err.heading || err.description
           );
         }
-        // If there are no section errors in the currentErrors object, validate directly
+
         return formData.sections.every(
           (section) =>
             section.heading.trim() !== "" && section.description.trim() !== ""
@@ -392,7 +380,7 @@ export default function CreatePetitionForm() {
     e.preventDefault();
 
     if (!user) return;
-    // Only allow submit on last step (step 5)
+
     if (currentStep < 5) {
       nextStep();
       return;
@@ -401,10 +389,8 @@ export default function CreatePetitionForm() {
     setSubmitting(true);
     const validationErrors = validateForm(formData);
 
-    // Check if there are any validation errors
     const hasErrors = Object.keys(validationErrors).some((key) => {
       if (key === "sections" && validationErrors.sections) {
-        // For sections, check if any section has actual errors
         return validationErrors.sections.some(
           (section) => Object.keys(section).length > 0
         );
@@ -624,7 +610,7 @@ export default function CreatePetitionForm() {
               <h3 className="text-lg font-medium">Petition Duration</h3>
               <p className="text-sm text-muted-foreground">
                 Select when your petition should start and end. Maximum duration
-                is 60 days.
+                is <strong>{MAX_DURATION_DAYS} days</strong>.
               </p>
             </div>
 
@@ -692,10 +678,11 @@ export default function CreatePetitionForm() {
                         const isBeforeStart = formData.startDate
                           ? isBefore(date, formData.startDate)
                           : false;
-                        const isOver60Days = formData.startDate
-                          ? differenceInDays(date, formData.startDate) > 60
+                        const isOverMaxDays = formData.startDate
+                          ? differenceInDays(date, formData.startDate) >
+                            MAX_DURATION_DAYS
                           : false;
-                        return isPast || isBeforeStart || isOver60Days;
+                        return isPast || isBeforeStart || isOverMaxDays;
                       }}
                       initialFocus
                     />
@@ -757,7 +744,6 @@ export default function CreatePetitionForm() {
                   onUpload={(files) => handleMultimediaUpload(files)}
                   maxFiles={10}
                   accept="image/*,video/*"
-                  //   multiple={true}
                 />
                 {errors.multimedia && (
                   <p className="text-sm text-red-500">{errors.multimedia}</p>
@@ -999,24 +985,6 @@ export default function CreatePetitionForm() {
             Back
           </Button>
           <div className="flex gap-2">
-            {/* REMOVE THIS TEST BUTTON IN PRODUCTION */}
-            {/* <Button 
-              type="button" 
-              variant="outline"
-              onClick={async () => {
-                try {
-                  await sendIncompletePetitionDraftEmail({
-                    continueUrl: `${window.location.origin}/create-petition`
-                  });
-                  alert("Test petition email sent successfully!");
-                } catch (error) {
-                  alert("Failed to send test petition email");
-                }
-              }}
-            >
-              Test Petition Email
-            </Button> */}
-
             {currentStep < 5 ? (
               <Button type="button" onClick={nextStep}>
                 Next

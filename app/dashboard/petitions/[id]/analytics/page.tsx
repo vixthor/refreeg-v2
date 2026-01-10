@@ -36,7 +36,6 @@ export default async function AnalyticsPage({
         </p>
       </div>
 
-      {/* Overview Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
         <Card>
           <CardHeader className="pb-2">
@@ -93,7 +92,6 @@ export default async function AnalyticsPage({
         </Card>
       </div>
 
-      {/* Detailed Analytics Tabs */}
       <Tabs defaultValue="donations" className="space-y-4">
         <TabsList>
           <TabsTrigger value="donations">Donations</TabsTrigger>

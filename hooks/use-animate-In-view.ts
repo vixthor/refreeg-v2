@@ -11,7 +11,7 @@ export function useAnimateInView(options?: {
 
   const isInView = useInView(ref, {
     once: options?.once ?? true,
-    margin: (options?.margin as MarginType) ?? "-100px", // Cast string to MarginType
+    margin: (options?.margin as MarginType) ?? "-100px",
   });
 
   return { ref, isInView };

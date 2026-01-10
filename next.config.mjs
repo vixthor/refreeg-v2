@@ -20,11 +20,13 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname:
-          process.env.NODE_ENV === "development"
-            ? "eivlgwyipqojpeaxoajm.supabase.co"
-            : "gfrksuuzzaczlxcswgkw.supabase.co",
-        pathname: "/storage/v1/object/**",
+        hostname: "eivlgwyipqojpeaxoajm.supabase.co",
+        pathname: "/storage/v1/object/public/**",
+      },
+      {
+        protocol: "https",
+        hostname: "gfrksuuzzaczlxcswgkw.supabase.co",
+        pathname: "/storage/v1/object/public/**",
       },
       {
         protocol: "https",
@@ -32,6 +34,7 @@ const nextConfig = {
       },
     ],
   },
+
   experimental: {
     webpackBuildWorker: false,
     parallelServerBuildTraces: false,

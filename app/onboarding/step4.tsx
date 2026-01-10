@@ -101,9 +101,6 @@ export default function Step4({
                     width={96}
                     height={96}
                     className="w-full h-full object-cover"
-                    onError={(e) => {
-                      console.error("Error loading profile image:", e);
-                    }}
                   />
                 </div>
               ) : (

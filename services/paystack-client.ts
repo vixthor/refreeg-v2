@@ -22,10 +22,9 @@ declare global {
 }
 
 export const initializePaystackPayment = (config: PaystackConfig) => {
-  // Check if Paystack script is loaded
   if (typeof window !== "undefined" && window.PaystackPop) {
     const handler = window.PaystackPop.setup({
-      key: config.key, // This should be the PUBLIC key (pk_...)
+      key: config.key,
       email: config.email,
       amount: config.amount,
       currency: config.currency || "NGN",
@@ -48,7 +47,6 @@ export const loadPaystackScript = (): Promise<void> => {
       return;
     }
 
-    // Check if script is already loaded
     if (window.PaystackPop) {
       resolve();
       return;

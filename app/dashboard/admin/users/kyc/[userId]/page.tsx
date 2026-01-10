@@ -34,7 +34,7 @@ export default async function KycReviewPage({
   searchParams,
 }: {
   params: { userId: string };
-  searchParams?: Promise<{ kyc_alert?: string }>; // 👈 note Promise here
+  searchParams?: Promise<{ kyc_alert?: string }>;
 }) {
   const userId = params.userId;
 
@@ -43,7 +43,6 @@ export default async function KycReviewPage({
   const { status: kyc, error: kycError } = await getVerificationStatus(userId);
   const profile = await getProfile(userId);
 
-  // Handle missing KYC submission
   if (kycError || !kyc) {
     return (
       <div className="max-w-4xl mx-auto mt-8">
@@ -57,7 +56,6 @@ export default async function KycReviewPage({
     );
   }
 
-  // Handle missing profile
   if (!profile) {
     return (
       <div className="max-w-4xl mx-auto mt-8">
@@ -90,7 +88,6 @@ export default async function KycReviewPage({
 
   return (
     <div className=" mt-4 md:mt-8 space-y-4 md:space-y-6 px-4 md:px-0">
-      {/* Success/Error Alerts */}
       {resolvedSearchParams.kyc_alert === "approved" && (
         <Alert className="bg-green-100 border-green-300 text-green-800">
           <CheckCircle className="h-4 w-4 text-green-700" />
@@ -111,7 +108,6 @@ export default async function KycReviewPage({
         </Alert>
       )}
 
-      {/* User Information */}
       <Card className="shadow-lg">
         <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50">
           <CardTitle className="flex items-center gap-2">
@@ -138,7 +134,6 @@ export default async function KycReviewPage({
         </CardContent>
       </Card>
 
-      {/* KYC Status */}
       <Card className="shadow-lg">
         <CardHeader className="bg-gradient-to-r from-purple-50 to-pink-50">
           <CardTitle className="flex items-center gap-2">
@@ -173,7 +168,6 @@ export default async function KycReviewPage({
         </CardContent>
       </Card>
 
-      {/* KYC Submission Details */}
       <Card className="shadow-lg">
         <CardHeader className="bg-gradient-to-r from-purple-50 to-pink-50">
           <CardTitle className="flex items-center gap-2">
@@ -185,7 +179,6 @@ export default async function KycReviewPage({
           </CardDescription>
         </CardHeader>
         <CardContent className="pt-6">
-          {/* Personal Information */}
           <div className="space-y-4">
             <h4 className="font-semibold text-sm text-gray-600 uppercase tracking-wide">
               Personal Information
@@ -227,7 +220,6 @@ export default async function KycReviewPage({
 
           <Separator className="my-6" />
 
-          {/* Address Information */}
           <div className="space-y-4">
             <h4 className="font-semibold text-sm text-gray-600 uppercase tracking-wide">
               Address Information
@@ -285,7 +277,6 @@ export default async function KycReviewPage({
 
           <Separator className="my-6" />
 
-          {/* Document Preview */}
           <div className="space-y-4">
             <h4 className="font-semibold text-sm text-gray-600 uppercase tracking-wide">
               Document Preview
@@ -313,7 +304,7 @@ export default async function KycReviewPage({
                 </div>
               ) : (
                 <div className="border rounded-lg p-4 bg-gray-50 flex items-center gap-4">
-                  <span className="inline-block w-8 h-8 bg-gray-200 flex items-center justify-center rounded">
+                  <span className=" w-8 h-8 bg-gray-200 flex items-center justify-center rounded">
                     <svg width="24" height="24" fill="none" viewBox="0 0 24 24">
                       <path
                         d="M6 2a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8.828A2 2 0 0 0 19.414 7.414l-4.828-4.828A2 2 0 0 0 12.172 2H6zm7 1.414L18.586 9H15a2 2 0 0 1-2-2V3.414z"
@@ -350,7 +341,6 @@ export default async function KycReviewPage({
         </CardContent>
       </Card>
 
-      {/* Action Buttons */}
       <Card className="shadow-lg">
         <CardContent className="pt-6">
           <div className="flex flex-col sm:flex-row gap-4 justify-center">

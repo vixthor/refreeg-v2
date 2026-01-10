@@ -20,6 +20,12 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { LocationSelector } from "@/components/location-selector";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "@/components/ui/use-toast";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface Step3Props {
   user: any;
@@ -356,8 +362,10 @@ export default function Step3({
                     placeholder="Choose a unique username"
                     value={formData.username}
                     onChange={(e) => handleChange("username", e.target.value)}
-                    className={`pl-10 pr-10 ${
-                      errors.username ? "border-red-500" : ""
+                    className={`pl-10 pr-10 text-gray-900 placeholder:text-gray-400 ${
+                      errors.username
+                        ? "border-red-500 bg-red-50 text-gray-900"
+                        : ""
                     }`}
                   />
 
@@ -372,16 +380,34 @@ export default function Step3({
                   {isUsernameAvailable === true &&
                     formData.username.length >= 3 &&
                     !isCheckingUsername && (
-                      <div className="absolute right-3 top-2.5 text-green-500">
-                        <CheckCircle className="w-5 h-5" />
-                      </div>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className="absolute right-3 top-2.5 text-green-500 cursor-help">
+                              <CheckCircle className="w-5 h-5" />
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Username is available</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     )}
 
                   {/* ❌ Username taken */}
                   {isUsernameAvailable === false && !isCheckingUsername && (
-                    <div className="absolute right-3 top-2.5 text-red-500">
-                      <XCircle className="w-5 h-5" />
-                    </div>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="absolute right-3 top-2.5 text-red-500 cursor-help">
+                            <XCircle className="w-5 h-5" />
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Username is already taken</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   )}
                 </div>
               </div>

@@ -8,13 +8,11 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[];
 
-// Status types
 export type CauseStatus = "pending" | "approved" | "rejected";
 export type PetitionStatus = "pending" | "approved" | "rejected";
 export type DonationStatus = "pending" | "completed" | "failed";
 export type SignatureStatus = "pending" | "signed" | "rejected";
 
-// Form data types
 export interface ProfileFormData {
   name: string;
   phone: string;
@@ -110,7 +108,6 @@ export interface ICreateSubaccount {
   business_name: string;
 }
 
-// Filter options
 export interface CauseFilterOptions {
   category?: string;
   status?: CauseStatus;
@@ -240,7 +237,7 @@ export interface Comment {
   user: {
     full_name: string | null;
     profile_photo: string | null;
-    username?: string | null; // Added username field
+    username?: string | null;
   };
   replies?: Comment[];
   replies_count?: number;

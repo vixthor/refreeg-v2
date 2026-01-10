@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Petition Goal Reached - Refreeg</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        line-height: 1.6;
+        color: #333;
+        margin: 0;
+        padding: 0;
+      }
+
+      .container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+
+      .header {
+        background-color: #28a745;
+        color: white;
+        padding: 20px;
+        text-align: center;
+      }
+
+      .logo {
+        max-width: 150px;
+        margin-bottom: 10px;
+      }
+
+      .content {
+        padding: 20px;
+        background-color: #f9f9f9;
+      }
+
+      .footer {
+        text-align: center;
+        padding: 20px;
+        font-size: 12px;
+        color: #777;
+        border-top: 3px solid #28a745;
+      }
+
+      h1 {
+        color: #ffffff;
+        margin-top: 0;
+      }
+
+      .highlight {
+        font-weight: bold;
+        color: #28a745;
+      }
+
+      .cta-button {
+        display: inline-block;
+        background-color: #28a745;
+        color: white !important;
+        padding: 12px 24px;
+        text-decoration: none;
+        border-radius: 8px;
+        margin: 20px 0;
+        font-weight: bold;
+        font-size: 16px;
+        transition: background-color 0.3s ease;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .cta-button:hover {
+        background-color: #218838;
+        color: white !important;
+      }
+
+      .celebration-section {
+        background-color: #d4edda;
+        padding: 15px;
+        border-radius: 5px;
+        margin: 15px 0;
+        border-left: 4px solid #28a745;
+      }
+
+      .success-icon {
+        font-size: 50px;
+        text-align: center;
+        margin: 10px 0;
+      }
+
+      .petition-name {
+        font-size: 1.2em;
+        font-weight: bold;
+        color: #28a745;
+        margin: 10px 0;
+      }
+
+      .stats-section {
+        background-color: #e8f4fd;
+        padding: 15px;
+        border-radius: 5px;
+        margin: 15px 0;
+        border-left: 4px solid #0066cc;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>🎉 Your petition has reached its goal!</h1>
+      </div>
+      <div class="content">
+        <p>Hi {{creatorName}},</p>
+
+        <div class="celebration-section">
+          <div class="success-icon">🎉</div>
+          <p>
+            <strong>CONGRATULATIONS!</strong> Your petition
+            <span class="petition-name">"{{petitionName}}"</span> has reached
+            its signature goal!
+          </p>
+        </div>
+
+        <div class="stats-section">
+          <p>
+            <strong>Final Results:</strong>
+          </p>
+          <ul>
+            <li><strong>Total Signatures:</strong> {{totalSignatures}}</li>
+            <li><strong>Goal Amount:</strong> {{goalAmount}}</li>
+          </ul>
+        </div>
+
+        <p>
+          This is an incredible achievement! Your hard work and dedication have
+          paid off. The support you've gathered shows the power of collective
+          action and the impact your cause has made.
+        </p>
+
+        <p>
+          <strong>What's next?</strong> Consider sharing your success with your
+          supporters and thanking them for their contributions. You can also
+          explore ways to build on this momentum and continue making a
+          difference.
+        </p>
+
+        <div style="text-align: center">
+          <a
+            href="{{petitionUrl}}"
+            class="cta-button"
+            style="color: white; text-decoration: none"
+            >👉 View Your Successful Petition</a
+          >
+        </div>
+
+        <p>
+          Celebrating your success with you,<br />
+          The Refreeg Team
+        </p>
+      </div>
+      <div class="footer">
+        <p>
+          This is an automated email. Please do not reply directly to this
+          message.
+        </p>
+        <p>© {{currentYear}} RefreeG. All rights reserved.</p>
+      </div>
+    </div>
+  </body>
+</html>

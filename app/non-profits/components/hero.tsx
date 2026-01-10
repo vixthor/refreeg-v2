@@ -1,15 +1,12 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-// import { Users, CreditCard, FileText } from "lucide-react";
 import { motion } from "framer-motion";
-// import Statistics from "@/components/home/statistics";
 import Numbers from "@/components/numbers";
+import Link from "next/link";
 
 const SLIDE_UP_DURATION = 0.8;
-const STAGGER_DELAY = 0.15;
 
-// Animation variants with proper easing types
 const slideUp = (delay = 0) => ({
   initial: { opacity: 0, y: 50 },
   animate: { opacity: 1, y: 0 },
@@ -33,7 +30,6 @@ const scaleIn = (delay = 0) => ({
 export default function Hero() {
   const [imagesShouldMove, setImagesShouldMove] = useState(true);
 
-  // Stop image movement after 3 seconds to reduce overstimulation
   useEffect(() => {
     const timer = setTimeout(() => {
       setImagesShouldMove(false);
@@ -44,7 +40,6 @@ export default function Hero() {
 
   return (
     <section className="relative min-h-screen bg-gray-50 py-8 md:py-16 px-4 sm:px-6 lg:px-8 overflow-hidden">
-      {/* Background Pattern */}
       <motion.div
         className="absolute inset-0 opacity-30 md:opacity-50"
         initial={{ opacity: 0, scale: 1.1 }}
@@ -58,13 +53,10 @@ export default function Hero() {
         />
       </motion.div>
 
-      {/* Mobile Overlay for Better Text Readability */}
       <div className="absolute inset-0 bg-gradient-to-b from-gray-50/80 via-gray-50/60 to-gray-50/80 pointer-events-none lg:hidden z-0" />
 
       <div className="relative max-w-7xl mx-auto">
-        {/* Hero Images */}
         <div className="relative flex justify-center items-center min-h-[500px] md:min-h-[600px] mb-10">
-          {/* Top Left - Disaster Relief */}
           <motion.div
             className="absolute top-4 left-4 md:top-0 md:left-20 w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 lg:w-48 lg:h-48"
             initial={{ opacity: 0, y: 30, scale: 0.9 }}
@@ -103,8 +95,6 @@ export default function Hero() {
               />
             </motion.div>
           </motion.div>
-
-          {/* Top Right - Community Group */}
           <motion.div
             className="absolute top-4 right-4 md:top-0 md:right-20 w-20 h-20 sm:w-28 sm:h-28 md:w-36 md:h-36 lg:w-44 lg:h-44"
             initial={{ opacity: 0, y: 30, scale: 0.9 }}
@@ -143,8 +133,6 @@ export default function Hero() {
               />
             </motion.div>
           </motion.div>
-
-          {/* Bottom Left - Volunteer */}
           <motion.div
             className="absolute bottom-4 left-8 md:bottom-0 md:left-32 w-20 h-20 sm:w-28 sm:h-28 md:w-36 md:h-36 lg:w-44 lg:h-44"
             initial={{ opacity: 0, y: 30, scale: 0.9 }}
@@ -183,8 +171,7 @@ export default function Hero() {
               />
             </motion.div>
           </motion.div>
-
-          {/* Center Left - Food Distribution */}
+          s
           <motion.div
             className="absolute left-2 top-1/2 transform -translate-y-1/2 w-16 h-16 sm:w-24 sm:h-24 md:w-32 md:h-32 lg:w-40 lg:h-40"
             initial={{ opacity: 0, y: 30, scale: 0.9 }}
@@ -223,8 +210,6 @@ export default function Hero() {
               />
             </motion.div>
           </motion.div>
-
-          {/* Center Right - Community Helper */}
           <motion.div
             className="absolute right-2 top-1/2 transform -translate-y-1/2 w-16 h-16 sm:w-24 sm:h-24 md:w-32 md:h-32 lg:w-40 lg:h-40"
             initial={{ opacity: 0, y: 30, scale: 0.9 }}
@@ -263,17 +248,14 @@ export default function Hero() {
               />
             </motion.div>
           </motion.div>
-
-          {/* Central Content */}
           <div className="text-center max-w-2xl mx-auto px-4 z-10 relative">
-            {/* Text Background for Better Readability on Mobile */}
             <motion.div
               className="absolute inset-0 bg-white/70 backdrop-blur-sm rounded-2xl -m-4 lg:hidden"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.8, duration: 0.5 }}
             />
-            
+
             <div className="relative z-20">
               <motion.h1
                 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-gray-800 mb-6 md:mb-8 leading-tight"
@@ -289,45 +271,47 @@ export default function Hero() {
                 {...slideUp(0.5)}
               >
                 <p className="text-base sm:text-lg md:text-xl text-gray-600 leading-relaxed bg-white/80 backdrop-blur-sm rounded-lg p-4 lg:bg-transparent lg:backdrop-blur-0 lg:p-0">
-                  RefreeG gives nonprofits a transparent and powerful way to raise
-                  funds globally. From disaster relief to community projects, we
-                  make it easy for donors to trust your mission and support your
-                  cause.
+                  RefreeG gives nonprofits a transparent and powerful way to
+                  raise funds globally. From disaster relief to community
+                  projects, we make it easy for donors to trust your mission and
+                  support your cause.
                 </p>
               </motion.div>
 
-              <motion.button
-                className="bg-purple-600 hover:bg-purple-700 text-white font-semibold px-6 py-3 md:px-8 md:py-4 rounded-lg text-base md:text-lg shadow-lg relative z-20"
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{
-                  opacity: 1,
-                  scale: 1,
-                  y: [0, -5, 0], // Continuous gentle movement
-                }}
-                transition={{
-                  duration: SLIDE_UP_DURATION,
-                  delay: 0.7,
-                  ease: [0.4, 0, 0.2, 1] as const,
-                  y: {
-                    duration: 2,
-                    repeat: Infinity,
-                    repeatType: "reverse",
-                    ease: "easeInOut",
-                  },
-                }}
-                whileHover={{
-                  scale: 1.05,
-                  y: -3, // Enhanced movement on hover
-                  transition: {
-                    duration: 0.3,
-                    y: { duration: 0.5, ease: "easeInOut" },
-                  },
-                }}
-                whileTap={{ scale: 0.95 }}
-              >
-                Start Your Nonprofit Campaign
-                <span className="ml-2">→</span>
-              </motion.button>
+              <Link href="/dashboard/causes/create" passHref>
+                <motion.button
+                  className="bg-purple-600 hover:bg-purple-700 text-white font-semibold px-6 py-3 md:px-8 md:py-4 rounded-lg text-base md:text-lg shadow-lg relative z-20 cursor-pointer"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{
+                    opacity: 1,
+                    scale: 1,
+                    y: [0, -5, 0],
+                  }}
+                  transition={{
+                    duration: SLIDE_UP_DURATION,
+                    delay: 0.7,
+                    ease: [0.4, 0, 0.2, 1] as const,
+                    y: {
+                      duration: 2,
+                      repeat: Infinity,
+                      repeatType: "reverse",
+                      ease: "easeInOut",
+                    },
+                  }}
+                  whileHover={{
+                    scale: 1.05,
+                    y: -3,
+                    transition: {
+                      duration: 0.3,
+                      y: { duration: 0.5, ease: "easeInOut" },
+                    },
+                  }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  Start Your Nonprofit Campaign
+                  <span className="ml-2">→</span>
+                </motion.button>
+              </Link>
             </div>
           </div>
         </div>

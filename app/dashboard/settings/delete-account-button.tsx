@@ -54,7 +54,7 @@ export function DeleteAccountButton({ userId }: DeleteAccountButtonProps) {
           title: "Account Deleted",
           description: "Your account has been successfully deleted.",
         });
-        // Redirect to home page after successful deletion
+
         router.push("/");
       }
     } catch (err) {
