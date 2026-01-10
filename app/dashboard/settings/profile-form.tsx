@@ -113,11 +113,10 @@ export function ProfileForm({ profile, user }: ProfileFormProps) {
     const phoneIsValid = isValidNigerianPhone(formData.phone);
 
     // Check phone number
-    if (!phoneIsValid) {
+    if (formData.phone && !phoneIsValid) {
       setFormErrors({
         phone: "Enter a valid Nigerian phone number (e.g. 08012345678)",
       });
-      setIsSubmitting(false);
       return;
     }
 
@@ -178,6 +177,18 @@ export function ProfileForm({ profile, user }: ProfileFormProps) {
 
   // Get the username from formData (which comes from profile)
   const username = formData.username;
+
+  const hasSocialErrors = [
+  ["twitter_url", "twitter"],
+  ["facebook_url", "facebook"],
+  ["instagram_url", "instagram"],
+  ["linkedin_url", "linkedin"],
+].some(
+  ([urlKey, errorKey]) =>
+    !!formData[urlKey as keyof typeof formData] &&
+    socialErrors[errorKey as keyof typeof socialErrors]
+);
+
 
   return (
     <Card>
@@ -372,12 +383,7 @@ export function ProfileForm({ profile, user }: ProfileFormProps) {
           </div>
         </CardContent>
         <CardFooter>
-          <Button
-            type="submit"
-            disabled={
-              isSubmitting || Object.values(socialErrors).some((error) => error)
-            }
-          >
+          <Button type="submit" disabled={isSubmitting || hasSocialErrors}>
             {isSubmitting ? (
               <>
                 <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
