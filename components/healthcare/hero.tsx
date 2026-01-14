@@ -4,6 +4,7 @@ import Image from "next/image";
 import React from "react";
 import { Button } from "../ui/button";
 import { motion } from "framer-motion";
+import Link from "next/link";
 
 export default function Hero() {
   return (
@@ -72,16 +73,18 @@ export default function Hero() {
           transition={{ duration: 0.8 }}
           whileHover={{ scale: 1.05 }}
         >
-          <Button className="bg-[#C03744] hover:bg-[#a72f3b] text-white px-12 py-3 rounded-sm flex items-center justify-center mx-auto transition-all duration-300">
-            Start a Healthcare Campaign
-            <Image
-              src="/images/chevron-right-2.png"
-              height={20}
-              width={20}
-              alt="get started"
-              className="ml-2"
-            />
-          </Button>
+          <Link href="/dashboard/causes/create">
+            <Button className="bg-[#C03744] hover:bg-[#a72f3b] text-white px-12 py-3 rounded-sm flex items-center justify-center mx-auto transition-all duration-300">
+              Start a Healthcare Campaign
+              <Image
+                src="/images/chevron-right-2.png"
+                height={20}
+                width={20}
+                alt="get started"
+                className="ml-2"
+              />
+            </Button>
+          </Link>
         </motion.div>
       </motion.div>
     </div>

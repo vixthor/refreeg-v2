@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -71,6 +71,8 @@ interface NavDropdown {
 type NavItem = NavLink | NavDropdown;
 
 export function Header() {
+  const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   const pathname = usePathname();
   const { user, isLoading, signOut } = useAuth();
   const { isAdminOrManager } = useAdmin(user?.id);
@@ -294,6 +296,21 @@ export function Header() {
     setOpenDropdown(openDropdown === title ? null : title);
   };
 
+  const openMenu = (title: string) => {
+  if (closeTimeoutRef.current) {
+    clearTimeout(closeTimeoutRef.current);
+    closeTimeoutRef.current = null;
+  }
+  setOpenDropdown(title);
+};
+
+const scheduleCloseMenu = () => {
+  closeTimeoutRef.current = setTimeout(() => {
+    setOpenDropdown(null);
+  }, 200); // 👈 adjust delay (150–300ms is ideal)
+};
+
+
   return (
     <>
       <div className="sticky top-0 left-0 right-0 z-50">
@@ -330,57 +347,64 @@ export function Header() {
                   } else {
                     return (
                       <NavbarItem key={item.title}>
-                        <Dropdown>
-                          <DropdownTrigger>
-                            <HeroButton
-                              variant="light"
-                              className="text-sm items-center font-medium text-muted-foreground hover:text-secondary hover:bg-gray-100 px-3 py-2 rounded-md transition-all duration-200 group"
-                              endContent={
-                                <ChevronDown className="text-small transition-transform duration-200 group-hover:rotate-180" />
-                              }
-                            >
-                              {item.title}
-                            </HeroButton>
-                          </DropdownTrigger>
-                          <DropdownMenu
-                            aria-label={item.title}
-                            className="bg-white shadow-xl rounded-lg w-3/5 border border-gray-100"
+                        <div
+                          key={item.title}
+                          className="relative"
+                          onMouseEnter={() => openMenu(item.title)}
+                          onMouseLeave={scheduleCloseMenu}
+                        >
+                          <HeroButton
+                            variant="light"
+                            className={`text-sm items-center font-medium text-muted-foreground hover:text-secondary hover:bg-gray-100 px-3 py-2 rounded-md transition-all duration-200 group ${
+                              openDropdown === item.title ? "bg-gray-100 text-secondary" : ""
+                            }`}
+                            endContent={
+                              <ChevronDown
+                                className={`text-small transition-transform duration-200 ${
+                                  openDropdown === item.title ? "rotate-180 text-secondary" : ""
+                                }`}
+                              />
+                            }
                           >
-                            <DropdownSection
-                              title={item.header as string}
-                              classNames={{
-                                heading:
-                                  "font-semibold text-sm text-foreground px-4 py-3 flex items-center gap-2",
-                              }}
-                              showDivider
+                            {item.title}
+                          </HeroButton>
+
+                          {/* Dropdown on hover */}
+                          {openDropdown === item.title && (
+                            <div
+                              onMouseEnter={() => openMenu(item.title)}
+                              onMouseLeave={scheduleCloseMenu}
+                              className={`absolute top-full mt-2 bg-white shadow-xl rounded-lg border border-gray-100 z-50 animate-in fade-in-50 slide-in-from-top-1 duration-150
+                                ${item.title.includes("About") ? "right-0 left-auto" : "left-0"}
+                                max-w-[90vw] overflow-hidden`}
                             >
-                              {item.items.map((dropdownItem) => {
-                                return (
-                                  <DropdownItem
+
+                              <div className="p-3 font-semibold text-sm text-foreground border-b">
+                                {item.header}
+                              </div>
+                              <div className="p-2">
+                                {item.items.map((dropdownItem) => (
+                                  <Link
                                     key={dropdownItem.href}
-                                    className="py-3 px-4 transition-all duration-200 hover:bg-blue-50 hover:border-l-4 hover:border-l-blue-500 cursor-pointer"
-                                    textValue={dropdownItem.title}
+                                    href={dropdownItem.href}
+                                    className="flex items-start gap-3 py-3 px-4 rounded-md transition-all duration-200 hover:bg-blue-50 hover:border-l-4 hover:border-l-blue-500"
                                   >
-                                    <Link
-                                      href={dropdownItem.href}
-                                      className="flex items-start gap-3 w-full group"
-                                    >
-                                      <div className="flex-1">
-                                        <p className="font-medium text-sm group-hover:text-blue-700 transition-colors">
-                                          {dropdownItem.title}
-                                        </p>
-                                        <p className="text-xs text-muted-foreground mt-1 group-hover:text-gray-600 transition-colors">
-                                          {dropdownItem.description}
-                                        </p>
-                                      </div>
-                                      <ChevronDown className="h-4 w-4 text-transparent group-hover:text-blue-400 -rotate-90 transition-all" />
-                                    </Link>
-                                  </DropdownItem>
-                                );
-                              })}
-                            </DropdownSection>
-                          </DropdownMenu>
-                        </Dropdown>
+                                    {/* optional icon */}
+                                    {/* <dropdownItem.icon className="h-5 w-5 text-gray-400 mt-0.5 flex-shrink-0 group-hover:text-blue-600 transition-colors" /> */}
+                                    <div className="flex-1">
+                                      <p className="font-medium text-sm text-gray-900 hover:text-blue-700">
+                                        {dropdownItem.title}
+                                      </p>
+                                      <p className="text-xs text-gray-500 mt-1">
+                                        {dropdownItem.description}
+                                      </p>
+                                    </div>
+                                  </Link>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       </NavbarItem>
                     );
                   }
@@ -442,7 +466,7 @@ export function Header() {
                   text: "text-secondary",
                   hoverBg: "hover:bg-secondary",
                   hoverText: "hover:text-white",
-                  bg: "bg-primary",
+                  bg: "bg-secondary",
                 };
 
                 return (

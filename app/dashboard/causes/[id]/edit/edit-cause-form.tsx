@@ -2,6 +2,7 @@
 
 import type React from "react";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -85,6 +86,7 @@ type EditCauseFormProps = {
 export default function EditCauseForm({ cause }: EditCauseFormProps) {
   const { user } = useAuth();
   const { isLoading, updateCause } = useCause();
+  const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<FormData>({
     title: cause.title,
@@ -298,6 +300,8 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
         reviewTimeframe: "3-5 business days",
         dashboardUrl: `${window.location.origin}/dashboard/causes`,
       });
+
+      router.push("/dashboard/causes");
     } catch (error) {
       console.error("Error updating cause:", error);
     }

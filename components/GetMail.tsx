@@ -20,7 +20,7 @@ const GetMail = () => {
       case "/disaster-relief":
         return "bg-[#0A0A0B] hover:bg-[#0A0A0B]";
       default:
-        return "bg-primary hover:bg-primary/90"; // default theme color
+        return "bg-secondary hover:bg-seecondary/90"; // default theme color
     }
   };
 

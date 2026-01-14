@@ -4,6 +4,7 @@ import Image from "next/image";
 import React from "react";
 import { Button } from "../ui/button";
 import { motion } from "framer-motion";
+import Link from "next/link";
 
 // Animation variants
 const fadeInUp = {
@@ -107,21 +108,23 @@ export default function ReliefPowered() {
             viewport={{ once: true }}
           >
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Button className="w-full bg-[#151314] hover:bg-[#2f2b2d] border px-10 py-6 flex items-center justify-center gap-2 rounded-full shadow">
-                <Image
-                  src="/images/doctorsbag.png"
-                  height={20}
-                  width={20}
-                  alt="get started"
-                />
-                Start a Disaster Relief Campaign
-                <Image
-                  src="/images/arrow-right-1.png"
-                  height={20}
-                  width={20}
-                  alt="get started"
-                />
-              </Button>
+              <Link href="/dashboard/causes/create">
+                <Button className="w-full bg-[#151314] hover:bg-[#2f2b2d] border px-10 py-6 flex items-center justify-center gap-2 rounded-full shadow">
+                  <Image
+                    src="/images/doctorsbag.png"
+                    height={20}
+                    width={20}
+                    alt="get started"
+                  />
+                  Start a Disaster Relief Campaign
+                  <Image
+                    src="/images/arrow-right-1.png"
+                    height={20}
+                    width={20}
+                    alt="get started"
+                  />
+                </Button>
+              </Link>
             </motion.div>
           </motion.div>
         </div>
