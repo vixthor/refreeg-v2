@@ -50,9 +50,7 @@ export async function sendMail({
   subject,
   templateName,
   context,
-  from = process.env.SMTP_USER ||
-    process.env.EMAIL_FROM ||
-    "noreply@example.com",
+  from = process.env.EMAIL_FROM  || "noreply@refreeg.com",
   cc,
   bcc,
 }: SendMailOptions) {
