@@ -2,6 +2,7 @@
 
 import type React from "react";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -158,6 +159,7 @@ const validateForm = (formData: FormData): FormErrors => {
 export default function CreateCauseForm() {
   const { user } = useAuth();
   const { isLoading, createCause } = useCause();
+  const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState<FormData>({
@@ -421,6 +423,8 @@ export default function CreateCauseForm() {
       });
       await createCause(user.id, causeData);
       localStorage.removeItem("causeDraft");
+
+      router.push("/dashboard/causes");
     } catch (error) {
       console.error("Error submitting cause:", error);
     } finally {
@@ -795,7 +799,6 @@ export default function CreateCauseForm() {
                   </div>
                 )}
             </div>
-            =
             <div className="mt-8 space-y-2">
               <Label>Video Links (YouTube, TikTok, etc.)</Label>
               <div className="flex gap-2">

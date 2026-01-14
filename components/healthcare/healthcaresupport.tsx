@@ -4,6 +4,7 @@ import Image from "next/image";
 import React from "react";
 import { Button } from "../ui/button";
 import { motion } from "framer-motion";
+import Link from "next/link";
 
 export default function HealthcareSupport() {
   const features = [
@@ -114,21 +115,23 @@ export default function HealthcareSupport() {
             className="flex justify-center items-center w-full md:w-2/3"
           >
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.97 }}>
-              <Button className="w-full bg-[#8C1823] hover:bg-[#861722] border px-10 py-6 flex items-center justify-center gap-2 rounded-full shadow transition-all duration-300">
-                <Image
-                  src="/images/doctorsbag.png"
-                  height={20}
-                  width={20}
-                  alt="get started"
-                />
-                Start a Healthcare Campaign
-                <Image
-                  src="/images/arrow-right-1.png"
-                  height={20}
-                  width={20}
-                  alt="get started"
-                />
-              </Button>
+              <Link href="/dashboard/causes/create">
+                <Button className="w-full bg-[#8C1823] hover:bg-[#861722] border px-10 py-6 flex items-center justify-center gap-2 rounded-full shadow transition-all duration-300">
+                  <Image
+                    src="/images/doctorsbag.png"
+                    height={20}
+                    width={20}
+                    alt="get started"
+                  />
+                  Start a Healthcare Campaign
+                  <Image
+                    src="/images/arrow-right-1.png"
+                    height={20}
+                    width={20}
+                    alt="get started"
+                  />
+                </Button>
+              </Link>
             </motion.div>
           </motion.div>
         </motion.div>

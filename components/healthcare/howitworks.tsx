@@ -4,6 +4,7 @@ import React from "react";
 import { motion } from "framer-motion";
 import { Button } from "../ui/button";
 import Image from "next/image";
+import Link from "next/link";
 
 export default function HowItWorks() {
   // Animation variants
@@ -99,15 +100,17 @@ export default function HowItWorks() {
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.97 }}
       >
-        <Button className="bg-[#FAFAFA] border text-black px-10 py-4 flex items-center gap-2 rounded-full shadow-sm">
-          Get Started
-          <Image
-            src="/images/arrow-right.png"
-            height={20}
-            width={20}
-            alt="get started"
-          />
-        </Button>
+        <Link href="/dashboard/causes/create">
+          <Button className="bg-[#FAFAFA] border text-black px-10 py-4 flex items-center gap-2 rounded-full shadow-sm">
+            Get Started
+            <Image
+              src="/images/arrow-right.png"
+              height={20}
+              width={20}
+              alt="get started"
+            />
+          </Button>
+        </Link>
       </motion.div>
     </motion.div>
   );

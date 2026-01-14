@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import Statistics from "@/components/home/statistics";
+import Numbers from "@/components/numbers";
 import Link from "next/link";
 
 const SLIDE_UP_DURATION = 0.8;
@@ -56,7 +56,7 @@ export default function Hero() {
       <div className="absolute inset-0 bg-gradient-to-b from-gray-50/80 via-gray-50/60 to-gray-50/80 pointer-events-none lg:hidden z-0" />
 
       <div className="relative max-w-7xl mx-auto">
-        <div className="relative flex justify-center items-center min-h-[500px] md:min-h-[600px]">
+        <div className="relative flex justify-center items-center min-h-[500px] md:min-h-[600px] mb-10">
           <motion.div
             className="absolute top-4 left-4 md:top-0 md:left-20 w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 lg:w-48 lg:h-48"
             initial={{ opacity: 0, y: 30, scale: 0.9 }}
@@ -316,7 +316,8 @@ export default function Hero() {
           </div>
         </div>
 
-        <Statistics />
+        {/* Statistics */}
+        <Numbers />
       </div>
     </section>
   );

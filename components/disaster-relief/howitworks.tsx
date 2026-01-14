@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import Image from "next/image";
 import React from "react";
 import { Button } from "../ui/button";
+import Link from "next/link";
 
 export default function HowItWorks() {
   const steps = [
@@ -98,6 +99,7 @@ export default function HowItWorks() {
         transition={{ duration: 0.5, delay: 0.3 }}
         viewport={{ once: true }}
       >
+        <Link href="/dashboard/causes/create">
         <Button className="bg-[#FAFAFA] border text-black px-10 py-4 flex items-center gap-2 rounded-full hover:bg-gray-100 transition">
           Get Started
           <Image
@@ -107,6 +109,7 @@ export default function HowItWorks() {
             alt="get started"
           />
         </Button>
+        </Link>
       </motion.div>
     </div>
   );
