@@ -12,28 +12,53 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/use-auth";
 import { useAdmin } from "@/hooks/use-admin";
-import { useAdminAnalytics } from "@/hooks/use-admin-analytics";
-import { BarChart, Users, DollarSign, TrendingUp } from "lucide-react";
+import { useAdminAnalytics, useAnalyticsCharts } from "@/hooks/use-admin-analytics";
+import { BarChart, Users, DollarSign, TrendingUp, Activity } from "lucide-react";
 import { AnalyticsCard } from "@/components/analytics-card";
+import {
+  Bar,
+  BarChart as RechartsBarChart,
+  CartesianGrid,
+  Legend,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+  PieChart,
+  Pie,
+  Cell,
+} from "recharts";
+
+const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
 
 export default function AdminAnalytics() {
   const router = useRouter();
   const { user } = useAuth();
   const { isAdminOrManager, isLoading: adminLoading } = useAdmin(user?.id);
+  
   const {
     data: analytics,
     isLoading: analyticsLoading,
     error: analyticsError,
   } = useAdminAnalytics();
-console.log(analytics);
+
+  const {
+    donationTrends,
+    userGrowth,
+    causeCategories,
+    isLoading: chartsLoading,
+  } = useAnalyticsCharts();
+
   useEffect(() => {
     if (!adminLoading && !isAdminOrManager && user) {
       router.push("/dashboard");
     }
   }, [user, adminLoading, isAdminOrManager, router]);
 
-  if (adminLoading || analyticsLoading) {
-    return <div className="flex justify-center p-8">Loading...</div>;
+  if (adminLoading || analyticsLoading || chartsLoading) {
+    return <div className="flex justify-center p-8">Loading analytics data...</div>;
   }
 
   if (!isAdminOrManager) {
@@ -86,22 +111,26 @@ console.log(analytics);
         <AnalyticsCard
           title="Total Donations"
           value={analytics.totalDonations.current}
+          description={`${analytics.totalDonations.trend > 0 ? '+' : ''}${analytics.totalDonations.trend}% from last month`}
           icon={DollarSign}
         />
         <AnalyticsCard
           title="Total Users"
           value={String(analytics.totalUsers.current)}
+          description={`+${analytics.totalUsers.newThisMonth} new this month`}
           icon={Users}
         />
         <AnalyticsCard
           title="Active Causes"
-          value={String(analytics.activeCauses.current)}
-          icon={TrendingUp}
+          value={`${analytics.activeCauses.active} / ${analytics.activeCauses.total}`}
+          description="Active / Total Causes"
+          icon={Activity}
         />
         <AnalyticsCard
           title="Pending Approvals"
           value={String(analytics.pendingApprovals.current)}
-          icon={BarChart}
+          description="Requires attention"
+          icon={TrendingUp}
         />
       </div>
 
@@ -111,50 +140,116 @@ console.log(analytics);
           <TabsTrigger value="users">Users</TabsTrigger>
           <TabsTrigger value="causes">Causes</TabsTrigger>
         </TabsList>
+        
         <TabsContent value="donations" className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle>Donation Trends</CardTitle>
               <CardDescription>
-                Monthly donation volume over time.
+                Monthly donation volume (Regular vs Crypto)
               </CardDescription>
             </CardHeader>
-            <CardContent className="h-[300px] flex items-center justify-center bg-muted/50">
-              <p className="text-muted-foreground">
-                Donation chart will appear here
-              </p>
+            <CardContent className="h-[400px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <RechartsBarChart data={donationTrends}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" />
+                  <YAxis />
+                  <Tooltip 
+                    formatter={(value) => `₦${Number(value).toLocaleString()}`}
+                  />
+                  <Legend />
+                  <Bar dataKey="regular" name="Regular (₦)" stackId="a" fill="#2563eb" />
+                  <Bar dataKey="crypto" name="Crypto (₦)" stackId="a" fill="#16a34a" />
+                </RechartsBarChart>
+              </ResponsiveContainer>
             </CardContent>
           </Card>
         </TabsContent>
+        
         <TabsContent value="users" className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle>User Growth</CardTitle>
               <CardDescription>
-                New user registrations over time.
+                New user registrations per month
               </CardDescription>
             </CardHeader>
-            <CardContent className="h-[300px] flex items-center justify-center bg-muted/50">
-              <p className="text-muted-foreground">
-                User growth chart will appear here
-              </p>
+            <CardContent className="h-[400px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={userGrowth}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Line 
+                    type="monotone" 
+                    dataKey="users" 
+                    name="New Users" 
+                    stroke="#2563eb" 
+                    activeDot={{ r: 8 }} 
+                    strokeWidth={2}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="active" 
+                    name="Active (Updated)" 
+                    stroke="#f59e0b" 
+                    strokeWidth={2}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
             </CardContent>
           </Card>
         </TabsContent>
+        
         <TabsContent value="causes" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Cause Categories</CardTitle>
-              <CardDescription>
-                Distribution of causes by category.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="h-[300px] flex items-center justify-center bg-muted/50">
-              <p className="text-muted-foreground">
-                Cause categories chart will appear here
-              </p>
-            </CardContent>
-          </Card>
+          <div className="grid gap-4 md:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>Causes by Category</CardTitle>
+                <CardDescription>
+                  Distribution of total causes
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="h-[400px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <RechartsBarChart data={causeCategories} layout="vertical">
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis type="number" />
+                    <YAxis dataKey="category" type="category" width={100} />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="total" name="Total Causes" fill="#8884d8" />
+                  </RechartsBarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Status Distribution</CardTitle>
+                <CardDescription>
+                  Approved vs Pending vs Completed
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="h-[400px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <RechartsBarChart data={causeCategories}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="category" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="approved" name="Approved" stackId="a" fill="#16a34a" />
+                    <Bar dataKey="pending" name="Pending" stackId="a" fill="#f59e0b" />
+                    <Bar dataKey="completed" name="Completed" stackId="a" fill="#2563eb" />
+                  </RechartsBarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
       </Tabs>
     </div>

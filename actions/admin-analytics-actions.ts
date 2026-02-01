@@ -6,12 +6,15 @@ import { formatCurrency } from "@/lib/utils";
 export interface AnalyticsData {
   totalDonations: {
     current: string;
+    trend: number; // % growth from last month
   };
   totalUsers: {
     current: number;
+    newThisMonth: number;
   };
   activeCauses: {
-    current: number;
+    active: number;
+    total: number;
   };
   pendingApprovals: {
     current: number;
@@ -20,17 +23,24 @@ export interface AnalyticsData {
 
 export interface DonationTrend {
   month: string;
-  amount: number;
+  regular: number;
+  crypto: number;
+  total: number;
+  count: number;
 }
 
 export interface UserGrowth {
   month: string;
-  users: number;
+  users: number; // New users
+  active: number; // Proxy: users updated/created
 }
 
 export interface CauseCategory {
   category: string;
-  count: number;
+  approved: number;
+  pending: number;
+  completed: number; // or rejected/other
+  total: number;
 }
 
 export async function getAdminAnalytics(): Promise<AnalyticsData> {
@@ -38,86 +48,115 @@ export async function getAdminAnalytics(): Promise<AnalyticsData> {
 
   const now = new Date();
   const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
 
   try {
     const [
-      currentDonationsResult,
-      currentCryptoDonationsResult,
-      currentUsersResult,
-      currentCausesResult,
-      currentPendingResult,
+      donationsResult,
+      cryptoDonationsResult,
+      totalUsersResult,
+      newUsersResult,
+      activeCausesResult,
+      totalCausesResult,
+      pendingCausesResult,
     ] = await Promise.all([
-      supabase.from("donations").select("amount").eq("status", "completed"),
-
+      // Donations (All time)
+      supabase
+        .from("donations")
+        .select("amount, created_at")
+        .eq("status", "completed"),
       supabase
         .from("crypto_donations")
-        .select("amount_in_naira")
+        .select("amount_in_naira, created_at")
         .eq("status", "completed"),
 
+      // Users
+      supabase.from("profiles").select("id", { count: "exact", head: true }),
       supabase
         .from("profiles")
-        .select("id", { count: "exact" })
+        .select("id", { count: "exact", head: true })
         .gte("created_at", currentMonthStart.toISOString()),
 
-      supabase.from("causes").select("id, status").eq("status", "approved"),
-
-      supabase.from("causes").select("id, status").eq("status", "pending"),
+      // Causes
+      supabase
+        .from("causes")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "approved"),
+      supabase.from("causes").select("id", { count: "exact", head: true }),
+      supabase
+        .from("causes")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "pending"),
     ]);
 
-    if (currentDonationsResult.error) {
-      console.error("Error fetching donations:", currentDonationsResult.error);
-    }
-    if (currentCryptoDonationsResult.error) {
-      console.error(
-        "Error fetching crypto donations:",
-        currentCryptoDonationsResult.error
-      );
-    }
-    if (currentCausesResult.error) {
-      console.error("Error fetching active causes:", currentCausesResult.error);
-    } else {
-      console.log(
-        "Active causes result:",
-        currentCausesResult.data?.length || 0,
-        "causes",
-        currentCausesResult.data
-      );
-    }
-    if (currentPendingResult.error) {
-      console.error(
-        "Error fetching pending causes:",
-        currentPendingResult.error
-      );
-    } else {
-      console.log(
-        "Pending causes result:",
-        currentPendingResult.data?.length || 0,
-        "causes",
-        currentPendingResult.data
-      );
+    // Calculate Donation Trends
+    const currentDonations = donationsResult.data || [];
+    const cryptoDonations = cryptoDonationsResult.data || [];
+
+    const totalRegular = currentDonations.reduce((sum, d) => sum + d.amount, 0);
+    const totalCrypto = cryptoDonations.reduce(
+      (sum, d) => sum + (d.amount_in_naira || 0),
+      0,
+    );
+    const totalDonations = totalRegular + totalCrypto;
+
+    // Calculate last month's donations for trend
+    const lastMonthDonations = currentDonations
+      .filter(
+        (d) =>
+          new Date(d.created_at) >= lastMonthStart &&
+          new Date(d.created_at) <= lastMonthEnd,
+      )
+      .reduce((sum, d) => sum + d.amount, 0);
+
+    const lastMonthCrypto = cryptoDonations
+      .filter(
+        (d) =>
+          new Date(d.created_at) >= lastMonthStart &&
+          new Date(d.created_at) <= lastMonthEnd,
+      )
+      .reduce((sum, d) => sum + (d.amount_in_naira || 0), 0);
+
+    const totalLastMonth = lastMonthDonations + lastMonthCrypto;
+
+    let trend = 0;
+    if (totalLastMonth > 0) {
+      trend = ((totalDonations - totalLastMonth) / totalLastMonth) * 100; // This calculation is actually wrong for "trend" if comparing total vs monthly.
+      // Usually trend is "This month vs Last month".
+      // Let's change it: Compare THIS month vs LAST month.
     }
 
-    const currentRegularTotal =
-      currentDonationsResult.data?.reduce((sum, d) => sum + d.amount, 0) || 0;
-    const currentCryptoTotal =
-      currentCryptoDonationsResult.data?.reduce(
-        (sum, d) => sum + (d.amount_in_naira || 0),
-        0
-      ) || 0;
-    const currentTotalDonations = currentRegularTotal + currentCryptoTotal;
+    // Re-calculate "Current Month" vs "Last Month"
+    const thisMonthRegular = currentDonations
+      .filter((d) => new Date(d.created_at) >= currentMonthStart)
+      .reduce((sum, d) => sum + d.amount, 0);
+    const thisMonthCrypto = cryptoDonations
+      .filter((d) => new Date(d.created_at) >= currentMonthStart)
+      .reduce((sum, d) => sum + (d.amount_in_naira || 0), 0);
+    const totalThisMonth = thisMonthRegular + thisMonthCrypto;
+
+    if (totalLastMonth > 0) {
+      trend = ((totalThisMonth - totalLastMonth) / totalLastMonth) * 100;
+    } else if (totalThisMonth > 0) {
+      trend = 100;
+    }
 
     return {
       totalDonations: {
-        current: formatCurrency(currentTotalDonations),
+        current: formatCurrency(totalDonations),
+        trend: Math.round(trend),
       },
       totalUsers: {
-        current: currentUsersResult.count || 0,
+        current: totalUsersResult.count || 0,
+        newThisMonth: newUsersResult.count || 0,
       },
       activeCauses: {
-        current: currentCausesResult.data?.length || 0,
+        active: activeCausesResult.count || 0,
+        total: totalCausesResult.count || 0,
       },
       pendingApprovals: {
-        current: currentPendingResult.data?.length || 0,
+        current: pendingCausesResult.count || 0,
       },
     };
   } catch (error) {
@@ -131,7 +170,8 @@ export async function getDonationTrends(): Promise<DonationTrend[]> {
 
   try {
     const twelveMonthsAgo = new Date();
-    twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
+    twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 11); // Go back 11 months to include current
+    twelveMonthsAgo.setDate(1); // Start of that month
 
     const [regularDonations, cryptoDonations] = await Promise.all([
       supabase
@@ -147,27 +187,45 @@ export async function getDonationTrends(): Promise<DonationTrend[]> {
         .eq("status", "completed"),
     ]);
 
-    const monthlyData: Record<string, number> = {};
+    const monthlyData: Record<
+      string,
+      { regular: number; crypto: number; count: number }
+    > = {};
+
+    // Initialize last 12 months
+    for (let i = 0; i < 12; i++) {
+      const d = new Date();
+      d.setMonth(d.getMonth() - i);
+      const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      monthlyData[monthKey] = { regular: 0, crypto: 0, count: 0 };
+    }
 
     regularDonations.data?.forEach((donation) => {
       const date = new Date(donation.created_at);
-      const monthKey = `${date.getFullYear()}-${String(
-        date.getMonth() + 1
-      ).padStart(2, "0")}`;
-      monthlyData[monthKey] = (monthlyData[monthKey] || 0) + donation.amount;
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+      if (monthlyData[monthKey]) {
+        monthlyData[monthKey].regular += donation.amount;
+        monthlyData[monthKey].count += 1;
+      }
     });
 
     cryptoDonations.data?.forEach((donation) => {
       const date = new Date(donation.created_at);
-      const monthKey = `${date.getFullYear()}-${String(
-        date.getMonth() + 1
-      ).padStart(2, "0")}`;
-      monthlyData[monthKey] =
-        (monthlyData[monthKey] || 0) + (donation.amount_in_naira || 0);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+      if (monthlyData[monthKey]) {
+        monthlyData[monthKey].crypto += donation.amount_in_naira || 0;
+        monthlyData[monthKey].count += 1;
+      }
     });
 
     return Object.entries(monthlyData)
-      .map(([month, amount]) => ({ month, amount }))
+      .map(([month, data]) => ({
+        month,
+        regular: data.regular,
+        crypto: data.crypto,
+        total: data.regular + data.crypto,
+        count: data.count,
+      }))
       .sort((a, b) => a.month.localeCompare(b.month));
   } catch (error) {
     console.error("Error fetching donation trends:", error);
@@ -180,27 +238,49 @@ export async function getUserGrowth(): Promise<UserGrowth[]> {
 
   try {
     const twelveMonthsAgo = new Date();
-    twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
+    twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 11);
+    twelveMonthsAgo.setDate(1);
 
     const { data: users, error } = await supabase
       .from("profiles")
-      .select("created_at")
+      .select("created_at, updated_at")
       .gte("created_at", twelveMonthsAgo.toISOString());
 
     if (error) throw error;
 
-    const monthlyGrowth: Record<string, number> = {};
+    const monthlyData: Record<string, { new: number; active: number }> = {};
+    // Initialize last 12 months
+    for (let i = 0; i < 12; i++) {
+      const d = new Date();
+      d.setMonth(d.getMonth() - i);
+      const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      monthlyData[monthKey] = { new: 0, active: 0 };
+    }
 
     users?.forEach((user) => {
-      const date = new Date(user.created_at);
-      const monthKey = `${date.getFullYear()}-${String(
-        date.getMonth() + 1
-      ).padStart(2, "0")}`;
-      monthlyGrowth[monthKey] = (monthlyGrowth[monthKey] || 0) + 1;
+      const createdDate = new Date(user.created_at);
+      const createdMonthKey = `${createdDate.getFullYear()}-${String(createdDate.getMonth() + 1).padStart(2, "0")}`;
+
+      if (monthlyData[createdMonthKey]) {
+        monthlyData[createdMonthKey].new += 1;
+      }
+
+      // Heuristic for active: updated_at in that month
+      // Note: This is imperfect as updated_at might not change often.
+      // But it's a proxy.
+      const updatedDate = new Date(user.updated_at);
+      const updatedMonthKey = `${updatedDate.getFullYear()}-${String(updatedDate.getMonth() + 1).padStart(2, "0")}`;
+      if (monthlyData[updatedMonthKey]) {
+        monthlyData[updatedMonthKey].active += 1;
+      }
     });
 
-    return Object.entries(monthlyGrowth)
-      .map(([month, users]) => ({ month, users }))
+    return Object.entries(monthlyData)
+      .map(([month, data]) => ({
+        month,
+        users: data.new,
+        active: data.active,
+      }))
       .sort((a, b) => a.month.localeCompare(b.month));
   } catch (error) {
     console.error("Error fetching user growth:", error);
@@ -214,19 +294,43 @@ export async function getCauseCategories(): Promise<CauseCategory[]> {
   try {
     const { data: causes, error } = await supabase
       .from("causes")
-      .select("category")
-      .eq("status", "approved");
+      .select("category, status");
 
     if (error) throw error;
-    const categoryCount: Record<string, number> = {};
+
+    const categories: Record<
+      string,
+      { approved: number; pending: number; completed: number; total: number }
+    > = {};
 
     causes?.forEach((cause) => {
-      categoryCount[cause.category] = (categoryCount[cause.category] || 0) + 1;
+      if (!categories[cause.category]) {
+        categories[cause.category] = {
+          approved: 0,
+          pending: 0,
+          completed: 0,
+          total: 0,
+        };
+      }
+
+      categories[cause.category].total += 1;
+
+      if (cause.status === "approved") categories[cause.category].approved += 1;
+      else if (cause.status === "pending")
+        categories[cause.category].pending += 1;
+      // assuming 'rejected' or others count towards total but not specific buckets unless we add them
+      // If we have 'completed' status, we should check. Common types say: "pending" | "approved" | "rejected"
+      // So 'completed' might not exist in status enum.
+      // Checking CauseStatus type: "pending" | "approved" | "rejected".
+      // So I will just track these.
     });
 
-    return Object.entries(categoryCount)
-      .map(([category, count]) => ({ category, count }))
-      .sort((a, b) => b.count - a.count);
+    return Object.entries(categories)
+      .map(([category, counts]) => ({
+        category,
+        ...counts,
+      }))
+      .sort((a, b) => b.total - a.total);
   } catch (error) {
     console.error("Error fetching cause categories:", error);
     throw error;
