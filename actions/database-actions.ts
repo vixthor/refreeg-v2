@@ -11,7 +11,11 @@ type Action =
   | "block-user"
   | "unblock-user"
   | "appoint-manager"
-  | "remove-manager";
+  | "remove-manager"
+  | "delete-user"
+  | "approve-kyc"
+  | "reject-kyc"
+  | "appoint-admin";
 
 export async function checkTableExists(tableName: string): Promise<boolean> {
   const supabase = await createClient();

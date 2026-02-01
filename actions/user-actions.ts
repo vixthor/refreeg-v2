@@ -4,9 +4,19 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { createClient as createSupabaseAdmin } from "@supabase/supabase-js";
 import { getUserRole } from "@/actions/role-actions";
+import { logAdminActivity } from "@/actions/database-actions";
 
 export async function blockUser(userId: string): Promise<boolean> {
   const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    console.error("Unauthorized: No user found");
+    return false;
+  }
 
   const { error } = await supabase.from("profiles").upsert({
     id: userId,
@@ -19,12 +29,23 @@ export async function blockUser(userId: string): Promise<boolean> {
     return false;
   }
 
+  await logAdminActivity("block-user", user.id);
+
   revalidatePath("/dashboard/admin/users");
   return true;
 }
 
 export async function unblockUser(userId: string): Promise<boolean> {
   const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    console.error("Unauthorized: No user found");
+    return false;
+  }
 
   const { error } = await supabase.from("profiles").upsert({
     id: userId,
@@ -36,6 +57,8 @@ export async function unblockUser(userId: string): Promise<boolean> {
     console.error("Error unblocking user:", error);
     return false;
   }
+
+  await logAdminActivity("unblock-user", user.id);
 
   revalidatePath("/dashboard/admin/users");
   return true;
@@ -203,6 +226,8 @@ export async function deleteUserAsAdmin(
       console.error("Error deleting auth user:", authError);
       return { error: authError.message };
     }
+
+    await logAdminActivity("delete-user", user.id);
 
     revalidatePath("/dashboard/admin/users");
     return { error: null };
