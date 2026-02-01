@@ -208,7 +208,6 @@ export const causesData = [
       },
     ],
   },
-  // Add more causes here
 ];
 
 export const causes = [

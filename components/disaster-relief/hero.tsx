@@ -4,6 +4,7 @@ import Image from "next/image";
 import React from "react";
 import { Button } from "../ui/button";
 import { motion } from "framer-motion";
+import Link from "next/link";
 
 export default function Hero() {
   return (
@@ -45,15 +46,17 @@ export default function Hero() {
 
             {/* Animated Button */}
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Button className="text-xs md:text-base flex items-center gap-x-2 text-white p-2 bg-[#151314] rounded">
-                Launch a Disaster Relief Campaign
-                <Image
-                  src="/images/chevron-right-2.png"
-                  height={12}
-                  width={12}
-                  alt="get started"
-                />
-              </Button>
+              <Link href="/dashboard/causes/create">
+                <Button className="text-xs md:text-base flex items-center gap-x-2 text-white p-2 bg-[#151314] rounded">
+                  Launch a Disaster Relief Campaign
+                  <Image
+                    src="/images/chevron-right-2.png"
+                    height={12}
+                    width={12}
+                    alt="get started"
+                  />
+                </Button>
+              </Link>
             </motion.div>
           </motion.div>
 

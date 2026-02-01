@@ -3,6 +3,7 @@ import React from "react";
 import { Button } from "../ui/button";
 import { motion } from "framer-motion";
 import Image from "next/image";
+import Link from "next/link";
 
 export default function MoreOnHealthcare() {
   return (
@@ -32,10 +33,12 @@ export default function MoreOnHealthcare() {
         or limited reach. RefreeG solves this by making healthcare 
         fundraising global, transparent, and instant.
       </div>
-      <Button className="bg-[#FAFAFA] hover:bg-[#5f0f17] hover:text-white border text-black px-10 py-4 flex items-center gap-2 rounded-full">
-        Get started today
-        <Image src="/images/arrow-right.png" height={20} width={20} alt="get started" />
-      </Button>
+      <Link href="/dashboard/causes/create">
+        <Button className="bg-[#FAFAFA] hover:bg-[#5f0f17] hover:text-white border text-black px-10 py-4 flex items-center gap-2 rounded-full">
+          Get started today
+          <Image src="/images/arrow-right.png" height={20} width={20} alt="get started" />
+        </Button>
+      </Link>
     </motion.div>
   );
 }
