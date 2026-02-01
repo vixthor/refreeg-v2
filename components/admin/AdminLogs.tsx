@@ -1,7 +1,13 @@
-"use client"
+"use client";
 
-
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "@/components/ui/table";
 
 interface AdminLog {
   email: string;
@@ -10,7 +16,6 @@ interface AdminLog {
 }
 
 export default function AdminLogs({ logs }: { logs: AdminLog[] }) {
-
   return (
     <div className="w-full">
       <Table>
@@ -24,14 +29,18 @@ export default function AdminLogs({ logs }: { logs: AdminLog[] }) {
         <TableBody>
           {logs.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={3} className="text-center">No admin logs found.</TableCell>
+              <TableCell colSpan={3} className="text-center">
+                No admin logs found.
+              </TableCell>
             </TableRow>
           ) : (
             logs.map((log: AdminLog, idx: number) => (
               <TableRow key={idx}>
                 <TableCell>{log.email}</TableCell>
                 <TableCell>{log.action}</TableCell>
-                <TableCell>{new Date(log.created_at).toLocaleString()}</TableCell>
+                <TableCell suppressHydrationWarning>
+                  {new Date(log.created_at).toLocaleString()}
+                </TableCell>
               </TableRow>
             ))
           )}
