@@ -161,7 +161,7 @@ export default function ReferralPage() {
               reward,
               created_at,
               referee_id
-            `
+            `,
           )
           .eq("referrer_id", currentUser.id)
           .order("created_at", { ascending: false });
@@ -615,7 +615,7 @@ export default function ReferralPage() {
               <div className="space-y-3">
                 <a
                   href={`https://wa.me/?text=${encodeURIComponent(
-                    `Join me on RefreeG! ${referralLink}`
+                    `Join me on RefreeG! ${referralLink}`,
                   )}`}
                   target="_blank"
                   rel="noreferrer"
@@ -626,7 +626,7 @@ export default function ReferralPage() {
 
                 <a
                   href={`mailto:?subject=${encodeURIComponent(
-                    "Join me on RefreeG"
+                    "Join me on RefreeG",
                   )}&body=${encodeURIComponent(referralLink)}`}
                   className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#2563EB] py-2 text-sm font-medium text-white transition hover:bg-[#1D4ED8]"
                 >

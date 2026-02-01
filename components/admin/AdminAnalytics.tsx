@@ -21,7 +21,6 @@ import {
   useOperationalAnalytics,
 } from "@/hooks/use-admin-analytics";
 import {
-  BarChart,
   Users,
   DollarSign,
   TrendingUp,
@@ -36,19 +35,21 @@ import { AnalyticsCard } from "@/components/analytics-card";
 import { DatePickerWithRange } from "@/components/ui/date-range-picker";
 import {
   Bar,
-  BarChart as RechartsBarChart,
+  BarChart,
   CartesianGrid,
-  Legend,
   Line,
   LineChart,
-  ResponsiveContainer,
-  Tooltip,
   XAxis,
   YAxis,
-  PieChart,
-  Pie,
-  Cell,
 } from "recharts";
+import {
+  ChartConfig,
+  ChartContainer,
+  ChartLegend,
+  ChartLegendContent,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function AdminAnalytics() {
@@ -187,6 +188,51 @@ export default function AdminAnalytics() {
     );
   }
 
+  // Chart Configs
+  const donationConfig = {
+    regular: {
+      label: "Regular (₦)",
+      color: "#2563eb",
+    },
+    crypto: {
+      label: "Crypto (₦)",
+      color: "#16a34a",
+    },
+  } satisfies ChartConfig;
+
+  const userConfig = {
+    users: {
+      label: "New Users",
+      color: "#2563eb",
+    },
+    active: {
+      label: "Active",
+      color: "#f59e0b",
+    },
+  } satisfies ChartConfig;
+
+  const causeCategoryConfig = {
+    total: {
+      label: "Total Causes",
+      color: "#8884d8",
+    },
+  } satisfies ChartConfig;
+
+  const causeStatusConfig = {
+    approved: {
+      label: "Approved",
+      color: "#16a34a",
+    },
+    pending: {
+      label: "Pending",
+      color: "#f59e0b",
+    },
+    completed: {
+      label: "Completed",
+      color: "#2563eb",
+    },
+  } satisfies ChartConfig;
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -278,30 +324,43 @@ export default function AdminAnalytics() {
                 Volume over time (Regular vs Crypto)
               </CardDescription>
             </CardHeader>
-            <CardContent className="h-[400px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <RechartsBarChart data={donationTrends}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="period" />
-                  <YAxis />
-                  <Tooltip
-                    formatter={(value) => `₦${Number(value).toLocaleString()}`}
+            <CardContent>
+              <ChartContainer
+                config={donationConfig}
+                className="h-[400px] w-full"
+              >
+                <BarChart data={donationTrends}>
+                  <CartesianGrid vertical={false} />
+                  <XAxis
+                    dataKey="period"
+                    tickLine={false}
+                    tickMargin={10}
+                    axisLine={false}
                   />
-                  <Legend />
+                  <YAxis
+                    tickLine={false}
+                    axisLine={false}
+                    tickFormatter={(value) => `₦${value.toLocaleString()}`}
+                  />
+                  <ChartTooltip
+                    cursor={false}
+                    content={<ChartTooltipContent indicator="dashed" />}
+                  />
+                  <ChartLegend content={<ChartLegendContent />} />
                   <Bar
                     dataKey="regular"
-                    name="Regular (₦)"
+                    fill="var(--color-regular)"
+                    radius={4}
                     stackId="a"
-                    fill="#2563eb"
                   />
                   <Bar
                     dataKey="crypto"
-                    name="Crypto (₦)"
+                    fill="var(--color-crypto)"
+                    radius={4}
                     stackId="a"
-                    fill="#16a34a"
                   />
-                </RechartsBarChart>
-              </ResponsiveContainer>
+                </BarChart>
+              </ChartContainer>
             </CardContent>
           </Card>
         </TabsContent>
@@ -314,31 +373,38 @@ export default function AdminAnalytics() {
                 New user registrations over time
               </CardDescription>
             </CardHeader>
-            <CardContent className="h-[400px]">
-              <ResponsiveContainer width="100%" height="100%">
+            <CardContent>
+              <ChartContainer config={userConfig} className="h-[400px] w-full">
                 <LineChart data={userGrowth}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="period" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
+                  <CartesianGrid vertical={false} />
+                  <XAxis
+                    dataKey="period"
+                    tickLine={false}
+                    tickMargin={10}
+                    axisLine={false}
+                  />
+                  <YAxis tickLine={false} axisLine={false} />
+                  <ChartTooltip
+                    cursor={false}
+                    content={<ChartTooltipContent />}
+                  />
+                  <ChartLegend content={<ChartLegendContent />} />
                   <Line
                     type="monotone"
                     dataKey="users"
-                    name="New Users"
-                    stroke="#2563eb"
-                    activeDot={{ r: 8 }}
+                    stroke="var(--color-users)"
                     strokeWidth={2}
+                    dot={{ r: 4 }}
                   />
                   <Line
                     type="monotone"
                     dataKey="active"
-                    name="Active (Updated)"
-                    stroke="#f59e0b"
+                    stroke="var(--color-active)"
                     strokeWidth={2}
+                    dot={{ r: 4 }}
                   />
                 </LineChart>
-              </ResponsiveContainer>
+              </ChartContainer>
             </CardContent>
           </Card>
         </TabsContent>
@@ -350,17 +416,32 @@ export default function AdminAnalytics() {
                 <CardTitle>Causes by Category</CardTitle>
                 <CardDescription>Distribution of total causes</CardDescription>
               </CardHeader>
-              <CardContent className="h-[400px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <RechartsBarChart data={causeCategories} layout="vertical">
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis type="number" />
-                    <YAxis dataKey="category" type="category" width={100} />
-                    <Tooltip />
-                    <Legend />
-                    <Bar dataKey="total" name="Total Causes" fill="#8884d8" />
-                  </RechartsBarChart>
-                </ResponsiveContainer>
+              <CardContent>
+                <ChartContainer
+                  config={causeCategoryConfig}
+                  className="h-[400px] w-full"
+                >
+                  <BarChart
+                    data={causeCategories}
+                    layout="vertical"
+                    margin={{ left: 20 }}
+                  >
+                    <CartesianGrid horizontal={false} />
+                    <XAxis type="number" hide />
+                    <YAxis
+                      dataKey="category"
+                      type="category"
+                      tickLine={false}
+                      axisLine={false}
+                      width={100}
+                    />
+                    <ChartTooltip
+                      cursor={false}
+                      content={<ChartTooltipContent />}
+                    />
+                    <Bar dataKey="total" fill="var(--color-total)" radius={4} />
+                  </BarChart>
+                </ChartContainer>
               </CardContent>
             </Card>
 
@@ -371,34 +452,45 @@ export default function AdminAnalytics() {
                   Approved vs Pending vs Completed
                 </CardDescription>
               </CardHeader>
-              <CardContent className="h-[400px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <RechartsBarChart data={causeCategories}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="category" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
+              <CardContent>
+                <ChartContainer
+                  config={causeStatusConfig}
+                  className="h-[400px] w-full"
+                >
+                  <BarChart data={causeCategories}>
+                    <CartesianGrid vertical={false} />
+                    <XAxis
+                      dataKey="category"
+                      tickLine={false}
+                      tickMargin={10}
+                      axisLine={false}
+                    />
+                    <YAxis tickLine={false} axisLine={false} />
+                    <ChartTooltip
+                      cursor={false}
+                      content={<ChartTooltipContent />}
+                    />
+                    <ChartLegend content={<ChartLegendContent />} />
                     <Bar
                       dataKey="approved"
-                      name="Approved"
+                      fill="var(--color-approved)"
+                      radius={4}
                       stackId="a"
-                      fill="#16a34a"
                     />
                     <Bar
                       dataKey="pending"
-                      name="Pending"
+                      fill="var(--color-pending)"
+                      radius={4}
                       stackId="a"
-                      fill="#f59e0b"
                     />
                     <Bar
                       dataKey="completed"
-                      name="Completed"
+                      fill="var(--color-completed)"
+                      radius={4}
                       stackId="a"
-                      fill="#2563eb"
                     />
-                  </RechartsBarChart>
-                </ResponsiveContainer>
+                  </BarChart>
+                </ChartContainer>
               </CardContent>
             </Card>
           </div>
