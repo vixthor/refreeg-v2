@@ -5,6 +5,7 @@ import React from "react";
 import { motion } from "framer-motion";
 import { Button } from "../ui/button";
 import Image from "next/image";
+import Link from "next/link";
 
 export default function LifeMatters() {
   const container = {
@@ -73,10 +74,12 @@ export default function LifeMatters() {
         </motion.p>
 
         <motion.div variants={item}>
-          <Button className="bg-[#FAFAFA] hover:bg-[#8C1823] hover:text-white border text-black px-10 py-4 flex items-center gap-2 rounded-full">
-            Get Started
-            <ArrowRight size={16} />
-          </Button>
+          <Link href="/dashboard/causes/create">
+            <Button className="bg-[#FAFAFA] hover:bg-[#8C1823] hover:text-white border text-black px-10 py-4 flex items-center gap-2 rounded-full">
+              Get Started
+              <ArrowRight size={16} />
+            </Button>
+          </Link>
         </motion.div>
       </motion.div>
 
