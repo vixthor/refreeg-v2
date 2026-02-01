@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useState, useEffect } from "react";
 import {
   BarChart3,
   FileText,
@@ -91,19 +92,15 @@ export function DashboardNav() {
   const { user } = useAuth();
   const { isAdminOrManager, isLoading } = useAdmin(user?.id);
 
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   if (isLoading) {
-    return (
-      <nav className="grid items-start gap-2 py-4">
-        {userNavItems.map((_, index) => (
-          <Skeleton key={index} className="h-10 w-full" />
-        ))}
-        <div className="my-2">
-          {adminNavItems.map((_, index) => (
-            <Skeleton key={index} className="h-10 w-full" />
-          ))}
-        </div>
-      </nav>
-    );
+    // We only show skeletons for the admin part to prevent hydration mismatch
+    // The user nav items are static and should always render
   }
 
   return (
@@ -129,7 +126,13 @@ export function DashboardNav() {
         </Link>
       ))}
 
-      {!isLoading && isAdminOrManager && (
+      {mounted && isLoading ? (
+        <div className="my-2">
+          {adminNavItems.map((_, index) => (
+            <Skeleton key={index} className="h-10 w-full mb-2" />
+          ))}
+        </div>
+      ) : mounted && isAdminOrManager ? (
         <>
           <div className="my-2 grid items-start gap-2">
             <div className="mb-2 px-2 text-xs font-semibold tracking-tight flex items-center">
@@ -160,7 +163,7 @@ export function DashboardNav() {
             ))}
           </div>
         </>
-      )}
+      ) : null}
     </nav>
   );
 }
