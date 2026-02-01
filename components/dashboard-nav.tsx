@@ -120,7 +120,7 @@ export function DashboardNav() {
               "w-full justify-start",
               pathname === item.href || pathname.startsWith(`${item.href}/`)
                 ? "bg-secondary hover:bg-secondary"
-                : ""
+                : "",
             )}
           >
             <item.icon className="mr-2 h-4 w-4" />
@@ -150,7 +150,7 @@ export function DashboardNav() {
                     pathname === item.href ||
                       pathname.startsWith(`${item.href}/`)
                       ? "bg-secondary hover:bg-secondary"
-                      : ""
+                      : "",
                   )}
                 >
                   <item.icon className="mr-2 h-4 w-4" />
