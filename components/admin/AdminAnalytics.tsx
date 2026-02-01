@@ -32,7 +32,7 @@ import {
   Clock,
 } from "lucide-react";
 import { AnalyticsCard } from "@/components/analytics-card";
-import { DatePickerWithRange } from "@/components/ui/date-range-picker";
+import { TimeRangeSelector } from "@/components/ui/time-range-selector";
 import {
   Bar,
   BarChart,
@@ -244,7 +244,7 @@ export default function AdminAnalytics() {
         </div>
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <div className="w-full sm:w-auto">
-            <DatePickerWithRange date={date} setDate={setDate} />
+            <TimeRangeSelector date={date} setDate={setDate} />
           </div>
           <div>
             <Button
