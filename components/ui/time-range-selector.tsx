@@ -89,11 +89,15 @@ export function TimeRangeSelector({
   const handleManualChange = (newValue: string, newUnit: TimeUnit) => {
     setValue(newValue);
     setUnit(newUnit);
+  };
 
-    const numVal = parseInt(newValue);
+  // Handle manual apply
+  const handleManualApply = () => {
+    const numVal = parseInt(value);
     if (!isNaN(numVal) && numVal > 0) {
-      const newRange = calculateRange(numVal, newUnit);
+      const newRange = calculateRange(numVal, unit);
       setDate(newRange);
+      setIsOpen(false);
     }
   };
 
@@ -195,6 +199,9 @@ export function TimeRangeSelector({
                     </SelectContent>
                   </Select>
                 </div>
+                <Button onClick={handleManualApply} className="w-auto">
+                  Apply
+                </Button>
               </div>
             </div>
           </div>
