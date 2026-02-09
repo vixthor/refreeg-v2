@@ -1,29 +1,130 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect, useCallback } from "react";
 import {
   ArrowDownLeft,
   ArrowUpRight,
   Eye,
   EyeOff,
-  Gift,
   History,
-  Send,
 } from "lucide-react";
+import { useEventListeners, type EventPayload } from "@/hooks/use-event-listeners";
+import { useAuth } from "@/hooks/use-auth";
+import { getUserWallet, getUserStats } from "@/actions/event-reward-actions";
+import type { RewardTransaction, UserStreak } from "@/types";
 
-const transactions = [
-  { label: "Campaign share reward", time: "Today, 1:14 PM", amount: "+100" },
-  { label: "Comment reward", time: "Today, 10:32 AM", amount: "+50" },
-  { label: "Donation bonus", time: "Yesterday, 8:10 PM", amount: "+500" },
-  { label: "Claimed to wallet", time: "Feb 8, 4:55 PM", amount: "-300" },
-];
+interface Transaction {
+  label: string;
+  time: string;
+  amount: string;
+  id: string;
+}
 
 export default function EizaRewardsScreen() {
   const [showBalance, setShowBalance] = useState(true);
+  const [balance, setBalance] = useState(0);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [stats, setStats] = useState<UserStreak | null>(null);
+  const [loading, setLoading] = useState(true);
+  const { user, isLoading: authLoading } = useAuth();
+
+  // Fetch initial wallet data
+  const fetchWalletData = useCallback(async () => {
+    if (!user?.id) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const walletData = await getUserWallet(user.id);
+      if (walletData.wallet) {
+        setBalance(walletData.wallet.balance || 0);
+      }
+
+      // Format transactions for display
+      if (walletData.transactions && Array.isArray(walletData.transactions)) {
+        const formatted = walletData.transactions.map((t: RewardTransaction) => ({
+          id: t.id,
+          label: formatTransactionLabel(t.transaction_type),
+          time: formatTime(t.created_at),
+          amount: `+${t.amount}`,
+        }));
+        setTransactions(formatted);
+      }
+
+      const userStats = await getUserStats(user.id);
+      setStats(userStats);
+    } catch (error) {
+      console.error("Error fetching wallet data:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.id]);
+
+  // Set up event listeners
+  useEventListeners({
+    userId: user?.id,
+    onComment: async (payload) => {
+      handleEventPayload(payload);
+    },
+    onShare: async (payload) => {
+      handleEventPayload(payload);
+    },
+    onDonation: async (payload) => {
+      handleEventPayload(payload);
+    },
+    onLogin: async (payload) => {
+      handleEventPayload(payload);
+    },
+    onWeeklyStreak: async (payload) => {
+      handleEventPayload(payload);
+      await fetchWalletData();
+    },
+    onMonthlyActive: async (payload) => {
+      handleEventPayload(payload);
+      await fetchWalletData();
+    },
+  });
+
+  const handleEventPayload = (payload: EventPayload) => {
+    // Update balance optimistically
+    const rewardAmounts: Record<string, number> = {
+      comment: 50,
+      share: 100,
+      donation: 100, // Default, actual amount depends on donation size
+      login: 10,
+      weekly_streak: 500,
+      monthly_active: 1000,
+    };
+
+    const amount = rewardAmounts[payload.type] || 0;
+    setBalance((prev) => prev + amount);
+
+    // Add transaction to list
+    const newTransaction: Transaction = {
+      id: `${payload.type}-${payload.timestamp}`,
+      label: formatTransactionLabel(payload.type),
+      time: "Just now",
+      amount: `+${amount}`,
+    };
+
+    setTransactions((prev) => [newTransaction, ...prev.slice(0, 49)]);
+  };
+
+  useEffect(() => {
+    if (!authLoading) {
+      fetchWalletData();
+    }
+  }, [authLoading, fetchWalletData]);
 
   const visibleBalance = useMemo(
-    () => (showBalance ? "3,250 EIZA" : "••••• EIZA"),
-    [showBalance]
+    () => (showBalance ? `${balance.toLocaleString()} EIZA` : "••••• EIZA"),
+    [showBalance, balance]
+  );
+
+  const usdEquivalent = useMemo(
+    () => (balance * 0.3825).toFixed(2), // Assuming 1 EIZA = $0.3825
+    [balance]
   );
 
   return (
@@ -45,12 +146,16 @@ export default function EizaRewardsScreen() {
           <p className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
             {visibleBalance}
           </p>
-          <p className="mt-1 text-xs text-blue-100 sm:text-sm">≈ $1,242.50 USD</p>
+          <p className="mt-1 text-xs text-blue-100 sm:text-sm">
+            ≈ ${usdEquivalent} USD
+          </p>
 
           <div className="mt-3 rounded-lg bg-white/15 p-2">
             <div className="flex items-center justify-between text-[11px] text-blue-100 sm:text-xs">
-              <span>7d change</span>
-              <span className="font-semibold text-emerald-200">+12.8%</span>
+              <span>Active Today</span>
+              <span className="font-semibold text-emerald-200">
+                {stats?.weekly_streak || 0} day streak
+              </span>
             </div>
             <svg className="mt-1 h-8 w-full" viewBox="0 0 240 32" fill="none">
               <path
@@ -63,16 +168,8 @@ export default function EizaRewardsScreen() {
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-2 p-3 sm:gap-3 sm:p-4">
-          <button className="flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2 py-2 text-xs font-semibold text-slate-700">
-            <Gift size={14} />
-            Claim
-          </button>
-          <button className="flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2 py-2 text-xs font-semibold text-slate-700">
-            <Send size={14} />
-            Send
-          </button>
-          <button className="flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2 py-2 text-xs font-semibold text-slate-700">
+        <div className="grid grid-cols-1 gap-2 p-3 sm:gap-3 sm:p-4">
+          <button className="flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100">
             <History size={14} />
             History
           </button>
@@ -84,9 +181,14 @@ export default function EizaRewardsScreen() {
               NEXT REWARD TIER
             </p>
             <div className="mt-2 h-2 rounded-full bg-slate-200">
-              <div className="h-2 w-3/4 rounded-full bg-blue-500" />
+              <div
+                className="h-2 rounded-full bg-blue-500 transition-all duration-500"
+                style={{ width: `${((balance % 1000) / 1000) * 100}%` }}
+              />
             </div>
-            <p className="mt-2 text-xs text-slate-600">750 / 1000 points to Gold</p>
+            <p className="mt-2 text-xs text-slate-600">
+              {balance % 1000} / 1000 points to next tier
+            </p>
           </div>
         </div>
 
@@ -95,39 +197,80 @@ export default function EizaRewardsScreen() {
             TRANSACTIONS
           </p>
           <div className="mt-2 divide-y divide-slate-100 rounded-xl border border-slate-100 bg-white">
-            {transactions.map((item) => {
-              const isPositive = item.amount.startsWith("+");
-              return (
-                <div
-                  key={`${item.label}-${item.time}`}
-                  className="flex items-center justify-between px-3 py-3"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <span className="rounded-full bg-slate-100 p-1.5 text-slate-500">
-                      {isPositive ? (
-                        <ArrowDownLeft size={14} />
-                      ) : (
-                        <ArrowUpRight size={14} />
-                      )}
-                    </span>
-                    <div>
-                      <p className="text-sm font-medium text-slate-700">{item.label}</p>
-                      <p className="text-xs text-slate-400">{item.time}</p>
-                    </div>
-                  </div>
-                  <span
-                    className={`text-sm font-semibold ${
-                      isPositive ? "text-emerald-600" : "text-slate-500"
-                    }`}
+            {transactions.length === 0 ? (
+              <div className="p-4 text-center text-sm text-slate-400">
+                {loading ? "Loading transactions..." : "No transactions yet. Start earning rewards!"}
+              </div>
+            ) : (
+              transactions.map((item) => {
+                const isPositive = item.amount.startsWith("+");
+                return (
+                  <div
+                    key={item.id}
+                    className="flex items-center justify-between px-3 py-3 transition hover:bg-slate-50"
                   >
-                    {item.amount}
-                  </span>
-                </div>
-              );
-            })}
+                    <div className="flex items-center gap-2.5">
+                      <span className="rounded-full bg-slate-100 p-1.5 text-slate-500">
+                        {isPositive ? (
+                          <ArrowDownLeft size={14} />
+                        ) : (
+                          <ArrowUpRight size={14} />
+                        )}
+                      </span>
+                      <div>
+                        <p className="text-sm font-medium text-slate-700">{item.label}</p>
+                        <p className="text-xs text-slate-400">{item.time}</p>
+                      </div>
+                    </div>
+                    <span
+                      className={`text-sm font-semibold ${
+                        isPositive ? "text-emerald-600" : "text-slate-500"
+                      }`}
+                    >
+                      {item.amount}
+                    </span>
+                  </div>
+                );
+              })
+            )}
           </div>
         </div>
       </div>
     </div>
   );
 }
+
+function formatTransactionLabel(type: string): string {
+  const labels: Record<string, string> = {
+    comment: "Comment reward",
+    share: "Campaign share reward",
+    donation: "Donation bonus",
+    login: "Daily login bonus",
+    weekly_streak: "Weekly streak reward",
+    monthly_active: "Monthly active bonus",
+  };
+  return labels[type] || "Reward earned";
+}
+
+function formatTime(timestamp: string): string {
+  const date = new Date(timestamp);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMins < 1) return "Just now";
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays < 7) return `${diffDays}d ago`;
+
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: date.getFullYear() !== now.getFullYear() ? "numeric" : undefined,
+  });
+}
+
+
+
