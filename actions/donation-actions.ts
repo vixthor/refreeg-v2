@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import type { Donation, DonationWithCause, DonationFormData } from "@/types";
+import { recordEvent } from "@/actions/event-reward-actions";
 
 export async function createDonation(
   causeId: string,
@@ -11,15 +12,17 @@ export async function createDonation(
 ): Promise<Donation> {
   const supabase = await createClient();
 
+  const donationAmount =
+    typeof donationData.amount === "string"
+      ? Number.parseFloat(donationData.amount)
+      : donationData.amount;
+
   const { data, error } = await supabase
     .from("donations")
     .insert({
       cause_id: causeId,
       ...(userId ? { user_id: userId } : {}),
-      amount:
-        typeof donationData.amount === "string"
-          ? Number.parseFloat(donationData.amount)
-          : donationData.amount,
+      amount: donationAmount,
       name:
         String(donationData.isAnonymous).toLocaleLowerCase() === "true"
           ? "Anonymous"
@@ -35,6 +38,25 @@ export async function createDonation(
   if (error) {
     console.error("Error creating donation:", error);
     throw error;
+  }
+
+  // Record event for reward tracking (only if user is logged in)
+  if (userId) {
+    try {
+      await recordEvent({
+        type: "donation",
+        userId,
+        amount: donationAmount,
+        metadata: {
+          cause_id: causeId,
+          donation_id: data.id,
+          is_anonymous: donationData.isAnonymous,
+        },
+      });
+    } catch (eventError) {
+      console.error("Error recording donation event:", eventError);
+      // Don't throw - event tracking shouldn't break the main action
+    }
   }
 
   revalidatePath(`/causes/${causeId}`);

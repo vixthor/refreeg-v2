@@ -681,7 +681,7 @@ export async function deleteCause(causeId: string): Promise<void> {
 /**
  * Save a cause share to the database
  */
-export async function saveCauseShare(causeId: string): Promise<void> {
+export async function saveCauseShare(causeId: string, userId?: string): Promise<void> {
   const supabase = await createClient();
 
   const { error: shareError, data: causeData } = await supabase
@@ -705,5 +705,30 @@ export async function saveCauseShare(causeId: string): Promise<void> {
     throw causeError;
   }
 
+  // Record event for reward tracking if userId provided
+  if (userId) {
+    try {
+      const { recordEvent } = await import("@/actions/event-reward-actions");
+      await recordEvent({
+        type: "share",
+        userId,
+        metadata: {
+          cause_id: causeId,
+        },
+      });
+    } catch (eventError) {
+      console.error("Error recording share event:", eventError);
+      // Don't throw - event tracking shouldn't break the main action
+    }
+  }
+
   return mine;
+}
+
+/**
+ * Record a cause share with user tracking
+ */
+export async function shareCause(causeId: string, userId: string): Promise<void> {
+  // Record the share
+  await saveCauseShare(causeId, userId);
 }

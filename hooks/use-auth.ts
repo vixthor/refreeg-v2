@@ -178,6 +178,17 @@ export function useAuth() {
         return;
       }
 
+      // Initialize wallet with signup bonus
+      if (data?.user?.id) {
+        try {
+          const { initializeUserWallet } = await import("@/actions/auth-actions");
+          await initializeUserWallet(data.user.id, 1);
+        } catch (walletError) {
+          console.error("Error initializing user wallet:", walletError);
+          // Don't fail signup if wallet initialization fails
+        }
+      }
+
       try {
         const profileSetupUrl = `${window.location.origin}/dashboard/settings`;
         await sendWelcomeEmailToUser(email, fullName, profileSetupUrl);

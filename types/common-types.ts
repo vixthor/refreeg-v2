@@ -242,3 +242,46 @@ export interface Comment {
   replies?: Comment[];
   replies_count?: number;
 }
+export interface Event {
+  id: string;
+  user_id: string;
+  event_type: "comment" | "share" | "donation" | "login" | "weekly_streak" | "monthly_active";
+  metadata: Record<string, any>;
+  created_at: string;
+}
+
+export interface RewardEvent {
+  type: "comment" | "share" | "donation" | "login" | "weekly_streak" | "monthly_active";
+  userId: string;
+  amount?: number;
+  metadata?: Record<string, any>;
+}
+
+export interface RewardTransaction {
+  id: string;
+  user_id: string;
+  amount: number;
+  transaction_type: string;
+  event_id: string;
+  status: "completed" | "pending" | "failed";
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface UserWallet {
+  id: string;
+  user_id: string;
+  balance: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UserStreak {
+  id: string;
+  user_id: string;
+  weekly_streak: number;
+  is_monthly_active: boolean;
+  last_active_date: string | null;
+  created_at: string;
+  updated_at: string;
+}
