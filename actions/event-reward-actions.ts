@@ -12,25 +12,27 @@ export async function recordEvent(event: RewardEvent) {
   const supabase = await createClient();
 
   try {
-    // Prevent multiple login rewards in the same day
+    // Prevent multiple login rewards within a rolling 24-hour window
     if (event.type === "login") {
       try {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const startOfDay = today.toISOString();
-
         const { data: recentLogin, error: recentLoginError } = await supabase
           .from("events")
           .select("id, created_at")
           .eq("user_id", event.userId)
           .eq("event_type", "login")
-          .gte("created_at", startOfDay)
+          .order("created_at", { ascending: false })
           .limit(1)
           .single();
 
-        if (recentLogin) {
-          // A login event already recorded today — do not award again
-          return recentLogin;
+        if (recentLogin?.created_at) {
+          const lastLogin = new Date(recentLogin.created_at).getTime();
+          const now = Date.now();
+          const hours24 = 24 * 60 * 60 * 1000;
+
+          if (now - lastLogin < hours24) {
+            // A login event already recorded within 24 hours — do not award again
+            return recentLogin;
+          }
         }
 
         if (recentLoginError && recentLoginError.code !== "PGRST116") {
@@ -141,11 +143,14 @@ export async function addRewards(
 
     const { error: updateError } = await supabase
       .from("user_wallets")
-      .upsert({
-        user_id: userId,
-        balance: newBalance,
-        updated_at: new Date().toISOString(),
-      });
+      .upsert(
+        {
+          user_id: userId,
+          balance: newBalance,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id" }
+      );
 
     if (updateError) {
       console.error("Error updating wallet balance:", updateError);

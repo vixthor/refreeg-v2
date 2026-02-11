@@ -69,17 +69,17 @@ export default function EizaRewardsScreen() {
   const handleLoginReward = useCallback(async () => {
     if (!user?.id) return;
 
-    const todayKey = new Date().toISOString().slice(0, 10);
+    const now = Date.now();
     const storageKey = `eiza_daily_login_reward_${user.id}`;
 
     try {
-      const lastRewardDate = window.localStorage.getItem(storageKey);
-      if (lastRewardDate === todayKey) {
+      const lastRewardMs = window.localStorage.getItem(storageKey);
+      if (lastRewardMs && now - Number(lastRewardMs) < 24 * 60 * 60 * 1000) {
         return;
       }
 
       await trackLogin(user.id);
-      window.localStorage.setItem(storageKey, todayKey);
+      window.localStorage.setItem(storageKey, String(now));
       await fetchWalletData();
     } catch (error) {
       console.error("Error handling daily login reward:", error);
@@ -117,7 +117,7 @@ export default function EizaRewardsScreen() {
       comment: 50,
       share: 100,
       donation: 100, // Default, actual amount depends on donation size
-      login: 1,
+      login: 0.5,
       weekly_streak: 500,
       monthly_active: 1000,
     };
@@ -323,6 +323,7 @@ export default function EizaRewardsScreen() {
 
 function formatTransactionLabel(type: string): string {
   const labels: Record<string, string> = {
+    signup: "One time signup bonus",
     comment: "Comment reward",
     share: "Campaign share reward",
     donation: "Donation bonus",

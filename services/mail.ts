@@ -3,7 +3,7 @@
 import nodemailer from "nodemailer";
 import fs from "fs";
 import path from "path";
-import Handlebars from "handlebars";
+import Handlebars from "handlebars/dist/handlebars.js";
 import { getCurrentUser, getProfile } from "@/actions";
 
 export async function getDeviceInfo() {

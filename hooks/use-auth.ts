@@ -178,14 +178,30 @@ export function useAuth() {
         return;
       }
 
-      // Initialize wallet with signup bonus
+      // Initialize wallet (bonus handled separately)
       if (data?.user?.id) {
         try {
           const { initializeUserWallet } = await import("@/actions/auth-actions");
-          await initializeUserWallet(data.user.id, 1);
+          await initializeUserWallet(data.user.id, 0);
         } catch (walletError) {
           console.error("Error initializing user wallet:", walletError);
           // Don't fail signup if wallet initialization fails
+        }
+      }
+
+      // Track first login for daily reward
+      if (data?.user?.id) {
+        try {
+          const { trackLogin, recordSignupReward } = await import("@/actions/auth-actions");
+          await trackLogin(data.user.id);
+          await recordSignupReward(data.user.id, 1);
+          toast({
+            title: "Rewards credited",
+            description: "Signup bonus (1 EIZA) and daily login bonus (0.5 EIZA) have been added.",
+          });
+        } catch (loginError) {
+          console.error("Error tracking signup login:", loginError);
+          // Don't fail signup if login tracking fails
         }
       }
 
