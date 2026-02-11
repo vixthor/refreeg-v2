@@ -42,7 +42,7 @@ export async function trackLogin(userId: string) {
 /**
  * Initialize wallet for new user with signup bonus
  */
-export async function initializeUserWallet(userId: string, signupBonus: number = 1) {
+export async function initializeUserWallet(userId: string, signupBonus: number = 0) {
   const supabase = await createClient()
 
   try {
@@ -58,7 +58,7 @@ export async function initializeUserWallet(userId: string, signupBonus: number =
       return existingWallet
     }
 
-    // Create wallet with signup bonus
+    // Create wallet (signup bonus handled separately)
     const { data, error } = await supabase
       .from("user_wallets")
       .insert({
@@ -93,5 +93,84 @@ export async function initializeUserWallet(userId: string, signupBonus: number =
   } catch (error) {
     console.error("Error in initializeUserWallet:", error)
     // Don't throw - wallet initialization shouldn't break signup
+  }
+}
+
+/**
+ * Record a one-time signup reward transaction
+ */
+export async function recordSignupReward(userId: string, amount: number = 1) {
+  const supabase = await createClient()
+
+  try {
+    const { data: existingReward, error: existingError } = await supabase
+      .from("reward_transactions")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("transaction_type", "signup")
+      .limit(1)
+      .single()
+
+    if (existingReward) {
+      return existingReward
+    }
+
+    if (existingError && existingError.code !== "PGRST116") {
+      console.error("Error checking signup reward:", existingError)
+      throw existingError
+    }
+
+    const { data, error } = await supabase
+      .from("reward_transactions")
+      .insert({
+        user_id: userId,
+        amount,
+        transaction_type: "signup",
+        status: "completed",
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .select()
+      .single()
+
+    if (error) {
+      console.error("Error recording signup reward:", error)
+      throw error
+    }
+
+    // Update user's wallet balance
+    const { data: walletData, error: walletError } = await supabase
+      .from("user_wallets")
+      .select("balance")
+      .eq("user_id", userId)
+      .single()
+
+    if (walletError && walletError.code !== "PGRST116") {
+      console.error("Error fetching wallet for signup reward:", walletError)
+      throw walletError
+    }
+
+    const currentBalance = walletData?.balance || 0
+    const newBalance = currentBalance + amount
+
+    const { error: updateError } = await supabase
+      .from("user_wallets")
+      .upsert(
+        {
+          user_id: userId,
+          balance: newBalance,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id" }
+      )
+
+    if (updateError) {
+      console.error("Error updating wallet for signup reward:", updateError)
+      throw updateError
+    }
+
+    return data
+  } catch (error) {
+    console.error("Error in recordSignupReward:", error)
   }
 }
