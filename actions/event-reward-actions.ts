@@ -12,6 +12,36 @@ export async function recordEvent(event: RewardEvent) {
   const supabase = await createClient();
 
   try {
+    // Prevent multiple login rewards in the same day
+    if (event.type === "login") {
+      try {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const startOfDay = today.toISOString();
+
+        const { data: recentLogin, error: recentLoginError } = await supabase
+          .from("events")
+          .select("id, created_at")
+          .eq("user_id", event.userId)
+          .eq("event_type", "login")
+          .gte("created_at", startOfDay)
+          .limit(1)
+          .single();
+
+        if (recentLogin) {
+          // A login event already recorded today — do not award again
+          return recentLogin;
+        }
+
+        if (recentLoginError && recentLoginError.code !== "PGRST116") {
+          console.error("Error checking recent login events:", recentLoginError);
+          throw recentLoginError;
+        }
+      } catch (err) {
+        // If something goes wrong checking recent logins, log and continue to avoid breaking login flow
+        console.error("Error while verifying daily login reward:", err);
+      }
+    }
     // Insert event into events table
     const { data: eventData, error: eventError } = await supabase
       .from("events")

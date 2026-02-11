@@ -4,6 +4,7 @@ import { useMemo, useState, useEffect, useCallback } from "react";
 import {
   ArrowDownLeft,
   ArrowUpRight,
+  ArrowLeft,
   Eye,
   EyeOff,
   History,
@@ -11,6 +12,8 @@ import {
 import { useEventListeners, type EventPayload } from "@/hooks/use-event-listeners";
 import { useAuth } from "@/hooks/use-auth";
 import { getUserWallet, getUserStats } from "@/actions/event-reward-actions";
+import { trackLogin } from "@/actions/auth-actions";
+import Link from "next/link";
 import type { RewardTransaction, UserStreak } from "@/types";
 
 interface Transaction {
@@ -61,6 +64,26 @@ export default function EizaRewardsScreen() {
     }
   }, [user?.id]);
 
+  const handleLoginReward = useCallback(async () => {
+    if (!user?.id) return;
+
+    const todayKey = new Date().toISOString().slice(0, 10);
+    const storageKey = `eiza_daily_login_reward_${user.id}`;
+
+    try {
+      const lastRewardDate = window.localStorage.getItem(storageKey);
+      if (lastRewardDate === todayKey) {
+        return;
+      }
+
+      await trackLogin(user.id);
+      window.localStorage.setItem(storageKey, todayKey);
+      await fetchWalletData();
+    } catch (error) {
+      console.error("Error handling daily login reward:", error);
+    }
+  }, [user?.id, fetchWalletData]);
+
   // Set up event listeners
   useEventListeners({
     userId: user?.id,
@@ -73,8 +96,8 @@ export default function EizaRewardsScreen() {
     onDonation: async (payload) => {
       handleEventPayload(payload);
     },
-    onLogin: async (payload) => {
-      handleEventPayload(payload);
+    onLogin: async () => {
+      await handleLoginReward();
     },
     onWeeklyStreak: async (payload) => {
       handleEventPayload(payload);
@@ -92,7 +115,7 @@ export default function EizaRewardsScreen() {
       comment: 50,
       share: 100,
       donation: 100, // Default, actual amount depends on donation size
-      login: 10,
+      login: 1,
       weekly_streak: 500,
       monthly_active: 1000,
     };
@@ -132,7 +155,16 @@ export default function EizaRewardsScreen() {
       <div className="mx-auto flex h-auto w-full max-w-md flex-col overflow-hidden rounded-[1.4rem] bg-white shadow-[0_16px_34px_rgba(15,23,42,0.08)] md:h-[82vh] md:max-w-xl">
         <div className="rounded-b-[1.3rem] bg-gradient-to-r from-blue-600 to-blue-500 p-4 text-white sm:p-5">
           <div className="flex items-center justify-between">
-            <p className="text-sm font-medium text-blue-100">EIZA Rewards Wallet</p>
+            <div className="flex items-center gap-2">
+              <Link
+                href="/"
+                aria-label="Back to home"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/20 text-white transition hover:bg-white/30"
+              >
+                <ArrowLeft size={16} />
+              </Link>
+              <p className="text-sm font-medium text-blue-100">EIZA Rewards Wallet</p>
+            </div>
             <button
               type="button"
               onClick={() => setShowBalance((prev) => !prev)}
