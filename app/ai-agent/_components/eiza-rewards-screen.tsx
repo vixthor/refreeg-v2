@@ -5,6 +5,7 @@ import {
   ArrowDownLeft,
   ArrowUpRight,
   ArrowLeft,
+  ChevronDown,
   Eye,
   EyeOff,
   History,
@@ -25,6 +26,7 @@ interface Transaction {
 
 export default function EizaRewardsScreen() {
   const [showBalance, setShowBalance] = useState(true);
+  const [showAllTransactions, setShowAllTransactions] = useState(false);
   const [balance, setBalance] = useState(0);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [stats, setStats] = useState<UserStreak | null>(null);
@@ -144,14 +146,12 @@ export default function EizaRewardsScreen() {
     () => (showBalance ? `${balance.toLocaleString()} EIZA` : "••••• EIZA"),
     [showBalance, balance]
   );
-
-  const usdEquivalent = useMemo(
-    () => (balance * 0.3825).toFixed(2), // Assuming 1 EIZA = $0.3825
-    [balance]
-  );
+  const displayedTransactions = showAllTransactions
+    ? transactions
+    : transactions.slice(0, 4);
 
   return (
-    <div className="relative bg-[#f3f5f8] px-3 pb-2 pt-24 sm:px-4 sm:pb-3 sm:pt-28 md:pb-6">
+    <div className="relative bg-[#f3f5f8] px-3 pb-2 pt-28 sm:px-4 sm:pb-3 sm:pt-28 md:pb-6">
       <div className="mx-auto flex h-auto w-full max-w-md flex-col overflow-hidden rounded-[1.4rem] bg-white shadow-[0_16px_34px_rgba(15,23,42,0.08)] md:h-[82vh] md:max-w-xl">
         <div className="rounded-b-[1.3rem] bg-gradient-to-r from-blue-600 to-blue-500 p-4 text-white sm:p-5">
           <div className="flex items-center justify-between">
@@ -177,9 +177,6 @@ export default function EizaRewardsScreen() {
 
           <p className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
             {visibleBalance}
-          </p>
-          <p className="mt-1 text-xs text-blue-100 sm:text-sm">
-            ≈ ${usdEquivalent} USD
           </p>
 
           <div className="mt-3 rounded-lg bg-white/15 p-2">
@@ -208,7 +205,7 @@ export default function EizaRewardsScreen() {
         </div>
 
         <div className="px-3 pb-3 sm:px-4 sm:pb-4">
-          <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 shadow-[0_6px_16px_rgba(15,23,42,0.08)]">
             <p className="text-[11px] font-semibold tracking-[0.14em] text-slate-500">
               NEXT REWARD TIER
             </p>
@@ -225,16 +222,59 @@ export default function EizaRewardsScreen() {
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-4 sm:px-4">
-          <p className="text-[11px] font-semibold tracking-[0.14em] text-slate-500">
-            TRANSACTIONS
-          </p>
+          <button
+            type="button"
+            onClick={() => setShowAllTransactions((prev) => !prev)}
+            className="flex w-full items-center justify-between rounded-md text-left transition active:scale-[0.99]"
+            aria-expanded={showAllTransactions}
+            aria-label="Toggle transactions list"
+          >
+            <span className="text-[11px] font-semibold tracking-[0.14em] text-slate-500">
+              TRANSACTIONS
+            </span>
+            <span className="flex items-center gap-1 text-xs font-medium text-slate-500">
+              {showAllTransactions ? "Collapse" : "Expand"}
+              <ChevronDown
+                size={14}
+                className={`transition-transform duration-200 ${
+                  showAllTransactions ? "rotate-180" : "rotate-0"
+                }`}
+              />
+            </span>
+          </button>
           <div className="mt-2 divide-y divide-slate-100 rounded-xl border border-slate-100 bg-white">
             {transactions.length === 0 ? (
-              <div className="p-4 text-center text-sm text-slate-400">
-                {loading ? "Loading transactions..." : "No transactions yet. Start earning rewards!"}
+              <div className="p-4 text-center">
+                <p className="text-sm text-slate-400">
+                  {loading
+                    ? "Loading transactions..."
+                    : "No transactions yet. Start earning rewards!"}
+                </p>
+                {!loading && (
+                  <div className="mt-3 flex flex-wrap justify-center gap-2">
+                    <button
+                      type="button"
+                      className="rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 active:scale-[0.98]"
+                    >
+                      Comment on a cause
+                    </button>
+                    <button
+                      type="button"
+                      className="rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 active:scale-[0.98]"
+                    >
+                      Share a campaign
+                    </button>
+                    <button
+                      type="button"
+                      className="rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 active:scale-[0.98]"
+                    >
+                      Make a donation
+                    </button>
+                  </div>
+                )}
               </div>
             ) : (
-              transactions.map((item) => {
+              displayedTransactions.map((item) => {
                 const isPositive = item.amount.startsWith("+");
                 return (
                   <div
@@ -264,6 +304,15 @@ export default function EizaRewardsScreen() {
                   </div>
                 );
               })
+            )}
+            {transactions.length > 4 && (
+              <button
+                type="button"
+                onClick={() => setShowAllTransactions((prev) => !prev)}
+                className="w-full px-3 py-2 text-center text-xs font-semibold text-blue-600 transition hover:bg-blue-50 active:scale-[0.99]"
+              >
+                {showAllTransactions ? "Show less transactions" : "View all transactions"}
+              </button>
             )}
           </div>
         </div>
@@ -303,6 +352,4 @@ function formatTime(timestamp: string): string {
     year: date.getFullYear() !== now.getFullYear() ? "numeric" : undefined,
   });
 }
-
-
 
