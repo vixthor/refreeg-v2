@@ -87,7 +87,7 @@ export async function sendCauseUnderReviewEmail(context: {
 }) {
   const user = await getCurrentUser();
   if (!user) {
-    throw new Error("User not found");
+    return { success: false, error: "User not found" };
   }
   const profile = await getProfile(user.id);
   const currentYear = new Date().getFullYear();
@@ -113,7 +113,7 @@ export async function sendPetitionUnderReviewEmail(context: {
 }) {
   const user = await getCurrentUser();
   if (!user) {
-    throw new Error("User not found");
+    return { success: false, error: "User not found" };
   }
   const profile = await getProfile(user.id);
   return sendMail({
@@ -182,7 +182,7 @@ export async function sendBankAccountAddedEmail(context: {
 }) {
   const user = await getCurrentUser();
   if (!user) {
-    throw new Error("User not found");
+    return { success: false, error: "User not found" };
   }
   const profile = await getProfile(user.id);
   const currentYear = new Date().getFullYear();
@@ -370,7 +370,7 @@ export async function sendLoginNotificationEmail(context: {
 }) {
   const user = await getCurrentUser();
   if (!user) {
-    throw new Error("User not found");
+    return { success: false, error: "User not found" };
   }
   const profile = await getProfile(user.id);
   const currentYear = new Date().getFullYear();
@@ -400,7 +400,7 @@ export async function sendCauseEditedEmail({
 }) {
   const user = await getCurrentUser();
   if (!user) {
-    throw new Error("User not found");
+    return { success: false, error: "User not found" };
   }
   const profile = await getProfile(user.id);
   const currentYear = new Date().getFullYear();
@@ -438,7 +438,7 @@ export async function sendIncompleteCauseSetupEmail(context: {
 }) {
   const user = await getCurrentUser();
   if (!user) {
-    throw new Error("User not found");
+    return { success: false, error: "User not found" };
   }
   const profile = await getProfile(user.id);
   const currentYear = new Date().getFullYear();
@@ -460,7 +460,7 @@ export async function sendIncompleteKycVerificationEmail(context: {
 }) {
   const user = await getCurrentUser();
   if (!user) {
-    throw new Error("User not found");
+    return { success: false, error: "User not found" };
   }
   const profile = await getProfile(user.id);
   const currentYear = new Date().getFullYear();
@@ -481,7 +481,7 @@ export async function sendIncompletePetitionDraftEmail(context: {
 }) {
   const user = await getCurrentUser();
   if (!user) {
-    throw new Error("User not found");
+    return { success: false, error: "User not found" };
   }
   const profile = await getProfile(user.id);
   const currentYear = new Date().getFullYear();
@@ -504,7 +504,7 @@ export async function sendUnfinishedDonationEmail(context: {
 }) {
   const user = await getCurrentUser();
   if (!user) {
-    throw new Error("User not found");
+    return { success: false, error: "User not found" };
   }
   const profile = await getProfile(user.id);
   const currentYear = new Date().getFullYear();
