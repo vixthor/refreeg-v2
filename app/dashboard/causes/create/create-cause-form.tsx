@@ -276,7 +276,7 @@ export default function CreateCauseForm() {
 
   const handleDateChange = (
     date: Date | undefined,
-    field: "startDate" | "endDate"
+    field: "startDate" | "endDate",
   ) => {
     setFormData((prev) => ({ ...prev, [field]: date }));
 
@@ -352,13 +352,13 @@ export default function CreateCauseForm() {
       case 2:
         if (currentErrors.sections) {
           return !currentErrors.sections.some(
-            (err) => err.heading || err.description
+            (err) => err.heading || err.description,
           );
         }
 
         return formData.sections.every(
           (section) =>
-            section.heading.trim() !== "" && section.description.trim() !== ""
+            section.heading.trim() !== "" && section.description.trim() !== "",
         );
       case 3:
         return !currentErrors.startDate && !currentErrors.endDate;
@@ -391,7 +391,7 @@ export default function CreateCauseForm() {
     const hasErrors = Object.keys(validationErrors).some((key) => {
       if (key === "sections" && validationErrors.sections) {
         return validationErrors.sections.some(
-          (section) => Object.keys(section).length > 0
+          (section) => Object.keys(section).length > 0,
         );
       }
       return validationErrors[key as keyof FormErrors] !== undefined;
@@ -453,12 +453,12 @@ export default function CreateCauseForm() {
   const updateSection = (
     index: number,
     field: "heading" | "description",
-    value: string
+    value: string,
   ) => {
     setFormData((prev) => ({
       ...prev,
       sections: prev.sections.map((section, i) =>
-        i === index ? { ...section, [field]: value } : section
+        i === index ? { ...section, [field]: value } : section,
       ),
     }));
   };
@@ -645,7 +645,7 @@ export default function CreateCauseForm() {
                       className={cn(
                         "w-full justify-start text-left font-normal",
                         !formData.startDate && "text-muted-foreground",
-                        errors.startDate && "border-red-500"
+                        errors.startDate && "border-red-500",
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
@@ -680,7 +680,7 @@ export default function CreateCauseForm() {
                       className={cn(
                         "w-full justify-start text-left font-normal",
                         !formData.endDate && "text-muted-foreground",
-                        errors.endDate && "border-red-500"
+                        errors.endDate && "border-red-500",
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
@@ -856,7 +856,7 @@ export default function CreateCauseForm() {
                           setFormData((prev) => ({
                             ...prev,
                             videoLinks: prev.videoLinks.filter(
-                              (_, i) => i !== idx
+                              (_, i) => i !== idx,
                             ),
                           }))
                         }
@@ -914,7 +914,7 @@ export default function CreateCauseForm() {
               <MultimediaCarousel
                 media={[
                   ...formData.multimedia.map((file) =>
-                    URL.createObjectURL(file)
+                    URL.createObjectURL(file),
                   ),
                   ...formData.videoLinks,
                 ]}

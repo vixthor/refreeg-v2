@@ -28,11 +28,20 @@ export function MilestoneNotifications({
 
     if (percentage >= 25 && (lastMilestone === null || lastMilestone < 25)) {
       milestone = 25;
-    } else if (percentage >= 50 && (lastMilestone === null || lastMilestone < 50)) {
+    } else if (
+      percentage >= 50 &&
+      (lastMilestone === null || lastMilestone < 50)
+    ) {
       milestone = 50;
-    } else if (percentage >= 75 && (lastMilestone === null || lastMilestone < 75)) {
+    } else if (
+      percentage >= 75 &&
+      (lastMilestone === null || lastMilestone < 75)
+    ) {
       milestone = 75;
-    } else if (percentage >= 100 && (lastMilestone === null || lastMilestone < 100)) {
+    } else if (
+      percentage >= 100 &&
+      (lastMilestone === null || lastMilestone < 100)
+    ) {
       milestone = 100;
     }
 

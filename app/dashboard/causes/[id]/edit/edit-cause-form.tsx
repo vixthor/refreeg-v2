@@ -110,7 +110,7 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
   console.log(cause.startDate, cause.endDate);
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -153,7 +153,7 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
 
   const handleDateChange = (
     date: Date | undefined,
-    field: "startDate" | "endDate"
+    field: "startDate" | "endDate",
   ) => {
     setFormData((prev) => ({ ...prev, [field]: date }));
 
@@ -179,12 +179,12 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
   const updateSection = (
     index: number,
     field: "heading" | "description",
-    value: string
+    value: string,
   ) => {
     setFormData((prev) => ({
       ...prev,
       sections: prev.sections.map((section, i) =>
-        i === index ? { ...section, [field]: value } : section
+        i === index ? { ...section, [field]: value } : section,
       ),
     }));
   };
@@ -238,12 +238,12 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
       case 2:
         if (currentErrors.sections) {
           return !currentErrors.sections.some(
-            (err) => err.heading || err.description
+            (err) => err.heading || err.description,
           );
         }
         return formData.sections.every(
           (section) =>
-            section.heading.trim() !== "" && section.description.trim() !== ""
+            section.heading.trim() !== "" && section.description.trim() !== "",
         );
       case 3:
         return !currentErrors.startDate && !currentErrors.endDate;
@@ -269,7 +269,7 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
     const hasErrors = Object.keys(validationErrors).some((key) => {
       if (key === "sections" && validationErrors.sections) {
         return validationErrors.sections.some(
-          (section) => Object.keys(section).length > 0
+          (section) => Object.keys(section).length > 0,
         );
       }
       return validationErrors[key as keyof FormErrors] !== undefined;
@@ -454,7 +454,7 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
                       className={cn(
                         "w-full justify-start text-left font-normal",
                         !formData.startDate && "text-muted-foreground",
-                        errors.startDate && "border-red-500"
+                        errors.startDate && "border-red-500",
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
@@ -491,7 +491,7 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
                       className={cn(
                         "w-full justify-start text-left font-normal",
                         !formData.endDate && "text-muted-foreground",
-                        errors.endDate && "border-red-500"
+                        errors.endDate && "border-red-500",
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
@@ -672,7 +672,7 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
                           setFormData((prev) => ({
                             ...prev,
                             videoLinks: prev.videoLinks.filter(
-                              (_, i) => i !== idx
+                              (_, i) => i !== idx,
                             ),
                           }))
                         }
@@ -731,7 +731,7 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
               <MultimediaCarousel
                 media={[
                   ...formData.multimedia.map((file) =>
-                    URL.createObjectURL(file)
+                    URL.createObjectURL(file),
                   ),
                   ...formData.videoLinks,
                 ]}

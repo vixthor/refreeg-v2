@@ -38,8 +38,8 @@ const MobileSlider = () => {
             opacity: 1,
             y: 0,
             transition: { duration: SLIDE_UP_DURATION, ease: "easeOut" },
-          })
-        )
+          }),
+        ),
       );
 
       const totalWidth = HERO_IMAGES.length * (200 + IMAGE_GAP);
