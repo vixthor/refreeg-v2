@@ -6,10 +6,18 @@ import {
   getDonationTrends,
   getUserGrowth,
   getCauseCategories,
+  getKycAnalytics,
+  getPaymentAnalytics,
+  getCauseLifecycleAnalytics,
+  getAlerts,
   type AnalyticsData,
   type DonationTrend,
   type UserGrowth,
   type CauseCategory,
+  type KycAnalytics,
+  type PaymentAnalytics,
+  type CauseLifecycle,
+  type Alert,
 } from "@/actions/admin-analytics-actions";
 
 interface UseAdminAnalyticsReturn {
@@ -28,7 +36,17 @@ interface UseAnalyticsChartsReturn {
   refetch: () => Promise<void>;
 }
 
-export function useAdminAnalytics(): UseAdminAnalyticsReturn {
+interface UseOperationalAnalyticsReturn {
+  kyc: KycAnalytics | null;
+  payments: PaymentAnalytics | null;
+  lifecycle: CauseLifecycle | null;
+  alerts: Alert[];
+  isLoading: boolean;
+  error: string | null;
+  refetch: () => Promise<void>;
+}
+
+export function useAdminAnalytics(from?: string, to?: string): UseAdminAnalyticsReturn {
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -37,7 +55,7 @@ export function useAdminAnalytics(): UseAdminAnalyticsReturn {
     try {
       setIsLoading(true);
       setError(null);
-      const analyticsData = await getAdminAnalytics();
+      const analyticsData = await getAdminAnalytics(from, to);
       setData(analyticsData);
     } catch (err) {
       setError(
@@ -51,7 +69,7 @@ export function useAdminAnalytics(): UseAdminAnalyticsReturn {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [from, to]);
 
   return {
     data,
@@ -61,7 +79,7 @@ export function useAdminAnalytics(): UseAdminAnalyticsReturn {
   };
 }
 
-export function useAnalyticsCharts(): UseAnalyticsChartsReturn {
+export function useAnalyticsCharts(from?: string, to?: string): UseAnalyticsChartsReturn {
   const [donationTrends, setDonationTrends] = useState<DonationTrend[]>([]);
   const [userGrowth, setUserGrowth] = useState<UserGrowth[]>([]);
   const [causeCategories, setCauseCategories] = useState<CauseCategory[]>([]);
@@ -74,9 +92,9 @@ export function useAnalyticsCharts(): UseAnalyticsChartsReturn {
       setError(null);
 
       const [trends, growth, categories] = await Promise.all([
-        getDonationTrends(),
-        getUserGrowth(),
-        getCauseCategories(),
+        getDonationTrends(from, to),
+        getUserGrowth(from, to),
+        getCauseCategories(), // Categories usually static or all-time
       ]);
 
       setDonationTrends(trends);
@@ -94,12 +112,61 @@ export function useAnalyticsCharts(): UseAnalyticsChartsReturn {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [from, to]);
 
   return {
     donationTrends,
     userGrowth,
     causeCategories,
+    isLoading,
+    error,
+    refetch: fetchData,
+  };
+}
+
+export function useOperationalAnalytics(from?: string, to?: string): UseOperationalAnalyticsReturn {
+  const [kyc, setKyc] = useState<KycAnalytics | null>(null);
+  const [payments, setPayments] = useState<PaymentAnalytics | null>(null);
+  const [lifecycle, setLifecycle] = useState<CauseLifecycle | null>(null);
+  const [alerts, setAlerts] = useState<Alert[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchData = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      const [kycData, paymentData, lifecycleData, alertData] = await Promise.all([
+        getKycAnalytics(from, to),
+        getPaymentAnalytics(from, to),
+        getCauseLifecycleAnalytics(from, to),
+        getAlerts(),
+      ]);
+
+      setKyc(kycData);
+      setPayments(paymentData);
+      setLifecycle(lifecycleData);
+      setAlerts(alertData);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to fetch operational data"
+      );
+      console.error("Error fetching operational analytics:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, [from, to]);
+
+  return {
+    kyc,
+    payments,
+    lifecycle,
+    alerts,
     isLoading,
     error,
     refetch: fetchData,

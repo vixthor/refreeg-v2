@@ -196,7 +196,7 @@ export default function KycSetupPage() {
       formData.dobYear && formData.dobMonth && formData.dobDay
         ? `${formData.dobYear}-${String(formData.dobMonth).padStart(
             2,
-            "0"
+            "0",
           )}-${String(formData.dobDay).padStart(2, "0")}`
         : "";
     try {
@@ -213,7 +213,7 @@ export default function KycSetupPage() {
           state: formData.state,
           postal: formData.postal,
           country: formData.country,
-        }
+        },
       );
       if (uploadError) {
         setUploadError(uploadError);

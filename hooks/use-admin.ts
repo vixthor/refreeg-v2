@@ -32,6 +32,8 @@ export function useAdmin(userId: string | undefined, status?: CauseStatus) {
     queryKey: ["userRole", userId],
     queryFn: () => (userId ? getUserRoleInfo(userId) : null),
     enabled: !!userId,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    refetchOnWindowFocus: false,
   });
 
   const isAdminUser = roleInfo?.isAdmin ?? false;
