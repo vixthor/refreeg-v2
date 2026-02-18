@@ -69,11 +69,11 @@ export function ProfileForm({ profile, user }: ProfileFormProps) {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { updateProfile, updateProfilePhoto, isUploading } = useProfile(
-    user?.id
+    user?.id,
   );
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -183,16 +183,15 @@ export function ProfileForm({ profile, user }: ProfileFormProps) {
   const username = formData.username;
 
   const hasSocialErrors = [
-  ["twitter_url", "twitter"],
-  ["facebook_url", "facebook"],
-  ["instagram_url", "instagram"],
-  ["linkedin_url", "linkedin"],
-].some(
-  ([urlKey, errorKey]) =>
-    !!formData[urlKey as keyof typeof formData] &&
-    socialErrors[errorKey as keyof typeof socialErrors]
-);
-
+    ["twitter_url", "twitter"],
+    ["facebook_url", "facebook"],
+    ["instagram_url", "instagram"],
+    ["linkedin_url", "linkedin"],
+  ].some(
+    ([urlKey, errorKey]) =>
+      !!formData[urlKey as keyof typeof formData] &&
+      socialErrors[errorKey as keyof typeof socialErrors],
+  );
 
   return (
     <Card>

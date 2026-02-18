@@ -297,19 +297,18 @@ export function Header() {
   };
 
   const openMenu = (title: string) => {
-  if (closeTimeoutRef.current) {
-    clearTimeout(closeTimeoutRef.current);
-    closeTimeoutRef.current = null;
-  }
-  setOpenDropdown(title);
-};
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current);
+      closeTimeoutRef.current = null;
+    }
+    setOpenDropdown(title);
+  };
 
-const scheduleCloseMenu = () => {
-  closeTimeoutRef.current = setTimeout(() => {
-    setOpenDropdown(null);
-  }, 200); // 👈 adjust delay (150–300ms is ideal)
-};
-
+  const scheduleCloseMenu = () => {
+    closeTimeoutRef.current = setTimeout(() => {
+      setOpenDropdown(null);
+    }, 200); // 👈 adjust delay (150–300ms is ideal)
+  };
 
   return (
     <>
@@ -356,12 +355,16 @@ const scheduleCloseMenu = () => {
                           <HeroButton
                             variant="light"
                             className={`text-sm items-center font-medium text-muted-foreground hover:text-secondary hover:bg-gray-100 px-3 py-2 rounded-md transition-all duration-200 group ${
-                              openDropdown === item.title ? "bg-gray-100 text-secondary" : ""
+                              openDropdown === item.title
+                                ? "bg-gray-100 text-secondary"
+                                : ""
                             }`}
                             endContent={
                               <ChevronDown
                                 className={`text-small transition-transform duration-200 ${
-                                  openDropdown === item.title ? "rotate-180 text-secondary" : ""
+                                  openDropdown === item.title
+                                    ? "rotate-180 text-secondary"
+                                    : ""
                                 }`}
                               />
                             }
@@ -378,7 +381,6 @@ const scheduleCloseMenu = () => {
                                 ${item.title.includes("About") ? "right-0 left-auto" : "left-0"}
                                 max-w-[90vw] overflow-hidden`}
                             >
-
                               <div className="p-3 font-semibold text-sm text-foreground border-b">
                                 {item.header}
                               </div>
