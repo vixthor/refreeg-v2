@@ -33,7 +33,10 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  if (request.nextUrl.pathname.startsWith("/dashboard/causes/create")) {
+  if (
+    request.nextUrl.pathname.startsWith("/dashboard/causes/create") ||
+    request.nextUrl.pathname.startsWith("/dashboard/petitions/create")
+  ) {
     const supabase = await createClient();
     const {
       data: { user },
