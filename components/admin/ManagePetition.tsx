@@ -230,10 +230,10 @@ export default function ManagePetition() {
                             item.status === "approved"
                               ? "default"
                               : item.status === "pending"
-                              ? "secondary"
-                              : item.status === "pending edit"
-                              ? "outline"
-                              : "destructive"
+                                ? "secondary"
+                                : item.status === "pending edit"
+                                  ? "outline"
+                                  : "destructive"
                           }
                         >
                           {item.status.charAt(0).toUpperCase() +
@@ -262,7 +262,7 @@ export default function ManagePetition() {
                                       item.type === "edit"
                                         ? item.original_petition_id
                                         : item.id,
-                                      item.title
+                                      item.title,
                                     )
                                   }
                                 >
@@ -273,7 +273,7 @@ export default function ManagePetition() {
                                     handleApprove(
                                       item.type === "edit"
                                         ? item.original_petition_id
-                                        : item.id
+                                        : item.id,
                                     )
                                   }
                                 >
@@ -373,7 +373,7 @@ export default function ManagePetition() {
                     <p className="text-muted-foreground">
                       {
                         categories.find(
-                          (c) => c.id === detailDialog.petition?.category
+                          (c) => c.id === detailDialog.petition?.category,
                         )?.name
                       }
                     </p>
@@ -383,8 +383,8 @@ export default function ManagePetition() {
                       detailDialog.petition.status === "approved"
                         ? "default"
                         : detailDialog.petition.status === "pending"
-                        ? "secondary"
-                        : "destructive"
+                          ? "secondary"
+                          : "destructive"
                     }
                   >
                     {detailDialog.petition.status.charAt(0).toUpperCase() +
@@ -408,7 +408,7 @@ export default function ManagePetition() {
                       {detailDialog.petition.created_at
                         ? format(
                             new Date(detailDialog.petition.created_at),
-                            "PPP"
+                            "PPP",
                           )
                         : "N/A"}
                     </p>
@@ -418,7 +418,7 @@ export default function ManagePetition() {
                         {detailDialog.petition.updated_at
                           ? format(
                               new Date(detailDialog.petition.updated_at),
-                              "PPP"
+                              "PPP",
                             )
                           : "N/A"}
                       </p>
@@ -459,7 +459,7 @@ export default function ManagePetition() {
 
               {/* Sections (handle sections on both main petition and edit rows) */}
               {Array.isArray(
-                (detailDialog.petition as any).petition_edit_sections
+                (detailDialog.petition as any).petition_edit_sections,
               ) &&
               (detailDialog.petition as any).petition_edit_sections.length >
                 0 ? (
@@ -476,7 +476,7 @@ export default function ManagePetition() {
                           {section.description}
                         </p>
                       </div>
-                    )
+                    ),
                   )}
                 </div>
               ) : null}
@@ -561,7 +561,7 @@ export default function ManagePetition() {
                         closeDetailDialog();
                         openRejectDialog(
                           detailDialog.petition!.id,
-                          detailDialog.petition!.title
+                          detailDialog.petition!.title,
                         );
                       }}
                     >
@@ -594,7 +594,7 @@ export default function ManagePetition() {
                       closeDetailDialog();
                       openRejectDialog(
                         detailDialog.petition!.id,
-                        detailDialog.petition!.title
+                        detailDialog.petition!.title,
                       );
                     }}
                   >

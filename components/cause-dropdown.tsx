@@ -22,7 +22,7 @@ export function CauseDropdown({ causeId }: CauseDropdownProps) {
   async function handleDelete() {
     if (
       !window.confirm(
-        "Are you sure you want to delete this cause? This action cannot be undone."
+        "Are you sure you want to delete this cause? This action cannot be undone.",
       )
     )
       return;
