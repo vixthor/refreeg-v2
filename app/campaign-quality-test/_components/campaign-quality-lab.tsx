@@ -98,12 +98,6 @@ const stagger = {
   show: { opacity: 1, transition: { staggerChildren: 0.08 } },
 };
 
-function getDefaultPledgeDate() {
-  const date = new Date();
-  date.setDate(date.getDate() + 7);
-  return date.toISOString().split("T")[0];
-}
-
 type TabKey = (typeof tabs)[number];
 
 type ProfileSummary = {
@@ -556,8 +550,6 @@ function DonateCard({
   impactText,
   profile,
   creatorHasWallet,
-  mode,
-  setMode,
 }: {
   cause: CauseDetail;
   donation: number;
@@ -570,16 +562,7 @@ function DonateCard({
   impactText: string;
   profile: ProfileSummary;
   creatorHasWallet: boolean;
-  mode: "donate" | "pledge";
-  setMode: (mode: "donate" | "pledge") => void;
 }) {
-  const [pledgeAmount, setPledgeAmount] = useState(25000);
-  const [pledgeDate, setPledgeDate] = useState(getDefaultPledgeDate);
-  const [pledgeName, setPledgeName] = useState(profile.name || "");
-  const [pledgeEmail, setPledgeEmail] = useState(profile.email || "");
-  const [pledgeNote, setPledgeNote] = useState("");
-  const [pledgeSubmitted, setPledgeSubmitted] = useState(false);
-
   return (
     <motion.div
       className="rounded-[14px] border border-[#E5E7EB] bg-white p-4 shadow-[0_10px_30px_rgba(0,0,0,0.06)] sm:p-6"
@@ -589,273 +572,119 @@ function DonateCard({
       viewport={{ once: true, amount: 0.2 }}
     >
       <div className="flex items-center justify-between">
-        <p className="text-xs uppercase tracking-[0.15em] text-slate-500">
-          {mode === "donate" ? "Donate" : "Pledge"}
-        </p>
+        <p className="text-xs uppercase tracking-[0.15em] text-slate-500">Donate</p>
         <HandHeart className="h-4 w-4 text-[#2563EB]" />
       </div>
 
-      <div className="mt-3 grid grid-cols-2 gap-2 rounded-full bg-slate-100 p-1 text-xs font-semibold text-slate-600">
-        <button
-          type="button"
-          onClick={() => setMode("donate")}
-          className={`rounded-full px-3 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 ${
-            mode === "donate" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"
-          }`}
-        >
-          Donate now
-        </button>
-        <button
-          type="button"
-          onClick={() => setMode("pledge")}
-          className={`rounded-full px-3 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 ${
-            mode === "pledge" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"
-          }`}
-        >
-          Make a pledge
-        </button>
+      <h3 className="mt-3 text-xl font-semibold text-slate-900 sm:text-2xl">
+        Make a contribution
+      </h3>
+      <p className="mt-2 text-sm text-slate-600">
+        Rewards only apply to verified campaigns. Every milestone release is publicly audited.
+      </p>
+
+      <div className="mt-4 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+        {donationPresets.map((amount) => (
+          <button
+            key={amount}
+            type="button"
+            onClick={() => setDonation(amount)}
+            className={`rounded-full border px-3 py-1 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 ${
+              donation === amount
+                ? "border-[#2563EB] bg-[#2563EB] text-white"
+                : "border-[#E5E7EB] bg-white text-[#64748B]"
+            }`}
+          >
+            ₦{amount.toLocaleString()}
+          </button>
+        ))}
       </div>
 
-      {mode === "donate" ? (
-        <>
-          <h3 className="mt-3 text-xl font-semibold text-slate-900 sm:text-2xl">
-            Make a contribution
-          </h3>
-          <p className="mt-2 text-sm text-slate-600">
-            Rewards only apply to verified campaigns. Every milestone release is publicly audited.
-          </p>
+      <label className="mt-4 grid gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+        <span className="text-xs uppercase tracking-[0.15em] text-slate-500">
+          Custom amount
+        </span>
+        <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2">
+          <span className="text-sm font-semibold text-slate-500">₦</span>
+          <input
+            type="number"
+            min={1}
+            value={donation}
+            onChange={(event) => setDonation(Number(event.target.value))}
+            className="w-full bg-transparent text-right text-sm text-slate-900 outline-none"
+          />
+        </div>
+        <p className="text-xs text-slate-500">Enter any amount above ₦1.</p>
+      </label>
 
-          <div className="mt-4 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
-            {donationPresets.map((amount) => (
+      <div className="mt-4 grid gap-3">
+        <label className="flex items-center justify-between rounded-xl border border-[#E5E7EB] bg-white px-4 py-3 text-xs text-[#64748B]">
+          <span>Make this monthly</span>
+          <button
+            type="button"
+            onClick={() => setRecurring((prev) => !prev)}
+            className={`rounded-full px-3 py-1 text-[11px] font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 ${
+              recurring
+                ? "bg-[#2563EB] text-white"
+                : "border border-[#E5E7EB] bg-white text-[#64748B]"
+            }`}
+          >
+            {recurring ? "Monthly" : "One-time"}
+          </button>
+        </label>
+
+        <label className="grid gap-2 rounded-xl border border-[#E5E7EB] bg-white px-4 py-3 text-xs text-[#64748B]">
+          <span>Platform tip</span>
+          <div className="grid grid-cols-3 gap-2 sm:flex sm:items-center">
+            {tipPresets.map((value) => (
               <button
-                key={amount}
+                key={value}
                 type="button"
-                onClick={() => setDonation(amount)}
-                className={`rounded-full border px-3 py-1 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 ${
-                  donation === amount
-                    ? "border-[#2563EB] bg-[#2563EB] text-white"
-                    : "border-[#E5E7EB] bg-white text-[#64748B]"
-                }`}
-              >
-                ₦{amount.toLocaleString()}
-              </button>
-            ))}
-          </div>
-
-          <label className="mt-4 grid gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
-            <span className="text-xs uppercase tracking-[0.15em] text-slate-500">
-              Custom amount
-            </span>
-            <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2">
-              <span className="text-sm font-semibold text-slate-500">₦</span>
-              <input
-                type="number"
-                min={1}
-                value={donation}
-                onChange={(event) => setDonation(Number(event.target.value))}
-                className="w-full bg-transparent text-right text-sm text-slate-900 outline-none"
-              />
-            </div>
-            <p className="text-xs text-slate-500">Enter any amount above ₦1.</p>
-          </label>
-
-          <div className="mt-4 grid gap-3">
-            <label className="flex items-center justify-between rounded-xl border border-[#E5E7EB] bg-white px-4 py-3 text-xs text-[#64748B]">
-              <span>Make this monthly</span>
-              <button
-                type="button"
-                onClick={() => setRecurring((prev) => !prev)}
-                className={`rounded-full px-3 py-1 text-[11px] font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 ${
-                  recurring
+                onClick={() => setTip(value)}
+                className={`rounded-full px-2 py-1 text-[11px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 ${
+                  tip === value
                     ? "bg-[#2563EB] text-white"
                     : "border border-[#E5E7EB] bg-white text-[#64748B]"
                 }`}
               >
-                {recurring ? "Monthly" : "One-time"}
+                ₦{value.toLocaleString()}
               </button>
-            </label>
-
-            <label className="grid gap-2 rounded-xl border border-[#E5E7EB] bg-white px-4 py-3 text-xs text-[#64748B]">
-              <span>Platform tip</span>
-              <div className="grid grid-cols-3 gap-2 sm:flex sm:items-center">
-                {tipPresets.map((value) => (
-                  <button
-                    key={value}
-                    type="button"
-                    onClick={() => setTip(value)}
-                    className={`rounded-full px-2 py-1 text-[11px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 ${
-                      tip === value
-                        ? "bg-[#2563EB] text-white"
-                        : "border border-[#E5E7EB] bg-white text-[#64748B]"
-                    }`}
-                  >
-                    ₦{value.toLocaleString()}
-                  </button>
-                ))}
-              </div>
-            </label>
+            ))}
           </div>
+        </label>
+      </div>
 
-          <div className="mt-4 rounded-[14px] border border-[#E5E7EB] bg-white p-4 shadow-[0_10px_30px_rgba(0,0,0,0.06)]">
-            <p className="text-xs uppercase tracking-[0.15em] text-[#64748B]">
-              Impact estimate
-            </p>
-            <p className="mt-2 text-sm text-[#0F172A]">{impactText}</p>
-          </div>
+      <div className="mt-4 rounded-[14px] border border-[#E5E7EB] bg-white p-4 shadow-[0_10px_30px_rgba(0,0,0,0.06)]">
+        <p className="text-xs uppercase tracking-[0.15em] text-[#64748B]">Impact estimate</p>
+        <p className="mt-2 text-sm text-[#0F172A]">{impactText}</p>
+      </div>
 
-          <div className="mt-4 flex items-center justify-between text-sm text-[#64748B]">
-            <span>Total today</span>
-            <span className="text-[#0F172A]">₦{totalWithTip}</span>
-          </div>
+      <div className="mt-4 flex items-center justify-between text-sm text-[#64748B]">
+        <span>Total today</span>
+        <span className="text-[#0F172A]">₦{totalWithTip}</span>
+      </div>
 
-          <div className="mt-4 space-y-3">
-            {creatorHasWallet && <SolanaDonationButtonWrapper causeId={cause.id} />}
-            <DonationForm
-              causeId={cause.id}
-              profile={profile}
-              status={cause.status}
-              subaccount={cause?.user.sub_account_code}
-              causeName={cause.title}
-              causeUrl={`/causes/${cause.id}`}
-            />
-          </div>
+      <div className="mt-4 space-y-3">
+        {creatorHasWallet && <SolanaDonationButtonWrapper causeId={cause.id} />}
+        <DonationForm
+          causeId={cause.id}
+          profile={profile}
+          status={cause.status}
+          subaccount={cause?.user.sub_account_code}
+          causeName={cause.title}
+          causeUrl={`/causes/${cause.id}`}
+        />
+      </div>
 
-          <div className="mt-4 flex items-start gap-2 text-xs text-[#64748B]">
-            <ShieldAlert className="mt-0.5 h-4 w-4 text-[#F59E0B]" />
-            Donations below ₦5 do not earn EIZA. Refunds or chargebacks remove rewards.
-          </div>
+      <div className="mt-4 flex items-start gap-2 text-xs text-[#64748B]">
+        <ShieldAlert className="mt-0.5 h-4 w-4 text-[#F59E0B]" />
+        Donations below ₦5 do not earn EIZA. Refunds or chargebacks remove rewards.
+      </div>
 
-          <div className="mt-4 flex items-center justify-between rounded-xl border border-[#E5E7EB] bg-white px-4 py-3 text-xs text-[#64748B]">
-            <span>Guest checkout</span>
-            <span className="text-[#22C55E]">Enabled</span>
-          </div>
-        </>
-      ) : (
-        <>
-          <h3 className="mt-3 text-xl font-semibold text-slate-900 sm:text-2xl">
-            Pledge to pay later
-          </h3>
-          <p className="mt-2 text-sm text-slate-600">
-            Make a pledge today and we’ll remind you by email on the date you choose. This is a
-            commitment only — no payment is taken now.
-          </p>
-
-          <div className="mt-4 grid gap-3">
-            <label className="grid gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
-              <span className="text-xs uppercase tracking-[0.15em] text-slate-500">
-                Pledge amount
-              </span>
-              <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2">
-                <span className="text-sm font-semibold text-slate-500">₦</span>
-                <input
-                  type="number"
-                  min={1}
-                  value={pledgeAmount}
-                  onChange={(event) => {
-                    setPledgeAmount(Number(event.target.value));
-                    setPledgeSubmitted(false);
-                  }}
-                  className="w-full bg-transparent text-right text-sm text-slate-900 outline-none"
-                />
-              </div>
-              <p className="text-xs text-slate-500">Choose the amount you plan to pay later.</p>
-            </label>
-
-            <label className="grid gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
-              <span className="text-xs uppercase tracking-[0.15em] text-slate-500">
-                Reminder date
-              </span>
-              <input
-                type="date"
-                value={pledgeDate}
-                onChange={(event) => {
-                  setPledgeDate(event.target.value);
-                  setPledgeSubmitted(false);
-                }}
-                className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none"
-              />
-              <p className="text-xs text-slate-500">
-                We’ll send a reminder on this date by email. SMS reminders can be added later.
-              </p>
-            </label>
-
-            <label className="grid gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
-              <span className="text-xs uppercase tracking-[0.15em] text-slate-500">Name</span>
-              <input
-                type="text"
-                value={pledgeName}
-                onChange={(event) => {
-                  setPledgeName(event.target.value);
-                  setPledgeSubmitted(false);
-                }}
-                placeholder="Your name"
-                className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none"
-              />
-            </label>
-
-            <label className="grid gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
-              <span className="text-xs uppercase tracking-[0.15em] text-slate-500">Email</span>
-              <input
-                type="email"
-                value={pledgeEmail}
-                onChange={(event) => {
-                  setPledgeEmail(event.target.value);
-                  setPledgeSubmitted(false);
-                }}
-                placeholder="you@example.com"
-                className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none"
-              />
-              <p className="text-xs text-slate-500">We’ll only email about this pledge.</p>
-            </label>
-
-            <label className="grid gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
-              <span className="text-xs uppercase tracking-[0.15em] text-slate-500">
-                Message (optional)
-              </span>
-              <textarea
-                rows={3}
-                value={pledgeNote}
-                onChange={(event) => {
-                  setPledgeNote(event.target.value);
-                  setPledgeSubmitted(false);
-                }}
-                placeholder="Add a note to the organiser"
-                className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none"
-              />
-            </label>
-          </div>
-
-          {pledgeSubmitted && (
-            <div
-              className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"
-              aria-live="polite"
-            >
-              Pledge saved. We’ll remind you on {pledgeDate || "your selected date"} to complete
-              your ₦{Number(pledgeAmount || 0).toLocaleString()} contribution.
-              <button
-                type="button"
-                onClick={() => setPledgeSubmitted(false)}
-                className="mt-2 inline-flex text-xs font-semibold text-emerald-800 underline underline-offset-4"
-              >
-                Edit pledge
-              </button>
-            </div>
-          )}
-
-          <button
-            type="button"
-            onClick={() => setPledgeSubmitted(true)}
-            className="mt-4 w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
-          >
-            Save pledge &amp; remind me
-          </button>
-
-          <div className="mt-4 flex items-start gap-2 text-xs text-[#64748B]">
-            <ShieldAlert className="mt-0.5 h-4 w-4 text-[#F59E0B]" />
-            This is a pledge only. You will not be charged today.
-          </div>
-        </>
-      )}
+      <div className="mt-4 flex items-center justify-between rounded-xl border border-[#E5E7EB] bg-white px-4 py-3 text-xs text-[#64748B]">
+        <span>Guest checkout</span>
+        <span className="text-[#22C55E]">Enabled</span>
+      </div>
     </motion.div>
   );
 }
@@ -946,7 +775,6 @@ export default function CampaignQualityLab({
   const [activeTab, setActiveTab] = useState<TabKey>("Story");
   const [recurring, setRecurring] = useState(false);
   const [tip, setTip] = useState(5);
-  const [donateMode, setDonateMode] = useState<"donate" | "pledge">("donate");
   const donateRef = useRef<HTMLDivElement | null>(null);
 
   const percentRaised = useMemo(() => {
@@ -1059,8 +887,6 @@ export default function CampaignQualityLab({
                 impactText={impactText}
                 profile={profile}
                 creatorHasWallet={creatorHasWallet}
-                mode={donateMode}
-                setMode={setDonateMode}
               />
             </div>
             <CampaignHealthCard donorsPreview={donorsPreview} />
@@ -1083,22 +909,11 @@ export default function CampaignQualityLab({
           <button
             type="button"
             onClick={() => {
-              setDonateMode("donate");
               donateRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
             }}
             className="flex-1 rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
           >
             Donate
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setDonateMode("pledge");
-              donateRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-            }}
-            className="flex-1 rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
-          >
-            Pledge
           </button>
         </div>
       </div>
