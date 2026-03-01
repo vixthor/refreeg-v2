@@ -2,6 +2,7 @@
 
 import type React from "react";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -48,6 +49,7 @@ import MultimediaCarousel from "@/components/MultimediaCarousel";
 import { sendCauseEditedEmail } from "@/services/mail";
 
 const currencies = [{ id: "NGN", name: "Naira (₦)" }];
+const MAX_DURATION_DAYS = 180;
 
 type FormData = {
   title: string;
@@ -84,6 +86,7 @@ type EditCauseFormProps = {
 export default function EditCauseForm({ cause }: EditCauseFormProps) {
   const { user } = useAuth();
   const { isLoading, updateCause } = useCause();
+  const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<FormData>({
     title: cause.title,
@@ -107,11 +110,11 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
   console.log(cause.startDate, cause.endDate);
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    // Clear error when user starts typing
+
     if (errors[name as keyof FormErrors]) {
       setErrors((prev) => ({ ...prev, [name]: undefined }));
     }
@@ -119,14 +122,14 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
 
   const handleSelectChange = (name: string, value: string) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
-    // Clear error when user makes a selection
+
     if (errors[name as keyof FormErrors]) {
       setErrors((prev) => ({ ...prev, [name]: undefined }));
     }
   };
 
   const handleImageUpload = (files: File[]) => {
-    const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB in bytes
+    const MAX_FILE_SIZE = 100 * 1024 * 1024;
     const file = files[0];
 
     if (file && file.size > MAX_FILE_SIZE) {
@@ -150,10 +153,10 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
 
   const handleDateChange = (
     date: Date | undefined,
-    field: "startDate" | "endDate"
+    field: "startDate" | "endDate",
   ) => {
     setFormData((prev) => ({ ...prev, [field]: date }));
-    // Clear error when user selects a date
+
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: undefined }));
     }
@@ -176,18 +179,18 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
   const updateSection = (
     index: number,
     field: "heading" | "description",
-    value: string
+    value: string,
   ) => {
     setFormData((prev) => ({
       ...prev,
       sections: prev.sections.map((section, i) =>
-        i === index ? { ...section, [field]: value } : section
+        i === index ? { ...section, [field]: value } : section,
       ),
     }));
   };
 
   const handleMultimediaUpload = (files: File[]) => {
-    const MAX_TOTAL_SIZE = 100 * 1024 * 1024; // 100MB in bytes
+    const MAX_TOTAL_SIZE = 100 * 1024 * 1024;
     const currentSize =
       formData.multimedia && formData.multimedia.length > 0
         ? formData.multimedia.reduce((acc, file) => acc + file.size, 0)
@@ -233,17 +236,14 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
           !currentErrors.title && !currentErrors.category && !currentErrors.goal
         );
       case 2:
-        // Check for section errors
         if (currentErrors.sections) {
-          // If there are section errors, check if any sections have errors
           return !currentErrors.sections.some(
-            (err) => err.heading || err.description
+            (err) => err.heading || err.description,
           );
         }
-        // If there are no section errors in the currentErrors object, validate directly
         return formData.sections.every(
           (section) =>
-            section.heading.trim() !== "" && section.description.trim() !== ""
+            section.heading.trim() !== "" && section.description.trim() !== "",
         );
       case 3:
         return !currentErrors.startDate && !currentErrors.endDate;
@@ -266,12 +266,10 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
 
     const validationErrors = validateForm(formData);
 
-    // Check if there are any validation errors
     const hasErrors = Object.keys(validationErrors).some((key) => {
       if (key === "sections" && validationErrors.sections) {
-        // For sections, check if any section has actual errors
         return validationErrors.sections.some(
-          (section) => Object.keys(section).length > 0
+          (section) => Object.keys(section).length > 0,
         );
       }
       return validationErrors[key as keyof FormErrors] !== undefined;
@@ -287,7 +285,7 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
       category: formData.category,
       goal: formData.goal,
       coverImage: formData.coverImage,
-      image: !formData.coverImage ? (cause.image || undefined) : undefined,
+      image: !formData.coverImage ? cause.image || undefined : undefined,
       sections: formData.sections,
       startDate: formData.startDate,
       endDate: formData.endDate,
@@ -300,7 +298,10 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
       await sendCauseEditedEmail({
         causeName: formData.title,
         reviewTimeframe: "3-5 business days",
+        dashboardUrl: `${window.location.origin}/dashboard/causes`,
       });
+
+      router.push("/dashboard/causes");
     } catch (error) {
       console.error("Error updating cause:", error);
     }
@@ -438,8 +439,8 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
             <div className="space-y-2">
               <h3 className="text-lg font-medium">Cause Duration</h3>
               <p className="text-sm text-muted-foreground">
-                Select when your cause should start and end. Maximum duration is
-                60 days.
+                Select when your cause should start and end. Maximum duration is{" "}
+                <strong>{MAX_DURATION_DAYS} days</strong>.
               </p>
             </div>
 
@@ -453,7 +454,7 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
                       className={cn(
                         "w-full justify-start text-left font-normal",
                         !formData.startDate && "text-muted-foreground",
-                        errors.startDate && "border-red-500"
+                        errors.startDate && "border-red-500",
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
@@ -490,7 +491,7 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
                       className={cn(
                         "w-full justify-start text-left font-normal",
                         !formData.endDate && "text-muted-foreground",
-                        errors.endDate && "border-red-500"
+                        errors.endDate && "border-red-500",
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
@@ -614,7 +615,6 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
                   </div>
                 )}
             </div>
-            {/* Video Links */}
             <div className="mt-8 space-y-2">
               <Label>Video Links (YouTube, TikTok, etc.)</Label>
               <div className="flex gap-2">
@@ -628,7 +628,6 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
                 <Button
                   type="button"
                   onClick={() => {
-                    // Basic URL validation
                     try {
                       const url = new URL(videoLinkInput);
                       if (!/^https?:\/\//.test(videoLinkInput)) {
@@ -673,7 +672,7 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
                           setFormData((prev) => ({
                             ...prev,
                             videoLinks: prev.videoLinks.filter(
-                              (_, i) => i !== idx
+                              (_, i) => i !== idx,
                             ),
                           }))
                         }
@@ -702,7 +701,9 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
               {formData.sections.map((section, index) => (
                 <div key={index} className="space-y-2">
                   <h5 className="font-medium">{section.heading}</h5>
-                  <p className="text-sm">{section.description}</p>
+                  <p className="text-sm whitespace-pre-line">
+                    {section.description}
+                  </p>
                 </div>
               ))}
             </div>
@@ -730,7 +731,7 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
               <MultimediaCarousel
                 media={[
                   ...formData.multimedia.map((file) =>
-                    URL.createObjectURL(file)
+                    URL.createObjectURL(file),
                   ),
                   ...formData.videoLinks,
                 ]}
@@ -784,14 +785,6 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">{renderStep()}</CardContent>
         <CardFooter className="flex justify-between">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={prevStep}
-            disabled={currentStep === 1}
-          >
-            Back
-          </Button>
           {currentStep != 5 ? (
             <Button type="button" onClick={nextStep}>
               Next
@@ -823,7 +816,6 @@ function validateForm(formData: FormData): FormErrors {
     errors.title = "Title must be at least 5 characters long";
   }
 
-  // Validate sections
   if (formData.sections && formData.sections.length > 0) {
     const sectionErrorsArray = formData.sections.map((section) => {
       const sectionErrors: { heading?: string; description?: string } = {};
@@ -834,7 +826,6 @@ function validateForm(formData: FormData): FormErrors {
       return sectionErrors;
     });
 
-    // Only add sections errors if there are actual errors
     if (sectionErrorsArray.some((err) => Object.keys(err).length > 0)) {
       errors.sections = sectionErrorsArray;
     }
@@ -858,8 +849,8 @@ function validateForm(formData: FormData): FormErrors {
     errors.endDate = "End date is required";
   } else if (formData.startDate && formData.endDate) {
     const daysDiff = differenceInDays(formData.endDate, formData.startDate);
-    if (daysDiff > 60) {
-      errors.endDate = "Cause duration cannot exceed 60 days";
+    if (daysDiff > MAX_DURATION_DAYS) {
+      errors.endDate = `Cause duration cannot exceed ${MAX_DURATION_DAYS} days`;
     }
     if (daysDiff < 1) {
       errors.endDate = "End date must be after start date";

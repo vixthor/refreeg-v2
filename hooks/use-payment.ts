@@ -1,6 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
-import Paystack from "@/services/paystack";
+import { useState, useEffect, useCallback } from "react";
 import { TransactionData } from "@/types";
 import { toast } from "@/components/ui/use-toast";
 
@@ -15,18 +14,28 @@ export const usePayment = (): UsePaymentReturn => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const initializePayment = async (data: TransactionData) => {
+  const initializePayment = useCallback(async (data: TransactionData) => {
     try {
       setIsLoading(true);
       setError(null);
 
-      const response = await Paystack.initializeTransaction(data);
+      const response = await fetch("/api/payments/initialize", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
 
-      // Store the reference in localStorage for verification after redirect
-      localStorage.setItem("payment_reference", response.reference);
+      const result = await response.json();
 
-      // Redirect to Paystack payment page
-      window.location.href = response.authorization_url;
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || "Failed to initialize payment");
+      }
+
+      localStorage.setItem("payment_reference", result.data.reference);
+
+      window.location.href = result.data.authorization_url;
     } catch (error) {
       console.error("Payment initialization failed:", error);
       setError("Failed to initialize payment. Please try again.");
@@ -39,33 +48,45 @@ export const usePayment = (): UsePaymentReturn => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const verifyPayment = async (reference: string): Promise<boolean> => {
-    try {
-      setIsLoading(true);
-      setError(null);
+  const verifyPayment = useCallback(
+    async (reference: string): Promise<boolean> => {
+      try {
+        setIsLoading(true);
+        setError(null);
 
-      const isSuccessful = await Paystack.verifyTransaction(reference);
+        const response = await fetch("/api/payments/verify", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ reference }),
+        });
 
-      if (isSuccessful) {
-        // Clear the stored reference
-        localStorage.removeItem("payment_reference");
-        return true;
-      } else {
-        setError("Payment verification failed");
+        const result = await response.json();
 
+        if (!response.ok || !result.success) {
+          throw new Error(result.error || "Failed to verify payment");
+        }
+
+        if (result.verified) {
+          localStorage.removeItem("payment_reference");
+          return true;
+        } else {
+          setError("Payment verification failed");
+          return false;
+        }
+      } catch (error) {
+        console.error("Payment verification failed:", error);
+        setError("Failed to verify payment");
         return false;
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error) {
-      console.error("Payment verification failed:", error);
-      setError("Failed to verify payment");
-
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    },
+    []
+  );
 
   return {
     initializePayment,

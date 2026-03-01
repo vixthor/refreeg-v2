@@ -3,11 +3,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { getBaseURL } from "@/lib/utils";
 
-/**
- * Generate a random short code (6 characters)
- */
 function generateShortCode(): string {
-  const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  const chars =
+    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   let code = "";
   for (let i = 0; i < 6; i++) {
     code += chars.charAt(Math.floor(Math.random() * chars.length));
@@ -15,9 +13,6 @@ function generateShortCode(): string {
   return code;
 }
 
-/**
- * Create a shortened URL for a cause or petition
- */
 export async function createShortUrl(
   entityId: string,
   entityType: "cause" | "petition",
@@ -26,7 +21,6 @@ export async function createShortUrl(
   const supabase = await createClient();
   const baseUrl = getBaseURL();
 
-  // Check if a short URL already exists for this entity
   const { data: existing } = await supabase
     .from("short_urls")
     .select("short_code")
@@ -38,7 +32,6 @@ export async function createShortUrl(
     return `${baseUrl}/s/${existing.short_code}`;
   }
 
-  // Generate a unique short code
   let shortCode = generateShortCode();
   let attempts = 0;
   const maxAttempts = 10;
@@ -62,7 +55,6 @@ export async function createShortUrl(
     throw new Error("Failed to generate unique short code");
   }
 
-  // Insert the short URL
   const { error } = await supabase.from("short_urls").insert({
     short_code: shortCode,
     entity_id: entityId,
@@ -79,13 +71,11 @@ export async function createShortUrl(
   return `${baseUrl}/s/${shortCode}`;
 }
 
-/**
- * Get the original URL from a short code and increment click count
- */
-export async function getOriginalUrl(shortCode: string): Promise<string | null> {
+export async function getOriginalUrl(
+  shortCode: string
+): Promise<string | null> {
   const supabase = await createClient();
 
-  // Get the short URL record
   const { data, error } = await supabase
     .from("short_urls")
     .select("*")
@@ -96,7 +86,6 @@ export async function getOriginalUrl(shortCode: string): Promise<string | null> 
     return null;
   }
 
-  // Increment click count
   await supabase
     .from("short_urls")
     .update({ clicks: data.clicks + 1 })
@@ -105,9 +94,6 @@ export async function getOriginalUrl(shortCode: string): Promise<string | null> 
   return data.original_url;
 }
 
-/**
- * Get analytics for a shortened URL
- */
 export async function getShortUrlAnalytics(
   entityId: string,
   entityType: "cause" | "petition"

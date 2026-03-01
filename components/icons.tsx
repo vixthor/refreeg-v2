@@ -1,5 +1,6 @@
 import {
   ArrowRight,
+  Building,
   ChevronLeft,
   ChevronRight,
   Command,
@@ -19,9 +20,9 @@ import {
   Check,
   type LucideIcon,
   type LucideProps,
-} from "lucide-react"
+} from "lucide-react";
 
-export type Icon = LucideIcon
+export type Icon = LucideIcon;
 
 export const Icons = {
   logo: Command,
@@ -35,6 +36,7 @@ export const Icons = {
   arrowRight: ArrowRight,
   help: HelpCircle,
   user: User,
+  building: Building,
   creditCard: CreditCard,
   laptop: Laptop,
   moon: Moon,
@@ -75,4 +77,4 @@ export const Icons = {
       />
     </svg>
   ),
-}
+};

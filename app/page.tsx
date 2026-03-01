@@ -8,6 +8,8 @@ import WhyItStandsOut from "@/components/home/whyitStandsOut";
 import HowitWorksYT from "@/components/home/howitWorksYT";
 import { FeaturedPetitions } from "@/components/home/featured-petitions";
 import { UrgentCauses } from "@/components/home/urgentCauses";
+import CTASection from "@/components/home/cta-section";
+import Numbers from "@/components/numbers";
 
 export default function Home() {
   return (
@@ -15,10 +17,13 @@ export default function Home() {
       <Hero />
 
       <div className="mx-8">
+        <Numbers />
+      </div>
+
+      <div className="mx-8">
         <LaunchYourCauseInSeconds />
       </div>
 
-      {/* Urgent Causes */}
       <div className="mx-8">
         <UrgentCauses />
       </div>
@@ -31,11 +36,6 @@ export default function Home() {
         <TrendingCauses />
       </div>
 
-      {/* Featured Causes */}
-      <div className="mx-8">
-        <FeaturedCauses />
-      </div>
-
       <div className="mx-8">
         <FeaturedPetitions />
       </div>
@@ -44,7 +44,9 @@ export default function Home() {
         <HowitWorksYT />
       </div>
 
-      <div className="md:mx-8">
+      <CTASection />
+
+      <div id="faq" className="md:mx-8">
         <FAQ />
       </div>
     </div>

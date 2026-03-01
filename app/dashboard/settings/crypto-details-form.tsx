@@ -10,49 +10,72 @@ import { useToast } from "@/components/ui/use-toast";
 export default function SolanaWalletForm() {
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const supabase = createClient();
   const { toast } = useToast();
 
+  console.log("walletAddress", walletAddress, "solana_wallet active");
+
   useEffect(() => {
+    let isCancelled = false;
+
     const fetchWallet = async () => {
-      setIsLoading(true);
       try {
+        const supabase = createClient();
         const {
           data: { user },
         } = await supabase.auth.getUser();
-        if (!user) return;
 
-        const { data: profile } = await supabase
+        if (isCancelled) return;
+
+        if (!user) {
+          setWalletAddress(null);
+          setIsLoading(false);
+          return;
+        }
+
+        const { data: profile, error } = await supabase
           .from("profiles")
           .select("solana_wallet")
           .eq("id", user.id)
           .single();
 
-        if (profile?.solana_wallet) {
-          setWalletAddress(profile.solana_wallet);
-        } else {
+        if (isCancelled) return;
+
+        if (error) {
+          console.error("Error fetching profile:", error);
           setWalletAddress(null);
+        } else {
+          setWalletAddress(profile?.solana_wallet || null);
         }
       } catch (error) {
+        if (isCancelled) return;
         console.error("Error fetching wallet:", error);
         toast({
           variant: "destructive",
           title: "Error",
           description: "Failed to load wallet",
         });
+        setWalletAddress(null);
       } finally {
-        setIsLoading(false);
+        if (!isCancelled) {
+          setIsLoading(false);
+        }
       }
     };
 
     fetchWallet();
-  }, [supabase, toast]);
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [toast]);
 
   const handleWalletConnected = async (address: string) => {
     try {
+      const supabase = createClient();
       const {
         data: { user },
       } = await supabase.auth.getUser();
+
       if (!user) throw new Error("User not authenticated");
 
       const { error } = await supabase
@@ -77,22 +100,18 @@ export default function SolanaWalletForm() {
     }
   };
 
-  const handleWalletDisconnected = () => {
+  const handleWalletDisconnected = async () => {
     setWalletAddress(null);
-    toast({
-      title: "Success",
-      description: "Wallet disconnected successfully",
-    });
   };
 
   if (isLoading) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Solana Wallet</CardTitle>
+          <CardTitle className="text-lg sm:text-xl">Solana Wallet</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-4 text-muted-foreground">
+          <div className="text-center py-4 text-sm text-muted-foreground">
             Loading wallet...
           </div>
         </CardContent>
@@ -103,25 +122,25 @@ export default function SolanaWalletForm() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Solana Wallet</CardTitle>
+        <CardTitle className="text-lg sm:text-xl">Solana Wallet</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
           {walletAddress ? (
-            <div className="flex items-center justify-between p-4 border rounded-lg">
-              <div className="flex items-center gap-4">
-                <div className="bg-purple-100 p-3 rounded-full">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 border rounded-lg">
+              <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
+                <div className="bg-purple-100 p-2 sm:p-3 rounded-full flex-shrink-0">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
-                    width="24"
-                    height="24"
+                    width="20"
+                    height="20"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
                     strokeWidth="2"
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    className="text-purple-600"
+                    className="text-purple-600 sm:w-6 sm:h-6"
                   >
                     <circle cx="12" cy="12" r="10" />
                     <path d="M8 14s1.5 2 4 2 4-2 4-2" />
@@ -129,20 +148,22 @@ export default function SolanaWalletForm() {
                     <line x1="15" x2="15.01" y1="9" y2="9" />
                   </svg>
                 </div>
-                <div>
-                  <p className="font-medium">Solana</p>
-                  <p className="text-sm text-muted-foreground truncate max-w-md">
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium text-sm sm:text-base">Solana</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground truncate">
                     {walletAddress}
                   </p>
                 </div>
               </div>
-              <DisconnectSolanaWalletButton
-                walletAddress={walletAddress}
-                onSuccess={handleWalletDisconnected}
-              />
+              <div className="flex-shrink-0 sm:ml-4">
+                <DisconnectSolanaWalletButton
+                  walletAddress={walletAddress}
+                  onSuccess={handleWalletDisconnected}
+                />
+              </div>
             </div>
           ) : (
-            <div className="text-center py-4 text-muted-foreground">
+            <div className="text-center py-4 text-sm text-muted-foreground">
               No wallet connected
             </div>
           )}

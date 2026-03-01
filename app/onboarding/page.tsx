@@ -1,0 +1,359 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+import { motion, AnimatePresence } from "framer-motion";
+import Step1 from "./step1";
+import Step2 from "./step2";
+import Step3 from "./step3";
+import Step4 from "./step4";
+import Step5 from "./step5";
+import NavigationLoader from "@/components/NavigationLoader";
+import OnboardingNav from "./onboardingNav";
+import {
+  hasCompletedOnboarding,
+  createOnboardingProfile,
+  getCurrentOnboardingStep,
+  getOnboardingData,
+  saveStep1Progress,
+  saveStep2Progress,
+} from "@/actions/profile-actions";
+import { toast } from "@/components/ui/use-toast";
+
+export default function OnboardingPage() {
+  // State management for dynamic onboarding flow
+  const [currentStep, setCurrentStep] = useState(1);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [user, setUser] = useState<any>(null);
+  const [direction, setDirection] = useState(1);
+
+  // Onboarding data state - now prefilled from database
+  const [onboardingData, setOnboardingData] = useState({
+    accountType: "",
+    gender: "",
+    profile: {
+      firstName: "",
+      lastName: "",
+      username: "",
+      bio: "",
+      location: "",
+      website: "",
+      phone: "",
+    },
+    interests: [],
+    kycCompleted: false,
+    consent: false,
+  });
+
+  const router = useRouter();
+  const supabase = createClient();
+
+  useEffect(() => {
+    const checkUser = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        router.push("/auth/signin");
+        return;
+      }
+
+      // Check if user has already completed onboarding
+      const hasCompleted = await hasCompletedOnboarding(user.id);
+      if (hasCompleted) {
+        router.push("/dashboard");
+        return;
+      }
+
+      setUser(user);
+
+      // DYNAMIC ONBOARDING LOGIC:
+      // 1. Determine which step to resume from based on existing database data
+      // 2. Fetch and prefill form data from database
+      // 3. Skip completed steps automatically
+      try {
+        const [currentStepFromDB, existingData] = await Promise.all([
+          getCurrentOnboardingStep(user.id),
+          getOnboardingData(user.id),
+        ]);
+
+        // Set the current step based on database state
+        // This automatically skips completed steps
+        setCurrentStep(currentStepFromDB);
+
+        // Prefill onboarding data with existing database data
+        // This ensures forms show previously entered data
+        setOnboardingData((prev) => ({
+          ...prev,
+          accountType:
+            existingData.accountType || user.user_metadata?.account_type || "",
+          gender: existingData.gender,
+          profile: {
+            ...prev.profile,
+            ...existingData.profile,
+          },
+        }));
+
+        console.log(
+          `Resuming onboarding from step ${currentStepFromDB}`,
+          existingData
+        );
+      } catch (error) {
+        console.error("Error loading onboarding progress:", error);
+        // If there's an error, start from step 1
+        setCurrentStep(1);
+      }
+
+      setIsLoading(false);
+    };
+
+    checkUser();
+  }, [router, supabase.auth]);
+
+  // Additional protection: Reset to step 1 if user tries to access steps 4-5 without completing step 3
+  useEffect(() => {
+    if (user && currentStep > 3) {
+      // Check if profile data is complete (step 3 completion)
+      // We need to check if the profile was actually created in the database
+      // This is a fallback check - the main protection is in middleware
+      const profileData = onboardingData.profile;
+      const isStep3Complete = !!(
+        profileData?.firstName &&
+        profileData?.lastName &&
+        profileData?.username &&
+        profileData?.location &&
+        profileData?.phone
+      );
+
+      if (!isStep3Complete) {
+        setCurrentStep(1);
+        toast({
+          title: "Complete your profile first",
+          description: "Please complete steps 1-3 before proceeding.",
+          variant: "destructive",
+        });
+      }
+    }
+  }, [user, currentStep, onboardingData.profile]);
+
+  // Note: localStorage loading removed - now using database for persistence
+
+  const handleNext = async () => {
+    if (currentStep < 5) {
+      setDirection(1);
+      setCurrentStep(currentStep + 1);
+    }
+  };
+
+  // PROGRESS SAVING HANDLERS:
+  // Each step now saves progress to database immediately upon completion
+  // This ensures users can resume from their last incomplete step
+
+  // Handle step 1 completion with database save
+  const handleStep1Next = async (accountType: string) => {
+    try {
+      await saveStep1Progress(user.id, accountType);
+      updateOnboardingData("accountType", accountType);
+      handleNext();
+    } catch (error) {
+      console.error("Error saving step 1 progress:", error);
+      toast({
+        title: "Error saving progress",
+        description: "Failed to save your account type. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Handle step 2 completion with database save
+  const handleStep2Next = async (gender: string) => {
+    try {
+      await saveStep2Progress(user.id, gender);
+      updateOnboardingData("gender", gender);
+      handleNext();
+    } catch (error) {
+      console.error("Error saving step 2 progress:", error);
+      toast({
+        title: "Error saving progress",
+        description: "Failed to save your gender. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleBack = () => {
+    if (currentStep > 1) {
+      setDirection(-1);
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
+  // Handle step 3 completion - saves complete profile to database
+  const handleStep3Submit = async (profileData: any) => {
+    setIsSubmitting(true);
+    try {
+      // Create user profile with all collected data
+      // This step saves the complete profile to database
+      await createOnboardingProfile(
+        user.id,
+        {
+          firstName: profileData.firstName,
+          lastName: profileData.lastName,
+          username: profileData.username,
+          location: profileData.location,
+          phone: profileData.phone,
+          email: user.email || "",
+          profilePhoto: profileData.profilePhoto,
+          accountType: onboardingData.accountType || "individual",
+          gender: onboardingData.gender || "",
+        },
+        user.user_metadata?.avatar_url
+      );
+
+      // Don't clear onboarding data yet, just move to step 4
+      setCurrentStep(4); // Go to KYC step
+    } catch (error) {
+      console.error("Error completing onboarding:", error);
+      // Show error to user
+      toast({
+        title: "Error creating profile",
+        description: error instanceof Error ? error.message : "Unknown error",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleComplete = () => {
+    // Clear any remaining localStorage data
+    localStorage.removeItem("onboarding_account_type");
+    localStorage.removeItem("onboarding_gender");
+    localStorage.removeItem("onboarding_profile");
+    localStorage.removeItem("onboarding_interests");
+    localStorage.removeItem("onboarding_kyc_completed");
+    localStorage.removeItem("onboarding_consent");
+
+    router.push("/dashboard");
+  };
+
+  const updateOnboardingData = (key: string, value: any) => {
+    setOnboardingData((prev) => ({ ...prev, [key]: value }));
+    localStorage.setItem(
+      `onboarding_${key}`,
+      typeof value === "string" ? value : JSON.stringify(value)
+    );
+  };
+
+  if (isLoading) {
+    return <NavigationLoader />;
+  }
+
+  if (!user) {
+    return null;
+  }
+
+  const stepVariants = {
+    enter: (direction: number) => ({
+      x: direction > 0 ? 300 : -300,
+      opacity: 0,
+    }),
+    center: {
+      x: 0,
+      opacity: 1,
+    },
+    exit: (direction: number) => ({
+      x: direction > 0 ? -300 : 300,
+      opacity: 0,
+    }),
+  };
+
+  return (
+    <div className="min-h-screen w-full bg-white flex flex-col items-center justify-center">
+      <OnboardingNav
+        currentStep={currentStep}
+        onBack={handleBack}
+        showUserNav={currentStep >= 4}
+      />
+      <div className="w-full  px-8 py-12">
+        {/* Progress indicator */}
+        <div className="mb-8 flex justify-center space-x-2">
+          {[...Array(5)].map((_, i) => (
+            <div
+              key={i}
+              className={`h-2 w-12 rounded-full transition-colors duration-300 ${
+                i < currentStep ? "bg-blue-600" : "bg-gray-200"
+              }`}
+            ></div>
+          ))}
+        </div>
+
+        {/* Step content with smooth transitions */}
+        <div className="relative overflow-hidden">
+          <AnimatePresence mode="wait" custom={direction}>
+            <motion.div
+              key={currentStep}
+              custom={direction}
+              variants={stepVariants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{
+                x: { type: "spring", stiffness: 300, damping: 30 },
+                opacity: { duration: 0.2 },
+              }}
+              className="w-full"
+            >
+              {currentStep === 1 && (
+                <Step1
+                  user={user}
+                  onNext={handleStep1Next}
+                  onboardingData={onboardingData}
+                  updateOnboardingData={updateOnboardingData}
+                />
+              )}
+              {currentStep === 2 && (
+                <Step2
+                  user={user}
+                  onNext={handleStep2Next}
+                  onBack={handleBack}
+                  onboardingData={onboardingData}
+                  updateOnboardingData={updateOnboardingData}
+                />
+              )}
+              {currentStep === 3 && (
+                <Step3
+                  user={user}
+                  onNext={handleStep3Submit}
+                  onBack={handleBack}
+                  onboardingData={onboardingData}
+                  updateOnboardingData={updateOnboardingData}
+                  isSubmitting={isSubmitting}
+                />
+              )}
+              {currentStep === 4 && (
+                <Step4
+                  user={user}
+                  onNext={handleNext}
+                  onBack={handleBack}
+                  onboardingData={onboardingData}
+                  updateOnboardingData={updateOnboardingData}
+                />
+              )}
+              {currentStep === 5 && (
+                <Step5
+                  user={user}
+                  onComplete={handleComplete}
+                  onboardingData={onboardingData}
+                />
+              )}
+            </motion.div>
+          </AnimatePresence>
+        </div>
+      </div>
+    </div>
+  );
+}

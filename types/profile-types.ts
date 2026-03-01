@@ -1,9 +1,12 @@
-// User profile
 export interface Profile {
   id: string;
   email: string | null;
   full_name: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
+  username?: string | null;
   phone: string | null;
+  location?: string | null;
   account_number: string | null;
   bank_name: string | null;
   account_name: string | null;
@@ -22,7 +25,8 @@ export interface Profile {
   followers_count?: number;
   following_count?: number;
   causes_count?: number;
-  account_type?: "individual" | "organization";
+  account_type?: "individual" | "creator" | "nonprofit" | "organization" | "community";
+  gender?: string | null;
   bio: string | null;
   solana_wallet?: string | null;
   social_media?: {
@@ -31,4 +35,21 @@ export interface Profile {
     instagram?: string | null;
     linkedin?: string | null;
   };
+  twitter_url?: string | null;
+  facebook_url?: string | null;
+  instagram_url?: string | null;
+  linkedin_url?: string | null;
+  crypto_wallets?: string;
+}
+
+export interface OnboardingProfileData {
+  firstName: string;
+  lastName: string;
+  username: string;
+  location: string;
+  phone: string;
+  email: string;
+  profilePhoto?: File | null;
+  accountType: string;
+  gender: string;
 }

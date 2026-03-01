@@ -27,7 +27,7 @@ export default function UpdatePasswordPage() {
   const [redirectCountdown, setRedirectCountdown] = useState(20);
   const [isRedirecting, setIsRedirecting] = useState(false);
   const [updateResult, setUpdateResult] = useState<"success" | "error" | null>(
-    null
+    null,
   );
   const router = useRouter();
   const supabase = createClient();

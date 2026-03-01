@@ -1,4 +1,3 @@
-// Export all actions from their respective files
 export * from "./profile-actions"
 export * from "./cause-actions"
 export * from "./petition-actions"

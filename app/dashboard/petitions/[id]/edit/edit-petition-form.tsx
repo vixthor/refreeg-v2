@@ -47,6 +47,7 @@ import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const currencies = [{ id: "SIGNATURES", name: "Signatures" }];
+const MAX_DURATION_DAYS = 180;
 
 type FormData = {
   title: string;
@@ -106,11 +107,11 @@ export default function EditPetitionForm({ petition }: EditPetitionFormProps) {
   console.log(petition.startDate, petition.endDate);
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    // Clear error when user starts typing
+
     if (errors[name as keyof FormErrors]) {
       setErrors((prev) => ({ ...prev, [name]: undefined }));
     }
@@ -118,14 +119,14 @@ export default function EditPetitionForm({ petition }: EditPetitionFormProps) {
 
   const handleSelectChange = (name: string, value: string) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
-    // Clear error when user makes a selection
+
     if (errors[name as keyof FormErrors]) {
       setErrors((prev) => ({ ...prev, [name]: undefined }));
     }
   };
 
   const handleImageUpload = (files: File[]) => {
-    const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB in bytes
+    const MAX_FILE_SIZE = 100 * 1024 * 1024;
     const file = files[0];
 
     if (file && file.size > MAX_FILE_SIZE) {
@@ -149,10 +150,10 @@ export default function EditPetitionForm({ petition }: EditPetitionFormProps) {
 
   const handleDateChange = (
     date: Date | undefined,
-    field: "startDate" | "endDate"
+    field: "startDate" | "endDate",
   ) => {
     setFormData((prev) => ({ ...prev, [field]: date }));
-    // Clear error when user selects a date
+
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: undefined }));
     }
@@ -175,18 +176,18 @@ export default function EditPetitionForm({ petition }: EditPetitionFormProps) {
   const updateSection = (
     index: number,
     field: "heading" | "description",
-    value: string
+    value: string,
   ) => {
     setFormData((prev) => ({
       ...prev,
       sections: prev.sections.map((section, i) =>
-        i === index ? { ...section, [field]: value } : section
+        i === index ? { ...section, [field]: value } : section,
       ),
     }));
   };
 
   const handleMultimediaUpload = (files: File[]) => {
-    const MAX_TOTAL_SIZE = 100 * 1024 * 1024; // 100MB in bytes
+    const MAX_TOTAL_SIZE = 100 * 1024 * 1024;
     const currentSize =
       formData.multimedia && formData.multimedia.length > 0
         ? formData.multimedia.reduce((acc, file) => acc + file.size, 0)
@@ -232,24 +233,22 @@ export default function EditPetitionForm({ petition }: EditPetitionFormProps) {
           !currentErrors.title && !currentErrors.category && !currentErrors.goal
         );
       case 2:
-        // Check for section errors
         if (currentErrors.sections) {
-          // If there are section errors, check if any sections have errors
           return !currentErrors.sections.some(
-            (err) => err.heading || err.description
+            (err) => err.heading || err.description,
           );
         }
-        // If there are no section errors in the currentErrors object, validate directly
+
         return formData.sections.every(
           (section) =>
-            section.heading.trim() !== "" && section.description.trim() !== ""
+            section.heading.trim() !== "" && section.description.trim() !== "",
         );
       case 3:
         return !currentErrors.startDate && !currentErrors.endDate;
       case 4:
         return !currentErrors.coverImage;
       case 5:
-        return true; // Media step is optional
+        return true;
       default:
         return true;
     }
@@ -265,14 +264,17 @@ export default function EditPetitionForm({ petition }: EditPetitionFormProps) {
     e.preventDefault();
     if (!user) return;
 
+    if (currentStep < 6) {
+      nextStep();
+      return;
+    }
+
     const validationErrors = validateForm(formData);
 
-    // Check if there are any validation errors
     const hasErrors = Object.keys(validationErrors).some((key) => {
       if (key === "sections" && validationErrors.sections) {
-        // For sections, check if any section has actual errors
         return validationErrors.sections.some(
-          (section) => Object.keys(section).length > 0
+          (section) => Object.keys(section).length > 0,
         );
       }
       return validationErrors[key as keyof FormErrors] !== undefined;
@@ -288,7 +290,7 @@ export default function EditPetitionForm({ petition }: EditPetitionFormProps) {
       category: formData.category,
       goal: formData.goal,
       coverImage: formData.coverImage,
-      image: !formData.coverImage ? (petition.image || undefined) : undefined,
+      image: !formData.coverImage ? petition.image || undefined : undefined,
       sections: formData.sections,
       startDate: formData.startDate,
       endDate: formData.endDate,
@@ -436,7 +438,7 @@ export default function EditPetitionForm({ petition }: EditPetitionFormProps) {
               <h3 className="text-lg font-medium">Petition Duration</h3>
               <p className="text-sm text-muted-foreground">
                 Select when your petition should start and end. Maximum duration
-                is 60 days.
+                is <strong>{MAX_DURATION_DAYS} days</strong>.
               </p>
             </div>
 
@@ -450,7 +452,7 @@ export default function EditPetitionForm({ petition }: EditPetitionFormProps) {
                       className={cn(
                         "w-full justify-start text-left font-normal",
                         !formData.startDate && "text-muted-foreground",
-                        errors.startDate && "border-red-500"
+                        errors.startDate && "border-red-500",
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
@@ -487,7 +489,7 @@ export default function EditPetitionForm({ petition }: EditPetitionFormProps) {
                       className={cn(
                         "w-full justify-start text-left font-normal",
                         !formData.endDate && "text-muted-foreground",
-                        errors.endDate && "border-red-500"
+                        errors.endDate && "border-red-500",
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
@@ -611,7 +613,7 @@ export default function EditPetitionForm({ petition }: EditPetitionFormProps) {
                   </div>
                 )}
             </div>
-            {/* Video Links */}
+
             <div className="mt-8 space-y-2">
               <Label>Video Links (YouTube, TikTok, etc.)</Label>
               <div className="flex gap-2">
@@ -625,7 +627,6 @@ export default function EditPetitionForm({ petition }: EditPetitionFormProps) {
                 <Button
                   type="button"
                   onClick={() => {
-                    // Basic URL validation
                     try {
                       const url = new URL(videoLinkInput);
                       if (!/^https?:\/\//.test(videoLinkInput)) {
@@ -670,7 +671,7 @@ export default function EditPetitionForm({ petition }: EditPetitionFormProps) {
                           setFormData((prev) => ({
                             ...prev,
                             videoLinks: prev.videoLinks.filter(
-                              (_, i) => i !== idx
+                              (_, i) => i !== idx,
                             ),
                           }))
                         }
@@ -699,7 +700,9 @@ export default function EditPetitionForm({ petition }: EditPetitionFormProps) {
               {formData.sections.map((section, index) => (
                 <div key={index} className="space-y-2">
                   <h5 className="font-medium">{section.heading}</h5>
-                  <p className="text-sm">{section.description}</p>
+                  <p className="text-sm whitespace-pre-line">
+                    {section.description}
+                  </p>
                 </div>
               ))}
             </div>
@@ -727,7 +730,7 @@ export default function EditPetitionForm({ petition }: EditPetitionFormProps) {
               <MultimediaCarousel
                 media={[
                   ...formData.multimedia.map((file) =>
-                    URL.createObjectURL(file)
+                    URL.createObjectURL(file),
                   ),
                   ...formData.videoLinks,
                 ]}
@@ -820,7 +823,6 @@ function validateForm(formData: FormData): FormErrors {
     errors.title = "Title must be at least 5 characters long";
   }
 
-  // Validate sections
   if (formData.sections && formData.sections.length > 0) {
     const sectionErrorsArray = formData.sections.map((section) => {
       const sectionErrors: { heading?: string; description?: string } = {};
@@ -831,7 +833,6 @@ function validateForm(formData: FormData): FormErrors {
       return sectionErrors;
     });
 
-    // Only add sections errors if there are actual errors
     if (sectionErrorsArray.some((err) => Object.keys(err).length > 0)) {
       errors.sections = sectionErrorsArray;
     }
@@ -855,8 +856,8 @@ function validateForm(formData: FormData): FormErrors {
     errors.endDate = "End date is required";
   } else if (formData.startDate && formData.endDate) {
     const daysDiff = differenceInDays(formData.endDate, formData.startDate);
-    if (daysDiff > 60) {
-      errors.endDate = "Petition duration cannot exceed 60 days";
+    if (daysDiff > MAX_DURATION_DAYS) {
+      errors.endDate = `Petition duration cannot exceed ${MAX_DURATION_DAYS} days`;
     }
     if (daysDiff < 1) {
       errors.endDate = "End date must be after start date";

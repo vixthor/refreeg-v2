@@ -1,308 +1,611 @@
-"use server"
+"use server";
 
-import { createClient } from "@/lib/supabase/server"
-import { formatCurrency } from "@/lib/utils"
+import { createClient } from "@/lib/supabase/server";
+import { formatCurrency } from "@/lib/utils";
 
 export interface AnalyticsData {
-    totalDonations: {
-        current: string
-        previous: string
-        percentageChange: string
-    }
-    totalUsers: {
-        current: number
-        previous: number
-        percentageChange: string
-    }
-    activeCauses: {
-        current: number
-        previous: number
-        percentageChange: string
-    }
-    pendingApprovals: {
-        current: number
-        previous: number
-        percentageChange: string
-    }
+  totalDonations: {
+    current: string;
+    trend: number;
+    previous: string;
+  };
+  totalUsers: {
+    current: number;
+    newInPeriod: number;
+    trend: number;
+  };
+  activeCauses: {
+    active: number;
+    total: number;
+  };
+  pendingApprovals: {
+    current: number;
+  };
 }
 
 export interface DonationTrend {
-    month: string
-    amount: number
+  period: string;
+  regular: number;
+  crypto: number;
+  total: number;
+  count: number;
 }
 
 export interface UserGrowth {
-    month: string
-    users: number
+  period: string;
+  users: number;
+  active: number;
 }
 
 export interface CauseCategory {
-    category: string
-    count: number
+  category: string;
+  approved: number;
+  pending: number;
+  completed: number;
+  total: number;
 }
 
-/**
- * Get admin analytics data with current and previous period comparisons
- */
-export async function getAdminAnalytics(): Promise<AnalyticsData> {
-    const supabase = await createClient()
+export interface KycAnalytics {
+  total: number;
+  approved: number;
+  rejected: number;
+  pending: number;
+  approvalRate: number;
+  avgProcessingTimeHours: number;
+}
 
-    // Get current date and calculate previous month ranges
-    const now = new Date()
-    const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1)
-    const previousMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1)
-    const previousMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0)
+export interface PaymentAnalytics {
+  total: number;
+  failed: number;
+  successRate: number;
+  failureRate: number;
+  failedAmount: number;
+}
 
-    try {
-        // Fetch current month donations (both regular and crypto)
-        const [
-            currentDonationsResult,
-            previousDonationsResult,
-            currentCryptoDonationsResult,
-            previousCryptoDonationsResult,
-            currentUsersResult,
-            previousUsersResult,
-            currentCausesResult,
-            previousCausesResult,
-            currentPendingResult,
-            previousPendingResult
-        ] = await Promise.all([
-            // Current month regular donations
-            supabase
-                .from("donations")
-                .select("amount")
-                .gte("created_at", currentMonthStart.toISOString())
-                .eq("status", "completed"),
+export interface CauseLifecycle {
+  avgApprovalTimeHours: number;
+  avgCompletionTimeDays: number;
+  funnel: {
+    created: number;
+    pending: number;
+    approved: number;
+    completed: number;
+  };
+}
 
-            // Previous month regular donations
-            supabase
-                .from("donations")
-                .select("amount")
-                .gte("created_at", previousMonthStart.toISOString())
-                .lt("created_at", currentMonthStart.toISOString())
-                .eq("status", "completed"),
+export interface Alert {
+  id: string;
+  type: "warning" | "critical" | "info";
+  message: string;
+  metric: string;
+  value: string;
+  threshold: string;
+}
 
-            // Current month crypto donations
-            supabase
-                .from("crypto_donations")
-                .select("amount_in_naira")
-                .gte("created_at", currentMonthStart.toISOString())
-                .eq("status", "completed"),
+function getPreviousPeriod(from: Date, to: Date): { from: Date; to: Date } {
+  const duration = to.getTime() - from.getTime();
+  return {
+    from: new Date(from.getTime() - duration),
+    to: new Date(to.getTime() - duration),
+  };
+}
 
-            // Previous month crypto donations
-            supabase
-                .from("crypto_donations")
-                .select("amount_in_naira")
-                .gte("created_at", previousMonthStart.toISOString())
-                .lt("created_at", currentMonthStart.toISOString())
-                .eq("status", "completed"),
+export async function getAdminAnalytics(
+  from?: string,
+  to?: string,
+): Promise<AnalyticsData> {
+  const supabase = await createClient();
 
-            // Current month users
-            supabase
-                .from("profiles")
-                .select("id", { count: "exact" })
-                .gte("created_at", currentMonthStart.toISOString()),
+  const endDate = to ? new Date(to) : new Date();
+  const startDate = from
+    ? new Date(from)
+    : new Date(new Date().setMonth(endDate.getMonth() - 1));
 
-            // Previous month users
-            supabase
-                .from("profiles")
-                .select("id", { count: "exact" })
-                .gte("created_at", previousMonthStart.toISOString())
-                .lt("created_at", currentMonthStart.toISOString()),
+  // Ensure end date includes the full day
+  endDate.setHours(23, 59, 59, 999);
 
-            // Current active causes
-            supabase
-                .from("causes")
-                .select("id", { count: "exact" })
-                .eq("status", "approved"),
+  const { from: prevFrom, to: prevTo } = getPreviousPeriod(startDate, endDate);
 
-            // Previous month active causes
-            supabase
-                .from("causes")
-                .select("id", { count: "exact" })
-                .eq("status", "approved")
-                .lt("created_at", currentMonthStart.toISOString()),
+  try {
+    const [
+      donationsInPeriod,
+      cryptoInPeriod,
+      donationsPrev,
+      cryptoPrev,
+      totalUsersResult,
+      newUsersResult,
+      newUsersPrev,
+      activeCausesResult,
+      totalCausesResult,
+      pendingCausesResult,
+    ] = await Promise.all([
+      // Donations in Period
+      supabase
+        .from("donations")
+        .select("amount")
+        .eq("status", "completed")
+        .gte("created_at", startDate.toISOString())
+        .lte("created_at", endDate.toISOString()),
+      supabase
+        .from("crypto_donations")
+        .select("amount_in_naira")
+        .eq("status", "completed")
+        .gte("created_at", startDate.toISOString())
+        .lte("created_at", endDate.toISOString()),
 
-            // Current pending approvals
-            supabase
-                .from("causes")
-                .select("id", { count: "exact" })
-                .eq("status", "pending"),
+      // Donations Previous Period
+      supabase
+        .from("donations")
+        .select("amount")
+        .eq("status", "completed")
+        .gte("created_at", prevFrom.toISOString())
+        .lte("created_at", prevTo.toISOString()),
+      supabase
+        .from("crypto_donations")
+        .select("amount_in_naira")
+        .eq("status", "completed")
+        .gte("created_at", prevFrom.toISOString())
+        .lte("created_at", prevTo.toISOString()),
 
-            // Previous pending approvals
-            supabase
-                .from("causes")
-                .select("id", { count: "exact" })
-                .eq("status", "pending")
-                .lt("created_at", currentMonthStart.toISOString())
-        ])
+      // Users Total (As of End Date)
+      supabase
+        .from("profiles")
+        .select("id", { count: "exact", head: true })
+        .lte("created_at", endDate.toISOString()),
 
-        // Calculate total donations (regular + crypto)
-        const currentRegularTotal = currentDonationsResult.data?.reduce((sum, d) => sum + d.amount, 0) || 0
-        const currentCryptoTotal = currentCryptoDonationsResult.data?.reduce((sum, d) => sum + (d.amount_in_naira || 0), 0) || 0
-        const currentTotalDonations = currentRegularTotal + currentCryptoTotal
+      // Users New in Period
+      supabase
+        .from("profiles")
+        .select("id", { count: "exact", head: true })
+        .gte("created_at", startDate.toISOString())
+        .lte("created_at", endDate.toISOString()),
 
-        const previousRegularTotal = previousDonationsResult.data?.reduce((sum, d) => sum + d.amount, 0) || 0
-        const previousCryptoTotal = previousCryptoDonationsResult.data?.reduce((sum, d) => sum + (d.amount_in_naira || 0), 0) || 0
-        const previousTotalDonations = previousRegularTotal + previousCryptoTotal
+      // Users New in Previous Period
+      supabase
+        .from("profiles")
+        .select("id", { count: "exact", head: true })
+        .gte("created_at", prevFrom.toISOString())
+        .lte("created_at", prevTo.toISOString()),
 
-        // Calculate percentage changes
-        const donationPercentageChange = previousTotalDonations > 0
-            ? ((currentTotalDonations - previousTotalDonations) / previousTotalDonations * 100).toFixed(1)
-            : "100.0"
+      // Causes
+      supabase
+        .from("causes")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "approved"),
+      supabase.from("causes").select("id", { count: "exact", head: true }),
+      supabase
+        .from("causes")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "pending"),
+    ]);
 
-        const userPercentageChange = (previousUsersResult.count || 0) > 0
-            ? (((currentUsersResult.count || 0) - (previousUsersResult.count || 0)) / (previousUsersResult.count || 0) * 100).toFixed(1)
-            : "100.0"
+    // Calculate Donations
+    const totalRegular =
+      donationsInPeriod.data?.reduce((sum, d) => sum + d.amount, 0) || 0;
+    const totalCrypto =
+      cryptoInPeriod.data?.reduce(
+        (sum, d) => sum + (d.amount_in_naira || 0),
+        0,
+      ) || 0;
+    const totalDonations = totalRegular + totalCrypto;
 
-        const causePercentageChange = (previousCausesResult.count || 0) > 0
-            ? (((currentCausesResult.count || 0) - (previousCausesResult.count || 0)) / (previousCausesResult.count || 0) * 100).toFixed(1)
-            : "100.0"
+    const prevRegular =
+      donationsPrev.data?.reduce((sum, d) => sum + d.amount, 0) || 0;
+    const prevCrypto =
+      cryptoPrev.data?.reduce((sum, d) => sum + (d.amount_in_naira || 0), 0) ||
+      0;
+    const prevTotalDonations = prevRegular + prevCrypto;
 
-        const pendingPercentageChange = (previousPendingResult.count || 0) > 0
-            ? (((currentPendingResult.count || 0) - (previousPendingResult.count || 0)) / (previousPendingResult.count || 0) * 100).toFixed(1)
-            : ((currentPendingResult.count || 0) > 0 ? "100.0" : "0.0")
-
-        return {
-            totalDonations: {
-                current: formatCurrency(currentTotalDonations),
-                previous: formatCurrency(previousTotalDonations),
-                percentageChange: `${parseFloat(donationPercentageChange) >= 0 ? '+' : ''}${donationPercentageChange}% from last month`
-            },
-            totalUsers: {
-                current: currentUsersResult.count || 0,
-                previous: previousUsersResult.count || 0,
-                percentageChange: `${parseFloat(userPercentageChange) >= 0 ? '+' : ''}${userPercentageChange}% from last month`
-            },
-            activeCauses: {
-                current: currentCausesResult.count || 0,
-                previous: previousCausesResult.count || 0,
-                percentageChange: `${parseFloat(causePercentageChange) >= 0 ? '+' : ''}${causePercentageChange}% from last month`
-            },
-            pendingApprovals: {
-                current: currentPendingResult.count || 0,
-                previous: previousPendingResult.count || 0,
-                percentageChange: `${parseFloat(pendingPercentageChange) >= 0 ? '+' : ''}${pendingPercentageChange} from last month`
-            }
-        }
-    } catch (error) {
-        console.error("Error fetching admin analytics:", error)
-        throw error
+    let donationTrend = 0;
+    if (prevTotalDonations > 0) {
+      donationTrend =
+        ((totalDonations - prevTotalDonations) / prevTotalDonations) * 100;
+    } else if (totalDonations > 0) {
+      donationTrend = 100;
     }
-}
 
-/**
- * Get donation trends over the last 12 months
- */
-export async function getDonationTrends(): Promise<DonationTrend[]> {
-    const supabase = await createClient()
-
-    try {
-        const twelveMonthsAgo = new Date()
-        twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12)
-
-        const [regularDonations, cryptoDonations] = await Promise.all([
-            supabase
-                .from("donations")
-                .select("amount, created_at")
-                .gte("created_at", twelveMonthsAgo.toISOString())
-                .eq("status", "completed"),
-
-            supabase
-                .from("crypto_donations")
-                .select("amount_in_naira, created_at")
-                .gte("created_at", twelveMonthsAgo.toISOString())
-                .eq("status", "completed")
-        ])
-
-        // Combine and group by month
-        const monthlyData: Record<string, number> = {}
-
-        // Process regular donations
-        regularDonations.data?.forEach(donation => {
-            const date = new Date(donation.created_at)
-            const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
-            monthlyData[monthKey] = (monthlyData[monthKey] || 0) + donation.amount
-        })
-
-        // Process crypto donations
-        cryptoDonations.data?.forEach(donation => {
-            const date = new Date(donation.created_at)
-            const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
-            monthlyData[monthKey] = (monthlyData[monthKey] || 0) + (donation.amount_in_naira || 0)
-        })
-
-        // Convert to array and sort
-        return Object.entries(monthlyData)
-            .map(([month, amount]) => ({ month, amount }))
-            .sort((a, b) => a.month.localeCompare(b.month))
-    } catch (error) {
-        console.error("Error fetching donation trends:", error)
-        throw error
+    // Calculate Users
+    const newUsers = newUsersResult.count || 0;
+    const prevNewUsers = newUsersPrev.count || 0;
+    let userTrend = 0;
+    if (prevNewUsers > 0) {
+      userTrend = ((newUsers - prevNewUsers) / prevNewUsers) * 100;
+    } else if (newUsers > 0) {
+      userTrend = 100;
     }
+
+    return {
+      totalDonations: {
+        current: formatCurrency(totalDonations),
+        trend: Math.round(donationTrend),
+        previous: formatCurrency(prevTotalDonations),
+      },
+      totalUsers: {
+        current: totalUsersResult.count || 0,
+        newInPeriod: newUsers,
+        trend: Math.round(userTrend),
+      },
+      activeCauses: {
+        active: activeCausesResult.count || 0,
+        total: totalCausesResult.count || 0,
+      },
+      pendingApprovals: {
+        current: pendingCausesResult.count || 0,
+      },
+    };
+  } catch (error) {
+    console.error("Error fetching admin analytics:", error);
+    throw error;
+  }
 }
 
-/**
- * Get user growth trends over the last 12 months
- */
-export async function getUserGrowth(): Promise<UserGrowth[]> {
-    const supabase = await createClient()
+export async function getDonationTrends(
+  from?: string,
+  to?: string,
+): Promise<DonationTrend[]> {
+  const supabase = await createClient();
+  const endDate = to ? new Date(to) : new Date();
+  const startDate = from
+    ? new Date(from)
+    : new Date(new Date().setMonth(endDate.getMonth() - 11));
+  endDate.setHours(23, 59, 59, 999);
 
-    try {
-        const twelveMonthsAgo = new Date()
-        twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12)
+  try {
+    const [regularDonations, cryptoDonations] = await Promise.all([
+      supabase
+        .from("donations")
+        .select("amount, created_at")
+        .gte("created_at", startDate.toISOString())
+        .lte("created_at", endDate.toISOString())
+        .eq("status", "completed"),
 
-        const { data: users, error } = await supabase
-            .from("profiles")
-            .select("created_at")
-            .gte("created_at", twelveMonthsAgo.toISOString())
+      supabase
+        .from("crypto_donations")
+        .select("amount_in_naira, created_at")
+        .gte("created_at", startDate.toISOString())
+        .lte("created_at", endDate.toISOString())
+        .eq("status", "completed"),
+    ]);
 
-        if (error) throw error
+    // Grouping by appropriate interval based on duration
+    // For simplicity, we stick to Monthly if duration > 2 months, else Daily
+    const durationDays =
+      (endDate.getTime() - startDate.getTime()) / (1000 * 3600 * 24);
+    const isDaily = durationDays <= 62;
 
-        // Group by month
-        const monthlyGrowth: Record<string, number> = {}
+    const dataMap: Record<
+      string,
+      { regular: number; crypto: number; count: number }
+    > = {};
 
-        users?.forEach(user => {
-            const date = new Date(user.created_at)
-            const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
-            monthlyGrowth[monthKey] = (monthlyGrowth[monthKey] || 0) + 1
-        })
+    const getKey = (dateStr: string) => {
+      const d = new Date(dateStr);
+      if (isDaily) return d.toISOString().split("T")[0]; // YYYY-MM-DD
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`; // YYYY-MM
+    };
 
-        return Object.entries(monthlyGrowth)
-            .map(([month, users]) => ({ month, users }))
-            .sort((a, b) => a.month.localeCompare(b.month))
-    } catch (error) {
-        console.error("Error fetching user growth:", error)
-        throw error
-    }
+    regularDonations.data?.forEach((d) => {
+      const key = getKey(d.created_at);
+      if (!dataMap[key]) dataMap[key] = { regular: 0, crypto: 0, count: 0 };
+      dataMap[key].regular += d.amount;
+      dataMap[key].count += 1;
+    });
+
+    cryptoDonations.data?.forEach((d) => {
+      const key = getKey(d.created_at);
+      if (!dataMap[key]) dataMap[key] = { regular: 0, crypto: 0, count: 0 };
+      dataMap[key].crypto += d.amount_in_naira || 0;
+      dataMap[key].count += 1;
+    });
+
+    return Object.entries(dataMap)
+      .map(([period, data]) => ({
+        period,
+        regular: data.regular,
+        crypto: data.crypto,
+        total: data.regular + data.crypto,
+        count: data.count,
+      }))
+      .sort((a, b) => a.period.localeCompare(b.period));
+  } catch (error) {
+    console.error("Error fetching donation trends:", error);
+    throw error;
+  }
 }
 
-/**
- * Get cause categories distribution
- */
+export async function getUserGrowth(
+  from?: string,
+  to?: string,
+): Promise<UserGrowth[]> {
+  const supabase = await createClient();
+  const endDate = to ? new Date(to) : new Date();
+  const startDate = from
+    ? new Date(from)
+    : new Date(new Date().setMonth(endDate.getMonth() - 11));
+  endDate.setHours(23, 59, 59, 999);
+
+  try {
+    const { data: users, error } = await supabase
+      .from("profiles")
+      .select("created_at, updated_at")
+      .gte("created_at", startDate.toISOString())
+      .lte("created_at", endDate.toISOString());
+
+    if (error) throw error;
+
+    const durationDays =
+      (endDate.getTime() - startDate.getTime()) / (1000 * 3600 * 24);
+    const isDaily = durationDays <= 62;
+    const getKey = (dateStr: string) => {
+      const d = new Date(dateStr);
+      if (isDaily) return d.toISOString().split("T")[0];
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    };
+
+    const dataMap: Record<string, { new: number; active: number }> = {};
+
+    users?.forEach((user) => {
+      const createdKey = getKey(user.created_at);
+      if (!dataMap[createdKey]) dataMap[createdKey] = { new: 0, active: 0 };
+      dataMap[createdKey].new += 1;
+
+      const updatedKey = getKey(user.updated_at);
+      if (!dataMap[updatedKey]) dataMap[updatedKey] = { new: 0, active: 0 };
+      dataMap[updatedKey].active += 1;
+    });
+
+    return Object.entries(dataMap)
+      .map(([period, data]) => ({
+        period,
+        users: data.new,
+        active: data.active,
+      }))
+      .sort((a, b) => a.period.localeCompare(b.period));
+  } catch (error) {
+    console.error("Error fetching user growth:", error);
+    throw error;
+  }
+}
+
 export async function getCauseCategories(): Promise<CauseCategory[]> {
-    const supabase = await createClient()
+  // Categories are usually a snapshot of current state, not time-series dependent
+  // But we could filter "Causes created in period".
+  // For now, let's keep it global as it's a breakdown of the platform.
+  const supabase = await createClient();
 
-    try {
-        const { data: causes, error } = await supabase
-            .from("causes")
-            .select("category")
-            .eq("status", "approved")
+  try {
+    const { data: causes, error } = await supabase
+      .from("causes")
+      .select("category, status");
 
-        if (error) throw error
+    if (error) throw error;
 
-        // Group by category
-        const categoryCount: Record<string, number> = {}
+    const categories: Record<
+      string,
+      { approved: number; pending: number; completed: number; total: number }
+    > = {};
 
-        causes?.forEach(cause => {
-            categoryCount[cause.category] = (categoryCount[cause.category] || 0) + 1
-        })
+    causes?.forEach((cause) => {
+      if (!categories[cause.category]) {
+        categories[cause.category] = {
+          approved: 0,
+          pending: 0,
+          completed: 0,
+          total: 0,
+        };
+      }
+      categories[cause.category].total += 1;
+      if (cause.status === "approved") categories[cause.category].approved += 1;
+      else if (cause.status === "pending")
+        categories[cause.category].pending += 1;
+    });
 
-        return Object.entries(categoryCount)
-            .map(([category, count]) => ({ category, count }))
-            .sort((a, b) => b.count - a.count)
-    } catch (error) {
-        console.error("Error fetching cause categories:", error)
-        throw error
-    }
-} 
+    return Object.entries(categories)
+      .map(([category, counts]) => ({
+        category,
+        ...counts,
+      }))
+      .sort((a, b) => b.total - a.total);
+  } catch (error) {
+    console.error("Error fetching cause categories:", error);
+    throw error;
+  }
+}
+
+export async function getKycAnalytics(
+  from?: string,
+  to?: string,
+): Promise<KycAnalytics> {
+  const supabase = await createClient();
+  const endDate = to ? new Date(to) : new Date();
+  const startDate = from
+    ? new Date(from)
+    : new Date(new Date().setMonth(endDate.getMonth() - 1));
+  endDate.setHours(23, 59, 59, 999);
+
+  try {
+    const { data: verifications } = await supabase
+      .from("kyc_verifications")
+      .select("status, created_at, updated_at")
+      .gte("created_at", startDate.toISOString())
+      .lte("created_at", endDate.toISOString());
+
+    const total = verifications?.length || 0;
+    const approved =
+      verifications?.filter((v) => v.status === "approved").length || 0;
+    const rejected =
+      verifications?.filter((v) => v.status === "rejected").length || 0;
+    const pending =
+      verifications?.filter((v) => v.status === "pending").length || 0;
+
+    let totalProcessingTime = 0;
+    let processedCount = 0;
+
+    verifications?.forEach((v) => {
+      if (v.status !== "pending" && v.updated_at && v.created_at) {
+        const start = new Date(v.created_at).getTime();
+        const end = new Date(v.updated_at).getTime();
+        totalProcessingTime += end - start;
+        processedCount++;
+      }
+    });
+
+    return {
+      total,
+      approved,
+      rejected,
+      pending,
+      approvalRate: total > 0 ? (approved / total) * 100 : 0,
+      avgProcessingTimeHours:
+        processedCount > 0
+          ? totalProcessingTime / processedCount / (1000 * 60 * 60)
+          : 0,
+    };
+  } catch (error) {
+    console.error("Error fetching KYC analytics:", error);
+    return {
+      total: 0,
+      approved: 0,
+      rejected: 0,
+      pending: 0,
+      approvalRate: 0,
+      avgProcessingTimeHours: 0,
+    };
+  }
+}
+
+export async function getPaymentAnalytics(
+  from?: string,
+  to?: string,
+): Promise<PaymentAnalytics> {
+  const supabase = await createClient();
+  const endDate = to ? new Date(to) : new Date();
+  const startDate = from
+    ? new Date(from)
+    : new Date(new Date().setMonth(endDate.getMonth() - 1));
+  endDate.setHours(23, 59, 59, 999);
+
+  try {
+    const { data: donations } = await supabase
+      .from("donations")
+      .select("status, amount")
+      .gte("created_at", startDate.toISOString())
+      .lte("created_at", endDate.toISOString());
+
+    const total = donations?.length || 0;
+    const failed = donations?.filter((d) => d.status === "failed").length || 0;
+    const completed =
+      donations?.filter((d) => d.status === "completed").length || 0;
+    const failedAmount =
+      donations
+        ?.filter((d) => d.status === "failed")
+        .reduce((sum, d) => sum + d.amount, 0) || 0;
+
+    return {
+      total,
+      failed,
+      successRate: total > 0 ? (completed / total) * 100 : 0,
+      failureRate: total > 0 ? (failed / total) * 100 : 0,
+      failedAmount,
+    };
+  } catch (error) {
+    console.error("Error fetching payment analytics:", error);
+    return {
+      total: 0,
+      failed: 0,
+      successRate: 0,
+      failureRate: 0,
+      failedAmount: 0,
+    };
+  }
+}
+
+export async function getCauseLifecycleAnalytics(
+  from?: string,
+  to?: string,
+): Promise<CauseLifecycle> {
+  const supabase = await createClient();
+  const endDate = to ? new Date(to) : new Date();
+  const startDate = from
+    ? new Date(from)
+    : new Date(new Date().setMonth(endDate.getMonth() - 6)); // Default 6 months for lifecycle
+  endDate.setHours(23, 59, 59, 999);
+
+  try {
+    const { data: causes } = await supabase
+      .from("causes")
+      .select("created_at, updated_at, status")
+      .gte("created_at", startDate.toISOString())
+      .lte("created_at", endDate.toISOString());
+
+    const total = causes?.length || 0;
+    const pending = causes?.filter((c) => c.status === "pending").length || 0;
+    const approved = causes?.filter((c) => c.status === "approved").length || 0;
+    const completed =
+      causes?.filter((c) => c.status === "completed" || c.status === "rejected")
+        .length || 0; // Assuming rejected is terminal too
+
+    let totalApprovalTime = 0;
+    let approvedCount = 0;
+
+    causes?.forEach((c) => {
+      if (c.status === "approved" && c.updated_at) {
+        const start = new Date(c.created_at).getTime();
+        const end = new Date(c.updated_at).getTime();
+        totalApprovalTime += end - start;
+        approvedCount++;
+      }
+    });
+
+    return {
+      avgApprovalTimeHours:
+        approvedCount > 0
+          ? totalApprovalTime / approvedCount / (1000 * 60 * 60)
+          : 0,
+      avgCompletionTimeDays: 0, // Need 'completed_at' which doesn't exist yet
+      funnel: {
+        created: total,
+        pending,
+        approved,
+        completed,
+      },
+    };
+  } catch (error) {
+    return {
+      avgApprovalTimeHours: 0,
+      avgCompletionTimeDays: 0,
+      funnel: { created: 0, pending: 0, approved: 0, completed: 0 },
+    };
+  }
+}
+
+export async function getAlerts(): Promise<Alert[]> {
+  const kyc = await getKycAnalytics();
+  const payment = await getPaymentAnalytics();
+
+  const alerts: Alert[] = [];
+
+  if (kyc.approvalRate < 50 && kyc.total > 5) {
+    alerts.push({
+      id: "kyc-rate",
+      type: "warning",
+      message: "KYC Approval Rate is low",
+      metric: "Approval Rate",
+      value: `${kyc.approvalRate.toFixed(1)}%`,
+      threshold: "< 50%",
+    });
+  }
+
+  if (payment.failureRate > 5) {
+    alerts.push({
+      id: "payment-fail",
+      type: "critical",
+      message: "High Payment Failure Rate",
+      metric: "Failure Rate",
+      value: `${payment.failureRate.toFixed(1)}%`,
+      threshold: "> 5%",
+    });
+  }
+
+  return alerts;
+}
