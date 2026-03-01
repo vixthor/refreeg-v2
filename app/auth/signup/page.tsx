@@ -1,170 +1,259 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { useState } from "react"
-import Link from "next/link"
-import { useAuth } from "@/hooks/use-auth"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Icons } from "@/components/icons"
+import React, { useState, useEffect } from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { Eye, EyeOff } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
+
+import { useAuth } from "@/hooks/use-auth";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { toast } from "@/components/ui/use-toast";
+import { AuthTestimonials } from "@/components/ui/auth-testimonials";
 
 export default function SignUpPage() {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [confirmPassword, setConfirmPassword] = useState("")
-  const [firstName, setFirstName] = useState("")
-  const [lastName, setLastName] = useState("")
-  const [accountType, setAccountType] = useState<"individual" | "organization">()
-  const [isLoading, setIsLoading] = useState(false)
-  const { signUp } = useAuth()
+  const supabase = createClient();
+  const { signUp, signInWithGoogle } = useAuth();
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const [refFromUrl, setRefFromUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const ref = params.get("ref");
+      if (ref) {
+        setRefFromUrl(ref);
+      }
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    if (!accountType) {
-      alert("Please select an account type")
-      return
-    }
-    
-    if (!firstName.trim() || !lastName.trim()) {
-      alert("Please enter both first name and last name")
-      return
-    }
-    
+    e.preventDefault();
+
     if (password !== confirmPassword) {
-      alert("Passwords do not match")
-      return
+      toast({
+        title: "Passwords do not match",
+        description: "Please confirm your password correctly.",
+        variant: "destructive",
+      });
+      return;
     }
-    
-    setIsLoading(true)
-    await signUp(email, password, `${firstName} ${lastName}`, accountType)
-    setIsLoading(false)
-  }
+
+    setIsLoading(true);
+
+    toast({
+      title: "Creating your account...",
+      description: "Setting up your RefreeG account.",
+    });
+
+    try {
+      const signUpEmail = email.trim();
+      const normalizedEmail = signUpEmail.toLowerCase();
+
+      if (refFromUrl) {
+        await supabase.from("referrals").insert({
+          referrer_id: refFromUrl,
+          referee_email: normalizedEmail,
+          registered: false,
+        });
+      }
+
+      const result = await signUp(signUpEmail, password, "User", "individual");
+
+      if (!result?.data?.user) {
+        return;
+      }
+
+      if (refFromUrl) {
+        await supabase
+          .from("referrals")
+          .update({
+            registered: true,
+            referee_id: result.data.user.id,
+            reward: "5_pts",
+          })
+          .eq("referee_email", normalizedEmail)
+          .eq("referrer_id", refFromUrl);
+      }
+
+      toast({
+        title: "Account created!",
+        description: "Please verify your email to continue.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error?.message || "Could not create account",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
-    <div className="container flex h-screen w-screen flex-col items-center justify-center">
-      <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
-        <Card>
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl text-center">Sign up</CardTitle>
-            <CardDescription className="text-center">
+    <div className="flex h-screen w-screen">
+      <div className="flex md:w-2/5 w-full flex-col items-center justify-center bg-white px-8">
+        <div className="w-full max-w-md">
+          <div className="mb-8 text-center md:text-left">
+            <h1 className="text-2xl md:text-4xl font-bold text-neutral-800">
+              Welcome to RefreeG
+            </h1>
+            <p className="mt-2 text-sm md:text-lg text-neutral-600">
               Create an account to start fundraising or donating
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-4">
-            <form onSubmit={handleSubmit}>
-              <div className="grid gap-2">
-                <div className="grid gap-1">
-                  <Label htmlFor="firstName">First Name</Label>
-                  <Input
-                    id="firstName"
-                    type="text"
-                    placeholder="John"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="grid gap-1">
-                  <Label htmlFor="lastName">Last Name</Label>
-                  <Input
-                    id="lastName"
-                    type="text"
-                    placeholder="Doe"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    required
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Please use your real name. Accounts with fake or suspicious names will be flagged for review.
-                  </p>
-                </div>
-                <div className="grid gap-1">
-                  <Label>Account Type</Label>
-                  <div className="flex items-center space-x-4">
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="radio"
-                        id="individual"
-                        name="accountType"
-                        value="individual"
-                        checked={accountType === "individual"}
-                        onChange={() => setAccountType("individual")}
-                        required
-                      />
-                      <Label htmlFor="individual">Individual</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="radio"
-                        id="organization"
-                        name="accountType"
-                        value="organization"
-                        checked={accountType === "organization"}
-                        onChange={() => setAccountType("organization")}
-                      />
-                      <Label htmlFor="organization">Organization</Label>
-                    </div>
-                  </div>
-                </div>
-                <div className="grid gap-1">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="name@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="grid gap-1">
-                  <Label htmlFor="password">Password</Label>
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmit}>
+            <div className="mb-4">
+              <LabelInputContainer>
+                <Label htmlFor="email">Email Address</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="name@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </LabelInputContainer>
+            </div>
+
+            <div className="mb-4">
+              <LabelInputContainer>
+                <Label htmlFor="password">Password</Label>
+                <div className="relative">
                   <Input
                     id="password"
-                    type="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="••••••••"
                     value={password}
-                    placeholder="********"
                     onChange={(e) => setPassword(e.target.value)}
                     required
+                    className="pr-10"
                   />
+                  <button
+                    type="button"
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4 text-gray-400" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-gray-400" />
+                    )}
+                  </button>
                 </div>
-                <div className="grid gap-1">
-                  <Label htmlFor="confirmPassword">Confirm Password</Label>
+              </LabelInputContainer>
+            </div>
+
+            <div className="mb-8">
+              <LabelInputContainer>
+                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <div className="relative">
                   <Input
                     id="confirmPassword"
-                    type="password"
+                    type={showConfirmPassword ? "text" : "password"}
+                    placeholder="••••••••"
                     value={confirmPassword}
-                    placeholder="********"
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
+                    className="pr-10"
                   />
+                  <button
+                    type="button"
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff className="h-4 w-4 text-gray-400" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-gray-400" />
+                    )}
+                  </button>
                 </div>
-                <Button type="submit" className="mt-2" disabled={isLoading}>
-                  {isLoading ? (
-                    <>
-                      <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
-                      Creating account...
-                    </>
-                  ) : (
-                    "Create Account"
-                  )}
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-          <CardFooter>
-            <div className="text-sm text-center text-muted-foreground w-full">
+              </LabelInputContainer>
+            </div>
+
+            <Button
+              type="submit"
+              disabled={isLoading}
+              className="group/btn relative h-10 w-full rounded-md font-medium text-white"
+            >
+              Sign Up
+              <BottomGradient />
+            </Button>
+
+            <div className="my-2 h-[1px] w-full bg-gradient-to-r from-transparent via-neutral-300 to-transparent" />
+
+            {/*
+            <button
+              type="button"
+              onClick={signInWithGoogle}
+              disabled={isLoading}
+              className="flex h-10 w-full items-center justify-center gap-2 rounded-md bg-gray-50 shadow-input"
+            >
+              <Image
+                src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+                width={18}
+                height={18}
+                alt="Google"
+              />
+              <span className="text-sm text-neutral-700">Google</span>
+              <BottomGradient />
+            </button>
+            */}
+
+            <div className="mt-6 text-center text-sm text-neutral-600">
               Already have an account?{" "}
-              <Link href="/auth/signin" className="underline underline-offset-4 hover:text-primary">
-                Sign in
+              <Link href="/auth/signin" className="font-medium hover:underline">
+                Sign In
               </Link>
             </div>
-          </CardFooter>
-        </Card>
+
+            <div className="mt-2 text-sm text-center text-neutral-600">
+              By signing up, you agree to our{" "}
+              <Link href="/terms" className="font-medium hover:underline">
+                Terms of Service
+              </Link>{" "}
+              and{" "}
+              <Link href="/privacy" className="font-medium hover:underline">
+                Privacy Policy
+              </Link>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div className="hidden md:flex md:w-3/5 items-center justify-center bg-[#003366] px-8">
+        <AuthTestimonials />
       </div>
     </div>
-  )
+  );
 }
+
+const BottomGradient = () => (
+  <>
+    <span className="absolute inset-x-0 -bottom-px block h-px bg-gradient-to-r from-transparent via-cyan-500 to-transparent opacity-0 transition duration-500 group-hover/btn:opacity-100" />
+  </>
+);
+
+const LabelInputContainer = ({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) => (
+  <div className={cn("flex flex-col space-y-2", className)}>{children}</div>
+);

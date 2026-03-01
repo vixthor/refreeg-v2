@@ -92,11 +92,37 @@ export default function ManagePetition() {
     await approvePetition(petitionId);
   };
 
-  const openDetailDialog = async (petitionId: string) => {
+  const openDetailDialog = async (item: any) => {
     setDetailDialog((prev) => ({ ...prev, open: true, isLoading: true }));
     try {
-      const detailed = await getPetition(petitionId);
-      setDetailDialog({ open: true, isLoading: false, petition: detailed });
+      if (item.type === "edit") {
+        const detailed: any = {
+          id: item.original_petition_id,
+          title: item.title,
+          category: item.category,
+          goal: item.goal,
+          image: item.image,
+          days_active: item.days_active,
+          status: item.status || "pending",
+          created_at: item.created_at,
+          updated_at: item.updated_at,
+          user: {
+            name: item.profiles?.full_name || "Anonymous",
+            email: item.profiles?.email || "",
+          },
+          sections: (item.petition_edit_sections || []).map((s: any) => ({
+            id: s.id,
+            heading: s.heading,
+            description: s.description,
+          })),
+          multimedia: item.multimedia || [],
+          video_links: item.video_links || [],
+        };
+        setDetailDialog({ open: true, isLoading: false, petition: detailed });
+      } else {
+        const detailed = await getPetition(item.id);
+        setDetailDialog({ open: true, isLoading: false, petition: detailed });
+      }
     } catch (e) {
       setDetailDialog({ open: true, isLoading: false, petition: null });
     }
@@ -204,10 +230,10 @@ export default function ManagePetition() {
                             item.status === "approved"
                               ? "default"
                               : item.status === "pending"
-                              ? "secondary"
-                              : item.status === "pending edit"
-                              ? "outline"
-                              : "destructive"
+                                ? "secondary"
+                                : item.status === "pending edit"
+                                  ? "outline"
+                                  : "destructive"
                           }
                         >
                           {item.status.charAt(0).toUpperCase() +
@@ -224,7 +250,7 @@ export default function ManagePetition() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem
-                              onClick={() => openDetailDialog(item.id)}
+                              onClick={() => openDetailDialog(item)}
                             >
                               Preview
                             </DropdownMenuItem>
@@ -236,7 +262,7 @@ export default function ManagePetition() {
                                       item.type === "edit"
                                         ? item.original_petition_id
                                         : item.id,
-                                      item.title
+                                      item.title,
                                     )
                                   }
                                 >
@@ -247,7 +273,7 @@ export default function ManagePetition() {
                                     handleApprove(
                                       item.type === "edit"
                                         ? item.original_petition_id
-                                        : item.id
+                                        : item.id,
                                     )
                                   }
                                 >
@@ -347,7 +373,7 @@ export default function ManagePetition() {
                     <p className="text-muted-foreground">
                       {
                         categories.find(
-                          (c) => c.id === detailDialog.petition?.category
+                          (c) => c.id === detailDialog.petition?.category,
                         )?.name
                       }
                     </p>
@@ -357,8 +383,8 @@ export default function ManagePetition() {
                       detailDialog.petition.status === "approved"
                         ? "default"
                         : detailDialog.petition.status === "pending"
-                        ? "secondary"
-                        : "destructive"
+                          ? "secondary"
+                          : "destructive"
                     }
                   >
                     {detailDialog.petition.status.charAt(0).toUpperCase() +
@@ -379,18 +405,22 @@ export default function ManagePetition() {
                     </p>
                     <p>
                       <span className="font-medium">Created:</span>{" "}
-                      {format(
-                        new Date(detailDialog.petition.created_at),
-                        "PPP"
-                      )}
+                      {detailDialog.petition.created_at
+                        ? format(
+                            new Date(detailDialog.petition.created_at),
+                            "PPP",
+                          )
+                        : "N/A"}
                     </p>
                     {detailDialog.petition.status === "approved" && (
                       <p>
                         <span className="font-medium">Approved:</span>{" "}
-                        {format(
-                          new Date(detailDialog.petition.updated_at),
-                          "PPP"
-                        )}
+                        {detailDialog.petition.updated_at
+                          ? format(
+                              new Date(detailDialog.petition.updated_at),
+                              "PPP",
+                            )
+                          : "N/A"}
                       </p>
                     )}
                   </div>
@@ -419,7 +449,7 @@ export default function ManagePetition() {
                     {detailDialog.petition.sections.map((section, index) => (
                       <div key={index} className="p-4 border rounded-lg">
                         <h4 className="font-medium mb-2">{section.heading}</h4>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-sm text-muted-foreground whitespace-pre-line">
                           {section.description}
                         </p>
                       </div>
@@ -428,19 +458,25 @@ export default function ManagePetition() {
                 )}
 
               {/* Sections (handle sections on both main petition and edit rows) */}
-              {Array.isArray((detailDialog.petition as any).petition_edit_sections) &&
-              (detailDialog.petition as any).petition_edit_sections.length > 0 ? (
+              {Array.isArray(
+                (detailDialog.petition as any).petition_edit_sections,
+              ) &&
+              (detailDialog.petition as any).petition_edit_sections.length >
+                0 ? (
                 <div className="space-y-2">
                   <h3 className="font-medium">Sections</h3>
                   {(detailDialog.petition as any).petition_edit_sections.map(
                     (section: any, index: number) => (
-                      <div key={section.id ?? index} className="p-4 border rounded-lg">
+                      <div
+                        key={section.id ?? index}
+                        className="p-4 border rounded-lg"
+                      >
                         <h4 className="font-medium mb-2">{section.heading}</h4>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-sm text-muted-foreground whitespace-pre-line">
                           {section.description}
                         </p>
                       </div>
-                    )
+                    ),
                   )}
                 </div>
               ) : null}
@@ -525,7 +561,7 @@ export default function ManagePetition() {
                         closeDetailDialog();
                         openRejectDialog(
                           detailDialog.petition!.id,
-                          detailDialog.petition!.title
+                          detailDialog.petition!.title,
                         );
                       }}
                     >
@@ -558,7 +594,7 @@ export default function ManagePetition() {
                       closeDetailDialog();
                       openRejectDialog(
                         detailDialog.petition!.id,
-                        detailDialog.petition!.title
+                        detailDialog.petition!.title,
                       );
                     }}
                   >

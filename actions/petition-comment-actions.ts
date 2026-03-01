@@ -18,7 +18,7 @@ export async function createPetitionComment(
       parent_id: parentId || null,
       is_edited: false,
     })
-    .select(`*, user:profiles(full_name, profile_photo) `)
+    .select(`*, user:profiles(full_name, profile_photo, username)`)
     .single();
 
   if (error) throw error;
@@ -33,10 +33,14 @@ export async function updatePetitionComment(
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("petition_comments")
-    .update({ content, is_edited: true })
+    .update({
+      content,
+      is_edited: true,
+      updated_at: new Date().toISOString(),
+    })
     .eq("id", commentId)
     .eq("user_id", userId)
-    .select()
+    .select(`*, user:profiles(full_name, profile_photo, username)`)
     .single();
 
   if (error) throw error;
@@ -58,7 +62,7 @@ export async function listPetitionComments(petitionId: string) {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("petition_comments")
-    .select(`*, user:profiles(full_name, profile_photo)`)
+    .select(`*, user:profiles(full_name, profile_photo, username)`)
     .eq("petition_id", petitionId)
     .is("parent_id", null)
     .order("created_at", { ascending: false });
@@ -82,7 +86,7 @@ export async function listRepliesForPetitionComment(commentId: string) {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("petition_comments")
-    .select(`*, user:profiles(full_name, profile_photo)`)
+    .select(`*, user:profiles(full_name, profile_photo, username)`)
     .eq("parent_id", commentId)
     .order("created_at", { ascending: true });
   if (error) throw error;

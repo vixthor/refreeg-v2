@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, CheckCircle } from "lucide-react";
 import {
   CauseCard,
   DonationCard,
@@ -39,19 +39,20 @@ export default function PublicProfile({
   const causesCount = causes.length;
   const petitionsCount = petitions.length;
 
+  const isVerified = profile.is_verified || false;
+
   const handleBack = () => {
     window.history.back();
   };
 
-  // Default profile image configuration
   const defaultProfileImage = "/default-avatar.jpg";
   const profileImage = profile.profile_photo || defaultProfileImage;
   const displayName = profile.full_name || "Anonymous";
+  const username = profile.username || "";
 
   return (
     <div className="w-full px-4 py-8">
       <div className="max-w-7xl mx-auto">
-        {/* Back Button */}
         <div>
           <Button variant="ghost" size="sm" onClick={handleBack}>
             <ChevronLeft className="h-4 w-4 mr-2" />
@@ -59,7 +60,6 @@ export default function PublicProfile({
           </Button>
         </div>
 
-        {/* Profile Header - Full width aligned left */}
         <div className="flex flex-col md:flex-row gap-6 items-start mt-6 w-full">
           <div className="relative w-24 h-24 rounded-full overflow-hidden border-2 border-gray-200 bg-gray-100">
             <Image
@@ -74,14 +74,29 @@ export default function PublicProfile({
                 target.src = defaultProfileImage;
               }}
             />
+            {isVerified && (
+              <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5">
+                <CheckCircle className="h-5 w-5 text-blue-500 fill-blue-100" />
+              </div>
+            )}
           </div>
 
           <div className="flex-1 w-full">
-            <div>
+            <div className="flex items-center gap-2 flex-wrap">
               <h1 className="text-2xl font-bold">{displayName}</h1>
+              {isVerified && (
+                <CheckCircle className="h-5 w-5 text-blue-500 fill-blue-100" />
+              )}
             </div>
+            {username && <p className="text-gray-600">@{username}</p>}
 
-            {/* Stats */}
+            {isVerified && (
+              <div className="inline-flex items-center gap-1.5 mt-1 px-3 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded-full">
+                <CheckCircle className="h-3 w-3" />
+                <span>Verified Account</span>
+              </div>
+            )}
+
             <div className="flex gap-4 mt-4 text-sm">
               <span className="text-gray-700">
                 <span className="font-semibold">{causesCount}</span>{" "}
@@ -97,12 +112,10 @@ export default function PublicProfile({
               </span>
             </div>
 
-            {/* Bio */}
             <p className="mt-4 text-gray-700">{profile.bio || "No Bio Yet"}</p>
           </div>
         </div>
 
-        {/* Custom-styled shadcn Tabs - Full width */}
         <div className="border-b mt-8 w-full">
           <Tabs value={tab} onValueChange={setTab} className="w-full">
             <div className="flex justify-center">

@@ -17,16 +17,20 @@ export default function PaymentVerification() {
     "loading" | "success" | "failed"
   >("loading");
   const [errorMessage, setErrorMessage] = useState("");
+  const [hasVerified, setHasVerified] = useState(false);
 
   useEffect(() => {
     const verifyPaymentStatus = async () => {
-      try {
+      if (hasVerified || !reference) {
         if (!reference) {
           setVerificationStatus("failed");
           setErrorMessage("Invalid payment verification parameters");
-          return;
         }
+        return;
+      }
 
+      try {
+        setHasVerified(true);
         const isSuccessful = await verifyPayment(reference);
 
         if (isSuccessful) {
@@ -44,7 +48,7 @@ export default function PaymentVerification() {
     };
 
     verifyPaymentStatus();
-  }, [reference, verifyPayment]);
+  }, [reference, verifyPayment, hasVerified]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">

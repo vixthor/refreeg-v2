@@ -11,11 +11,12 @@ type Action =
   | "block-user"
   | "unblock-user"
   | "appoint-manager"
-  | "remove-manager";
+  | "remove-manager"
+  | "delete-user"
+  | "approve-kyc"
+  | "reject-kyc"
+  | "appoint-admin";
 
-/**
- * Check if a database table exists
- */
 export async function checkTableExists(tableName: string): Promise<boolean> {
   const supabase = await createClient();
 
@@ -38,9 +39,6 @@ export async function checkTableExists(tableName: string): Promise<boolean> {
   }
 }
 
-/**
- * Check if all required tables exist
- */
 export async function checkDatabaseSetup(): Promise<{
   ready: boolean;
   missingTables: string[];
@@ -61,7 +59,6 @@ export async function checkDatabaseSetup(): Promise<{
     }
   }
 
-  // If all tables exist, ensure the default admin exists
   if (missingTables.length === 0) {
     await ensureDefaultAdmin();
   }
@@ -72,9 +69,6 @@ export async function checkDatabaseSetup(): Promise<{
   };
 }
 
-/**
- * Log admin activity
- */
 export const logAdminActivity = async (action: Action, adminId: string) => {
   const supabase = await createClient();
 
@@ -85,9 +79,6 @@ export const logAdminActivity = async (action: Action, adminId: string) => {
   });
 };
 
-/**
- * List admin logs with admin email, action, and timestamp
- */
 export async function listAdminLogs() {
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -100,10 +91,14 @@ export async function listAdminLogs() {
     throw error;
   }
 
-  // Return logs with admin email, action, and timestamp
-  return (data || []).map((log: any) => ({
-    email: log.profiles?.email || "",
-    action: log.action,
-    created_at: log.created_at,
-  }));
+  return (data || []).map((log: any) => {
+    const profile = Array.isArray(log.profiles)
+      ? log.profiles[0]
+      : log.profiles;
+    return {
+      email: profile?.email || "Unknown User",
+      action: log.action || "Unknown Action",
+      created_at: log.created_at || new Date().toISOString(),
+    };
+  });
 }

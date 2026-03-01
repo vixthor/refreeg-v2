@@ -1,16 +1,15 @@
-// app/profile/[userId]/page.tsx
 import {
   getProfile,
   getUserCauses,
   listUserDonations,
   getUserPetitions,
+  getProfileByUsername,
 } from "@/actions";
 import { getCurrentUser } from "@/actions/auth-actions";
 import PublicProfile from "@/components/PublicProfile";
 
-// Type definitions for our parameters
 type PageParams = {
-  userId: string;
+  username: string;
 };
 
 type SearchParams = {
@@ -22,19 +21,17 @@ export default async function PublicProfilePage({
 }: {
   params: PageParams;
 }) {
-  // Properly await the params destructuring
-  const { userId } = await params;
-
-  // Destructure searchParams
+  const { username } = await params;
 
   const currentUser = await getCurrentUser();
-  const isOwner = currentUser?.id === userId;
 
-  // Fetch data
-  const profile = await getProfile(userId);
+  const profile = await getProfileByUsername(username);
   if (!profile) {
     return <div className="text-center py-12">User not found</div>;
   }
+
+  const userId = profile.id;
+  const isOwner = currentUser?.id === userId;
 
   const causes = await getUserCauses(userId).then((causes) =>
     causes.filter((cause) => cause.status === "approved")

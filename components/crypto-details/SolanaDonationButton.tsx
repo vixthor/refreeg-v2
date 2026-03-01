@@ -23,6 +23,7 @@ declare global {
     solana?: {
       isPhantom?: boolean;
       connect: () => Promise<{ publicKey: PublicKey }>;
+      disconnect: () => Promise<void>;
       signAndSendTransaction: (
         transaction: Transaction
       ) => Promise<{ signature: string }>;

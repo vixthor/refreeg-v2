@@ -8,7 +8,6 @@ import { KycVerification, KycStatus } from "@/types/kyc-types";
 export function useKyc(userId: string | undefined) {
   const queryClient = useQueryClient();
 
-  // Fetch KYC verification record
   const {
     data: kycVerification,
     isLoading,
@@ -19,7 +18,6 @@ export function useKyc(userId: string | undefined) {
     enabled: !!userId,
   });
 
-  // Update KYC status
   const updateKycMutation = useMutation({
     mutationFn: ({
       verificationId,
@@ -27,7 +25,7 @@ export function useKyc(userId: string | undefined) {
       notes,
     }: {
       verificationId: string;
-      status: KycStatus; // "approved" | "rejected"
+      status: KycStatus;
       notes?: string;
     }) => updateKycStatus(verificationId, status, notes),
     onSuccess: () => {
@@ -49,7 +47,7 @@ export function useKyc(userId: string | undefined) {
   });
 
   return {
-    kycVerification, // full record: id, status, notes, timestamps, etc.
+    kycVerification,
     isVerified: kycVerification?.status === "approved",
     isLoading,
     error: error as string | null,

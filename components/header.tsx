@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -15,32 +15,27 @@ import {
   X,
   Megaphone,
   FileText,
-  Info,
   LogOut,
-  HeartHandshake,
   Users,
-  Globe,
-  BookOpen,
-  Lightbulb,
-  Target,
   CircleDollarSign,
+  Target,
   TargetIcon,
-  Heart,
+  Lightbulb,
+  HelpCircle,
+  Star,
+  HandHeart,
+  Home,
+  Settings,
+  Wallet,
+  Share2,
   BarChart3,
   Shield,
+  UserCog,
+  ClipboardCheckIcon,
   Book,
-  Star,
-  Rocket,
-  HelpCircle,
-  Calendar,
-  MapPin,
   Users2,
-  Globe2,
   LightbulbIcon,
-  Search,
-  Sparkles,
-  PlayCircle,
-  HandHeart,
+  Heart,
 } from "lucide-react";
 import {
   Navbar,
@@ -54,7 +49,6 @@ import {
   Button as HeroButton,
 } from "@heroui/react";
 
-// Define types for navigation items
 interface NavLink {
   title: string;
   type: "link";
@@ -77,13 +71,30 @@ interface NavDropdown {
 type NavItem = NavLink | NavDropdown;
 
 export function Header() {
+  const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   const pathname = usePathname();
   const { user, isLoading, signOut } = useAuth();
   const { isAdminOrManager } = useAdmin(user?.id);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [isSigningOut, setIsSigningOut] = useState(false);
 
-  const navItems: NavItem[] = [
+  const isDashboardRoute = pathname.startsWith("/dashboard");
+
+  useEffect(() => {
+    if (isMenuOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [isMenuOpen]);
+
+  const publicNavItems: NavItem[] = [
     {
       title: "Explore Causes",
       href: "/causes",
@@ -102,26 +113,28 @@ export function Header() {
           href: "/businesses",
           icon: CircleDollarSign,
         },
-        { 
-          title: "🤝 RefreeG for Nonprofits", 
-          description: "Raise more, reach more. Build trust with transparent fundraising tools designed to help nonprofits thrive and grow their donor communities.", 
-          href: "/non-profits", 
-          icon: Target 
+        {
+          title: "🤝 RefreeG for Nonprofits",
+          description:
+            "Raise more, reach more. Build trust with transparent fundraising tools designed to help nonprofits thrive and grow their donor communities.",
+          href: "/non-profits",
+          icon: Target,
         },
         {
           title: "🌪️ RefreeG for Disaster Relief",
           description:
-            "Respond faster when it matters most. Rally urgent support for communities hit by disasters and get aid to those who need it — quickly and securely.",
+            "Rally urgent support for communities hit by disasters and get aid to those who need it; quickly and securely.",
           href: "/disaster-relief",
           icon: FileText,
         },
-        {
-          title: "🎨 RefreeG for Creators",
-          description:
-            "Turn your influence into impact. Get your unique tag, share your story, and receive donations directly from your fans — in fiat or crypto.",
-          href: "/creators",
-          icon: FileText,
-        },
+        // NOT ACCURATE TO DESIGN; CHECK DESKTOP AND MOBILE VIEW - HASSAN
+        // {
+        //   title: "🎨 RefreeG for Creators",
+        //   description:
+        //     "Turn your influence into impact. Get your unique tag, share your story, and receive donations directly from your fans in fiat or crypto.",
+        //   href: "/creators",
+        //   icon: FileText,
+        // },
         {
           title: "🏥 RefreeG for Healthcare",
           description:
@@ -141,22 +154,8 @@ export function Header() {
           title: "⭐ How to start a cause",
           description:
             "Starting causes is easy, and fast because of the intuitive user experience Refreeg is built on. Set up causes in less than 3 minutes!",
-          href: "/crowdfund/medical",
+          href: "/dashboard/causes/create",
           icon: Star,
-        },
-        {
-          title: "🚀 Crowdfunding tips",
-          description:
-            "Raise more, reach more. Build trust with transparent fundraising tools.",
-          href: "/crowdfund/education",
-          icon: Rocket,
-        },
-        {
-          title: "📢 For Supporters",
-          description:
-            "See how to discover causes, donate securely in fiat or crypto, and follow progress transparently.",
-          href: "/crowdfund/community",
-          icon: Users,
         },
         {
           title: "💸 Fees & Payouts",
@@ -166,17 +165,10 @@ export function Header() {
           icon: CircleDollarSign,
         },
         {
-          title: "🛡️ Trust & Safety",
-          description:
-            "Read about our fraud checks, KYC verification, and commitment to protecting both donors and cause.",
-          href: "/crowdfund/trust",
-          icon: Shield,
-        },
-        {
           title: "📣 FAQ",
           description:
             "Get answers to the most common questions about crowdfunding on RefreeG.",
-          href: "/crowdfund/faq",
+          href: "/#faq",
           icon: HelpCircle,
         },
       ],
@@ -193,47 +185,129 @@ export function Header() {
           href: "/about-us/OurMission",
           icon: TargetIcon,
         },
-        {
-          title: "📢Our Story",
-          description:
-            "Raise more, reach more. Build trust with transparent fundraising tools.",
-          href: "/about-us/OurStory",
-          icon: Book,
-        },
-        {
-          title: "🔨Our Impact",
-          description:
-            "See how to discover causes, donate securely in fiat or crypto, and follow progress transparently.",
-          href: "/about-us/OurImpact",
-          icon: BarChart3,
-        },
-        {
-          title: "🧑‍🤝‍🧑Who Are We Made By",
-          description:
-            "Clear explanation of transaction fees, payout timelines, and how creators/nonprofits access their funds.",
-          href: "/about-us/OurTeam",
-          icon: Users2,
-        },
-        {
-          title: "💡 What We Do",
-          description:
-            "Read about our fraud checks, KYC verification, and commitment to protecting both donors and cause.",
-          href: "/about-us/WhatWeDo",
-          icon: LightbulbIcon,
-        },
-        {
-          title: "📣FAQ",
-          description:
-            "Get answers to the most common questions about crowdfunding on RefreeG.",
-          href: "/about-us/faq",
-          icon: Heart,
-        },
+
+        // DON'T UNCOMMENT THIS, THE PAGES ARE NOT INCOMPLETE. - HASSAN
+        // {
+        //   title: "📢Our Story",
+        //   description:
+        //     "Raise more, reach more. Build trust with transparent fundraising tools.",
+        //   href: "/about-us/OurStory",
+        //   icon: Book,
+        // },
+        // {
+        //   title: "🔨Our Impact",
+        //   description:
+        //     "See how to discover causes, donate securely in fiat or crypto, and follow progress transparently.",
+        //   href: "/about-us/OurImpact",
+        //   icon: BarChart3,
+        // },
+        // {
+        //   title: "🧑‍🤝‍🧑Who Are We Made By",
+        //   description:
+        //     "Clear explanation of transaction fees, payout timelines, and how creators/nonprofits access their funds.",
+        //   href: "/about-us/OurTeam",
+        //   icon: Users2,
+        // },
+        // {
+        //   title: "💡 What We Do",
+        //   description:
+        //     "Read about our fraud checks, KYC verification, and commitment to protecting both donors and cause.",
+        //   href: "/about-us/WhatWeDo",
+        //   icon: LightbulbIcon,
+        // },
+        // {
+        //   title: "📣FAQ",
+        //   description:
+        //     "Get answers to the most common questions about crowdfunding on RefreeG.",
+        //   href: "/about-us/faq",
+        //   icon: Heart,
+        // },
       ],
+    },
+  ];
+
+  const userDashboardItems = [
+    {
+      title: "Overview",
+      href: "/dashboard",
+      icon: Home,
+    },
+    {
+      title: "My Causes",
+      href: "/dashboard/causes",
+      icon: FileText,
+    },
+    {
+      title: "My Petitions",
+      href: "/dashboard/petitions",
+      icon: FileText,
+    },
+    {
+      title: "My Donations",
+      href: "/dashboard/donations",
+      icon: Users,
+    },
+    {
+      title: "Crypto Wallet",
+      href: "/dashboard/crypto",
+      icon: Wallet,
+    },
+    {
+      title: "Settings",
+      href: "/dashboard/settings",
+      icon: Settings,
+    },
+    {
+      title: "Referrals",
+      href: "/referrals",
+      icon: Share2,
+    },
+  ];
+
+  const adminDashboardItems = [
+    {
+      title: "Manage Causes",
+      href: "/dashboard/admin/causes",
+      icon: FileText,
+    },
+    {
+      title: "Manage Petitions",
+      href: "/dashboard/admin/petitions",
+      icon: FileText,
+    },
+    {
+      title: "Manage Users",
+      href: "/dashboard/admin/users",
+      icon: UserCog,
+    },
+    {
+      title: "Analytics",
+      href: "/dashboard/admin/analytics",
+      icon: BarChart3,
+    },
+    {
+      title: "Logs",
+      href: "/dashboard/admin/logs",
+      icon: ClipboardCheckIcon,
     },
   ];
 
   const toggleDropdown = (title: string) => {
     setOpenDropdown(openDropdown === title ? null : title);
+  };
+
+  const openMenu = (title: string) => {
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current);
+      closeTimeoutRef.current = null;
+    }
+    setOpenDropdown(title);
+  };
+
+  const scheduleCloseMenu = () => {
+    closeTimeoutRef.current = setTimeout(() => {
+      setOpenDropdown(null);
+    }, 200); // 👈 adjust delay (150–300ms is ideal)
   };
 
   return (
@@ -244,15 +318,13 @@ export function Header() {
           className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-2 md:p-4"
         >
           <div className="flex items-center justify-between w-full">
-            {/* Left: Logo + Desktop Nav */}
             <div className="flex items-center gap-4">
               <NavbarBrand>
                 <Logo />
               </NavbarBrand>
 
-              {/* Desktop Navigation */}
               <div className="hidden md:flex gap-0 items-center">
-                {navItems.map((item) => {
+                {publicNavItems.map((item) => {
                   if (item.type === "link") {
                     return (
                       <NavbarItem
@@ -274,66 +346,67 @@ export function Header() {
                   } else {
                     return (
                       <NavbarItem key={item.title}>
-                        <Dropdown>
-                          <DropdownTrigger>
-                            <HeroButton
-                              variant="light"
-                              className="text-sm items-center font-medium text-muted-foreground hover:text-secondary hover:bg-gray-100 px-3 py-2 rounded-md transition-all duration-200 group"
-                              endContent={
-                                <ChevronDown className="text-small transition-transform duration-200 group-hover:rotate-180" />
-                              }
-                            >
-                              {item.title}
-                            </HeroButton>
-                          </DropdownTrigger>
-                          <DropdownMenu
-                            aria-label={item.title}
-                            className="bg-white shadow-xl rounded-lg w-3/5 border border-gray-100"
+                        <div
+                          key={item.title}
+                          className="relative"
+                          onMouseEnter={() => openMenu(item.title)}
+                          onMouseLeave={scheduleCloseMenu}
+                        >
+                          <HeroButton
+                            variant="light"
+                            className={`text-sm items-center font-medium text-muted-foreground hover:text-secondary hover:bg-gray-100 px-3 py-2 rounded-md transition-all duration-200 group ${
+                              openDropdown === item.title
+                                ? "bg-gray-100 text-secondary"
+                                : ""
+                            }`}
+                            endContent={
+                              <ChevronDown
+                                className={`text-small transition-transform duration-200 ${
+                                  openDropdown === item.title
+                                    ? "rotate-180 text-secondary"
+                                    : ""
+                                }`}
+                              />
+                            }
                           >
-                            <DropdownSection
-                              title={
-                                <div className="flex items-center gap-2">
-                                  <div className="p-3 border border-1 bg-[#E8E8E8] rounded-full">
-                                    <item.icon className="h-6 w-6" />
-                                  </div>
-                                  {item.header}
-                                </div>
-                              }
-                              classNames={{
-                                heading:
-                                  "font-semibold text-sm text-foreground px-4 py-3 flex items-center gap-2",
-                              }}
-                              showDivider
+                            {item.title}
+                          </HeroButton>
+
+                          {/* Dropdown on hover */}
+                          {openDropdown === item.title && (
+                            <div
+                              onMouseEnter={() => openMenu(item.title)}
+                              onMouseLeave={scheduleCloseMenu}
+                              className={`absolute top-full mt-2 bg-white shadow-xl rounded-lg border border-gray-100 z-50 animate-in fade-in-50 slide-in-from-top-1 duration-150
+                                ${item.title.includes("About") ? "right-0 left-auto" : "left-0"}
+                                max-w-[90vw] overflow-hidden`}
                             >
-                              {item.items.map((dropdownItem) => {
-                                const DropdownIcon = dropdownItem.icon;
-                                return (
-                                  <DropdownItem
+                              <div className="p-3 font-semibold text-sm text-foreground border-b">
+                                {item.header}
+                              </div>
+                              <div className="p-2">
+                                {item.items.map((dropdownItem) => (
+                                  <Link
                                     key={dropdownItem.href}
-                                    className="py-3 px-4 transition-all duration-200 hover:bg-blue-50 hover:border-l-4 hover:border-l-blue-500 cursor-pointer"
-                                    textValue={dropdownItem.title}
+                                    href={dropdownItem.href}
+                                    className="flex items-start gap-3 py-3 px-4 rounded-md transition-all duration-200 hover:bg-blue-50 hover:border-l-4 hover:border-l-blue-500"
                                   >
-                                    <Link
-                                      href={dropdownItem.href}
-                                      className="flex items-start gap-3 w-full group"
-                                    >
-                                      {/* <DropdownIcon className="h-5 w-5 text-gray-400 mt-0.5 flex-shrink-0 group-hover:text-blue-600 transition-colors" /> */}
-                                      <div className="flex-1">
-                                        <p className="font-medium text-sm group-hover:text-blue-700 transition-colors">
-                                          {dropdownItem.title}
-                                        </p>
-                                        <p className="text-xs text-muted-foreground mt-1 group-hover:text-gray-600 transition-colors">
-                                          {dropdownItem.description}
-                                        </p>
-                                      </div>
-                                      <ChevronDown className="h-4 w-4 text-transparent group-hover:text-blue-400 -rotate-90 transition-all" />
-                                    </Link>
-                                  </DropdownItem>
-                                );
-                              })}
-                            </DropdownSection>
-                          </DropdownMenu>
-                        </Dropdown>
+                                    {/* optional icon */}
+                                    {/* <dropdownItem.icon className="h-5 w-5 text-gray-400 mt-0.5 flex-shrink-0 group-hover:text-blue-600 transition-colors" /> */}
+                                    <div className="flex-1">
+                                      <p className="font-medium text-sm text-gray-900 hover:text-blue-700">
+                                        {dropdownItem.title}
+                                      </p>
+                                      <p className="text-xs text-gray-500 mt-1">
+                                        {dropdownItem.description}
+                                      </p>
+                                    </div>
+                                  </Link>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       </NavbarItem>
                     );
                   }
@@ -341,33 +414,88 @@ export function Header() {
               </div>
             </div>
 
-            {/* Right Side Actions */}
             <div className="flex items-center gap-2">
-              <div className="hidden md:flex items-center gap-2">
-                <Link href="/dashboard/causes/create">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex items-center gap-2"
-                  >
-                    
-                    List a Cause
-                  </Button>
-                </Link>       
-              </div>
+              {(() => {
+                const themeMap: Record<
+                  string,
+                  {
+                    border: string;
+                    text: string;
+                    hoverBg: string;
+                    bg: string;
+                    hoverText: string;
+                  }
+                > = {
+                  "/non-profits": {
+                    border: "border-[#7D568A]",
+                    text: "text-[#7D568A]",
+                    hoverBg: "hover:bg-[#7D568A]",
+                    hoverText: "hover:text-white",
+                    bg: "bg-[#7D568A]",
+                  },
+                  "/businesses": {
+                    border: "border-[#008B73]",
+                    text: "text-[#008B73]",
+                    hoverBg: "hover:bg-[#008B73]",
+                    hoverText: "hover:text-white",
+                    bg: "bg-[#008B73]",
+                  },
+                  "/healthcare": {
+                    border: "border-[#C03744]",
+                    text: "text-[#C03744]",
+                    hoverBg: "hover:bg-[#C03744]",
+                    hoverText: "hover:text-white",
+                    bg: "bg-[#C03744]",
+                  },
+                  "/disaster-relief": {
+                    border: "border-[#151314]",
+                    text: "text-[#151314]",
+                    hoverBg: "hover:bg-[#151314]",
+                    hoverText: "hover:text-white",
+                    bg: "bg-[#151314]",
+                  },
+                  "/creators": {
+                    border: "border-[#0070E0]",
+                    text: "text-[#0070E0]",
+                    hoverBg: "hover:bg-[#0070E0]",
+                    hoverText: "hover:text-white",
+                    bg: "bg-[#0070E0]",
+                  },
+                };
 
-              {/* Auth */}
-              {!isLoading && !user ? (
-                <Link href="/auth/signin">
-                  <Button size="sm" variant="default">
-                    Sign In
-                  </Button>
-                </Link>
-              ) : (
-                <UserNav />
-              )}
+                const theme = themeMap[pathname] || {
+                  border: "border-secondary",
+                  text: "text-secondary",
+                  hoverBg: "hover:bg-secondary",
+                  hoverText: "hover:text-white",
+                  bg: "bg-secondary",
+                };
 
-              {/* Mobile Toggle */}
+                return (
+                  <>
+                    <Link href="/dashboard/causes/create">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className={`flex items-center gap-2 border-2 ${theme.border} ${theme.text} ${theme.hoverBg} ${theme.hoverText} transition-colors`}
+                      >
+                        List a Cause
+                      </Button>
+                    </Link>
+
+                    {!isLoading && !user ? (
+                      <Link href="/auth/signin">
+                        <Button size="sm" variant="default">
+                          Sign In
+                        </Button>
+                      </Link>
+                    ) : (
+                      <UserNav />
+                    )}
+                  </>
+                );
+              })()}
+
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
                 className="p-2 text-foreground hover:bg-gray-100 rounded-md transition-colors md:hidden"
@@ -383,12 +511,11 @@ export function Header() {
           </div>
         </Navbar>
 
-        {/* Mobile Menu */}
         <div
           className={`md:hidden fixed top-[64px] left-0 right-0 bottom-0
-    bg-background/70 
+    bg-background/95 
     backdrop-blur-md 
-    supports-[backdrop-filter]:bg-background/60 
+    supports-[backdrop-filter]:bg-background/90 
     border-b shadow-lg z-40 transition-all duration-300 ease-in-out
     ${
       isMenuOpen
@@ -397,186 +524,215 @@ export function Header() {
     }
   `}
         >
-          <div className="container py-6 space-y-4 max-h-[calc(100vh-64px)] overflow-y-auto">
-            {/* Main Nav */}
-            <div className="space-y-1">
-              {navItems.map((item) => {
-                if (item.type === "link") {
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      className={`flex items-center py-3 px-2 text-foreground hover:text-blue-600 hover:bg-blue-600/5 rounded-md transition-all duration-200 ${
-                        pathname === item.href
-                          ? "text-blue-600 font-medium bg-blue-600/10"
-                          : ""
-                      }`}
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      {item.title}
-                    </Link>
-                  );
-                } else {
-                  return (
-                    <div key={item.title} className="border-t pt-4">
-                      <button
-                        className="w-full flex justify-between items-center py-3 px-2 text-foreground font-medium hover:bg-blue-600/5 rounded-md transition-colors"
-                        onClick={() => toggleDropdown(item.title)}
-                      >
-                        {item.title}
-                        <ChevronDown
-                          className={`h-4 w-4 transition-transform duration-200 ${
-                            openDropdown === item.title
-                              ? "rotate-180"
-                              : "rotate-0"
-                          }`}
-                        />
-                      </button>
-                      <div
-                        className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                          openDropdown === item.title
-                            ? "max-h-96 opacity-100"
-                            : "max-h-0 opacity-0"
-                        }`}
-                      >
-                        {/* Mobile Dropdown Header with Icon */}
-                        <div className="ml-4 mt-2 mb-3 flex items-center gap-2 px-3 py-2 bg-blue-50 rounded-md">
-                          <item.icon className="h-4 w-4 text-blue-600" />
-                          <span className="text-sm font-medium text-blue-800">
-                            {item.header}
-                          </span>
-                        </div>
-
-                        <div className="ml-4 space-y-3">
-                          {item.items.map((subItem) => {
-                            const Icon = subItem.icon;
-                            return (
-                              <Link
-                                key={subItem.href}
-                                href={subItem.href}
-                                className="block py-2 px-3 text-sm hover:text-blue-600 hover:bg-blue-600/5 rounded-md transition-all duration-200"
-                                onClick={() => {
-                                  setIsMenuOpen(false);
-                                  setOpenDropdown(null);
-                                }}
-                              >
-                                <div className="flex items-start gap-2">
-                                  <Icon className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
-                                  <div>
-                                    <p className="font-medium">
-                                      {subItem.title}
-                                    </p>
-                                    <p className="text-muted-foreground text-xs mt-1">
-                                      {subItem.description}
-                                    </p>
-                                  </div>
-                                </div>
-                              </Link>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                }
-              })}
-            </div>
-
-            {/* Actions */}
-            <div className="border-t pt-4 space-y-2">
-              <Link
-                href="/dashboard/causes/create"
-                className="flex items-center gap-3 py-3 px-2 text-foreground hover:text-blue-600 rounded-md transition-colors font-medium"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                <Megaphone className="h-4 w-4" />
-                List a Cause
-              </Link>
-
-              <Link
-                href="/dashboard/petitions/create"
-                className="flex items-center gap-3 py-3 px-2 text-foreground hover:text-blue-600 rounded-md transition-colors font-medium"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                <FileText className="h-4 w-4" />
-                Create a Petition
-              </Link>
-
-              {!isLoading && user && (
-                <Link
-                  href="/dashboard"
-                  className="flex items-center gap-3 py-3 px-2 text-foreground hover:text-blue-600 rounded-md transition-colors font-medium"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  <LayoutDashboard className="h-4 w-4" />
-                  Dashboard
-                </Link>
-              )}
-
-              {!isLoading && user && (
-                <button
-                  onClick={() => {
-                    signOut?.();
-                    setIsMenuOpen(false);
-                  }}
-                  className="flex items-center gap-3 w-full py-3 px-2 text-foreground hover:text-red-600 rounded-md transition-colors font-medium"
-                >
-                  <LogOut className="h-4 w-4" />
-                  Sign Out
-                </button>
-              )}
-            </div>
-
-            {/* Admin Links */}
-            {isAdminOrManager && (
-              <div className="border-t pt-4">
-                <div className="py-2 px-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Admin
-                </div>
-                <div className="space-y-1">
-                  {[
-                    {
-                      href: "/dashboard/admin/causes",
-                      title: "Manage Causes",
-                      icon: Megaphone,
-                    },
-                    {
-                      href: "/dashboard/admin/petitions",
-                      title: "Manage Petitions",
-                      icon: FileText,
-                    },
-                    {
-                      href: "/dashboard/admin/users",
-                      title: "Manage Users",
-                      icon: Users,
-                    },
-                    {
-                      href: "/dashboard/admin/analytics",
-                      title: "Analytics",
-                      icon: BarChart3,
-                    },
-                    {
-                      href: "/dashboard/admin/logs",
-                      title: "Logs",
-                      icon: Book,
-                    },
-                  ].map((adminItem) => {
-                    const AdminIcon = adminItem.icon;
+          <div className="h-full overflow-y-auto overscroll-contain">
+            <div className="container py-6 space-y-4">
+              {!isLoading && user && isDashboardRoute && (
+                <div className="space-y-1 pb-4 border-b">
+                  <div className="py-2 px-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    Dashboard
+                  </div>
+                  {userDashboardItems.map((item) => {
+                    const Icon = item.icon;
                     return (
                       <Link
-                        key={adminItem.href}
-                        href={adminItem.href}
-                        className="flex items-center gap-3 py-2 px-2 text-sm text-foreground hover:text-blue-600 hover:bg-blue-600/5 rounded-md transition-colors"
+                        key={item.href}
+                        href={item.href}
+                        className={`flex items-center gap-3 py-3 px-2 text-foreground hover:text-blue-600 hover:bg-blue-600/5 rounded-md transition-all duration-200 ${
+                          pathname === item.href ||
+                          pathname.startsWith(`${item.href}/`)
+                            ? "text-blue-600 font-medium bg-blue-600/10"
+                            : ""
+                        }`}
                         onClick={() => setIsMenuOpen(false)}
                       >
-                        <AdminIcon className="h-4 w-4" />
-                        {adminItem.title}
+                        <Icon className="h-4 w-4" />
+                        {item.title}
                       </Link>
                     );
                   })}
+
+                  {/* Admin Section */}
+                  {isAdminOrManager && (
+                    <div className="pt-4 border-t mt-4">
+                      <div className="py-2 px-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                        <Shield className="h-3 w-3" />
+                        Admin
+                      </div>
+                      {adminDashboardItems.map((item) => {
+                        const Icon = item.icon;
+                        return (
+                          <Link
+                            key={item.href}
+                            href={item.href}
+                            className={`flex items-center gap-3 py-3 px-2 text-foreground hover:text-blue-600 hover:bg-blue-600/5 rounded-md transition-all duration-200 ${
+                              pathname === item.href ||
+                              pathname.startsWith(`${item.href}/`)
+                                ? "text-blue-600 font-medium bg-blue-600/10"
+                                : ""
+                            }`}
+                            onClick={() => setIsMenuOpen(false)}
+                          >
+                            <Icon className="h-4 w-4" />
+                            {item.title}
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
+              )}
+
+              <div className="space-y-1">
+                <div className="py-2 px-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Explore
+                </div>
+                {publicNavItems.map((item) => {
+                  if (item.type === "link") {
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        className={`flex items-center py-3 px-2 text-foreground hover:text-blue-600 hover:bg-blue-600/5 rounded-md transition-all duration-200 ${
+                          pathname === item.href
+                            ? "text-blue-600 font-medium bg-blue-600/10"
+                            : ""
+                        }`}
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        {item.title}
+                      </Link>
+                    );
+                  } else {
+                    return (
+                      <div key={item.title} className="border-t pt-4">
+                        <button
+                          className="w-full flex justify-between items-center py-3 px-2 text-foreground font-medium hover:bg-blue-600/5 rounded-md transition-colors"
+                          onClick={() => toggleDropdown(item.title)}
+                        >
+                          {item.title}
+                          <ChevronDown
+                            className={`h-4 w-4 transition-transform duration-200 ${
+                              openDropdown === item.title
+                                ? "rotate-180"
+                                : "rotate-0"
+                            }`}
+                          />
+                        </button>
+
+                        <div
+                          className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                            openDropdown === item.title
+                              ? "max-h-[600px] opacity-100"
+                              : "max-h-0 opacity-0"
+                          }`}
+                        >
+                          <div className="ml-4 mt-2 mb-3 flex items-center gap-2 px-3 py-2 bg-blue-50 rounded-md">
+                            <item.icon className="h-4 w-4 text-blue-600" />
+                            <span className="text-sm font-medium text-blue-800">
+                              {item.header}
+                            </span>
+                          </div>
+
+                          <div className="ml-4 space-y-3 max-h-[400px] overflow-y-auto overscroll-contain pr-2">
+                            {item.items.map((subItem) => {
+                              const Icon = subItem.icon;
+                              return (
+                                <Link
+                                  key={subItem.href}
+                                  href={subItem.href}
+                                  className="block py-2 px-3 text-sm hover:text-blue-600 hover:bg-blue-600/5 rounded-md transition-all duration-200"
+                                  onClick={() => {
+                                    setIsMenuOpen(false);
+                                    setOpenDropdown(null);
+                                  }}
+                                >
+                                  <div className="flex items-start gap-2">
+                                    <Icon className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                                    <div>
+                                      <p className="font-medium">
+                                        {subItem.title}
+                                      </p>
+                                      <p className="text-muted-foreground text-xs mt-1">
+                                        {subItem.description}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </Link>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
+                })}
               </div>
-            )}
+
+              <div className="border-t pt-4 space-y-2">
+                <div className="py-2 px-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Quick Actions
+                </div>
+                <Link
+                  href="/dashboard/causes/create"
+                  className="flex items-center gap-3 py-3 px-2 text-foreground hover:text-blue-600 rounded-md transition-colors font-medium"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <Megaphone className="h-4 w-4" />
+                  List a Cause
+                </Link>
+
+                <Link
+                  href="/dashboard/petitions/create"
+                  className="flex items-center gap-3 py-3 px-2 text-foreground hover:text-blue-600 rounded-md transition-colors font-medium"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <FileText className="h-4 w-4" />
+                  Create a Petition
+                </Link>
+
+                {!isLoading && user && !isDashboardRoute && (
+                  <Link
+                    href="/dashboard"
+                    className="flex items-center gap-3 py-3 px-2 text-foreground hover:text-blue-600 rounded-md transition-colors font-medium"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <LayoutDashboard className="h-4 w-4" />
+                    Go to Dashboard
+                  </Link>
+                )}
+
+                {!isLoading && user && (
+                  <button
+                    onClick={async () => {
+                      if (isSigningOut) return;
+
+                      try {
+                        setIsSigningOut(true);
+                        setIsMenuOpen(false);
+                        if (signOut) {
+                          await signOut();
+                        }
+                      } catch (error) {
+                        console.error("Error signing out:", error);
+                        setIsSigningOut(false);
+                      }
+                    }}
+                    disabled={isSigningOut}
+                    className="flex items-center gap-3 w-full py-3 px-2 text-foreground hover:text-red-600 rounded-md transition-colors font-medium disabled:opacity-50"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    {isSigningOut ? (
+                      <span className="flex items-center gap-2">
+                        <span className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                        Signing out...
+                      </span>
+                    ) : (
+                      "Sign Out"
+                    )}
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>

@@ -4,41 +4,41 @@ import { FC } from "react";
 import { blogs } from "@/lib/blog";
 
 interface FeatureCardProps {
-    imageSrc: string;
-    title: string;
-    description: string;
-    linkHref: string;
-  }
-  
-export const FeatureCard: FC<FeatureCardProps> = ({
-    imageSrc,
-    title,
-    description,
-    linkHref,
-}) => (
-    <Link href={linkHref}>
-        <div className="flex w-[350px] flex-col space-y-2 transform transition-transform duration-300 hover:scale-105 hover:shadow-lg hover:bg-slate-50 pb-5 hover:rounded-xl p-4 cursor-pointer">
-          <Image
-            src={imageSrc}
-            alt="icon"
-            width={350}
-            height={350}
-            className="mr-auto object-cover"
-          />
+  imageSrc: string;
+  title: string;
+  description: string;
+  linkHref: string;
+}
 
-          <h2 className="text-xl md:text-2xl font-medium">{title}</h2>
-          <p className="text-base md:text-lg">{description}</p>
-          <div className="flex font-medium hover:text-blue-800 hover:underline transition duration-500 ease-in-out transform items-center">
-              Read more
-              <Image
-              src={"/images/arrow-right.png"}
-              alt="icon"
-              width={25}
-              height={25}
-              />
-          </div>
-        </div>
-    </Link>
+export const FeatureCard: FC<FeatureCardProps> = ({
+  imageSrc,
+  title,
+  description,
+  linkHref,
+}) => (
+  <Link href={linkHref}>
+    <div className="flex w-[350px] flex-col space-y-2 transform transition-transform duration-300 hover:scale-105 hover:shadow-lg hover:bg-slate-50 pb-5 hover:rounded-xl p-4 cursor-pointer">
+      <Image
+        src={imageSrc}
+        alt="icon"
+        width={350}
+        height={350}
+        className="mr-auto object-cover"
+      />
+
+      <h2 className="text-xl md:text-2xl font-medium">{title}</h2>
+      <p className="text-base md:text-lg">{description}</p>
+      <div className="flex font-medium hover:text-blue-800 hover:underline transition duration-500 ease-in-out transform items-center">
+        Read more
+        <Image
+          src={"/images/arrow-right.png"}
+          alt="icon"
+          width={25}
+          height={25}
+        />
+      </div>
+    </div>
+  </Link>
 );
 
 export const WhatDoWeFocusOn: FC = () => {
@@ -57,12 +57,14 @@ export const WhatDoWeFocusOn: FC = () => {
         </div>
         <div className="w-full py-6 flex flex-col md:flex-row overflow-x-auto scrollbar-hide space-y-6 md:space-y-0 md:space-x-6">
           {blogs
-            .filter(blog => [
-              "education-and-literacy",
-              "vocational-training",
-              "healthcare-support",
-              "gender-based-violence-support"
-            ].includes(blog.slug))
+            .filter((blog) =>
+              [
+                "education-and-literacy",
+                "vocational-training",
+                "healthcare-support",
+                "gender-based-violence-support",
+              ].includes(blog.slug)
+            )
             .map(({ slug, title, img, content }) => (
               <FeatureCard
                 key={slug}
@@ -71,10 +73,10 @@ export const WhatDoWeFocusOn: FC = () => {
                 description={stripHtml(content).slice(0, 120) + "..."}
                 linkHref={`${slug}`}
               />
-          ))}
+            ))}
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 export default WhatDoWeFocusOn;

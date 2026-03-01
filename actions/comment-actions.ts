@@ -15,12 +15,14 @@ export async function createComment(
       user_id: userId,
       content,
       parent_id: parentId || null,
-      is_edited: false
+      is_edited: false,
     })
-    .select(`
+    .select(
+      `
       *,
-      user:profiles(full_name, profile_photo)
-    `)
+      user:profiles(full_name, profile_photo, username)
+    `
+    )
     .single();
 
   if (error) throw error;
@@ -38,14 +40,16 @@ export async function updateComment(
     .update({
       content,
       is_edited: true,
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
     })
-    .eq('id', commentId)
-    .eq('user_id', userId)
-    .select(`
+    .eq("id", commentId)
+    .eq("user_id", userId)
+    .select(
+      `
       *,
-      user:profiles(full_name, profile_photo)
-    `)
+      user:profiles(full_name, profile_photo, username)
+    `
+    )
     .single();
 
   if (error) throw error;
@@ -57,14 +61,12 @@ export async function deleteComment(commentId: string, userId: string) {
   const { error } = await supabase
     .from("comments")
     .delete()
-    .eq('id', commentId)
-    .eq('user_id', userId);
+    .eq("id", commentId)
+    .eq("user_id", userId);
 
   if (error) throw error;
   return true;
 }
-
-// ... rest of the existing functions ...
 
 export async function listCommentsForCause(causeId: string) {
   const supabase = await createClient();
@@ -72,7 +74,7 @@ export async function listCommentsForCause(causeId: string) {
     .from("comments")
     .select(
       `*, 
-      user:profiles(full_name, profile_photo)`
+      user:profiles(full_name, profile_photo, username)`
     )
     .eq("cause_id", causeId)
     .is("parent_id", null)
@@ -80,7 +82,6 @@ export async function listCommentsForCause(causeId: string) {
 
   if (error) throw error;
 
-  // Get replies count for each comment
   const commentsWithReplies = await Promise.all(
     data.map(async (comment) => {
       const supabase = await createClient();
@@ -105,7 +106,7 @@ export async function listRepliesForComment(commentId: string) {
     .from("comments")
     .select(
       `*, 
-      user:profiles(full_name, profile_photo)`
+      user:profiles(full_name, profile_photo, username)`
     )
     .eq("parent_id", commentId)
     .order("created_at", { ascending: true });

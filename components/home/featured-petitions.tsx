@@ -29,18 +29,32 @@ export async function FeaturedPetitions() {
     (p) => (p.days_active ?? 0) > 0 && p.status !== ("expired" as any)
   );
 
-
-  // ✅ Fetch signers for each petition
   const petitionsWithSigners = await Promise.all(
     featuredPetitions.map(async (petition) => {
       const signers = await listSignaturesForPetition(petition.id);
-      const percentSigned = Math.min(
-        Math.round(((signers?.length || 0) / petition.goal) * 100),
+
+      const signerCount = signers?.length || 0;
+
+      const totalAmount = signers.reduce((sum, s) => sum + (s.amount || 0), 0);
+
+      const percentRaised = Math.min(
+        Math.round((totalAmount / petition.goal) * 100),
         100
       );
-      return { ...petition, signers, percentSigned };
+
+      return {
+        ...petition,
+        signers,
+        signerCount,
+        totalAmount,
+        percentRaised,
+      };
     })
   );
+
+  if (!featuredPetitions || featuredPetitions.length === 0) {
+    return <div></div>;
+  }
 
   return (
     <div className="space-y-10 relative py-12">
@@ -90,7 +104,7 @@ export async function FeaturedPetitions() {
                       <div className="flex justify-between items-center pt-2 text-xs">
                         <P>Sign Now</P>
                         <P>
-                          {petition.percentSigned}% •{" "}
+                          {petition.percentRaised}% •{" "}
                           {Number(petition.days_active || 0)} Days left
                         </P>
                       </div>
@@ -99,7 +113,7 @@ export async function FeaturedPetitions() {
                       <CardContent>
                         <div className="space-y-2">
                           <Progress
-                            value={petition.percentSigned}
+                            value={petition.percentRaised}
                             className="h-2 bg-muted"
                           />
                         </div>
@@ -107,7 +121,8 @@ export async function FeaturedPetitions() {
                       <CardFooter>
                         <div className="w-full flex justify-between">
                           <span className="flex flex-col">
-                            <H4>{petition.signers.length}</H4>
+                            <H4>{petition.totalAmount.toLocaleString()}</H4>
+
                             <P className="font-light">
                               Signed of {petition.goal?.toLocaleString()}
                             </P>
@@ -127,7 +142,7 @@ export async function FeaturedPetitions() {
       </Carousel>
 
       {/* View All Button */}
-      <div className="flex justify-center mt-6">
+      {/* <div className="flex justify-center mt-6">
         <Link href="/petitions">
           <Button
             variant="outline"
@@ -137,7 +152,7 @@ export async function FeaturedPetitions() {
             View More <ArrowRight />
           </Button>
         </Link>
-      </div>
+      </div> */}
     </div>
   );
 }

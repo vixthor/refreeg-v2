@@ -8,7 +8,6 @@ try {
   // ignore error
 }
 
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   eslint: {
@@ -21,22 +20,30 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname:
-          process.env.NODE_ENV === "development"
-            ? "eivlgwyipqojpeaxoajm.supabase.co"
-            : "gfrksuuzzaczlxcswgkw.supabase.co",
-        pathname: "/storage/v1/object/**",
+        hostname: "eivlgwyipqojpeaxoajm.supabase.co",
+        pathname: "/storage/v1/object/public/**",
+      },
+      {
+        protocol: "https",
+        hostname: "gfrksuuzzaczlxcswgkw.supabase.co",
+        pathname: "/storage/v1/object/public/**",
+      },
+      {
+        protocol: "https",
+        hostname: "lh3.googleusercontent.com",
       },
     ],
   },
+
   experimental: {
-    webpackBuildWorker: true,
-    parallelServerBuildTraces: true,
-    parallelServerCompiles: true,
+    webpackBuildWorker: false,
+    parallelServerBuildTraces: false,
+    parallelServerCompiles: false,
     serverActions: {
       bodySizeLimit: "100mb",
     },
   },
+
   webpack(config, { dev, isServer }) {
     // Aceternity UI may import CSS that requires MiniCssExtractPlugin in prod
     if (!dev && !isServer) {

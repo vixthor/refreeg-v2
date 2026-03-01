@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { type NextRequest, NextResponse } from "next/server";
+import { hasCompletedOnboarding } from "@/actions/profile-actions";
 
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
@@ -17,11 +18,44 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // If this is a password recovery, redirect to update password page
     if (type === "recovery") {
       return NextResponse.redirect(
         new URL("/auth/update-password", request.url)
       );
+    }
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (user) {
+      try {
+        await supabase
+          .from("referrals")
+          .update({
+            registered: true,
+            referee_id: user.id,
+          })
+          .eq("referee_email", (user.email || "").toLowerCase());
+      } catch (error) {
+        console.error("Error updating referral after verification:", error);
+      }
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .single();
+
+      if (!profile) {
+        return NextResponse.redirect(new URL("/onboarding", request.url));
+      }
+
+      const completedOnboarding = await hasCompletedOnboarding(user.id);
+
+      if (!completedOnboarding) {
+        return NextResponse.redirect(new URL("/onboarding", request.url));
+      }
     }
   }
 

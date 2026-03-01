@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useState, useEffect } from "react";
 import {
   BarChart3,
   FileText,
@@ -13,11 +14,12 @@ import {
   Shield,
   UserCog,
   ClipboardCheckIcon,
+  Wallet,
+  Share2,
 } from "lucide-react";
 import { useAdmin } from "@/hooks/use-admin";
 import { useAuth } from "@/hooks/use-auth";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useState } from "react";
 
 const userNavItems = [
   {
@@ -41,13 +43,22 @@ const userNavItems = [
     icon: Users,
   },
   {
+    title: "Crypto Wallet",
+    href: "/dashboard/crypto",
+    icon: Wallet,
+  },
+  {
     title: "Settings",
     href: "/dashboard/settings",
     icon: Settings,
   },
+  {
+    title: "Referrals",
+    href: "/referrals",
+    icon: Share2,
+  },
 ];
 
-// Admin-specific nav items
 const adminNavItems = [
   {
     title: "Manage Causes",
@@ -80,102 +91,79 @@ export function DashboardNav() {
   const pathname = usePathname();
   const { user } = useAuth();
   const { isAdminOrManager, isLoading } = useAdmin(user?.id);
-  const [open, setOpen] = useState(false);
+
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   if (isLoading) {
-    return (
-      <nav className="grid items-start gap-2 py-4">
-        {userNavItems.map((_, index) => (
-          <Skeleton key={index} className="h-10 w-full" />
-        ))}
-        <div className="my-2">
-          {/* <div className="mb-2 px-2 text-xs font-semibold tracking-tight flex items-center">
-            <Shield className="mr-1 h-3 w-3" />
-            Admin
-          </div> */}
-          {adminNavItems.map((_, index) => (
-            <Skeleton key={index} className="h-10 w-full" />
-          ))}
-        </div>
-      </nav>
-    );
+    // We only show skeletons for the admin part to prevent hydration mismatch
+    // The user nav items are static and should always render
   }
 
   return (
     <nav className="grid items-start gap-2 py-4">
-      {/* Mobile/Tablet hamburger toggle for dashboard nav */}
-      <div className="md:hidden flex justify-between items-center mb-2">
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label="Toggle dashboard menu"
-          onClick={() => setOpen(!open)}
-        >
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+      {userNavItems.map((item, index) => (
+        <Link key={index} href={item.href}>
+          <Button
+            variant={
+              pathname === item.href || pathname.startsWith(`${item.href}/`)
+                ? "secondary"
+                : "ghost"
+            }
+            className={cn(
+              "w-full justify-start",
+              pathname === item.href || pathname.startsWith(`${item.href}/`)
+                ? "bg-secondary hover:bg-secondary"
+                : "",
+            )}
           >
-            <line x1="3" y1="12" x2="21" y2="12"></line>
-            <line x1="3" y1="6" x2="21" y2="6"></line>
-            <line x1="3" y1="18" x2="21" y2="18"></line>
-          </svg>
-        </Button>
-      </div>
-      <div className={cn("md:block", open ? "block" : "hidden")}>
-        {userNavItems.map((item, index) => (
-          <Link key={index} href={item.href}>
-            <Button
-              variant={pathname === item.href ? "secondary" : "ghost"}
-              className={cn(
-                "w-full justify-start",
-                pathname === item.href ? "bg-secondary hover:bg-secondary" : ""
-              )}
-            >
-              <item.icon className="mr-2 h-4 w-4" />
-              {item.title}
-            </Button>
-          </Link>
-        ))}
+            <item.icon className="mr-2 h-4 w-4" />
+            {item.title}
+          </Button>
+        </Link>
+      ))}
 
-        {!isLoading && isAdminOrManager && (
-          <>
-            <div className="my-2 grid items-start gap-2 ">
-              <div className="mb-2 px-2 text-xs font-semibold tracking-tight flex items-center">
-                <Shield className="mr-1 h-3 w-3" />
-                Admin
-              </div>
-              {adminNavItems.map((item, index) => (
-                <Link key={index} href={item.href}>
-                  <Button
-                    variant={
-                      pathname === item.href ||
-                      pathname.startsWith(`${item.href}/`)
-                        ? "secondary"
-                        : "ghost"
-                    }
-                    className={cn(
-                      "w-full justify-start",
-                      pathname === item.href ||
-                        pathname.startsWith(`${item.href}/`)
-                        ? "bg-secondary hover:bg-secondary"
-                        : ""
-                    )}
-                  >
-                    <item.icon className="mr-2 h-4 w-4" />
-                    {item.title}
-                  </Button>
-                </Link>
-              ))}
+      {mounted && isLoading ? (
+        <div className="my-2">
+          {adminNavItems.map((_, index) => (
+            <Skeleton key={index} className="h-10 w-full mb-2" />
+          ))}
+        </div>
+      ) : mounted && isAdminOrManager ? (
+        <>
+          <div className="my-2 grid items-start gap-2">
+            <div className="mb-2 px-2 text-xs font-semibold tracking-tight flex items-center">
+              <Shield className="mr-1 h-3 w-3" />
+              Admin
             </div>
-          </>
-        )}
-      </div>
+            {adminNavItems.map((item, index) => (
+              <Link key={index} href={item.href}>
+                <Button
+                  variant={
+                    pathname === item.href ||
+                    pathname.startsWith(`${item.href}/`)
+                      ? "secondary"
+                      : "ghost"
+                  }
+                  className={cn(
+                    "w-full justify-start",
+                    pathname === item.href ||
+                      pathname.startsWith(`${item.href}/`)
+                      ? "bg-secondary hover:bg-secondary"
+                      : "",
+                  )}
+                >
+                  <item.icon className="mr-2 h-4 w-4" />
+                  {item.title}
+                </Button>
+              </Link>
+            ))}
+          </div>
+        </>
+      ) : null}
     </nav>
   );
 }

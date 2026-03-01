@@ -2,6 +2,7 @@
 
 import type React from "react";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -33,7 +34,10 @@ import { useCause } from "@/hooks/use-cause";
 import { Progress } from "@/components/ui/progress";
 import { ImageUpload } from "@/components/ui/image-upload";
 import { categories } from "@/lib/categories";
-import { sendCauseUnderReviewEmail } from "@/services/mail";
+import {
+  sendCauseUnderReviewEmail,
+  sendIncompleteCauseSetupEmail,
+} from "@/services/mail";
 import {
   format,
   addDays,
@@ -47,6 +51,7 @@ import { cn } from "@/lib/utils";
 import MultimediaCarousel from "@/components/MultimediaCarousel";
 
 const currencies = [{ id: "NGN", name: "Naira (₦)" }];
+const MAX_DURATION_DAYS = 180;
 
 type FormData = {
   title: string;
@@ -58,7 +63,7 @@ type FormData = {
   startDate: Date | undefined;
   endDate: Date | undefined;
   multimedia: File[];
-  videoLinks: string[]; // NEW
+  videoLinks: string[];
 };
 
 type FormErrors = {
@@ -82,7 +87,7 @@ type CauseFormData = {
   startDate: Date | undefined;
   endDate: Date | undefined;
   multimedia: File[];
-  video_links: string[]; // NEW
+  video_links: string[];
 };
 
 const validateForm = (formData: FormData): FormErrors => {
@@ -116,15 +121,14 @@ const validateForm = (formData: FormData): FormErrors => {
     errors.endDate = "End date is required";
   } else if (formData.startDate && formData.endDate) {
     const daysDiff = differenceInDays(formData.endDate, formData.startDate);
-    if (daysDiff > 60) {
-      errors.endDate = "Cause duration cannot exceed 60 days";
+    if (daysDiff > MAX_DURATION_DAYS) {
+      errors.endDate = `Cause duration cannot exceed ${MAX_DURATION_DAYS} days`;
     }
     if (daysDiff < 1) {
       errors.endDate = "End date must be after start date";
     }
   }
 
-  // Validate sections
   if (formData.sections && formData.sections.length > 0) {
     const sectionErrorsArray = formData.sections.map((section) => {
       const sectionErrors: { heading?: string; description?: string } = {};
@@ -135,14 +139,12 @@ const validateForm = (formData: FormData): FormErrors => {
       return sectionErrors;
     });
 
-    // Only add sections errors if there are actual errors
     if (sectionErrorsArray.some((err) => Object.keys(err).length > 0)) {
       errors.sections = sectionErrorsArray;
     }
   }
 
-  // Check total multimedia size
-  const MAX_TOTAL_SIZE = 100 * 1024 * 1024; // 100MB in bytes
+  const MAX_TOTAL_SIZE = 100 * 1024 * 1024;
   const totalSize =
     formData.multimedia && formData.multimedia.length > 0
       ? formData.multimedia.reduce((acc, file) => acc + file.size, 0)
@@ -157,6 +159,7 @@ const validateForm = (formData: FormData): FormErrors => {
 export default function CreateCauseForm() {
   const { user } = useAuth();
   const { isLoading, createCause } = useCause();
+  const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState<FormData>({
@@ -169,13 +172,12 @@ export default function CreateCauseForm() {
     startDate: undefined,
     endDate: undefined,
     multimedia: [],
-    videoLinks: [], // NEW
+    videoLinks: [],
   });
   const [errors, setErrors] = useState<FormErrors>({});
   const [videoLinkInput, setVideoLinkInput] = useState("");
   const [videoLinkError, setVideoLinkError] = useState<string | null>(null);
 
-  // Auto-save draft to localStorage
   useEffect(() => {
     const savedDraft = localStorage.getItem("causeDraft");
     if (savedDraft) {
@@ -190,13 +192,12 @@ export default function CreateCauseForm() {
           ? new Date(parsedDraft.endDate)
           : undefined,
         multimedia: [],
-        videoLinks: parsedDraft.videoLinks || [], // NEW
+        videoLinks: parsedDraft.videoLinks || [],
       }));
     }
   }, []);
 
   useEffect(() => {
-    // Don't save files to localStorage, and properly serialize dates
     const { coverImage, multimedia, ...dataToSave } = formData;
     const serializedData = {
       ...dataToSave,
@@ -208,10 +209,58 @@ export default function CreateCauseForm() {
     localStorage.setItem("causeDraft", JSON.stringify(serializedData));
   }, [formData]);
 
+  useEffect(() => {
+    let inactivityTimer: NodeJS.Timeout;
+
+    const setupInactivityTracking = () => {
+      const hasDraft = localStorage.getItem("causeDraft");
+      const hasStartedFilling =
+        formData.title || formData.category || formData.goal;
+
+      if (hasDraft || hasStartedFilling) {
+        const resetTimer = () => {
+          clearTimeout(inactivityTimer);
+          inactivityTimer = setTimeout(sendReminder, 24 * 60 * 60 * 1000);
+        };
+
+        const events = ["input", "change", "click", "keydown"];
+        events.forEach((event) => {
+          document.addEventListener(event, resetTimer, { passive: true });
+        });
+
+        resetTimer();
+
+        return () => {
+          clearTimeout(inactivityTimer);
+          events.forEach((event) => {
+            document.removeEventListener(event, resetTimer);
+          });
+        };
+      }
+    };
+
+    const sendReminder = async () => {
+      const currentDraft = localStorage.getItem("causeDraft");
+      if (currentDraft && user) {
+        try {
+          await sendIncompleteCauseSetupEmail({
+            continueUrl: `${window.location.origin}/dashboard/causes/create`,
+          });
+          console.log("Incomplete cause reminder sent");
+        } catch (error) {
+          console.error("Failed to send incomplete cause email:", error);
+        }
+      }
+    };
+
+    const cleanup = setupInactivityTracking();
+    return cleanup;
+  }, [formData.title, formData.category, formData.goal, user]);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    // Clear error when user starts typing
+
     if (errors[name as keyof FormErrors]) {
       setErrors((prev) => ({ ...prev, [name]: undefined }));
     }
@@ -219,7 +268,7 @@ export default function CreateCauseForm() {
 
   const handleSelectChange = (name: string, value: string) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
-    // Clear error when user makes a selection
+
     if (errors[name as keyof FormErrors]) {
       setErrors((prev) => ({ ...prev, [name]: undefined }));
     }
@@ -227,17 +276,17 @@ export default function CreateCauseForm() {
 
   const handleDateChange = (
     date: Date | undefined,
-    field: "startDate" | "endDate"
+    field: "startDate" | "endDate",
   ) => {
     setFormData((prev) => ({ ...prev, [field]: date }));
-    // Clear error when user selects a date
+
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: undefined }));
     }
   };
 
   const handleImageUpload = (files: File[]) => {
-    const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB in bytes
+    const MAX_FILE_SIZE = 100 * 1024 * 1024;
     const file = files[0];
 
     if (file && file.size > MAX_FILE_SIZE) {
@@ -255,7 +304,7 @@ export default function CreateCauseForm() {
   };
 
   const handleMultimediaUpload = (files: File[]) => {
-    const MAX_TOTAL_SIZE = 100 * 1024 * 1024; // 100MB in bytes
+    const MAX_TOTAL_SIZE = 100 * 1024 * 1024;
     const currentSize =
       formData.multimedia && formData.multimedia.length > 0
         ? formData.multimedia.reduce((acc, file) => acc + file.size, 0)
@@ -301,17 +350,15 @@ export default function CreateCauseForm() {
           !currentErrors.title && !currentErrors.category && !currentErrors.goal
         );
       case 2:
-        // Check for section errors
         if (currentErrors.sections) {
-          // If there are section errors, check if any sections have errors
           return !currentErrors.sections.some(
-            (err) => err.heading || err.description
+            (err) => err.heading || err.description,
           );
         }
-        // If there are no section errors in the currentErrors object, validate directly
+
         return formData.sections.every(
           (section) =>
-            section.heading.trim() !== "" && section.description.trim() !== ""
+            section.heading.trim() !== "" && section.description.trim() !== "",
         );
       case 3:
         return !currentErrors.startDate && !currentErrors.endDate;
@@ -332,7 +379,6 @@ export default function CreateCauseForm() {
     e.preventDefault();
 
     if (!user) return;
-    // Only allow submit on last step
 
     if (currentStep < 5) {
       nextStep();
@@ -342,12 +388,10 @@ export default function CreateCauseForm() {
     setSubmitting(true);
     const validationErrors = validateForm(formData);
 
-    // Check if there are any validation errors
     const hasErrors = Object.keys(validationErrors).some((key) => {
       if (key === "sections" && validationErrors.sections) {
-        // For sections, check if any section has actual errors
         return validationErrors.sections.some(
-          (section) => Object.keys(section).length > 0
+          (section) => Object.keys(section).length > 0,
         );
       }
       return validationErrors[key as keyof FormErrors] !== undefined;
@@ -369,15 +413,18 @@ export default function CreateCauseForm() {
       startDate: formData.startDate,
       endDate: formData.endDate,
       multimedia: formData.multimedia,
-      video_links: formData.videoLinks, // <-- map to backend
+      video_links: formData.videoLinks,
     };
     try {
       await sendCauseUnderReviewEmail({
         causeName: causeData.title,
         reviewTimeframe: "3-5 business days",
+        dashboardUrl: `${window.location.origin}/dashboard/causes`,
       });
       await createCause(user.id, causeData);
       localStorage.removeItem("causeDraft");
+
+      router.push("/dashboard/causes");
     } catch (error) {
       console.error("Error submitting cause:", error);
     } finally {
@@ -406,12 +453,12 @@ export default function CreateCauseForm() {
   const updateSection = (
     index: number,
     field: "heading" | "description",
-    value: string
+    value: string,
   ) => {
     setFormData((prev) => ({
       ...prev,
       sections: prev.sections.map((section, i) =>
-        i === index ? { ...section, [field]: value } : section
+        i === index ? { ...section, [field]: value } : section,
       ),
     }));
   };
@@ -583,8 +630,8 @@ export default function CreateCauseForm() {
             <div className="space-y-2">
               <h3 className="text-lg font-medium">Cause Duration</h3>
               <p className="text-sm text-muted-foreground">
-                Select when your cause should start and end. Maximum duration is
-                60 days.
+                Select when your cause should start and end. Maximum duration is{" "}
+                <strong>{MAX_DURATION_DAYS} days</strong>.
               </p>
             </div>
 
@@ -598,7 +645,7 @@ export default function CreateCauseForm() {
                       className={cn(
                         "w-full justify-start text-left font-normal",
                         !formData.startDate && "text-muted-foreground",
-                        errors.startDate && "border-red-500"
+                        errors.startDate && "border-red-500",
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
@@ -633,7 +680,7 @@ export default function CreateCauseForm() {
                       className={cn(
                         "w-full justify-start text-left font-normal",
                         !formData.endDate && "text-muted-foreground",
-                        errors.endDate && "border-red-500"
+                        errors.endDate && "border-red-500",
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
@@ -652,10 +699,11 @@ export default function CreateCauseForm() {
                         const isBeforeStart = formData.startDate
                           ? isBefore(date, formData.startDate)
                           : false;
-                        const isOver60Days = formData.startDate
-                          ? differenceInDays(date, formData.startDate) > 60
+                        const isOverMaxDays = formData.startDate
+                          ? differenceInDays(date, formData.startDate) >
+                            MAX_DURATION_DAYS
                           : false;
-                        return isPast || isBeforeStart || isOver60Days;
+                        return isPast || isBeforeStart || isOverMaxDays;
                       }}
                       initialFocus
                     />
@@ -751,7 +799,6 @@ export default function CreateCauseForm() {
                   </div>
                 )}
             </div>
-            {/* Video Links */}
             <div className="mt-8 space-y-2">
               <Label>Video Links (YouTube, TikTok, etc.)</Label>
               <div className="flex gap-2">
@@ -765,7 +812,6 @@ export default function CreateCauseForm() {
                 <Button
                   type="button"
                   onClick={() => {
-                    // Basic URL validation
                     try {
                       const url = new URL(videoLinkInput);
                       if (!/^https?:\/\//.test(videoLinkInput)) {
@@ -810,7 +856,7 @@ export default function CreateCauseForm() {
                           setFormData((prev) => ({
                             ...prev,
                             videoLinks: prev.videoLinks.filter(
-                              (_, i) => i !== idx
+                              (_, i) => i !== idx,
                             ),
                           }))
                         }
@@ -838,7 +884,7 @@ export default function CreateCauseForm() {
               {formData.sections.map((section, index) => (
                 <div key={index} className="space-y-2">
                   <h5 className="font-medium">{section.heading}</h5>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-muted-foreground whitespace-pre-line">
                     {section.description}
                   </p>
                 </div>
@@ -868,7 +914,7 @@ export default function CreateCauseForm() {
               <MultimediaCarousel
                 media={[
                   ...formData.multimedia.map((file) =>
-                    URL.createObjectURL(file)
+                    URL.createObjectURL(file),
                   ),
                   ...formData.videoLinks,
                 ]}
@@ -945,26 +991,28 @@ export default function CreateCauseForm() {
           >
             Back
           </Button>
-          {currentStep < 5 ? (
-            <Button type="button" onClick={nextStep}>
-              Next
-            </Button>
-          ) : (
-            <Button
-              type="button"
-              disabled={isLoading || submitting}
-              onClick={handleSubmit}
-            >
-              {isLoading || submitting ? (
-                <>
-                  <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
-                  Submitting...
-                </>
-              ) : (
-                "Submit Cause"
-              )}
-            </Button>
-          )}
+          <div className="flex gap-2">
+            {currentStep < 5 ? (
+              <Button type="button" onClick={nextStep}>
+                Next
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                disabled={isLoading || submitting}
+                onClick={handleSubmit}
+              >
+                {isLoading || submitting ? (
+                  <>
+                    <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+                    Submitting...
+                  </>
+                ) : (
+                  "Submit Cause"
+                )}
+              </Button>
+            )}
+          </div>
         </CardFooter>
       </form>
     </Card>

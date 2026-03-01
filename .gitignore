@@ -5,6 +5,7 @@
 
 # next.js
 /.next/
+/.qodo/
 /out/
 /.qodo/
 
@@ -26,3 +27,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+.env*.local
+
+#docs
+/.trae
