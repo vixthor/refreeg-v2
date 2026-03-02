@@ -49,6 +49,7 @@ export async function checkDatabaseSetup(): Promise<{
     "donations",
     "roles",
     "cause_multimedia",
+    "logs",
   ];
   const missingTables: string[] = [];
 
