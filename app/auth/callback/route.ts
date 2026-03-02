@@ -14,13 +14,13 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       return NextResponse.redirect(
-        new URL("/auth/signin?error=Invalid link", request.url)
+        new URL("/auth/signin?error=Invalid link", request.url),
       );
     }
 
     if (type === "recovery") {
       return NextResponse.redirect(
-        new URL("/auth/update-password", request.url)
+        new URL("/auth/update-password", request.url),
       );
     }
 
@@ -30,15 +30,15 @@ export async function GET(request: NextRequest) {
 
     if (user) {
       try {
-        await supabase
-          .from("referrals")
-          .update({
-            registered: true,
+        await supabase.functions.invoke("process-referral-v1", {
+          body: {
+            action: "complete",
+            referee_email: (user.email || "").toLowerCase(),
             referee_id: user.id,
-          })
-          .eq("referee_email", (user.email || "").toLowerCase());
+          },
+        });
       } catch (error) {
-        console.error("Error updating referral after verification:", error);
+        console.error("Error updating referral v1 after verification:", error);
       }
 
       const { data: profile } = await supabase

@@ -117,7 +117,6 @@ export default function ReferralPage() {
     const loadData = async () => {
       setLoading(true);
       try {
-        // If useAuth hasn't loaded yet, fallback to Supabase auth
         const {
           data: { user: authUser },
         } = await supabase.auth.getUser();
@@ -127,12 +126,6 @@ export default function ReferralPage() {
           setLoading(false);
           return;
         }
-
-        setDebug({
-          userId: currentUser.id,
-          userEmail: currentUser.email ?? null,
-          rowCount: 0,
-        });
 
         // 1) Get referral code from profiles, fallback to user id
         const { data: profile } = await supabase
@@ -147,30 +140,38 @@ export default function ReferralPage() {
           process.env.NEXT_PUBLIC_SITE_URL ||
           (typeof window !== "undefined" ? window.location.origin : "");
 
-        setReferralLink(`${baseUrl}/auth/signup?ref=${code}`);
+        setReferralLink(`${baseUrl}/auth/signup?ref_v1=${code}`);
 
-        // 2) Load referral rows without implicit profile join
+        // 2) Load referral rows v1
         const { data: rows, error } = await supabase
-          .from("referrals")
+          .from("referrals_v1")
           .select(
             `
-              id,
-              referrer_id,
-              referee_email,
-              registered,
-              reward,
-              created_at,
-              referee_id
+              id_v1,
+              referrer_id_v1,
+              referee_email_v1,
+              registered_v1,
+              reward_v1,
+              created_at_v1,
+              referee_id_v1
             `,
           )
-          .eq("referrer_id", currentUser.id)
-          .order("created_at", { ascending: false });
+          .eq("referrer_id_v1", currentUser.id)
+          .order("created_at_v1", { ascending: false });
 
         if (error) {
-          console.error("REFERRAL QUERY ERROR:", error);
+          console.error("REFERRAL V1 QUERY ERROR:", error);
         }
 
-        const baseRows: ReferralRow[] = rows || [];
+        const baseRows: ReferralRow[] = (rows || []).map((r: any) => ({
+          id: r.id_v1,
+          referrer_id: r.referrer_id_v1,
+          referee_id: r.referee_id_v1,
+          registered: r.registered_v1,
+          referee_email: r.referee_email_v1,
+          created_at: r.created_at_v1,
+          reward: r.reward_v1,
+        }));
 
         // 3) Fetch profile names manually when referee_id exists
         let enrichedRows: ReferralRow[] = baseRows;
@@ -210,7 +211,6 @@ export default function ReferralPage() {
         }
 
         setReferrals(enrichedRows);
-        setDebug((prev) => ({ ...prev, rowCount: enrichedRows.length }));
 
         // 4) Compute stats
         const totalSignUps = enrichedRows.filter((r) => r.registered).length;
@@ -220,7 +220,7 @@ export default function ReferralPage() {
         setSignUps(totalSignUps);
         setPoints(totalPoints);
 
-        // Updated Tier Logic to match your 205/505 requirements
+        // Tier Logic
         let currentTier = "Tier 1";
         if (totalPoints >= 505) {
           currentTier = "Tier 3";
@@ -230,7 +230,7 @@ export default function ReferralPage() {
 
         setTier(currentTier);
       } catch (err) {
-        console.error("Unexpected error loading referrals:", err);
+        console.error("Unexpected error loading referrals v1:", err);
       } finally {
         setLoading(false);
       }
