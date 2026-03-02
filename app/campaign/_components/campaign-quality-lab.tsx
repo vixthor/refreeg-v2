@@ -26,16 +26,13 @@ import { Progress } from "@/components/ui/progress";
 import { ShareModal } from "@/components/share-modal";
 import MultimediaCarousel from "@/components/MultimediaCarousel";
 import { getBaseURL } from "@/lib/utils";
+import Link from "next/link";
+import { CommentsSection } from "@/components/comments/comment-section";
+import type { Comment } from "@/types/common-types";
 
 const tabs = ["Story", "Milestones", "Updates", "Budget", "Comments", "FAQ"] as const;
 const donationPresets = [1000, 10000, 100000, 1000000];
 const tipPresets = [100, 500, 1000];
-
-const impactBullets = [
-  "Provides emergency shelter kits for displaced families.",
-  "Escrowed milestones release funds only after proof.",
-  "Updates, receipts, and photos are published for donors.",
-];
 
 const trustTiles = [
   {
@@ -66,6 +63,12 @@ const trustTiles = [
     badgeTextClass: "text-[#0F172A]",
     body: "Receipts and field photos uploaded.",
   },
+];
+
+const trustStrip = [
+  { label: "Escrowed", tone: "bg-emerald-50 text-emerald-700" },
+  { label: "Verified Updates", tone: "bg-blue-50 text-blue-700" },
+  { label: "Funds Audited", tone: "bg-amber-50 text-amber-700" },
 ];
 
 const faqs = [
@@ -129,9 +132,10 @@ type CampaignQualityLabProps = {
   cause: CauseDetail;
   donors: Donor[];
   commentsCount: number;
+  comments: Comment[];
   profile: ProfileSummary;
   creatorHasWallet: boolean;
-  isDemo?: boolean;
+  currentUserId?: string;
 };
 
 function StatItem({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
@@ -151,20 +155,13 @@ function StatItem({ icon, label, value }: { icon: ReactNode; label: string; valu
 function HeaderMeta({
   status,
   formattedDate,
-  isDemo,
 }: {
   status: string;
   formattedDate: string;
-  isDemo?: boolean;
 }) {
   return (
     <motion.div className="space-y-2" variants={fadeUp}>
       <div className="flex flex-wrap items-center gap-2 text-xs text-[#64748B] sm:hidden">
-        {isDemo && (
-          <span className="rounded-full border border-[#E5E7EB] bg-[#0F172A] px-3 py-1 text-xs font-semibold text-white">
-            Demo mode
-          </span>
-        )}
         <span className="inline-flex items-center gap-2 rounded-full border border-[#E5E7EB] bg-white px-3 py-1 text-xs font-semibold text-[#0F172A]">
           <ShieldCheck className="h-4 w-4" />
           {status === "approved" ? "Verified" : "In review"}
@@ -180,11 +177,6 @@ function HeaderMeta({
       </div>
 
       <div className="hidden flex-wrap items-center gap-3 text-xs text-[#64748B] sm:flex sm:text-sm">
-        {isDemo && (
-          <div className="inline-flex items-center gap-2 rounded-full border border-[#E5E7EB] bg-[#0F172A] px-4 py-2 font-semibold text-white shadow-sm">
-            Demo mode
-          </div>
-        )}
         <div className="inline-flex items-center gap-2 rounded-full border border-[#E5E7EB] bg-white px-4 py-2 font-semibold text-[#0F172A] shadow-sm">
           <ShieldCheck className="h-5 w-5" />
           <span>{status === "approved" ? "Verified" : "In review"}</span>
@@ -313,7 +305,11 @@ function TrustPanel({ baseUrl, cause }: { baseUrl: string; cause: CauseDetail })
   );
 }
 
-function ImpactCard() {
+function ImpactCard({ cause }: { cause: CauseDetail }) {
+  const impactItems =
+    cause.sections?.map((section) => section.heading || section.description).filter(Boolean) || [];
+  const bullets = impactItems.slice(0, 3);
+
   return (
     <motion.div
       className="rounded-[14px] border border-[#E5E7EB] bg-white p-4 text-sm text-[#64748B] shadow-[0_10px_30px_rgba(0,0,0,0.06)] sm:p-6"
@@ -323,14 +319,20 @@ function ImpactCard() {
       viewport={{ once: true, amount: 0.2 }}
     >
       <p className="text-xs uppercase tracking-[0.15em] text-[#64748B]">Impact in 3 bullets</p>
-      <div className="mt-3 grid gap-2">
-        {impactBullets.map((item) => (
-          <div key={item} className="flex items-start gap-2">
-            <CheckCircle2 className="mt-0.5 h-4 w-4 text-emerald-500" />
-            <span>{item}</span>
-          </div>
-        ))}
-      </div>
+      {bullets.length > 0 ? (
+        <div className="mt-3 grid gap-2">
+          {bullets.map((item, index) => (
+            <div key={`${item}-${index}`} className="flex items-start gap-2">
+              <CheckCircle2 className="mt-0.5 h-4 w-4 text-emerald-500" />
+              <span>{item}</span>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="mt-3 text-sm text-slate-500">
+          No impact bullets yet. The campaign creator can add them in the story sections.
+        </p>
+      )}
     </motion.div>
   );
 }
@@ -407,9 +409,9 @@ function ProgressCard({
       <div className="mt-4">
         <Progress value={percentRaised} />
       </div>
-      <div className="mt-2 flex items-center justify-between text-sm text-slate-500">
-        <span>{percentRaised}% raised</span>
-        <span>₦{remainingGoal.toLocaleString()} remaining</span>
+      <div className="mt-3 text-sm text-slate-500">
+        ₦{cause.raised.toLocaleString()} raised • {percentRaised}% funded • {cause.days_active} days
+        left
       </div>
     </motion.div>
   );
@@ -419,12 +421,16 @@ function TabsCard({
   cause,
   formattedDate,
   commentsCount,
+  comments,
+  currentUserId,
   activeTab,
   setActiveTab,
 }: {
   cause: CauseDetail;
   formattedDate: string;
   commentsCount: number;
+  comments: Comment[];
+  currentUserId?: string;
   activeTab: TabKey;
   setActiveTab: (value: TabKey) => void;
 }) {
@@ -514,9 +520,14 @@ function TabsCard({
               <MessagesSquare className="h-4 w-4 text-emerald-500" />
               {commentsCount} comments
             </div>
-            <p className="mt-2 text-xs text-slate-500">
-              Comments are moderated and rate-limited. Visit the live cause page to participate.
-            </p>
+            <div className="mt-4">
+              <CommentsSection
+                comments={comments}
+                causeId={cause.id}
+                currentUserId={currentUserId}
+                entityType="cause"
+              />
+            </div>
           </div>
         )}
 
@@ -550,18 +561,20 @@ function DonateCard({
   impactText,
   profile,
   creatorHasWallet,
+  donorsPreview,
 }: {
   cause: CauseDetail;
   donation: number;
   setDonation: (value: number) => void;
-  recurring: boolean;
-  setRecurring: (value: boolean | ((prev: boolean) => boolean)) => void;
+  recurring: "one_time" | "weekly" | "monthly";
+  setRecurring: (value: "one_time" | "weekly" | "monthly") => void;
   tip: number;
   setTip: (value: number) => void;
   totalWithTip: number;
   impactText: string;
   profile: ProfileSummary;
   creatorHasWallet: boolean;
+  donorsPreview: { id: string; name: string; amount: number }[];
 }) {
   return (
     <motion.div
@@ -600,56 +613,80 @@ function DonateCard({
         ))}
       </div>
 
-      <label className="mt-4 grid gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+      <label className="mt-4 grid gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-[0_8px_18px_rgba(15,23,42,0.06)]">
         <span className="text-xs uppercase tracking-[0.15em] text-slate-500">
           Custom amount
         </span>
-        <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2">
-          <span className="text-sm font-semibold text-slate-500">₦</span>
+        <div className="flex items-stretch overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
+          <span className="flex items-center justify-center bg-slate-900 px-3 text-sm font-semibold text-white">
+            ₦
+          </span>
           <input
-            type="number"
-            min={1}
-            value={donation}
-            onChange={(event) => setDonation(Number(event.target.value))}
-            className="w-full bg-transparent text-right text-sm text-slate-900 outline-none"
+            type="text"
+            inputMode="numeric"
+            maxLength={12}
+            value={donation ? donation.toString() : ""}
+            onChange={(event) => {
+              const next = event.target.value.replace(/\D/g, "");
+              const capped = next.slice(0, 12);
+              setDonation(capped ? Number(capped) : 0);
+            }}
+            className="w-full appearance-none bg-transparent px-3 py-2 text-right text-sm text-slate-900 outline-none"
+            placeholder="0"
           />
         </div>
         <p className="text-xs text-slate-500">Enter any amount above ₦1.</p>
       </label>
 
       <div className="mt-4 grid gap-3">
-        <label className="flex items-center justify-between rounded-xl border border-[#E5E7EB] bg-white px-4 py-3 text-xs text-[#64748B]">
-          <span>Make this monthly</span>
-          <button
-            type="button"
-            onClick={() => setRecurring((prev) => !prev)}
-            className={`rounded-full px-3 py-1 text-[11px] font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 ${
-              recurring
-                ? "bg-[#2563EB] text-white"
-                : "border border-[#E5E7EB] bg-white text-[#64748B]"
-            }`}
+        <label className="grid gap-2 rounded-xl border border-[#E5E7EB] bg-white px-4 py-4 text-sm text-[#64748B]">
+          <span className="font-semibold text-slate-700">Contribution schedule</span>
+          <select
+            value={recurring}
+            onChange={(event) => setRecurring(event.target.value as "one_time" | "weekly" | "monthly")}
+            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
           >
-            {recurring ? "Monthly" : "One-time"}
-          </button>
+            <option value="one_time">One-time</option>
+            <option value="weekly">Every week</option>
+            <option value="monthly">Monthly</option>
+          </select>
         </label>
 
-        <label className="grid gap-2 rounded-xl border border-[#E5E7EB] bg-white px-4 py-3 text-xs text-[#64748B]">
-          <span>Platform tip</span>
-          <div className="grid grid-cols-3 gap-2 sm:flex sm:items-center">
+        <label className="grid gap-2 rounded-xl border border-[#E5E7EB] bg-white px-4 py-4 text-sm text-[#64748B]">
+          <div className="flex items-center justify-between">
+            <span className="font-semibold text-slate-700">Platform tip</span>
+            <span className="text-sm font-semibold text-slate-800">Support Refreeg ops</span>
+          </div>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             {tipPresets.map((value) => (
               <button
                 key={value}
                 type="button"
-                onClick={() => setTip(value)}
-                className={`rounded-full px-2 py-1 text-[11px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 ${
+                onClick={() => setTip((prev) => (prev === value ? 0 : value))}
+                className={`rounded-xl px-3 py-2 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 ${
                   tip === value
-                    ? "bg-[#2563EB] text-white"
+                    ? "bg-[#0F172A] text-white shadow-[0_10px_18px_rgba(15,23,42,0.18)]"
                     : "border border-[#E5E7EB] bg-white text-[#64748B]"
                 }`}
               >
                 ₦{value.toLocaleString()}
               </button>
             ))}
+            <div className="col-span-2 sm:col-span-1">
+              <div className="flex items-stretch overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+                <span className="flex items-center justify-center bg-slate-900 px-3 text-sm font-semibold text-white">
+                  ₦
+                </span>
+                <input
+                  type="number"
+                  min={0}
+                  value={tip}
+                  onChange={(event) => setTip(Number(event.target.value))}
+                  className="w-full bg-transparent px-3 py-2 text-right text-sm font-semibold text-slate-900 outline-none"
+                  placeholder="Custom"
+                />
+              </div>
+            </div>
           </div>
         </label>
       </div>
@@ -661,7 +698,28 @@ function DonateCard({
 
       <div className="mt-4 flex items-center justify-between text-sm text-[#64748B]">
         <span>Total today</span>
-        <span className="text-[#0F172A]">₦{totalWithTip}</span>
+        <span className="text-[#0F172A]">₦{totalWithTip.toLocaleString()}</span>
+      </div>
+
+      <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-xs text-slate-600">
+        <p className="text-[11px] uppercase tracking-[0.15em] font-semibold text-slate-700">
+          Recent donors
+        </p>
+        <div className="mt-2 flex flex-wrap gap-2">
+          {donorsPreview.length > 0 ? (
+            donorsPreview.slice(0, 3).map((donor) => (
+              <span
+                key={donor.id}
+                className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs text-slate-700"
+              >
+                {donor.name}
+                <span className="text-emerald-600">₦{donor.amount.toLocaleString()}</span>
+              </span>
+            ))
+          ) : (
+            <span className="font-semibold text-slate-700">Be the first to donate.</span>
+          )}
+        </div>
       </div>
 
       <div className="mt-4 space-y-3">
@@ -674,6 +732,12 @@ function DonateCard({
           causeName={cause.title}
           causeUrl={`/causes/${cause.id}`}
         />
+        <Link
+          href={`/causes/${cause.id}/pledge`}
+          className="inline-flex w-full items-center justify-center rounded-xl bg-[#2563EB] px-4 py-3 text-base font-semibold text-white shadow-[0_12px_24px_rgba(37,99,235,0.25)] transition hover:bg-[#1D4ED8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#93C5FD]"
+        >
+          Pledge to donate later
+        </Link>
       </div>
 
       <div className="mt-4 flex items-start gap-2 text-xs text-[#64748B]">
@@ -767,13 +831,14 @@ export default function CampaignQualityLab({
   cause,
   donors,
   commentsCount,
+  comments,
   profile,
   creatorHasWallet,
-  isDemo,
+  currentUserId,
 }: CampaignQualityLabProps) {
   const [donation, setDonation] = useState(25);
   const [activeTab, setActiveTab] = useState<TabKey>("Story");
-  const [recurring, setRecurring] = useState(false);
+  const [recurring, setRecurring] = useState<"one_time" | "weekly" | "monthly">("one_time");
   const [tip, setTip] = useState(5);
   const donateRef = useRef<HTMLDivElement | null>(null);
 
@@ -793,11 +858,8 @@ export default function CampaignQualityLab({
   );
 
   const impactText = useMemo(() => {
-    if (donation >= 100) return "Covers 2 family kits + transport";
-    if (donation >= 50) return "Funds 1 family kit";
-    if (donation >= 25) return "Supplies 3 hygiene packs";
-    return "Supports immediate relief";
-  }, [donation]);
+    return cause.summary || "Impact details will appear once provided by the campaign creator.";
+  }, [cause.summary]);
 
   const totalWithTip = useMemo(() => donation + tip, [donation, tip]);
   const remainingGoal = useMemo(
@@ -837,10 +899,21 @@ export default function CampaignQualityLab({
       <div className="border-b border-[#E5E7EB] bg-white">
         <div className="container px-4 py-4 sm:py-6">
           <motion.div className="flex flex-col gap-5 sm:gap-6" variants={stagger} initial="hidden" animate="show">
-            <HeaderMeta status={cause.status} formattedDate={formattedDate} isDemo={isDemo} />
+            <HeaderMeta status={cause.status} formattedDate={formattedDate} />
 
             <motion.div className="grid gap-6" variants={stagger}>
               <HeroSummary cause={cause} donorsCount={donors.length} />
+            </motion.div>
+
+            <motion.div className="flex flex-wrap gap-2" variants={fadeUp}>
+              {trustStrip.map((item) => (
+                <span
+                  key={item.label}
+                  className={`rounded-full px-3 py-1 text-xs font-semibold ${item.tone}`}
+                >
+                  {item.label}
+                </span>
+              ))}
             </motion.div>
 
             <StatsRow cause={cause} donorsCount={donors.length} />
@@ -848,31 +921,8 @@ export default function CampaignQualityLab({
         </div>
       </div>
 
-      <main className="container grid gap-6 px-4 pb-24 pt-6 sm:py-8 lg:grid-cols-[1.05fr_0.95fr]">
-        <section className="space-y-6 lg:col-start-1 lg:col-end-2">
-          <MediaCard media={media} cause={cause} />
-          <ProgressCard cause={cause} percentRaised={percentRaised} remainingGoal={remainingGoal} />
-          <ImpactCard />
-          <TrustPanel baseUrl={baseUrl} cause={cause} />
-          <motion.div
-            className="rounded-[14px] border border-[#E5E7EB] bg-white p-4 text-sm text-slate-600 shadow-[0_10px_30px_rgba(0,0,0,0.06)] sm:p-6"
-            variants={fadeUp}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true, amount: 0.2 }}
-          >
-            <p className="text-xs uppercase tracking-[0.15em] text-slate-500">
-              What happened and the solution
-            </p>
-            <p className="mt-3">
-              Flooding started after weeks of record rainfall, washing away homes and essential
-              infrastructure. The solution is a phased rebuild: emergency shelter now, permanent
-              housing next, and evidence-verified releases at every milestone.
-            </p>
-          </motion.div>
-        </section>
-
-        <aside className="space-y-6 lg:col-start-2 lg:row-span-2">
+      <main className="container grid items-start gap-6 px-4 pb-24 pt-6 sm:py-8 lg:grid-cols-[1.05fr_0.95fr]">
+        <aside className="order-1 self-start space-y-6 lg:order-2 lg:col-start-2 lg:row-span-2 lg:self-start">
           <div className="space-y-6 lg:sticky lg:top-24">
             <div ref={donateRef}>
               <DonateCard
@@ -887,17 +937,43 @@ export default function CampaignQualityLab({
                 impactText={impactText}
                 profile={profile}
                 creatorHasWallet={creatorHasWallet}
+                donorsPreview={donorsPreview}
               />
             </div>
             <CampaignHealthCard donorsPreview={donorsPreview} />
           </div>
         </aside>
 
-        <section className="lg:col-start-1 lg:col-end-2">
+        <section className="order-2 space-y-6 lg:order-1 lg:col-start-1 lg:col-end-2">
+          <MediaCard media={media} cause={cause} />
+          <ProgressCard cause={cause} percentRaised={percentRaised} remainingGoal={remainingGoal} />
+          <ImpactCard cause={cause} />
+          <TrustPanel baseUrl={baseUrl} cause={cause} />
+          <motion.div
+            className="rounded-[14px] border border-[#E5E7EB] bg-white p-4 text-sm text-slate-600 shadow-[0_10px_30px_rgba(0,0,0,0.06)] sm:p-6"
+            variants={fadeUp}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, amount: 0.2 }}
+          >
+            <p className="text-xs uppercase tracking-[0.15em] text-slate-500">Story</p>
+            {cause.description ? (
+              <p className="mt-3 whitespace-pre-line">{cause.description}</p>
+            ) : (
+              <p className="mt-3 text-slate-500">
+                No story yet. The campaign creator can add the full context and plan here.
+              </p>
+            )}
+          </motion.div>
+        </section>
+
+        <section className="order-3 lg:col-start-1 lg:col-end-2">
           <TabsCard
             cause={cause}
             formattedDate={formattedDate}
             commentsCount={commentsCount}
+            comments={comments}
+            currentUserId={currentUserId}
             activeTab={activeTab}
             setActiveTab={setActiveTab}
           />
