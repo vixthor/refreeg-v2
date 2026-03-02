@@ -8,12 +8,17 @@ import {
 import { listCommentsForCause } from "@/actions/comment-actions";
 import CampaignQualityLab from "@/app/campaign/_components/campaign-quality-lab";
 
-export default async function CauseDetailPage({
-  params,
+export default async function CampaignQualityTestPage({
+  searchParams,
 }: {
-  params: { id: string };
+  searchParams?: { id?: string };
 }) {
-  const cause = await getCause(params.id);
+  const causeId = searchParams?.id;
+  if (!causeId) {
+    notFound();
+  }
+
+  const cause = await getCause(causeId);
   if (!cause) {
     notFound();
   }
