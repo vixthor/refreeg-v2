@@ -24,16 +24,25 @@ export default function SignUpPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-
-  const [refFromUrl, setRefFromUrl] = useState<string | null>(null);
+  const [refV1FromUrl, setRefV1FromUrl] = useState<string | null>(null);
+  const [utmSource, setUtmSource] = useState<string | null>(null);
+  const [utmMedium, setUtmMedium] = useState<string | null>(null);
+  const [utmCampaign, setUtmCampaign] = useState<string | null>(null);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
-      const ref = params.get("ref");
-      if (ref) {
-        setRefFromUrl(ref);
-      }
+      const refV1 = params.get("ref_v1");
+      if (refV1) setRefV1FromUrl(refV1);
+
+      const source = params.get("utm_source_v1") || params.get("utm_source");
+      const medium = params.get("utm_medium_v1") || params.get("utm_medium");
+      const campaign =
+        params.get("utm_campaign_v1") || params.get("utm_campaign");
+
+      if (source) setUtmSource(source);
+      if (medium) setUtmMedium(medium);
+      if (campaign) setUtmCampaign(campaign);
     }
   }, []);
 
@@ -60,30 +69,34 @@ export default function SignUpPage() {
       const signUpEmail = email.trim();
       const normalizedEmail = signUpEmail.toLowerCase();
 
-      if (refFromUrl) {
-        await supabase.from("referrals").insert({
-          referrer_id: refFromUrl,
-          referee_email: normalizedEmail,
-          registered: false,
+      if (refV1FromUrl) {
+        await supabase.functions.invoke("process-referral-v1", {
+          body: {
+            action: "create",
+            referrer_id: refV1FromUrl,
+            referee_email: normalizedEmail,
+            utm_source: utmSource,
+            utm_medium: utmMedium,
+            utm_campaign: utmCampaign,
+          },
         });
       }
 
-      const result = await signUp(signUpEmail, password, "User", "individual");
+      const result = await signUp(signUpEmail, password, "User", null);
 
       if (!result?.data?.user) {
         return;
       }
 
-      if (refFromUrl) {
-        await supabase
-          .from("referrals")
-          .update({
-            registered: true,
+      if (refV1FromUrl) {
+        await supabase.functions.invoke("process-referral-v1", {
+          body: {
+            action: "complete",
+            referrer_id: refV1FromUrl,
+            referee_email: normalizedEmail,
             referee_id: result.data.user.id,
-            reward: "5_pts",
-          })
-          .eq("referee_email", normalizedEmail)
-          .eq("referrer_id", refFromUrl);
+          },
+        });
       }
 
       toast({
