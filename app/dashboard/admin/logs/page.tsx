@@ -1,7 +1,39 @@
 import AdminLogs from "@/components/admin/AdminLogs";
 import { listAdminLogs } from "@/actions/database-actions";
+import { createClient } from "@/lib/supabase/server";
+import { getUserRole } from "@/actions/role-actions";
+import { redirect } from "next/navigation";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 
 async function page() {
+  const supabase = await createClient();
+  const {
+    data: { user: authUser },
+  } = await supabase.auth.getUser();
+
+  if (!authUser) {
+    redirect("/signin");
+  }
+
+  const role = await getUserRole(authUser.id);
+  if (role !== "admin" && role !== "manager") {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Access Denied</CardTitle>
+          <CardDescription>
+            You do not have permission to access this page.
+          </CardDescription>
+        </CardHeader>
+      </Card>
+    );
+  }
+
   try {
     const logs = await listAdminLogs();
     return (

@@ -239,18 +239,19 @@ export function UserActions({
             </>
           )}
 
-          {currentUserRole === "admin" && userItem.role !== "admin" && (
-            <>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={() => handleDeleteUser(userItem.email)}
-                className="text-red-600 focus:text-red-600"
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Delete User
-              </DropdownMenuItem>
-            </>
-          )}
+          {(currentUserRole === "admin" || currentUserRole === "manager") &&
+            userItem.role !== "admin" && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => handleDeleteUser(userItem.email)}
+                  className="text-red-600 focus:text-red-600"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete User
+                </DropdownMenuItem>
+              </>
+            )}
         </DropdownMenuContent>
       </DropdownMenu>
 
