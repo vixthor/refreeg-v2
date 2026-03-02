@@ -163,8 +163,10 @@ export async function deleteUserAsAdmin(
     }
 
     const currentUserRole = await getUserRole(user.id);
-    if (currentUserRole !== "admin") {
-      return { error: "Unauthorized: Only admins can delete users" };
+    if (currentUserRole !== "admin" && currentUserRole !== "manager") {
+      return {
+        error: "Unauthorized: Only admins and managers can delete users",
+      };
     }
 
     if (

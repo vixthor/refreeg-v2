@@ -106,6 +106,7 @@ export default function ReferralPage() {
   const [referrals, setReferrals] = useState<ReferralRow[]>([]);
   const [shareOpen, setShareOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isQREnlarged, setIsQREnlarged] = useState(false);
 
   const [debug, setDebug] = useState<DebugInfo>({ rowCount: 0 });
 
@@ -117,7 +118,6 @@ export default function ReferralPage() {
     const loadData = async () => {
       setLoading(true);
       try {
-        // If useAuth hasn't loaded yet, fallback to Supabase auth
         const {
           data: { user: authUser },
         } = await supabase.auth.getUser();
@@ -127,12 +127,6 @@ export default function ReferralPage() {
           setLoading(false);
           return;
         }
-
-        setDebug({
-          userId: currentUser.id,
-          userEmail: currentUser.email ?? null,
-          rowCount: 0,
-        });
 
         // 1) Get referral code from profiles, fallback to user id
         const { data: profile } = await supabase
@@ -147,30 +141,38 @@ export default function ReferralPage() {
           process.env.NEXT_PUBLIC_SITE_URL ||
           (typeof window !== "undefined" ? window.location.origin : "");
 
-        setReferralLink(`${baseUrl}/auth/signup?ref=${code}`);
+        setReferralLink(`${baseUrl}/auth/signup?ref_v1=${code}`);
 
-        // 2) Load referral rows without implicit profile join
+        // 2) Load referral rows v1
         const { data: rows, error } = await supabase
-          .from("referrals")
+          .from("referrals_v1")
           .select(
             `
-              id,
-              referrer_id,
-              referee_email,
-              registered,
-              reward,
-              created_at,
-              referee_id
+              id_v1,
+              referrer_id_v1,
+              referee_email_v1,
+              registered_v1,
+              reward_v1,
+              created_at_v1,
+              referee_id_v1
             `,
           )
-          .eq("referrer_id", currentUser.id)
-          .order("created_at", { ascending: false });
+          .eq("referrer_id_v1", currentUser.id)
+          .order("created_at_v1", { ascending: false });
 
         if (error) {
-          console.error("REFERRAL QUERY ERROR:", error);
+          console.error("REFERRAL V1 QUERY ERROR:", error);
         }
 
-        const baseRows: ReferralRow[] = rows || [];
+        const baseRows: ReferralRow[] = (rows || []).map((r: any) => ({
+          id: r.id_v1,
+          referrer_id: r.referrer_id_v1,
+          referee_id: r.referee_id_v1,
+          registered: r.registered_v1,
+          referee_email: r.referee_email_v1,
+          created_at: r.created_at_v1,
+          reward: r.reward_v1,
+        }));
 
         // 3) Fetch profile names manually when referee_id exists
         let enrichedRows: ReferralRow[] = baseRows;
@@ -210,7 +212,6 @@ export default function ReferralPage() {
         }
 
         setReferrals(enrichedRows);
-        setDebug((prev) => ({ ...prev, rowCount: enrichedRows.length }));
 
         // 4) Compute stats
         const totalSignUps = enrichedRows.filter((r) => r.registered).length;
@@ -220,7 +221,7 @@ export default function ReferralPage() {
         setSignUps(totalSignUps);
         setPoints(totalPoints);
 
-        // Updated Tier Logic to match your 205/505 requirements
+        // Tier Logic
         let currentTier = "Tier 1";
         if (totalPoints >= 505) {
           currentTier = "Tier 3";
@@ -230,7 +231,7 @@ export default function ReferralPage() {
 
         setTier(currentTier);
       } catch (err) {
-        console.error("Unexpected error loading referrals:", err);
+        console.error("Unexpected error loading referrals v1:", err);
       } finally {
         setLoading(false);
       }
@@ -612,6 +613,24 @@ export default function ReferralPage() {
                 <span className="truncate">{referralLink}</span>
               </div>
 
+              {/* QR Code in Modal */}
+              <div className="mb-6 flex flex-col items-center justify-center">
+                <p className="mb-2 text-[10px] font-medium text-gray-400 uppercase tracking-wider">
+                  Your QR Code
+                </p>
+                <motion.div
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setIsQREnlarged(true)}
+                  className="cursor-pointer rounded-2xl bg-white p-4 shadow-md border border-gray-100"
+                >
+                  <QRCode value={referralLink} size={120} />
+                  <p className="mt-2 text-center text-[10px] text-blue-600 font-medium">
+                    Click to enlarge
+                  </p>
+                </motion.div>
+              </div>
+
               <div className="space-y-3">
                 <a
                   href={`https://wa.me/?text=${encodeURIComponent(
@@ -647,6 +666,41 @@ export default function ReferralPage() {
               >
                 Cancel
               </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      {/* ENLARGED QR OVERLAY */}
+      <AnimatePresence>
+        {isQREnlarged && referralLink && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[300] flex items-center justify-center bg-black/60 backdrop-blur-md"
+            onClick={() => setIsQREnlarged(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.5, opacity: 0 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              onClick={(e) => e.stopPropagation()}
+              className="relative flex flex-col items-center rounded-3xl bg-white p-8 shadow-2xl"
+            >
+              <button
+                onClick={() => setIsQREnlarged(false)}
+                className="absolute -right-2 -top-2 flex h-8 w-8 items-center justify-center rounded-full bg-white text-gray-500 shadow-lg hover:text-black"
+              >
+                ✕
+              </button>
+              <QRCode value={referralLink} size={280} />
+              <p className="mt-6 text-center text-sm font-semibold text-gray-800">
+                Scan to join RefreeG
+              </p>
+              <p className="mt-1 text-center text-xs text-gray-500">
+                Share this QR code with your friends
+              </p>
             </motion.div>
           </motion.div>
         )}
