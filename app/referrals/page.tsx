@@ -106,6 +106,7 @@ export default function ReferralPage() {
   const [referrals, setReferrals] = useState<ReferralRow[]>([]);
   const [shareOpen, setShareOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isQREnlarged, setIsQREnlarged] = useState(false);
 
   const [debug, setDebug] = useState<DebugInfo>({ rowCount: 0 });
 
@@ -612,6 +613,24 @@ export default function ReferralPage() {
                 <span className="truncate">{referralLink}</span>
               </div>
 
+              {/* QR Code in Modal */}
+              <div className="mb-6 flex flex-col items-center justify-center">
+                <p className="mb-2 text-[10px] font-medium text-gray-400 uppercase tracking-wider">
+                  Your QR Code
+                </p>
+                <motion.div
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setIsQREnlarged(true)}
+                  className="cursor-pointer rounded-2xl bg-white p-4 shadow-md border border-gray-100"
+                >
+                  <QRCode value={referralLink} size={120} />
+                  <p className="mt-2 text-center text-[10px] text-blue-600 font-medium">
+                    Click to enlarge
+                  </p>
+                </motion.div>
+              </div>
+
               <div className="space-y-3">
                 <a
                   href={`https://wa.me/?text=${encodeURIComponent(
@@ -647,6 +666,41 @@ export default function ReferralPage() {
               >
                 Cancel
               </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      {/* ENLARGED QR OVERLAY */}
+      <AnimatePresence>
+        {isQREnlarged && referralLink && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[300] flex items-center justify-center bg-black/60 backdrop-blur-md"
+            onClick={() => setIsQREnlarged(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.5, opacity: 0 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              onClick={(e) => e.stopPropagation()}
+              className="relative flex flex-col items-center rounded-3xl bg-white p-8 shadow-2xl"
+            >
+              <button
+                onClick={() => setIsQREnlarged(false)}
+                className="absolute -right-2 -top-2 flex h-8 w-8 items-center justify-center rounded-full bg-white text-gray-500 shadow-lg hover:text-black"
+              >
+                ✕
+              </button>
+              <QRCode value={referralLink} size={280} />
+              <p className="mt-6 text-center text-sm font-semibold text-gray-800">
+                Scan to join RefreeG
+              </p>
+              <p className="mt-1 text-center text-xs text-gray-500">
+                Share this QR code with your friends
+              </p>
             </motion.div>
           </motion.div>
         )}

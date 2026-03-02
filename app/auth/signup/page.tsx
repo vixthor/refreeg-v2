@@ -70,7 +70,7 @@ export default function SignUpPage() {
       const normalizedEmail = signUpEmail.toLowerCase();
 
       if (refV1FromUrl) {
-        await supabase.functions.invoke(" ", {
+        await supabase.functions.invoke("process-referral-v1", {
           body: {
             action: "create",
             referrer_id: refV1FromUrl,
@@ -82,7 +82,7 @@ export default function SignUpPage() {
         });
       }
 
-      const result = await signUp(signUpEmail, password, "User", "individual");
+      const result = await signUp(signUpEmail, password, "User", null);
 
       if (!result?.data?.user) {
         return;
