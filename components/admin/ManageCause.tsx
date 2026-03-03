@@ -253,10 +253,10 @@ export default function ManageCauses() {
                             item.status === "approved"
                               ? "default"
                               : item.status === "pending"
-                              ? "secondary"
-                              : item.status === "pending edit"
-                              ? "outline"
-                              : "destructive"
+                                ? "secondary"
+                                : item.status === "pending edit"
+                                  ? "outline"
+                                  : "destructive"
                           }
                         >
                           {item.status.charAt(0).toUpperCase() +
@@ -285,7 +285,7 @@ export default function ManageCauses() {
                                       item.type === "edit"
                                         ? item.original_cause_id
                                         : item.id,
-                                      item.title
+                                      item.title,
                                     )
                                   }
                                 >
@@ -296,7 +296,7 @@ export default function ManageCauses() {
                                     handleApprove(
                                       item.type === "edit"
                                         ? item.original_cause_id
-                                        : item.id
+                                        : item.id,
                                     )
                                   }
                                 >
@@ -397,7 +397,7 @@ export default function ManageCauses() {
                     <p className="text-muted-foreground">
                       {
                         categories.find(
-                          (c) => c.id === detailDialog.cause?.category
+                          (c) => c.id === detailDialog.cause?.category,
                         )?.name
                       }
                     </p>
@@ -407,8 +407,8 @@ export default function ManageCauses() {
                       detailDialog.cause.status === "approved"
                         ? "default"
                         : detailDialog.cause.status === "pending"
-                        ? "secondary"
-                        : "destructive"
+                          ? "secondary"
+                          : "destructive"
                     }
                   >
                     {detailDialog.cause.status.charAt(0).toUpperCase() +
@@ -439,7 +439,7 @@ export default function ManageCauses() {
                         {detailDialog.cause.updated_at
                           ? format(
                               new Date(detailDialog.cause.updated_at),
-                              "PPP"
+                              "PPP",
                             )
                           : "N/A"}
                       </p>
@@ -494,7 +494,7 @@ export default function ManageCauses() {
                           {section.description}
                         </p>
                       </div>
-                    )
+                    ),
                   )}
                 </div>
               ) : null}
@@ -535,9 +535,9 @@ export default function ManageCauses() {
                           Math.round(
                             ((detailDialog.cause.raised || 0) /
                               detailDialog.cause.goal) *
-                              100
+                              100,
                           ),
-                          100
+                          100,
                         )}
                         className="h-2"
                       />
@@ -546,9 +546,9 @@ export default function ManageCauses() {
                           Math.round(
                             ((detailDialog.cause.raised || 0) /
                               detailDialog.cause.goal) *
-                              100
+                              100,
                           ),
-                          100
+                          100,
                         )}
                         % raised
                       </p>
@@ -603,7 +603,7 @@ export default function ManageCauses() {
                         closeDetailDialog();
                         openRejectDialog(
                           detailDialog.cause!.id,
-                          detailDialog.cause!.title
+                          detailDialog.cause!.title,
                         );
                       }}
                     >
@@ -636,7 +636,7 @@ export default function ManageCauses() {
                       closeDetailDialog();
                       openRejectDialog(
                         detailDialog.cause!.id,
-                        detailDialog.cause!.title
+                        detailDialog.cause!.title,
                       );
                     }}
                   >

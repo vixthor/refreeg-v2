@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { KycVerification, KycStatus } from "@/types/kyc-types";
+import { logAdminActivity } from "@/actions/database-actions";
 import {
   sendKycSubmittedEmail,
   sendKycApprovedEmail,
@@ -23,7 +24,7 @@ export async function uploadKycDocument(
     state: string;
     postal: string;
     country: string;
-  }
+  },
 ): Promise<{ documentUrl: string; error: string | null }> {
   try {
     const supabase = await createClient();
@@ -122,7 +123,7 @@ export async function uploadKycDocument(
           profile?.email || "",
           personalData.fullName,
           userId,
-          kycReviewUrl
+          kycReviewUrl,
         );
       } catch (emailError) {
         console.error("Error sending KYC submission email:", emailError);
@@ -210,7 +211,7 @@ export async function uploadKycDocument(
           profile?.email || "",
           personalData.fullName,
           userId,
-          kycReviewUrl
+          kycReviewUrl,
         );
       } catch (emailError) {
         console.error("Error sending KYC submission email:", emailError);
@@ -225,7 +226,7 @@ export async function uploadKycDocument(
 }
 
 export async function getVerificationStatus(
-  userId: string
+  userId: string,
 ): Promise<{ status: KycVerification | null; error: string | null }> {
   try {
     const supabase = await createClient();
@@ -260,8 +261,8 @@ export async function getVerificationStatus(
         error instanceof Error
           ? error.message
           : typeof error === "string"
-          ? error
-          : JSON.stringify(error) || "Failed to get status",
+            ? error
+            : JSON.stringify(error) || "Failed to get status",
     };
   }
 }
@@ -269,7 +270,7 @@ export async function getVerificationStatus(
 export async function updateVerificationStatus(
   verificationId: string,
   status: "approved" | "rejected",
-  notes?: string
+  notes?: string,
 ): Promise<{ error: string | null }> {
   try {
     const supabase = await createClient();
@@ -277,7 +278,7 @@ export async function updateVerificationStatus(
       "[KYC] Updating status for verificationId:",
       verificationId,
       "to status:",
-      status
+      status,
     );
     const { error: updateError } = await supabase
       .from("kyc_verifications")
@@ -295,6 +296,18 @@ export async function updateVerificationStatus(
       return { error: updateError.message || JSON.stringify(updateError) };
     }
 
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (user) {
+      if (status === "approved") {
+        await logAdminActivity("approve-kyc", user.id);
+      } else if (status === "rejected") {
+        await logAdminActivity("reject-kyc", user.id);
+      }
+    }
+
     const { data: verification, error: fetchError } = await supabase
       .from("kyc_verifications")
       .select("user_id, full_name")
@@ -304,7 +317,7 @@ export async function updateVerificationStatus(
     if (fetchError) {
       console.error(
         "[KYC] Error fetching verification record after update:",
-        fetchError
+        fetchError,
       );
       return { error: fetchError.message || JSON.stringify(fetchError) };
     }
@@ -321,14 +334,14 @@ export async function updateVerificationStatus(
           if (status === "approved") {
             await sendKycApprovedEmail(
               profile.email,
-              verification.full_name || "User"
+              verification.full_name || "User",
             );
           } else if (status === "rejected") {
             await sendKycRejectedEmail(
               profile.email,
               verification.full_name || "User",
               notes ||
-                "Your KYC verification was rejected. Please review and resubmit."
+                "Your KYC verification was rejected. Please review and resubmit.",
             );
           }
         }
@@ -345,7 +358,7 @@ export async function updateVerificationStatus(
         if (profileError) {
           console.error(
             "[KYC] Error updating user profile to verified:",
-            profileError
+            profileError,
           );
           return {
             error: profileError.message || JSON.stringify(profileError),
@@ -360,7 +373,7 @@ export async function updateVerificationStatus(
         if (profileError) {
           console.error(
             "[KYC] Error updating user profile to unverified:",
-            profileError
+            profileError,
           );
           return {
             error: profileError.message || JSON.stringify(profileError),
@@ -370,7 +383,7 @@ export async function updateVerificationStatus(
     } else {
       console.error(
         "[KYC] No verification record found for id:",
-        verificationId
+        verificationId,
       );
       return { error: "No verification record found for this id." };
     }

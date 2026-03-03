@@ -89,7 +89,7 @@ export function DonationForm({
             // Don't save sensitive info like name/email for privacy
           },
           timestamp: Date.now(),
-        })
+        }),
       );
     }
   }, [
@@ -171,7 +171,7 @@ export function DonationForm({
   ]);
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));

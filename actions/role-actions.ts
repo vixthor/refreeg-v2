@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import type { UserRole, UserWithRole } from "@/types";
+import { logAdminActivity } from "@/actions/database-actions";
 
 const DEFAULT_ADMIN_EMAIL = "kingraj1344@gmail.com";
 
@@ -70,7 +71,7 @@ export async function getUserRole(userId: string): Promise<UserRole> {
 
 export async function setUserRole(
   userId: string,
-  role: UserRole
+  role: UserRole,
 ): Promise<boolean> {
   const supabase = await createClient();
 
@@ -125,6 +126,14 @@ export async function setUserRole(
     return false;
   }
 
+  if (role === "manager") {
+    await logAdminActivity("appoint-manager", user.id);
+  } else if (role === "user") {
+    await logAdminActivity("remove-manager", user.id);
+  } else if (role === "admin") {
+    await logAdminActivity("appoint-admin", user.id);
+  }
+
   revalidatePath("/dashboard/admin/users");
   return true;
 }
@@ -167,7 +176,7 @@ export async function listUsersWithRoles(): Promise<UserWithRole[]> {
       username,
       is_blocked,
       created_at
-    `
+    `,
     )
     .order("created_at", { ascending: false });
 
@@ -280,7 +289,7 @@ export async function getAllUsers(): Promise<UserWithRole[]> {
   const supabase = await createClient();
 
   const { data: profiles, error: profilesError } = await supabase.from(
-    "profiles"
+    "profiles",
   ).select(`
       id,
       full_name,

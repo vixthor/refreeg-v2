@@ -29,7 +29,7 @@ interface ExpandableCardProps {
 
 export function ExpandableCard({ items, type }: ExpandableCardProps) {
   const [active, setActive] = useState<ExpandableCardItem | boolean | null>(
-    null
+    null,
   );
   const id = useId();
   const ref = useRef<HTMLDivElement>(null);
