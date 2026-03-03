@@ -25,7 +25,7 @@ export interface Profile {
   followers_count?: number;
   following_count?: number;
   causes_count?: number;
-  account_type?: "individual" | "creator" | "nonprofit" | "organization";
+  account_type?: "individual" | "creator" | "nonprofit" | "organization" | "community";
   gender?: string | null;
   bio: string | null;
   solana_wallet?: string | null;

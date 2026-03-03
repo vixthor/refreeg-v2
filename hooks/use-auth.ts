@@ -26,7 +26,7 @@ export function useAuth() {
   const [user, setUser] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
-  const supabase = createClient();
+  const [supabase] = useState(() => createClient());
 
   useEffect(() => {
     let isMounted = true;
@@ -155,7 +155,7 @@ export function useAuth() {
     email: string,
     password: string,
     fullName: string,
-    accountType: "individual" | "organization"
+    accountType?: "individual" | "organization" | null,
   ) => {
     try {
       const { data, error } = await supabase.auth.signUp({
@@ -219,7 +219,7 @@ export function useAuth() {
           email,
           first_name: firstName,
           fields: {
-            account_type: accountType,
+            account_type: accountType || "not_selected",
             signup_date: new Date().toISOString(),
           },
         });

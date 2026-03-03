@@ -67,7 +67,7 @@ export function SignatureForm({
     hasSigned || status === "pending" || status === "rejected";
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     if (isFormDisabled) return;
 
@@ -92,7 +92,7 @@ export function SignatureForm({
     }
 
     try {
-      const ok = await createUserSignature(petitionId, profile.id, {
+      const ok = await createUserSignature(petitionId, profile.id || "", {
         amount: 1,
         email: formData.email,
         name: formData.name,
@@ -102,7 +102,7 @@ export function SignatureForm({
 
       if (!ok) {
         setFriendlyError(
-          "We couldn't process your signature. Please try again."
+          "We couldn't process your signature. Please try again.",
         );
         return;
       }
@@ -116,7 +116,7 @@ export function SignatureForm({
           formData.isAnonymous ? "Supporter" : formData.name,
           petitionData.title || "the petition",
           `${window.location.origin}/petitions/${petitionId}`,
-          formData.isAnonymous
+          formData.isAnonymous,
         );
         console.log("Petition signed confirmation email sent");
       } catch (emailError) {

@@ -36,7 +36,7 @@ export async function hasBankDetails(userId: string): Promise<boolean> {
 
 export async function updateProfile(
   userId: string,
-  profileData: ProfileFormData
+  profileData: ProfileFormData,
 ): Promise<Profile> {
   const supabase = await createClient();
 
@@ -77,7 +77,7 @@ export async function updateProfile(
 
 export async function updateProfilePhoto(
   userId: string,
-  photoFile: File
+  photoFile: File,
 ): Promise<string> {
   const supabase = await createClient();
 
@@ -122,7 +122,7 @@ export async function updateProfilePhoto(
 
 export async function updateBankDetails(
   userId: string,
-  bankData: BankDetailsFormData
+  bankData: BankDetailsFormData,
 ): Promise<Profile> {
   const supabase = await createClient();
 
@@ -151,7 +151,7 @@ export async function updateBankDetails(
 export async function createOnboardingProfile(
   userId: string,
   profileData: OnboardingProfileData,
-  oauthAvatarUrl?: string | null
+  oauthAvatarUrl?: string | null,
 ): Promise<Profile> {
   const supabase = await createClient();
 
@@ -237,7 +237,7 @@ export async function hasCompletedOnboarding(userId: string): Promise<boolean> {
     const { data: profile, error } = await supabase
       .from("profiles")
       .select(
-        "full_name, phone, email, first_name, last_name, username, location, created_at"
+        "full_name, phone, email, first_name, last_name, username, location, created_at",
       )
       .eq("id", userId)
       .single();
@@ -257,10 +257,17 @@ export async function hasCompletedOnboarding(userId: string): Promise<boolean> {
     );
 
     if (hasBasicProfile && !hasOnboardingFields) {
-      console.log(
-        `Grandfathered existing user ${userId} - has basic profile but no onboarding fields`
-      );
-      return true;
+      // Check if the user is very old (created before onboarding fields were added)
+      // For new users created by the trigger, this should be false
+      const createdAt = new Date(profile.created_at);
+      const onboardingcutoff = new Date("2024-12-21"); // Date when onboarding was added
+
+      if (createdAt < onboardingcutoff) {
+        console.log(
+          `Grandfathered existing user ${userId} - has basic profile but no onboarding fields`,
+        );
+        return true;
+      }
     }
 
     return hasOnboardingFields;
@@ -271,7 +278,7 @@ export async function hasCompletedOnboarding(userId: string): Promise<boolean> {
 }
 
 export async function getCurrentOnboardingStep(
-  userId: string
+  userId: string,
 ): Promise<number> {
   try {
     const supabase = await createClient();
@@ -279,7 +286,7 @@ export async function getCurrentOnboardingStep(
     const { data: profile, error } = await supabase
       .from("profiles")
       .select(
-        "account_type, gender, first_name, last_name, username, location, phone, email, profile_photo"
+        "account_type, gender, first_name, last_name, username, location, phone, email, profile_photo",
       )
       .eq("id", userId)
       .single();
@@ -335,7 +342,7 @@ export async function getOnboardingData(userId: string): Promise<{
     const { data: profile, error } = await supabase
       .from("profiles")
       .select(
-        "account_type, gender, first_name, last_name, username, location, phone, email, profile_photo"
+        "account_type, gender, first_name, last_name, username, location, phone, email, profile_photo",
       )
       .eq("id", userId)
       .single();
@@ -387,7 +394,7 @@ export async function getOnboardingData(userId: string): Promise<{
 
 export async function saveStep1Progress(
   userId: string,
-  accountType: string
+  accountType: string,
 ): Promise<void> {
   try {
     const supabase = await createClient();
@@ -412,7 +419,7 @@ export async function saveStep1Progress(
 
 export async function saveStep2Progress(
   userId: string,
-  gender: string
+  gender: string,
 ): Promise<void> {
   try {
     const supabase = await createClient();
@@ -436,7 +443,7 @@ export async function saveStep2Progress(
 }
 
 export async function isProfileComplete(
-  userId: string
+  userId: string,
 ): Promise<{ isComplete: boolean; missingFields: string[] }> {
   try {
     const supabase = await createClient();
@@ -498,7 +505,7 @@ export async function hasKycVerification(userId: string) {
 export async function updateKycStatus(
   verificationId: string,
   status: "approved" | "rejected",
-  notes?: string
+  notes?: string,
 ) {
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -517,7 +524,7 @@ export async function updateKycStatus(
 }
 
 export async function getProfileByUsername(
-  username: string
+  username: string,
 ): Promise<Profile | null> {
   const supabase = await createClient();
   try {

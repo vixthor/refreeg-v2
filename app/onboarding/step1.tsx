@@ -16,6 +16,7 @@ const accountOptions = [
   { id: "creator", label: "I’m a creator" },
   { id: "nonprofit", label: "I’m a nonprofit" },
   { id: "organization", label: "I’m an organisation" },
+  { id: "community", label: "I’m a community" },
 ];
 
 export default function Step1({
@@ -25,7 +26,7 @@ export default function Step1({
   updateOnboardingData,
 }: Step1Props) {
   const [selectedType, setSelectedType] = useState<string | null>(
-    onboardingData.accountType || null
+    onboardingData.accountType || null,
   );
 
   const handleNext = () => {
