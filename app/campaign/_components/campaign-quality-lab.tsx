@@ -131,7 +131,6 @@ type CauseDetail = Cause & {
 type CampaignQualityLabProps = {
   cause: CauseDetail;
   donors: Donor[];
-  commentsCount: number;
   comments: Comment[];
   profile: ProfileSummary;
   creatorHasWallet: boolean;
@@ -378,11 +377,9 @@ function MediaCard({ media, cause }: { media: string[]; cause: CauseDetail }) {
 function ProgressCard({
   cause,
   percentRaised,
-  remainingGoal,
 }: {
   cause: CauseDetail;
   percentRaised: number;
-  remainingGoal: number;
 }) {
   return (
     <motion.div
@@ -420,7 +417,6 @@ function ProgressCard({
 function TabsCard({
   cause,
   formattedDate,
-  commentsCount,
   comments,
   currentUserId,
   activeTab,
@@ -428,12 +424,12 @@ function TabsCard({
 }: {
   cause: CauseDetail;
   formattedDate: string;
-  commentsCount: number;
   comments: Comment[];
   currentUserId?: string;
   activeTab: TabKey;
   setActiveTab: (value: TabKey) => void;
 }) {
+  const commentCount = comments.length;
   return (
     <motion.div
       className="rounded-[14px] border border-[#E5E7EB] bg-white shadow-[0_10px_30px_rgba(0,0,0,0.06)]"
@@ -518,7 +514,7 @@ function TabsCard({
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
             <div className="flex items-center gap-2 text-sm text-slate-600">
               <MessagesSquare className="h-4 w-4 text-emerald-500" />
-              {commentsCount} comments
+              {commentCount} comments
             </div>
             <div className="mt-4">
               <CommentsSection
@@ -830,7 +826,6 @@ function StorySections({ sections }: { sections: { heading: string; description:
 export default function CampaignQualityLab({
   cause,
   donors,
-  commentsCount,
   comments,
   profile,
   creatorHasWallet,
@@ -862,11 +857,6 @@ export default function CampaignQualityLab({
   }, [cause.summary]);
 
   const totalWithTip = useMemo(() => donation + tip, [donation, tip]);
-  const remainingGoal = useMemo(
-    () => Math.max(cause.goal - cause.raised, 0),
-    [cause.goal, cause.raised]
-  );
-
   const donorsPreview = useMemo(
     () =>
       donors
@@ -946,7 +936,7 @@ export default function CampaignQualityLab({
 
         <section className="order-2 space-y-6 lg:order-1 lg:col-start-1 lg:col-end-2">
           <MediaCard media={media} cause={cause} />
-          <ProgressCard cause={cause} percentRaised={percentRaised} remainingGoal={remainingGoal} />
+          <ProgressCard cause={cause} percentRaised={percentRaised} />
           <ImpactCard cause={cause} />
           <TrustPanel baseUrl={baseUrl} cause={cause} />
           <motion.div
@@ -971,7 +961,6 @@ export default function CampaignQualityLab({
           <TabsCard
             cause={cause}
             formattedDate={formattedDate}
-            commentsCount={commentsCount}
             comments={comments}
             currentUserId={currentUserId}
             activeTab={activeTab}

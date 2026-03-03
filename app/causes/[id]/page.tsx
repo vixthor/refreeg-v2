@@ -35,7 +35,6 @@ export default async function CauseDetailPage({
     <CampaignQualityLab
       cause={cause}
       donors={donors}
-      commentsCount={comments.length}
       comments={comments}
       profile={profile}
       creatorHasWallet={!!creatorProfile?.solana_wallet}

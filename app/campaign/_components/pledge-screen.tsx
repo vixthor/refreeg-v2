@@ -3,9 +3,8 @@
 import { useState } from "react";
 import type { ReactNode } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, HandHeart, ShieldAlert } from "lucide-react";
+import { HandHeart, ShieldAlert } from "lucide-react";
 import type { Cause } from "@/types";
-import Link from "next/link";
 import { createPledge } from "@/actions";
 
 function getDefaultPledgeDate() {
@@ -36,6 +35,8 @@ type PledgeScreenProps = {
   profile: ProfileSummary;
 };
 
+const pledgePresets = [5000, 10000, 25000, 50000];
+
 const fadeUp = {
   hidden: { opacity: 0, y: 16 },
   show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
@@ -55,6 +56,7 @@ function StatItem({ icon, label, value }: { icon: ReactNode; label: string; valu
 
 export default function PledgeScreen({ cause, profile }: PledgeScreenProps) {
   const [pledgeAmount, setPledgeAmount] = useState(25000);
+  const [pledgeAmountInput, setPledgeAmountInput] = useState("25,000");
   const [pledgeDate, setPledgeDate] = useState(getDefaultPledgeDate);
   const [pledgeName, setPledgeName] = useState(profile.name || "");
   const [pledgeEmail, setPledgeEmail] = useState(profile.email || "");
@@ -63,17 +65,100 @@ export default function PledgeScreen({ cause, profile }: PledgeScreenProps) {
   const [pledgeSubmitting, setPledgeSubmitting] = useState(false);
   const [pledgeError, setPledgeError] = useState<string | null>(null);
   const [pledgeId, setPledgeId] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{
+    amount?: string;
+    date?: string;
+    email?: string;
+    name?: string;
+  }>({});
+
+  const resetSubmissionState = () => {
+    setPledgeSubmitted(false);
+    setPledgeError(null);
+  };
+
+  const clearFieldError = (key: keyof typeof fieldErrors) => {
+    setFieldErrors((prev) => {
+      if (!prev[key]) return prev;
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+  };
+
+  const handleFieldChange = (setter: (value: string) => void) => {
+    return (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      setter(event.target.value);
+      resetSubmissionState();
+    };
+  };
+
+  const handleAmountChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = event.target.value;
+    const next = raw.replace(/,/g, "").replace(/\D/g, "");
+    const capped = next.slice(0, 12);
+    setPledgeAmountInput(capped);
+    setPledgeAmount(capped ? Number(capped) : 0);
+    resetSubmissionState();
+    clearFieldError("amount");
+  };
+
+  const handleAmountBlur = () => {
+    if (!pledgeAmountInput) {
+      setPledgeAmountInput("");
+      return;
+    }
+    setPledgeAmountInput(Number(pledgeAmountInput).toLocaleString());
+  };
+
+  const handleAmountFocus = () => {
+    setPledgeAmountInput((prev) => prev.replace(/,/g, ""));
+  };
+
+  const handlePresetClick = (value: number) => {
+    setPledgeAmount(value);
+    setPledgeAmountInput(value.toLocaleString());
+    resetSubmissionState();
+    clearFieldError("amount");
+  };
+
+  const validatePledge = () => {
+    const trimmedName = pledgeName.trim();
+    const trimmedEmail = pledgeEmail.trim();
+    const amountValue = Number(pledgeAmount || 0);
+
+    const nextErrors: typeof fieldErrors = {};
+
+    if (amountValue <= 0) {
+      nextErrors.amount = "Enter a valid amount.";
+    }
+
+    if (!pledgeDate) {
+      nextErrors.date = "Select a reminder date.";
+    }
+
+    if (!trimmedEmail) {
+      nextErrors.email = "Email is required.";
+    }
+
+    if (!trimmedName) {
+      nextErrors.name = "Name is required.";
+    }
+
+    if (Object.keys(nextErrors).length > 0) {
+      setFieldErrors(nextErrors);
+      return "Add a valid amount, reminder date, name, and email.";
+    }
+
+    return null;
+  };
 
   const handleSubmit = async () => {
     if (pledgeSubmitting) return;
 
-    const trimmedName = pledgeName.trim();
-    const trimmedEmail = pledgeEmail.trim();
-    const trimmedNote = pledgeNote.trim();
-    const amountValue = Number(pledgeAmount || 0);
-
-    if (!trimmedName || !trimmedEmail || !pledgeDate || amountValue <= 0) {
-      setPledgeError("Add a valid amount, reminder date, name, and email.");
+    const validationError = validatePledge();
+    if (validationError) {
+      setPledgeError(validationError);
       return;
     }
 
@@ -81,6 +166,11 @@ export default function PledgeScreen({ cause, profile }: PledgeScreenProps) {
     setPledgeError(null);
 
     try {
+      const trimmedName = pledgeName.trim();
+      const trimmedEmail = pledgeEmail.trim();
+      const trimmedNote = pledgeNote.trim();
+      const amountValue = Number(pledgeAmount || 0);
+
       const { data, error } = await createPledge({
         causeId: cause.id,
         amount: amountValue,
@@ -109,7 +199,7 @@ export default function PledgeScreen({ cause, profile }: PledgeScreenProps) {
 
   return (
     <div
-      className="min-h-screen bg-[#F6F8FB] pb-16 pt-10 text-[#0F172A] sm:pt-14"
+      className="min-h-screen bg-[#F6F8FB] pb-24 pt-10 text-[#0F172A] sm:pt-14"
       style={{
         backgroundImage:
           "radial-gradient(circle at 50% 20%, rgba(37,99,235,0.08), transparent 60%)",
@@ -132,7 +222,7 @@ export default function PledgeScreen({ cause, profile }: PledgeScreenProps) {
 
             <div className="space-y-3">
               <h1 className="text-2xl font-semibold leading-snug tracking-tight text-[#0F172A] sm:text-3xl lg:text-5xl">
-                Pledge to support {cause.title}
+                Pledge now, donate later.
               </h1>
               <p className="text-sm leading-relaxed text-[#64748B] sm:text-base lg:text-lg">
                 {cause.summary ||
@@ -141,7 +231,11 @@ export default function PledgeScreen({ cause, profile }: PledgeScreenProps) {
             </div>
 
             <div className="flex flex-wrap items-center gap-3 text-sm text-[#64748B]">
-              <StatItem icon={<HandHeart className="h-4 w-4 text-[#2563EB]" />} label="Campaign" value="Verified" />
+              <StatItem
+                icon={<HandHeart className="h-4 w-4 text-[#2563EB]" />}
+                label="Campaign"
+                value="Verified"
+              />
               <StatItem
                 icon={<ShieldAlert className="h-4 w-4 text-[#F59E0B]" />}
                 label="Reminder"
@@ -179,20 +273,39 @@ export default function PledgeScreen({ cause, profile }: PledgeScreenProps) {
                 <span className="text-xs uppercase tracking-[0.15em] text-slate-500">
                   Pledge amount
                 </span>
+                <div className="flex flex-wrap gap-2">
+                  {pledgePresets.map((value) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => handlePresetClick(value)}
+                      className={`rounded-full border px-3 py-1 text-xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 ${
+                        pledgeAmount === value
+                          ? "border-[#2563EB] bg-[#2563EB] text-white"
+                          : "border-[#E5E7EB] bg-white text-[#64748B]"
+                      }`}
+                    >
+                      ₦{value.toLocaleString()}
+                    </button>
+                  ))}
+                </div>
                 <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2">
                   <span className="text-sm font-semibold text-slate-500">₦</span>
                   <input
-                    type="number"
-                    min={1}
-                    value={pledgeAmount}
-                    onChange={(event) => {
-                      setPledgeAmount(Number(event.target.value));
-                      setPledgeSubmitted(false);
-                      setPledgeError(null);
-                    }}
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={12}
+                    value={pledgeAmountInput}
+                    onChange={handleAmountChange}
+                    onBlur={handleAmountBlur}
+                    onFocus={handleAmountFocus}
                     className="w-full bg-transparent text-right text-sm text-slate-900 outline-none"
+                    placeholder="0"
                   />
                 </div>
+                {fieldErrors.amount && (
+                  <p className="text-xs font-semibold text-rose-600">{fieldErrors.amount}</p>
+                )}
                 <p className="text-xs text-slate-500">
                   Choose the amount you plan to donate later.
                 </p>
@@ -205,13 +318,16 @@ export default function PledgeScreen({ cause, profile }: PledgeScreenProps) {
                 <input
                   type="date"
                   value={pledgeDate}
+                  min={getDefaultPledgeDate()}
                   onChange={(event) => {
-                    setPledgeDate(event.target.value);
-                    setPledgeSubmitted(false);
-                    setPledgeError(null);
+                    handleFieldChange(setPledgeDate)(event);
+                    clearFieldError("date");
                   }}
                   className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none"
                 />
+                {fieldErrors.date && (
+                  <p className="text-xs font-semibold text-rose-600">{fieldErrors.date}</p>
+                )}
                 <p className="text-xs text-slate-500">
                   We will send a reminder on this date by email. SMS reminders can be added later.
                 </p>
@@ -223,13 +339,15 @@ export default function PledgeScreen({ cause, profile }: PledgeScreenProps) {
                   type="email"
                   value={pledgeEmail}
                   onChange={(event) => {
-                    setPledgeEmail(event.target.value);
-                    setPledgeSubmitted(false);
-                    setPledgeError(null);
+                    handleFieldChange(setPledgeEmail)(event);
+                    clearFieldError("email");
                   }}
                   placeholder="you@example.com"
                   className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none"
                 />
+                {fieldErrors.email && (
+                  <p className="text-xs font-semibold text-rose-600">{fieldErrors.email}</p>
+                )}
               </label>
 
               <label className="grid gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
@@ -238,13 +356,15 @@ export default function PledgeScreen({ cause, profile }: PledgeScreenProps) {
                   type="text"
                   value={pledgeName}
                   onChange={(event) => {
-                    setPledgeName(event.target.value);
-                    setPledgeSubmitted(false);
-                    setPledgeError(null);
+                    handleFieldChange(setPledgeName)(event);
+                    clearFieldError("name");
                   }}
                   placeholder="Your name"
                   className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none"
                 />
+                {fieldErrors.name && (
+                  <p className="text-xs font-semibold text-rose-600">{fieldErrors.name}</p>
+                )}
                 <p className="text-xs text-slate-500">We will only email about this pledge.</p>
               </label>
 
@@ -255,11 +375,7 @@ export default function PledgeScreen({ cause, profile }: PledgeScreenProps) {
                 <textarea
                   rows={3}
                   value={pledgeNote}
-                  onChange={(event) => {
-                    setPledgeNote(event.target.value);
-                    setPledgeSubmitted(false);
-                    setPledgeError(null);
-                  }}
+                  onChange={handleFieldChange(setPledgeNote)}
                   placeholder="Add a note to the organiser"
                   className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none"
                 />
@@ -306,6 +422,11 @@ export default function PledgeScreen({ cause, profile }: PledgeScreenProps) {
             >
               {pledgeSubmitting ? "Saving pledge..." : "Save pledge & remind me"}
             </button>
+
+            <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-[#7C2D12]">
+              <ShieldAlert className="h-4 w-4 text-[#F59E0B]" />
+              No payment today
+            </div>
 
             <div className="mt-6 flex items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-base font-semibold text-[#7C2D12] sm:text-lg">
               <ShieldAlert className="h-5 w-5 text-[#F59E0B]" />
@@ -360,6 +481,14 @@ export default function PledgeScreen({ cause, profile }: PledgeScreenProps) {
                   {cause.goal ? Math.round((cause.raised / cause.goal) * 100) : 0}%
                 </span>
               </div>
+              <div className="mt-3 h-2 w-full rounded-full bg-white">
+                <div
+                  className="h-2 rounded-full bg-emerald-500"
+                  style={{
+                    width: `${cause.goal ? Math.min((cause.raised / cause.goal) * 100, 100) : 0}%`,
+                  }}
+                />
+              </div>
             </div>
 
             <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
@@ -383,6 +512,19 @@ export default function PledgeScreen({ cause, profile }: PledgeScreenProps) {
           </motion.div>
         </aside>
       </main>
+
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white px-4 py-3 shadow-[0_-12px_30px_rgba(15,23,42,0.08)] sm:hidden">
+        <div className="mx-auto flex max-w-md items-center gap-3">
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={pledgeSubmitting}
+            className="flex-1 rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-70"
+          >
+            {pledgeSubmitting ? "Saving pledge..." : "Save pledge"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
