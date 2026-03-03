@@ -44,8 +44,8 @@ function MobileTeamSlider() {
             opacity: 1,
             y: 0,
             transition: { duration: 0.6, ease: "easeOut" },
-          })
-        )
+          }),
+        ),
       );
 
       const totalWidth = TEAM.length * (CARD_WIDTH + CARD_GAP);
@@ -106,7 +106,7 @@ function DesktopTeamGrid() {
       <motion.div
         ref={ref}
         className={`grid ${getGridCols(
-          TEAM.length
+          TEAM.length,
         )} gap-8 items-center justify-items-center`}
         initial={{ opacity: 0 }}
         animate={isInView ? { opacity: 1 } : { opacity: 0 }}
