@@ -11,7 +11,11 @@ type Action =
   | "block-user"
   | "unblock-user"
   | "appoint-manager"
-  | "remove-manager";
+  | "remove-manager"
+  | "delete-user"
+  | "approve-kyc"
+  | "reject-kyc"
+  | "appoint-admin";
 
 export async function checkTableExists(tableName: string): Promise<boolean> {
   const supabase = await createClient();
@@ -45,6 +49,7 @@ export async function checkDatabaseSetup(): Promise<{
     "donations",
     "roles",
     "cause_multimedia",
+    "logs",
   ];
   const missingTables: string[] = [];
 
@@ -87,9 +92,14 @@ export async function listAdminLogs() {
     throw error;
   }
 
-  return (data || []).map((log: any) => ({
-    email: log.profiles?.email || "",
-    action: log.action,
-    created_at: log.created_at,
-  }));
+  return (data || []).map((log: any) => {
+    const profile = Array.isArray(log.profiles)
+      ? log.profiles[0]
+      : log.profiles;
+    return {
+      email: profile?.email || "Unknown User",
+      action: log.action || "Unknown Action",
+      created_at: log.created_at || new Date().toISOString(),
+    };
+  });
 }

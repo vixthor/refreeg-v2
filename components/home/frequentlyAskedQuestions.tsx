@@ -21,7 +21,7 @@ export default function FAQ() {
 
   const toggleItem = (value: string) => {
     setOpenItems((prev) =>
-      prev.includes(value) ? prev.filter((i) => i !== value) : [...prev, value]
+      prev.includes(value) ? prev.filter((i) => i !== value) : [...prev, value],
     );
   };
 
