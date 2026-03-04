@@ -47,6 +47,7 @@ export async function updateProfile(
     username: profileData.username,
     phone: profileData.phone,
     bio: profileData.bio,
+    account_type: profileData.account_type,
     profile_photo: profileData.profile_photo,
     twitter_url: profileData.twitter_url || null,
     facebook_url: profileData.facebook_url || null,

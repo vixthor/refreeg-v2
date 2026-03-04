@@ -14,7 +14,7 @@ interface Step1Props {
 const accountOptions = [
   { id: "individual", label: "I’m an individual" },
   { id: "creator", label: "I’m a creator" },
-  { id: "nonprofit", label: "I’m a nonprofit" },
+  { id: "non-profit", label: "I’m a non-profit" },
   { id: "organization", label: "I’m an organisation" },
   { id: "community", label: "I’m a community" },
 ];
