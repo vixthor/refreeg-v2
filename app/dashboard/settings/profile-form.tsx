@@ -13,6 +13,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Camera, Upload, Eye } from "lucide-react";
 import { Icons } from "@/components/icons";
@@ -21,6 +28,21 @@ import type { ProfileFormData } from "@/types";
 import { useProfile } from "@/hooks/use-profile";
 import Link from "next/link";
 
+type AccountType =
+  | "individual"
+  | "creator"
+  | "non-profit"
+  | "organization"
+  | "community";
+
+const ACCOUNT_TYPE_OPTIONS: { value: AccountType; label: string }[] = [
+  { value: "individual", label: "Individual" },
+  { value: "creator", label: "Creator" },
+  { value: "non-profit", label: "Non-profit" },
+  { value: "organization", label: "Organisation" },
+  { value: "community", label: "Community" },
+];
+
 interface ProfileFormProps {
   profile: {
     full_name: string | null;
@@ -28,8 +50,8 @@ interface ProfileFormProps {
     phone: string | null;
     profile_photo: string | null;
     bio: string | null;
-    username?: string | null; // Add username here
-    account_type?: "individual" | "organization" | null;
+    username?: string | null;
+    account_type?: AccountType | null;
     twitter_url?: string | null;
     facebook_url?: string | null;
     instagram_url?: string | null;
@@ -51,7 +73,7 @@ export function ProfileForm({ profile, user }: ProfileFormProps) {
   const [formData, setFormData] = useState({
     full_name: profile?.full_name || "",
     email: profile?.email || user?.email || "",
-    account_type: profile?.account_type || "",
+    account_type: (profile?.account_type || "individual") as AccountType,
     phone: profile?.phone || "",
     bio: profile?.bio || "",
     username: profile?.username || "",
@@ -76,19 +98,15 @@ export function ProfileForm({ profile, user }: ProfileFormProps) {
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleAccountTypeChange = (value: AccountType) => {
+    setFormData((prev) => ({ ...prev, account_type: value }));
   };
 
   const handleSocialMediaChange = (platform: string, value: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      [`${platform}_url`]: value,
-    }));
-
-    // Validate the URL
+    setFormData((prev) => ({ ...prev, [`${platform}_url`]: value }));
     try {
       if (value && !/^https?:\/\//i.test(value)) {
         setSocialErrors((prev) => ({ ...prev, [platform]: true }));
@@ -108,25 +126,17 @@ export function ProfileForm({ profile, user }: ProfileFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Check if any social media URLs are invalid
     const hasErrors = Object.values(socialErrors).some((error) => error);
-    if (hasErrors) {
-      return;
-    }
+    if (hasErrors) return;
 
-    const phoneIsValid = isValidNigerianPhone(formData.phone);
-
-    // Check phone number
-    if (formData.phone && !phoneIsValid) {
+    if (formData.phone && !isValidNigerianPhone(formData.phone)) {
       setFormErrors({
         phone: "Enter a valid Nigerian phone number (e.g. 08012345678)",
       });
       return;
     }
 
-    // Clear previous errors
     setFormErrors({});
-
     setIsSubmitting(true);
 
     const updatedProfile: ProfileFormData = {
@@ -134,7 +144,8 @@ export function ProfileForm({ profile, user }: ProfileFormProps) {
       email: formData.email,
       phone: formData.phone,
       bio: formData.bio,
-      username: formData.username, // Include username in the update
+      username: formData.username,
+      account_type: formData.account_type,
       twitter_url: formData.twitter_url,
       facebook_url: formData.facebook_url,
       instagram_url: formData.instagram_url,
@@ -145,15 +156,11 @@ export function ProfileForm({ profile, user }: ProfileFormProps) {
     setIsSubmitting(false);
   };
 
-  const handlePhotoClick = () => {
-    fileInputRef.current?.click();
-  };
+  const handlePhotoClick = () => fileInputRef.current?.click();
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      await updateProfilePhoto(file);
-    }
+    if (file) await updateProfilePhoto(file);
   };
 
   const getInitials = () => {
@@ -175,11 +182,6 @@ export function ProfileForm({ profile, user }: ProfileFormProps) {
       : "U";
   };
 
-  const formatAccountType = (type: string) => {
-    return type === "individual" ? "Individual" : "Organization";
-  };
-
-  // Get the username from formData (which comes from profile)
   const username = formData.username;
 
   const hasSocialErrors = [
@@ -275,7 +277,7 @@ export function ProfileForm({ profile, user }: ProfileFormProps) {
             />
           </div>
 
-          {/* Username Field - Add this new field */}
+          {/* Username */}
           <div className="space-y-2">
             <Label htmlFor="username">Username</Label>
             <Input
@@ -283,16 +285,12 @@ export function ProfileForm({ profile, user }: ProfileFormProps) {
               name="username"
               placeholder="Your username"
               value={formData.username}
-              // disabled
               onChange={handleChange}
             />
             <p className="text-xs text-muted-foreground">
               This will be used in your profile URL: refreeg.com/
               {formData.username || "username"}
             </p>
-            {/* <p className="text-xs text-muted-foreground">
-              Your username cannot be changed at the moment
-            </p> */}
           </div>
 
           {/* Email */}
@@ -311,32 +309,43 @@ export function ProfileForm({ profile, user }: ProfileFormProps) {
             </p>
           </div>
 
-          {/* Account Type */}
+          {/* Account Type - now a Select dropdown */}
           <div className="space-y-2">
             <Label htmlFor="account_type">Account Type</Label>
-            <Input
-              id="account_type"
-              name="account_type"
-              value={formatAccountType(formData.account_type)}
-              disabled
-              className="bg-muted"
-            />
+            <Select
+              value={formData.account_type}
+              onValueChange={handleAccountTypeChange}
+            >
+              <SelectTrigger id="account_type">
+                <SelectValue placeholder="Select account type" />
+              </SelectTrigger>
+              <SelectContent>
+                {ACCOUNT_TYPE_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <p className="text-xs text-muted-foreground">
-              Your account type cannot be changed.
+              Choose the account type that best describes you.
             </p>
           </div>
 
           {/* Phone Number */}
-          <Input
-            id="phone"
-            name="phone"
-            value={formData.phone}
-            disabled
-            className="bg-muted cursor-not-allowed"
-          />
-          <p className="text-xs text-muted-foreground">
-            Phone number cannot be changed.
-          </p>
+          <div className="space-y-2">
+            <Label htmlFor="phone">Phone Number</Label>
+            <Input
+              id="phone"
+              name="phone"
+              value={formData.phone}
+              disabled
+              className="bg-muted cursor-not-allowed"
+            />
+            <p className="text-xs text-muted-foreground">
+              Phone number cannot be changed.
+            </p>
+          </div>
 
           {/* Bio */}
           <div className="space-y-2">
@@ -362,7 +371,6 @@ export function ProfileForm({ profile, user }: ProfileFormProps) {
               Add links to your social media profiles (must start with http://
               or https://)
             </p>
-
             <SocialMedia
               mode="edit"
               twitter={formData.twitter_url}
