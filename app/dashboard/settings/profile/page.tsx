@@ -80,11 +80,7 @@ export default function ProfileSettingsPage() {
             profile_photo: profile.profile_photo,
             bio: profile.bio,
             username: profile.username,
-            account_type:
-              profile.account_type === "individual" ||
-              profile.account_type === "organization"
-                ? profile.account_type
-                : null,
+            account_type: profile.account_type,
             twitter_url: profile.twitter_url,
             facebook_url: profile.facebook_url,
             instagram_url: profile.instagram_url,
