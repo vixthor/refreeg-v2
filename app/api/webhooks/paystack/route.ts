@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { createDonation } from "@/actions";
-import { calculateServiceFee } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/server";
 import crypto from "crypto";
 
@@ -28,7 +27,7 @@ export async function POST(request: Request) {
         JSON.stringify({
           error: "Empty payload received",
         }),
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -38,7 +37,7 @@ export async function POST(request: Request) {
         JSON.stringify({
           error: "Missing webhook signature",
         }),
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -49,7 +48,7 @@ export async function POST(request: Request) {
         JSON.stringify({
           error: "Server configuration error",
         }),
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -64,7 +63,7 @@ export async function POST(request: Request) {
         JSON.stringify({
           error: "Invalid webhook signature",
         }),
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -79,7 +78,7 @@ export async function POST(request: Request) {
         JSON.stringify({
           error: "Invalid webhook data structure",
         }),
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -91,18 +90,16 @@ export async function POST(request: Request) {
         JSON.stringify({
           error: "Missing required metadata fields",
         }),
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     const amount = Number(metadata.amount);
-    const serviceFee = calculateServiceFee(amount);
-    const correctAmount = amount - serviceFee;
 
     switch (event) {
       case "charge.success":
         await createDonation(metadata.cause_id, metadata.user_id, {
-          amount: correctAmount,
+          amount: amount,
           email: metadata.email,
           message: metadata.message,
           isAnonymous: metadata.is_anonymous,
@@ -112,14 +109,14 @@ export async function POST(request: Request) {
           JSON.stringify({
             message: "Webhook received and processed successfully",
           }),
-          { status: 201 }
+          { status: 201 },
         );
       default:
         return new NextResponse(
           JSON.stringify({
             message: "Webhook event not supported yet",
           }),
-          { status: 200 }
+          { status: 200 },
         );
     }
   } catch (e) {
@@ -129,7 +126,7 @@ export async function POST(request: Request) {
         error: e instanceof Error ? e.message : "An unknown error occurred",
         message: `An error occurred: ${e}`,
       }),
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
