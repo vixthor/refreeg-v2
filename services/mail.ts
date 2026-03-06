@@ -256,23 +256,23 @@ export async function sendCauseSubmissionAdminNotification(
   causeTitle: string,
   reviewUrl: string,
 ) {
-  const { getAdminManagerEmails } = await import("@/actions/role-actions");
-  const adminManagerEmails = await getAdminManagerEmails();
+  const { getAdminEmails } = await import("@/actions/role-actions");
+  const adminEmails = await getAdminEmails();
 
-  if (adminManagerEmails.length === 0) {
-    console.warn("No admin/manager emails found to send cause notification");
-    return { success: false, error: "No admin/manager emails found" };
+  if (adminEmails.length === 0) {
+    console.warn("No admin emails found to send cause notification");
+    return { success: false, error: "No admin emails found" };
   }
 
   const currentYear = new Date().getFullYear();
 
-  const emailPromises = adminManagerEmails.map((email) =>
+  const emailPromises = adminEmails.map((email: string) =>
     sendMail({
       to: email,
       subject: "New Cause Submission Requires Review - Refreeg",
       templateName: "cause-submission-admin-notification",
       context: {
-        adminName: "Admin/Manager",
+        adminName: "Admin",
         userName,
         userEmail,
         causeTitle,
@@ -313,23 +313,23 @@ export async function sendPetitionSubmissionAdminNotification(
   petitionTitle: string,
   reviewUrl: string,
 ) {
-  const { getAdminManagerEmails } = await import("@/actions/role-actions");
-  const adminManagerEmails = await getAdminManagerEmails();
+  const { getAdminEmails } = await import("@/actions/role-actions");
+  const adminEmails = await getAdminEmails();
 
-  if (adminManagerEmails.length === 0) {
-    console.warn("No admin/manager emails found to send petition notification");
-    return { success: false, error: "No admin/manager emails found" };
+  if (adminEmails.length === 0) {
+    console.warn("No admin emails found to send petition notification");
+    return { success: false, error: "No admin emails found" };
   }
 
   const currentYear = new Date().getFullYear();
 
-  const emailPromises = adminManagerEmails.map((email) =>
+  const emailPromises = adminEmails.map((email: string) =>
     sendMail({
       to: email,
       subject: "New Petition Submission Requires Review - Refreeg",
       templateName: "petition-submission-admin-notification",
       context: {
-        adminName: "Admin/Manager",
+        adminName: "Admin",
         userName,
         userEmail,
         petitionTitle,
@@ -354,7 +354,7 @@ export async function sendPetitionSubmissionAdminNotification(
       sent: successful,
       failed,
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error sending petition admin notifications:", error);
     return {
       success: false,
@@ -613,21 +613,21 @@ export async function sendKycSubmissionAdminNotification(
   userId: string,
   kycReviewUrl: string,
 ) {
-  const { getAdminManagerEmails } = await import("@/actions/role-actions");
-  const adminManagerEmails = await getAdminManagerEmails();
+  const { getAdminEmails } = await import("@/actions/role-actions");
+  const adminEmails = await getAdminEmails();
 
-  if (adminManagerEmails.length === 0) {
-    console.warn("No admin/manager emails found to send KYC notification");
-    return { success: false, error: "No admin/manager emails found" };
+  if (adminEmails.length === 0) {
+    console.warn("No admin emails found to send KYC notification");
+    return { success: false, error: "No admin emails found" };
   }
 
-  const emailPromises = adminManagerEmails.map((email) =>
+  const emailPromises = adminEmails.map((email: string) =>
     sendMail({
       to: email,
       subject: "New KYC Submission Requires Review - Refreeg",
       templateName: "kyc-submission-admin-notification",
       context: {
-        adminName: "Admin/Manager",
+        adminName: "Admin",
         userName,
         userEmail,
         kycReviewUrl,
