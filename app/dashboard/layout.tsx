@@ -1,6 +1,6 @@
 import type React from "react";
 import { redirect } from "next/navigation";
-import { getCurrentUser } from "@/actions";
+import { getCurrentUser } from "@/actions/auth-actions";
 import ClientLayoutWrapper from "@/components/ClientLayoutWrapper";
 
 export default async function DashboardLayout({

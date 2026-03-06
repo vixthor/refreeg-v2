@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import { motion, type Variants } from "framer-motion";
 import { HandHeart, ShieldAlert } from "lucide-react";
 import type { Cause } from "@/types";
-import { createPledge } from "@/actions";
+import { createPledge } from "@/actions/pledge-actions";
 
 function getDefaultPledgeDate() {
   const date = new Date();

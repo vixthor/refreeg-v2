@@ -11,6 +11,7 @@ const montserrat = Montserrat({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://refreeg.com"),
   title: {
     default: "RefreeG | Secure Crowdfunding & Petitions",
     template: "%s | RefreeG",

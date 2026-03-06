@@ -1,10 +1,8 @@
 import { notFound } from "next/navigation";
-import {
-  getCause,
-  getCurrentUser,
-  getProfile,
-  listDonationsForCause,
-} from "@/actions";
+import { getCause } from "@/actions/cause-actions";
+import { getCurrentUser } from "@/actions/auth-actions";
+import { getProfile } from "@/actions/profile-actions";
+import { listDonationsForCause } from "@/actions/donation-actions";
 import { listCommentsForCause } from "@/actions/comment-actions";
 import CampaignQualityLab from "@/app/campaign/_components/campaign-quality-lab";
 

@@ -10,7 +10,7 @@ import { Progress } from "@/components/ui/progress";
 import { DonateButton } from "@/components/donate-button";
 import { H2, P, H4 } from "../typograpy";
 import { Button } from "../ui/button";
-import { listPetitions } from "@/actions";
+import { listPetitions } from "@/actions/petition-actions";
 import { listSignaturesForPetition } from "@/actions/signature-actions";
 import AnimatedCard from "./components/AnimatedCard";
 import AnimatedHeader from "@/components/home/components/AnimatedHeader";
@@ -26,7 +26,7 @@ import {
 
 export async function FeaturedPetitions() {
   const featuredPetitions = (await listPetitions()).filter(
-    (p) => (p.days_active ?? 0) > 0 && p.status !== ("expired" as any)
+    (p) => (p.days_active ?? 0) > 0 && p.status !== ("expired" as any),
   );
 
   const petitionsWithSigners = await Promise.all(
@@ -39,7 +39,7 @@ export async function FeaturedPetitions() {
 
       const percentRaised = Math.min(
         Math.round((totalAmount / petition.goal) * 100),
-        100
+        100,
       );
 
       return {
@@ -49,7 +49,7 @@ export async function FeaturedPetitions() {
         totalAmount,
         percentRaised,
       };
-    })
+    }),
   );
 
   if (!featuredPetitions || featuredPetitions.length === 0) {

@@ -17,6 +17,7 @@ export interface Petition {
   profiles?: {
     full_name: string;
     email: string;
+    profile_photo?: string | null;
   };
 }
 export interface subHeadings {

@@ -3,8 +3,9 @@
 import nodemailer from "nodemailer";
 import fs from "fs";
 import path from "path";
-import Handlebars from "handlebars/dist/handlebars.js";
-import { getCurrentUser, getProfile } from "@/actions";
+import Handlebars from "handlebars";
+import { getCurrentUser } from "@/actions/auth-actions";
+import { getProfile } from "@/actions/profile-actions";
 
 export async function getDeviceInfo() {
   if (typeof window === "undefined") return "Unknown Device";
@@ -131,7 +132,7 @@ export async function sendPetitionUnderReviewEmail(context: {
 
 export async function sendPetitionApprovedEmailForUser(
   userId: string,
-  context: { petitionName: string }
+  context: { petitionName: string },
 ) {
   const profile = await getProfile(userId);
   if (!profile?.email) throw new Error("Recipient email not found");
@@ -154,7 +155,7 @@ export async function sendPetitionApprovedEmailForUser(
 
 export async function sendPetitionRejectedEmailForUser(
   userId: string,
-  context: { petitionName: string; rejectionReason?: string }
+  context: { petitionName: string; rejectionReason?: string },
 ) {
   const profile = await getProfile(userId);
   if (!profile?.email) throw new Error("Recipient email not found");
@@ -200,7 +201,7 @@ export async function sendBankAccountAddedEmail(context: {
 
 export async function sendKycSubmittedEmail(
   userEmail: string,
-  userName: string
+  userName: string,
 ) {
   return sendMail({
     to: userEmail,
@@ -217,7 +218,7 @@ export async function sendKycSubmittedEmail(
 
 export async function sendKycApprovedEmail(
   userEmail: string,
-  userName: string
+  userName: string,
 ) {
   return sendMail({
     to: userEmail,
@@ -234,7 +235,7 @@ export async function sendKycApprovedEmail(
 export async function sendKycRejectedEmail(
   userEmail: string,
   userName: string,
-  rejectionReason: string
+  rejectionReason: string,
 ) {
   return sendMail({
     to: userEmail,
@@ -253,7 +254,7 @@ export async function sendCauseSubmissionAdminNotification(
   userName: string,
   userEmail: string,
   causeTitle: string,
-  reviewUrl: string
+  reviewUrl: string,
 ) {
   const { getAdminManagerEmails } = await import("@/actions/role-actions");
   const adminManagerEmails = await getAdminManagerEmails();
@@ -279,7 +280,7 @@ export async function sendCauseSubmissionAdminNotification(
         organizationName: "Refreeg",
         currentYear,
       },
-    })
+    }),
   );
 
   try {
@@ -288,7 +289,7 @@ export async function sendCauseSubmissionAdminNotification(
     const failed = results.filter((r) => r.status === "rejected").length;
 
     console.log(
-      `Cause admin notification sent: ${successful} successful, ${failed} failed`
+      `Cause admin notification sent: ${successful} successful, ${failed} failed`,
     );
 
     return {
@@ -310,7 +311,7 @@ export async function sendPetitionSubmissionAdminNotification(
   userName: string,
   userEmail: string,
   petitionTitle: string,
-  reviewUrl: string
+  reviewUrl: string,
 ) {
   const { getAdminManagerEmails } = await import("@/actions/role-actions");
   const adminManagerEmails = await getAdminManagerEmails();
@@ -336,7 +337,7 @@ export async function sendPetitionSubmissionAdminNotification(
         organizationName: "Refreeg",
         currentYear,
       },
-    })
+    }),
   );
 
   try {
@@ -345,7 +346,7 @@ export async function sendPetitionSubmissionAdminNotification(
     const failed = results.filter((r) => r.status === "rejected").length;
 
     console.log(
-      `Petition admin notification sent: ${successful} successful, ${failed} failed`
+      `Petition admin notification sent: ${successful} successful, ${failed} failed`,
     );
 
     return {
@@ -524,7 +525,7 @@ export async function sendUnfinishedDonationEmail(context: {
 export async function sendWelcomeEmailToUser(
   userEmail: string,
   userName: string,
-  profileSetupUrl: string
+  profileSetupUrl: string,
 ) {
   return sendMail({
     to: userEmail,
@@ -543,7 +544,7 @@ export async function sendPetitionSignedEmailToUser(
   userName: string,
   petitionName: string,
   petitionUrl: string,
-  isAnonymous: boolean = false
+  isAnonymous: boolean = false,
 ) {
   return sendMail({
     to: userEmail,
@@ -565,7 +566,7 @@ export async function sendNewSignatureNotificationEmail(
   petitionName: string,
   petitionUrl: string,
   signerName: string,
-  message?: string
+  message?: string,
 ) {
   return sendMail({
     to: creatorEmail,
@@ -589,7 +590,7 @@ export async function sendPetitionGoalReachedEmail(
   petitionName: string,
   petitionUrl: string,
   totalSignatures: number,
-  goalAmount: number
+  goalAmount: number,
 ) {
   return sendMail({
     to: creatorEmail,
@@ -610,7 +611,7 @@ export async function sendKycSubmissionAdminNotification(
   userEmail: string,
   userName: string,
   userId: string,
-  kycReviewUrl: string
+  kycReviewUrl: string,
 ) {
   const { getAdminManagerEmails } = await import("@/actions/role-actions");
   const adminManagerEmails = await getAdminManagerEmails();
@@ -633,7 +634,7 @@ export async function sendKycSubmissionAdminNotification(
         organizationName: "Refreeg",
         currentYear: new Date().getFullYear(),
       },
-    })
+    }),
   );
 
   try {
@@ -642,7 +643,7 @@ export async function sendKycSubmissionAdminNotification(
     const failed = results.filter((r) => r.status === "rejected").length;
 
     console.log(
-      `KYC admin notification sent: ${successful} successful, ${failed} failed`
+      `KYC admin notification sent: ${successful} successful, ${failed} failed`,
     );
 
     return {

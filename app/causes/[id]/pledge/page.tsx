@@ -1,5 +1,7 @@
 import { notFound } from "next/navigation";
-import { getCause, getCurrentUser, getProfile } from "@/actions";
+import { getCause } from "@/actions/cause-actions";
+import { getCurrentUser } from "@/actions/auth-actions";
+import { getProfile } from "@/actions/profile-actions";
 import PledgeScreen from "@/app/campaign/_components/pledge-screen";
 
 export default async function CausePledgePage({
