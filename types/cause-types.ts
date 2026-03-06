@@ -16,6 +16,15 @@ export interface Cause {
   days_active?: number | null;
   multimedia?: string[];
   video_links?: string[];
+  trust_score?: {
+    impact: string;
+    readability: string;
+    transparency: string;
+  };
+  verified_status?: "verified" | "in_review" | "pending";
+  summary?: string | null;
+  location?: string | null;
+  faqs?: { question: string; answer: string }[];
   profiles?: {
     full_name: string;
     email: string;

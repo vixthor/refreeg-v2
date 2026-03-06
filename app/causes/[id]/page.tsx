@@ -11,9 +11,10 @@ import CampaignQualityLab from "@/app/campaign/_components/campaign-quality-lab"
 export default async function CauseDetailPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
-  const cause = await getCause(params.id);
+  const { id } = await params;
+  const cause = await getCause(id);
   if (!cause) {
     notFound();
   }

@@ -27,41 +27,51 @@ import { ShareModal } from "@/components/share-modal";
 import MultimediaCarousel from "@/components/MultimediaCarousel";
 import { getBaseURL } from "@/lib/utils";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
 import { CommentsSection } from "@/components/comments/comment-section";
 import type { Comment } from "@/types/common-types";
 
-const tabs = ["Story", "Milestones", "Updates", "Budget", "Comments", "FAQ"] as const;
+const tabs = [
+  "Story",
+  "Milestones",
+  "Updates",
+  "Budget",
+  "Comments",
+  "FAQ",
+] as const;
 const donationPresets = [1000, 10000, 100000, 1000000];
 const tipPresets = [100, 500, 1000];
 
-const trustTiles = [
+const trustTiles = (cause: CauseDetail) => [
   {
     title: "Milestone escrow",
-    status: "Active",
-    badgeClass: "bg-[#22C55E]",
+    status: cause.verified_status === "verified" ? "Active" : "Pending",
+    badgeClass:
+      cause.verified_status === "verified" ? "bg-[#22C55E]" : "bg-[#F59E0B]",
     badgeTextClass: "text-white",
     body: "Funds release only after proof review.",
   },
   {
     title: "Evidence review",
-    status: "1 in progress",
-    badgeClass: "bg-[#F59E0B]",
+    status: "Active", // This could be dynamic if we track pending edits count
+    badgeClass: "bg-[#2563EB]",
     badgeTextClass: "text-white",
     body: "Latest upload awaiting approval.",
   },
   {
     title: "Impact score",
-    status: "A-",
+    status: cause.trust_score?.impact || "B+",
     badgeClass: "bg-[#2563EB]",
     badgeTextClass: "text-white",
     body: "Strong delivery confidence.",
   },
   {
-    title: "Recent proof",
-    status: "Feb 12, 2026",
+    title: "Transparency",
+    status: cause.trust_score?.transparency || "High",
     badgeClass: "bg-[#E5E7EB]",
     badgeTextClass: "text-[#0F172A]",
-    body: "Receipts and field photos uploaded.",
+    body: "Open financials and updates.",
   },
 ];
 
@@ -71,32 +81,30 @@ const trustStrip = [
   { label: "Funds Audited", tone: "bg-amber-50 text-amber-700" },
 ];
 
-const faqs = [
+const defaultFaqs = [
   {
-    id: "faq-1",
     question: "How does milestone escrow work?",
     answer:
       "Funds are held until proof is uploaded and reviewed. Each release is logged in the public audit trail.",
   },
   {
-    id: "faq-2",
     question: "Can I donate without an account?",
-    answer: "Yes. Guest donations require only an email for receipts and updates.",
+    answer:
+      "Yes. Guest donations require only an email for receipts and updates.",
   },
   {
-    id: "faq-3",
     question: "What happens if a milestone fails?",
     answer:
       "Releases pause. The campaign must submit a revised plan or refunds are offered based on policy.",
   },
 ];
 
-const fadeUp = {
+const fadeUp: any = {
   hidden: { opacity: 0, y: 16 },
   show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
 };
 
-const stagger = {
+const stagger: any = {
   hidden: { opacity: 1 },
   show: { opacity: 1, transition: { staggerChildren: 0.08 } },
 };
@@ -126,6 +134,15 @@ type CauseDetail = Cause & {
   sections?: { heading: string; description: string }[];
   summary?: string | null;
   location?: string | null;
+  verified_status?: string;
+  trust_score?: {
+    impact: string;
+    readability: string;
+    transparency: string;
+  };
+  multimedia?: string[];
+  video_links?: string[];
+  faqs?: { question: string; answer: string }[];
 };
 
 type CampaignQualityLabProps = {
@@ -137,7 +154,15 @@ type CampaignQualityLabProps = {
   currentUserId?: string;
 };
 
-function StatItem({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
+function StatItem({
+  icon,
+  label,
+  value,
+}: {
+  icon: ReactNode;
+  label: string;
+  value: string;
+}) {
   return (
     <div className="flex items-center gap-3 rounded-[14px] border border-[#E5E7EB] bg-white px-3 py-2 text-sm shadow-[0_10px_30px_rgba(0,0,0,0.06)]">
       <span className="text-[#64748B]">{icon}</span>
@@ -182,7 +207,9 @@ function HeaderMeta({
         </div>
         <div className="inline-flex items-center gap-2 rounded-full border border-[#E5E7EB] bg-white px-4 py-2 font-medium text-[#0F172A] shadow-sm">
           <BadgeCheck className="h-5 w-5 text-[#2563EB]" />
-          <span className="uppercase tracking-[0.2em] text-[10px] text-slate-400">Trust</span>
+          <span className="uppercase tracking-[0.2em] text-[10px] text-slate-400">
+            Trust
+          </span>
           <span className="rounded-full bg-[#2563EB] px-2.5 py-0.5 text-xs font-semibold text-white">
             A-
           </span>
@@ -192,14 +219,22 @@ function HeaderMeta({
           <span className="uppercase tracking-[0.2em] text-[10px] text-[#64748B]">
             Updated
           </span>
-          <span className="text-sm font-semibold text-[#0F172A]">{formattedDate}</span>
+          <span className="text-sm font-semibold text-[#0F172A]">
+            {formattedDate}
+          </span>
         </div>
       </div>
     </motion.div>
   );
 }
 
-function HeroSummary({ cause, donorsCount }: { cause: CauseDetail; donorsCount: number }) {
+function HeroSummary({
+  cause,
+  donorsCount,
+}: {
+  cause: CauseDetail;
+  donorsCount: number;
+}) {
   return (
     <motion.div className="flex flex-col gap-4" variants={fadeUp}>
       <h1 className="text-2xl font-semibold leading-snug tracking-tight text-[#0F172A] sm:text-3xl lg:text-5xl">
@@ -227,12 +262,21 @@ function HeroSummary({ cause, donorsCount }: { cause: CauseDetail; donorsCount: 
   );
 }
 
-function TrustPanel({ baseUrl, cause }: { baseUrl: string; cause: CauseDetail }) {
+function TrustPanel({
+  baseUrl,
+  cause,
+}: {
+  baseUrl: string;
+  cause: CauseDetail;
+}) {
   const proofMedia = useMemo(() => {
-    if (cause.multimedia && cause.multimedia.length > 0) return cause.multimedia;
+    if (cause.multimedia && cause.multimedia.length > 0)
+      return cause.multimedia;
     if (cause.image) return [cause.image];
     return [];
   }, [cause.image, cause.multimedia]);
+
+  const tiles = trustTiles(cause);
 
   return (
     <motion.div
@@ -260,7 +304,7 @@ function TrustPanel({ baseUrl, cause }: { baseUrl: string; cause: CauseDetail })
       </div>
 
       <div className="mt-4 grid gap-3 text-sm text-[#64748B] sm:grid-cols-2">
-        {trustTiles.map((tile) => (
+        {tiles.map((tile: any) => (
           <div
             key={tile.title}
             className="rounded-[14px] border border-[#E5E7EB] bg-white p-4"
@@ -282,9 +326,11 @@ function TrustPanel({ baseUrl, cause }: { baseUrl: string; cause: CauseDetail })
 
       {proofMedia.length > 0 && (
         <div className="mt-4">
-          <p className="text-xs uppercase tracking-[0.15em] text-[#64748B]">Latest proof</p>
+          <p className="text-xs uppercase tracking-[0.15em] text-[#64748B]">
+            Latest proof
+          </p>
           <div className="mt-3 grid grid-cols-3 gap-2">
-            {proofMedia.slice(0, 3).map((item, index) => (
+            {proofMedia.slice(0, 3).map((item: any, index: any) => (
               <div
                 key={`${item}-${index}`}
                 className="aspect-square overflow-hidden rounded-xl border border-slate-200 bg-slate-100"
@@ -306,7 +352,9 @@ function TrustPanel({ baseUrl, cause }: { baseUrl: string; cause: CauseDetail })
 
 function ImpactCard({ cause }: { cause: CauseDetail }) {
   const impactItems =
-    cause.sections?.map((section) => section.heading || section.description).filter(Boolean) || [];
+    cause.sections
+      ?.map((section) => section.heading || section.description)
+      .filter(Boolean) || [];
   const bullets = impactItems.slice(0, 3);
 
   return (
@@ -317,7 +365,9 @@ function ImpactCard({ cause }: { cause: CauseDetail }) {
       whileInView="show"
       viewport={{ once: true, amount: 0.2 }}
     >
-      <p className="text-xs uppercase tracking-[0.15em] text-[#64748B]">Impact in 3 bullets</p>
+      <p className="text-xs uppercase tracking-[0.15em] text-[#64748B]">
+        Impact in 3 bullets
+      </p>
       {bullets.length > 0 ? (
         <div className="mt-3 grid gap-2">
           {bullets.map((item, index) => (
@@ -329,27 +379,82 @@ function ImpactCard({ cause }: { cause: CauseDetail }) {
         </div>
       ) : (
         <p className="mt-3 text-sm text-slate-500">
-          No impact bullets yet. The campaign creator can add them in the story sections.
+          No impact bullets yet. The campaign creator can add them in the story
+          sections.
         </p>
       )}
     </motion.div>
   );
 }
 
-function StatsRow({ cause, donorsCount }: { cause: CauseDetail; donorsCount: number }) {
+function StatsRow({
+  cause,
+  donorsCount,
+}: {
+  cause: CauseDetail;
+  donorsCount: number;
+}) {
   return (
-    <motion.div className="grid gap-3 sm:gap-4 sm:grid-cols-3" variants={fadeUp}>
+    <motion.div
+      className="grid gap-3 sm:gap-4 sm:grid-cols-3"
+      variants={fadeUp}
+    >
       <StatItem
         icon={<Target className="h-4 w-4" />}
         label="Raised"
         value={`₦${cause.raised.toLocaleString()} of ₦${cause.goal.toLocaleString()}`}
       />
-      <StatItem icon={<Users className="h-4 w-4" />} label="Supporters" value={`${donorsCount}`} />
+      <StatItem
+        icon={<Users className="h-4 w-4" />}
+        label="Supporters"
+        value={`${donorsCount}`}
+      />
       <StatItem
         icon={<CalendarClock className="h-4 w-4" />}
         label="Days left"
         value={`${cause.days_active}`}
       />
+    </motion.div>
+  );
+}
+
+function PledgesCard({
+  cause,
+  profile,
+}: {
+  cause: CauseDetail;
+  profile: ProfileSummary;
+}) {
+  const router = useRouter();
+
+  return (
+    <motion.div
+      className="rounded-[14px] border border-[#E5E7EB] bg-white p-4 shadow-[0_10px_30px_rgba(0,0,0,0.06)] sm:p-6"
+      variants={fadeUp}
+      initial="hidden"
+      whileInView="show"
+      viewport={{ once: true, amount: 0.2 }}
+    >
+      <div className="flex items-center justify-between">
+        <p className="text-xs uppercase tracking-[0.15em] text-slate-500">
+          Pledge
+        </p>
+        <HandHeart className="h-4 w-4 text-[#2563EB]" />
+      </div>
+
+      <h3 className="mt-3 text-xl font-semibold text-slate-900 sm:text-2xl">
+        Pledge to donate later
+      </h3>
+      <p className="mt-2 text-sm text-slate-600">
+        Commit to a future donation. We&apos;ll remind you when it&apos;s time.
+      </p>
+
+      <Button
+        onClick={() => router.push(`/causes/${cause.id}/pledge`)}
+        className="mt-6 w-full rounded-full bg-[#0F172A] py-6 text-base font-semibold text-white shadow-lg hover:bg-[#1E293B]"
+      >
+        Make a Pledge
+      </Button>
     </motion.div>
   );
 }
@@ -364,7 +469,11 @@ function MediaCard({ media, cause }: { media: string[]; cause: CauseDetail }) {
       viewport={{ once: true, amount: 0.2 }}
     >
       {media.length > 0 ? (
-        <MultimediaCarousel media={media} coverImage={cause.image || undefined} title={cause.title} />
+        <MultimediaCarousel
+          media={media}
+          coverImage={cause.image || undefined}
+          title={cause.title}
+        />
       ) : (
         <div className="flex h-64 items-center justify-center bg-slate-100 text-slate-400">
           <ImageIcon className="h-6 w-6" />
@@ -390,7 +499,9 @@ function ProgressCard({
       viewport={{ once: true, amount: 0.2 }}
     >
       <div className="flex items-center justify-between">
-        <p className="text-xs uppercase tracking-[0.15em] text-slate-500">Progress</p>
+        <p className="text-xs uppercase tracking-[0.15em] text-slate-500">
+          Progress
+        </p>
         <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
           {percentRaised}% funded
         </span>
@@ -407,8 +518,8 @@ function ProgressCard({
         <Progress value={percentRaised} />
       </div>
       <div className="mt-3 text-sm text-slate-500">
-        ₦{cause.raised.toLocaleString()} raised • {percentRaised}% funded • {cause.days_active} days
-        left
+        ₦{cause.raised.toLocaleString()} raised • {percentRaised}% funded •{" "}
+        {cause.days_active} days left
       </div>
     </motion.div>
   );
@@ -475,7 +586,9 @@ function TabsCard({
           <div className="space-y-4 text-sm text-slate-600">
             <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
               <span>Created by</span>
-              <span className="font-medium text-slate-800">{cause.user.name}</span>
+              <span className="font-medium text-slate-800">
+                {cause.user.name}
+              </span>
               <span className="text-slate-300">•</span>
               <span className="capitalize">{cause.category}</span>
               <span className="text-slate-300">•</span>
@@ -485,7 +598,8 @@ function TabsCard({
               <StorySections sections={cause.sections} />
             ) : (
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-                No story sections yet. Add campaign milestones and evidence to build trust.
+                No story sections yet. Add campaign milestones and evidence to
+                build trust.
               </div>
             )}
           </div>
@@ -493,8 +607,8 @@ function TabsCard({
 
         {activeTab === "Milestones" && (
           <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-6 text-sm text-slate-600">
-            Milestones are not yet configured for this campaign. Add milestone proof to unlock
-            escrowed releases.
+            Milestones are not yet configured for this campaign. Add milestone
+            proof to unlock escrowed releases.
           </div>
         )}
 
@@ -528,17 +642,34 @@ function TabsCard({
         )}
 
         {activeTab === "FAQ" && (
-          <div className="grid gap-3">
-            {faqs.map((faq) => (
-              <details key={faq.id} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                <summary className="flex cursor-pointer items-center justify-between text-sm font-semibold text-slate-900">
-                  {faq.question}
-                  <ChevronDown className="h-4 w-4" />
-                </summary>
-                <p className="mt-3 text-sm text-slate-600">{faq.answer}</p>
-              </details>
-            ))}
-          </div>
+          <motion.div
+            key="faq"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="space-y-4"
+          >
+            <h3 className="text-lg font-semibold text-[#0F172A]">
+              Frequently Asked Questions
+            </h3>
+            <div className="space-y-3">
+              {(cause.faqs && cause.faqs.length > 0
+                ? cause.faqs
+                : defaultFaqs
+              ).map((faq, idx) => (
+                <details
+                  key={idx}
+                  className="rounded-[14px] border border-[#E5E7EB] bg-white p-4 shadow-sm"
+                >
+                  <summary className="flex cursor-pointer items-center justify-between font-medium text-[#0F172A]">
+                    {faq.question}
+                    <ChevronDown className="h-5 w-5 text-[#64748B]" />
+                  </summary>
+                  <p className="mt-2 text-sm text-[#64748B]">{faq.answer}</p>
+                </details>
+              ))}
+            </div>
+          </motion.div>
         )}
       </div>
     </motion.div>
@@ -581,7 +712,9 @@ function DonateCard({
       viewport={{ once: true, amount: 0.2 }}
     >
       <div className="flex items-center justify-between">
-        <p className="text-xs uppercase tracking-[0.15em] text-slate-500">Donate</p>
+        <p className="text-xs uppercase tracking-[0.15em] text-slate-500">
+          Donate
+        </p>
         <HandHeart className="h-4 w-4 text-[#2563EB]" />
       </div>
 
@@ -589,7 +722,8 @@ function DonateCard({
         Make a contribution
       </h3>
       <p className="mt-2 text-sm text-slate-600">
-        Rewards only apply to verified campaigns. Every milestone release is publicly audited.
+        Rewards only apply to verified campaigns. Every milestone release is
+        publicly audited.
       </p>
 
       <div className="mt-4 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
@@ -636,10 +770,16 @@ function DonateCard({
 
       <div className="mt-4 grid gap-3">
         <label className="grid gap-2 rounded-xl border border-[#E5E7EB] bg-white px-4 py-4 text-sm text-[#64748B]">
-          <span className="font-semibold text-slate-700">Contribution schedule</span>
+          <span className="font-semibold text-slate-700">
+            Contribution schedule
+          </span>
           <select
             value={recurring}
-            onChange={(event) => setRecurring(event.target.value as "one_time" | "weekly" | "monthly")}
+            onChange={(event) =>
+              setRecurring(
+                event.target.value as "one_time" | "weekly" | "monthly",
+              )
+            }
             className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
           >
             <option value="one_time">One-time</option>
@@ -651,14 +791,16 @@ function DonateCard({
         <label className="grid gap-2 rounded-xl border border-[#E5E7EB] bg-white px-4 py-4 text-sm text-[#64748B]">
           <div className="flex items-center justify-between">
             <span className="font-semibold text-slate-700">Platform tip</span>
-            <span className="text-sm font-semibold text-slate-800">Support Refreeg ops</span>
+            <span className="text-sm font-semibold text-slate-800">
+              Support Refreeg ops
+            </span>
           </div>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             {tipPresets.map((value) => (
               <button
                 key={value}
                 type="button"
-                onClick={() => setTip((prev) => (prev === value ? 0 : value))}
+                onClick={() => setTip(tip === value ? 0 : value)}
                 className={`rounded-xl px-3 py-2 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 ${
                   tip === value
                     ? "bg-[#0F172A] text-white shadow-[0_10px_18px_rgba(15,23,42,0.18)]"
@@ -681,6 +823,23 @@ function DonateCard({
                   className="w-full bg-transparent px-3 py-2 text-right text-sm font-semibold text-slate-900 outline-none"
                   placeholder="Custom"
                 />
+                {/* Hidden input to keep DonationForm logic intact */}
+                <input
+                  type="range"
+                  min={0}
+                  max={20}
+                  step={1}
+                  value={
+                    typeof tip === "number" && donation > 0
+                      ? Math.round((tip / donation) * 100)
+                      : 0
+                  }
+                  onChange={(e) => {
+                    const pct = Number(e.target.value);
+                    setTip(Math.round(donation * (pct / 100)));
+                  }}
+                  className="hidden"
+                />
               </div>
             </div>
           </div>
@@ -688,7 +847,9 @@ function DonateCard({
       </div>
 
       <div className="mt-4 rounded-[14px] border border-[#E5E7EB] bg-white p-4 shadow-[0_10px_30px_rgba(0,0,0,0.06)]">
-        <p className="text-xs uppercase tracking-[0.15em] text-[#64748B]">Impact estimate</p>
+        <p className="text-xs uppercase tracking-[0.15em] text-[#64748B]">
+          Impact estimate
+        </p>
         <p className="mt-2 text-sm text-[#0F172A]">{impactText}</p>
       </div>
 
@@ -709,11 +870,15 @@ function DonateCard({
                 className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs text-slate-700"
               >
                 {donor.name}
-                <span className="text-emerald-600">₦{donor.amount.toLocaleString()}</span>
+                <span className="text-emerald-600">
+                  ₦{donor.amount.toLocaleString()}
+                </span>
               </span>
             ))
           ) : (
-            <span className="font-semibold text-slate-700">Be the first to donate.</span>
+            <span className="font-semibold text-slate-700">
+              Be the first to donate.
+            </span>
           )}
         </div>
       </div>
@@ -724,7 +889,7 @@ function DonateCard({
           causeId={cause.id}
           profile={profile}
           status={cause.status}
-          subaccount={cause?.user.sub_account_code}
+          subaccount={cause?.user.sub_account_code ?? undefined}
           causeName={cause.title}
           causeUrl={`/causes/${cause.id}`}
         />
@@ -738,7 +903,8 @@ function DonateCard({
 
       <div className="mt-4 flex items-start gap-2 text-xs text-[#64748B]">
         <ShieldAlert className="mt-0.5 h-4 w-4 text-[#F59E0B]" />
-        Donations below ₦5 do not earn EIZA. Refunds or chargebacks remove rewards.
+        Donations below ₦5 do not earn EIZA. Refunds or chargebacks remove
+        rewards.
       </div>
 
       <div className="mt-4 flex items-center justify-between rounded-xl border border-[#E5E7EB] bg-white px-4 py-3 text-xs text-[#64748B]">
@@ -763,7 +929,9 @@ function CampaignHealthCard({
       viewport={{ once: true, amount: 0.2 }}
     >
       <div className="flex items-center justify-between">
-        <p className="text-xs uppercase tracking-[0.15em] text-slate-500">Campaign health</p>
+        <p className="text-xs uppercase tracking-[0.15em] text-slate-500">
+          Campaign health
+        </p>
         <Target className="h-4 w-4 text-rose-500" />
       </div>
       <p className="mt-2 text-xs text-slate-500">
@@ -771,7 +939,9 @@ function CampaignHealthCard({
       </p>
 
       <div className="mt-4 flex items-center justify-between">
-        <p className="text-xs uppercase tracking-[0.15em] text-slate-500">Recent donors</p>
+        <p className="text-xs uppercase tracking-[0.15em] text-slate-500">
+          Recent donors
+        </p>
         <Share2 className="h-4 w-4 text-slate-400" />
       </div>
       <div className="mt-3 grid gap-3 text-sm text-slate-600">
@@ -779,7 +949,9 @@ function CampaignHealthCard({
           donorsPreview.map((donor) => (
             <div key={donor.id} className="flex items-center justify-between">
               <span>{donor.name}</span>
-              <span className="text-emerald-600">₦{Number(donor.amount).toLocaleString()}</span>
+              <span className="text-emerald-600">
+                ₦{Number(donor.amount).toLocaleString()}
+              </span>
             </div>
           ))
         ) : (
@@ -796,15 +968,24 @@ function CampaignHealthCard({
   );
 }
 
-function StorySections({ sections }: { sections: { heading: string; description: string }[] }) {
+function StorySections({
+  sections,
+}: {
+  sections: { heading: string; description: string }[];
+}) {
   const [expanded, setExpanded] = useState(false);
   const visible = expanded ? sections : sections.slice(0, 2);
 
   return (
     <div className="space-y-4">
       {visible.map((section, index) => (
-        <div key={index} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-          <p className="text-sm font-semibold text-slate-900">{section.heading}</p>
+        <div
+          key={index}
+          className="rounded-xl border border-slate-200 bg-slate-50 p-4"
+        >
+          <p className="text-sm font-semibold text-slate-900">
+            {section.heading}
+          </p>
           <p className="mt-2 whitespace-pre-line text-sm text-slate-600">
             {section.description}
           </p>
@@ -833,7 +1014,9 @@ export default function CampaignQualityLab({
 }: CampaignQualityLabProps) {
   const [donation, setDonation] = useState(25);
   const [activeTab, setActiveTab] = useState<TabKey>("Story");
-  const [recurring, setRecurring] = useState<"one_time" | "weekly" | "monthly">("one_time");
+  const [recurring, setRecurring] = useState<"one_time" | "weekly" | "monthly">(
+    "one_time",
+  );
   const [tip, setTip] = useState(5);
   const donateRef = useRef<HTMLDivElement | null>(null);
 
@@ -849,24 +1032,25 @@ export default function CampaignQualityLab({
         month: "long",
         day: "numeric",
       }),
-    [cause.created_at]
+    [cause.created_at],
   );
 
   const impactText = useMemo(() => {
-    return cause.summary || "Impact details will appear once provided by the campaign creator.";
+    return (
+      cause.summary ||
+      "Impact details will appear once provided by the campaign creator."
+    );
   }, [cause.summary]);
 
   const totalWithTip = useMemo(() => donation + tip, [donation, tip]);
   const donorsPreview = useMemo(
     () =>
-      donors
-        .slice(0, 5)
-        .map((donor) => ({
-          id: donor.id,
-          name: donor.name || "Anonymous",
-          amount: donor.amount || 0,
-        })),
-    [donors]
+      donors.slice(0, 5).map((donor) => ({
+        id: donor.id,
+        name: donor.name || "Anonymous",
+        amount: donor.amount || 0,
+      })),
+    [donors],
   );
 
   const media = useMemo(() => {
@@ -888,7 +1072,12 @@ export default function CampaignQualityLab({
     >
       <div className="border-b border-[#E5E7EB] bg-white">
         <div className="container px-4 py-4 sm:py-6">
-          <motion.div className="flex flex-col gap-5 sm:gap-6" variants={stagger} initial="hidden" animate="show">
+          <motion.div
+            className="flex flex-col gap-5 sm:gap-6"
+            variants={stagger}
+            initial="hidden"
+            animate="show"
+          >
             <HeaderMeta status={cause.status} formattedDate={formattedDate} />
 
             <motion.div className="grid gap-6" variants={stagger}>
@@ -930,6 +1119,7 @@ export default function CampaignQualityLab({
                 donorsPreview={donorsPreview}
               />
             </div>
+            <PledgesCard cause={cause} profile={profile} />
             <CampaignHealthCard donorsPreview={donorsPreview} />
           </div>
         </aside>
@@ -946,12 +1136,15 @@ export default function CampaignQualityLab({
             whileInView="show"
             viewport={{ once: true, amount: 0.2 }}
           >
-            <p className="text-xs uppercase tracking-[0.15em] text-slate-500">Story</p>
+            <p className="text-xs uppercase tracking-[0.15em] text-slate-500">
+              Story
+            </p>
             {cause.description ? (
               <p className="mt-3 whitespace-pre-line">{cause.description}</p>
             ) : (
               <p className="mt-3 text-slate-500">
-                No story yet. The campaign creator can add the full context and plan here.
+                No story yet. The campaign creator can add the full context and
+                plan here.
               </p>
             )}
           </motion.div>
@@ -974,7 +1167,10 @@ export default function CampaignQualityLab({
           <button
             type="button"
             onClick={() => {
-              donateRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+              donateRef.current?.scrollIntoView({
+                behavior: "smooth",
+                block: "start",
+              });
             }}
             className="flex-1 rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
           >

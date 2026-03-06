@@ -1,9 +1,9 @@
 "use client";
 
 import { IconArrowLeft, IconArrowRight } from "@tabler/icons-react";
-import { motion, AnimatePresence } from "motion/react";
-
+import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
+import Image from "next/image";
 
 type Testimonial = {
   quote: string;
@@ -56,7 +56,7 @@ export const AnimatedTestimonials = ({
           <div>
             <div className="relative h-80 w-full">
               <div className="absolute inset-0 origin-bottom">
-                <img
+                <Image
                   src={testimonials[0]?.src}
                   alt={testimonials[0]?.name}
                   width={500}
