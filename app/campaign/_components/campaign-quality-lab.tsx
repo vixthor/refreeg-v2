@@ -375,6 +375,7 @@ function TrustPanel({
                 <Image
                   src={item}
                   alt="Proof"
+                  fill
                   className="h-full w-full object-cover"
                   loading="lazy"
                 />
