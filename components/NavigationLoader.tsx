@@ -10,17 +10,13 @@ export default function NavigationLoader() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!router) return;
+    // Show loader when pathname changes
+    setLoading(true);
 
-    // Start loader on route push
-    const handleStart = () => setLoading(true);
-    const handleStop = () => setLoading(false);
-
-    // App Router doesn’t expose router.events
-    // so we simulate using pathname changes
-    setLoading(false); // reset when first mounted
-    handleStart();
-    const timeout = setTimeout(() => handleStop(), 600); // small delay
+    // Hide loader after a short delay to ensure the new page has started rendering
+    const timeout = setTimeout(() => {
+      setLoading(false);
+    }, 800);
 
     return () => clearTimeout(timeout);
   }, [pathname]);

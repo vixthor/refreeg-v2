@@ -12,6 +12,14 @@ import CTASection from "@/components/home/cta-section";
 import Numbers from "@/components/numbers";
 import AIAgentBot from "@/app/ai-agent/_components/ai-agent-bot";
 
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "RefreeG | Powering Social Impact Through Blockchain",
+  description:
+    "Join RefreeG to launch causes, start petitions, and drive social change with secure, transparent blockchain crowdfunding.",
+};
+
 export default function Home() {
   return (
     <div className="flex flex-col min-h-screen mt-16 ">

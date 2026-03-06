@@ -1,40 +1,63 @@
-"use client";
-
-import { usePathname } from "next/navigation";
-import { Inter } from "next/font/google";
+import { Montserrat } from "next/font/google";
 import "./globals.css";
-import { Header } from "@/components/header";
-import { Footer } from "@/components/footer";
 import { Toaster } from "@/components/ui/toaster";
 import { Providers } from "./providers";
-import NavigationLoader from "@/components/NavigationLoader";
-import { KYCBanner } from "@/components/kyc-banner";
+import { ClientLayout } from "@/components/client-layout";
+import { Metadata } from "next";
 
-const inter = Inter({ subsets: ["latin"] });
+const montserrat = Montserrat({
+  subsets: ["latin"],
+  variable: "--font-montserrat",
+});
+
+export const metadata: Metadata = {
+  title: {
+    default: "RefreeG | Secure Crowdfunding & Petitions",
+    template: "%s | RefreeG",
+  },
+  description:
+    "RefreeG is a secure, blockchain-powered crowdfunding and petition platform.",
+  keywords: [
+    "crowdfunding",
+    "petitions",
+    "blockchain",
+    "social impact",
+    "charity",
+  ],
+  authors: [{ name: "RefreeG Team" }],
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: "https://refreeg.com",
+    siteName: "RefreeG",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "RefreeG",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "RefreeG | Secure Crowdfunding & Petitions",
+    description:
+      "Empowering social change through secure crowdfunding and global petitions.",
+    images: ["/og-image.png"],
+  },
+};
 
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const pathname = usePathname();
-
-  const noLayoutRoutes = ["/auth/signin", "/auth/signup", "/onboarding"];
-
-  const hideLayout = noLayoutRoutes.some((route) => pathname.startsWith(route));
-
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
+      <body className={`${montserrat.variable} font-montserrat antialiased`}>
         <Providers>
-          {!hideLayout && <Header />}
-
-          {!hideLayout && <KYCBanner />}
-          <div className="flex min-h-screen flex-col">
-            <NavigationLoader />
-            <main className="flex-1">{children}</main>
-          </div>
-          {!hideLayout && <Footer />}
+          <ClientLayout>{children}</ClientLayout>
           <Toaster />
         </Providers>
       </body>
