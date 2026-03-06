@@ -1,4 +1,9 @@
-import type { CauseStatus } from "./common-types";
+import type {
+  CauseStatus,
+  Category,
+  subHeadings,
+  subHeadingWithSubDescription,
+} from "./common-types";
 
 export interface Cause {
   id: string;
@@ -31,21 +36,6 @@ export interface Cause {
     profile_photo: string | null;
   };
 }
-export interface subHeadings {
-  id: string;
-  title: string;
-  cause_id: string;
-  created_at: string;
-}
-export interface subDescription {
-  id: string;
-  description: string;
-  sub_heading_id: string;
-  created_at: string;
-}
-export interface subHeadingWithSubDescription extends subHeadings {
-  sub_description: subDescription[];
-}
 export interface CauseWithSubHeading extends Cause {
   sub_heading: subHeadingWithSubDescription[];
 }
@@ -59,11 +49,6 @@ export interface CauseWithUser extends Cause {
   };
 }
 
-export interface Category {
-  id: string;
-  name: string;
-}
-
 export interface CauseFormData {
   title: string;
   description: string;
@@ -71,9 +56,17 @@ export interface CauseFormData {
   goal: string | number;
   currency: string;
   coverImage: File | null;
+  image?: string;
   sections?: { heading: string; description: string }[];
   startDate?: Date | undefined;
   endDate?: Date | undefined;
   multimedia: File[];
   video_links?: string[];
+}
+export interface CauseFilterOptions {
+  category?: string;
+  status?: CauseStatus;
+  userId?: string;
+  limit?: number;
+  offset?: number;
 }
