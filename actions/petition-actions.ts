@@ -18,7 +18,7 @@ import {
 import { sendPetitionSubmissionAdminNotification } from "@/services/mail";
 
 export async function getPetition(
-  petitionId: string
+  petitionId: string,
 ): Promise<PetitionWithUser | null> {
   const supabase = await createClient();
   const user = await getCurrentUser();
@@ -38,7 +38,7 @@ export async function getPetition(
         heading,
         description
       )
-    `
+    `,
     )
     .eq("id", petitionId)
     .single();
@@ -82,7 +82,7 @@ export async function getPetition(
 async function uploadImageToSupabase(
   file: File,
   userId: string,
-  type: "cover" | "additional"
+  type: "cover" | "additional",
 ): Promise<string> {
   const supabase = await createClient();
 
@@ -115,7 +115,7 @@ async function uploadImageToSupabase(
 
 export async function createPetition(
   userId: string,
-  petitionData: PetitionFormData
+  petitionData: PetitionFormData,
 ): Promise<Petition> {
   const supabase = await createClient();
 
@@ -124,7 +124,7 @@ export async function createPetition(
     coverImageUrl = await uploadImageToSupabase(
       petitionData.coverImage,
       userId,
-      "cover"
+      "cover",
     );
   }
 
@@ -146,7 +146,7 @@ export async function createPetition(
     }
 
     daysActive = Math.ceil(
-      (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
+      (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
     );
   }
 
@@ -159,8 +159,8 @@ export async function createPetition(
     try {
       multimediaUrls = await Promise.all(
         petitionData.multimedia.map((file) =>
-          uploadImageToSupabase(file, userId, "additional")
-        )
+          uploadImageToSupabase(file, userId, "additional"),
+        ),
       );
     } catch (error) {
       console.error("Error uploading multimedia:", error);
@@ -222,12 +222,13 @@ export async function createPetition(
         process.env.NEXT_PUBLIC_APP_URL || "https://www.refreeg.com";
       const reviewUrl = `${baseUrl}/dashboard/admin/petitions?tab=pending`;
 
-      await sendPetitionSubmissionAdminNotification(
+      // Send notification in background - do not await
+      sendPetitionSubmissionAdminNotification(
         profile.full_name || "User",
         profile.email,
         petitionData.title,
-        reviewUrl
-      );
+        reviewUrl,
+      ).catch((err) => console.error("Background notification error:", err));
     }
   } catch (error) {
     console.error("Error sending petition admin notification:", error);
@@ -240,7 +241,7 @@ export async function createPetition(
 export async function updatePetition(
   petitionId: string,
   userId: string,
-  petitionData: Partial<PetitionFormData>
+  petitionData: Partial<PetitionFormData>,
 ): Promise<Petition> {
   const supabase = await createClient();
 
@@ -264,7 +265,7 @@ export async function updatePetition(
     }
 
     daysActive = Math.ceil(
-      (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
+      (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
     );
   }
 
@@ -277,8 +278,8 @@ export async function updatePetition(
     try {
       multimediaUrls = await Promise.all(
         petitionData.multimedia.map((file) =>
-          uploadImageToSupabase(file, userId, "additional")
-        )
+          uploadImageToSupabase(file, userId, "additional"),
+        ),
       );
     } catch (error) {
       console.error("Error uploading multimedia:", error);
@@ -336,7 +337,7 @@ export async function updatePetition(
 }
 
 export async function listPetitions(
-  options: PetitionFilterOptions = {}
+  options: PetitionFilterOptions = {},
 ): Promise<Petition[]> {
   const supabase = await createClient();
 
@@ -368,7 +369,7 @@ export async function listPetitions(
   if (options.offset) {
     query = query.range(
       options.offset,
-      options.offset + (options.limit || 10) - 1
+      options.offset + (options.limit || 10) - 1,
     );
   }
 
@@ -381,7 +382,7 @@ export async function listPetitions(
 
   const petitions = (data as Petition[]) || [];
   const nowExpired = petitions.filter(
-    (p) => (p.days_active ?? 0) <= 0 && p.status === ("approved" as any)
+    (p) => (p.days_active ?? 0) <= 0 && p.status === ("approved" as any),
   );
 
   if (nowExpired.length > 0) {
@@ -405,7 +406,7 @@ export async function listPetitions(
 }
 
 export async function countPetitions(
-  options: PetitionFilterOptions = {}
+  options: PetitionFilterOptions = {},
 ): Promise<number> {
   const supabase = await createClient();
 
@@ -442,7 +443,7 @@ export async function countPetitions(
 export async function updatePetitionStatus(
   petitionId: string,
   status: "approved" | "rejected",
-  rejectionReason?: string
+  rejectionReason?: string,
 ): Promise<Petition> {
   const supabase = await createClient();
 
@@ -485,7 +486,7 @@ export async function updatePetitionStatus(
       if (updateError) {
         console.error(
           "Error updating petition with approved edit:",
-          updateError
+          updateError,
         );
         throw updateError;
       }
@@ -512,7 +513,7 @@ export async function updatePetitionStatus(
               petition_id: petitionId,
               heading: s.heading,
               description: s.description,
-            }))
+            })),
           );
         if (insErr) {
           console.error("Failed to insert new petition sections", insErr);
@@ -632,7 +633,7 @@ export async function getPetitionEdits(): Promise<any[]> {
         heading,
         description
       )
-    `
+    `,
     )
     .eq("status", "pending")
     .order("created_at", { ascending: false });
@@ -664,7 +665,7 @@ export async function getUserPetitions(userId: string): Promise<Petition[]> {
 
 export async function getUserPetitionsWithStatus(
   userId: string,
-  status?: string
+  status?: string,
 ): Promise<Petition[]> {
   const supabase = await createClient();
 

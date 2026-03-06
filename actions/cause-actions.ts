@@ -236,12 +236,13 @@ export async function createCause(
         process.env.NEXT_PUBLIC_APP_URL || "https://www.refreeg.com";
       const reviewUrl = `${baseUrl}/dashboard/admin/causes?tab=pending`;
 
-      await sendCauseSubmissionAdminNotification(
+      // Send notification in background - do not await
+      sendCauseSubmissionAdminNotification(
         profile.full_name || "User",
         profile.email,
         causeData.title,
         reviewUrl,
-      );
+      ).catch((err) => console.error("Background notification error:", err));
     }
   } catch (error) {
     console.error("Error sending cause admin notification:", error);
@@ -359,12 +360,13 @@ export async function updateCause(
         process.env.NEXT_PUBLIC_APP_URL || "https://www.refreeg.com";
       const reviewUrl = `${baseUrl}/dashboard/admin/causes`;
 
-      await sendCauseSubmissionAdminNotification(
+      // Send notification in background - do not await
+      sendCauseSubmissionAdminNotification(
         profile.full_name || "User",
         profile.email,
         causeData.title || "Cause Edit",
         reviewUrl,
-      );
+      ).catch((err) => console.error("Background notification error:", err));
     }
   } catch (error) {
     console.error("Error sending cause edit admin notification:", error);

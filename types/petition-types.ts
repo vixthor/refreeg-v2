@@ -1,4 +1,9 @@
-import type { PetitionStatus } from "./common-types";
+import type {
+  PetitionStatus,
+  Category,
+  subHeadings,
+  subHeadingWithSubDescription,
+} from "./common-types";
 
 export interface Petition {
   id: string;
@@ -20,25 +25,6 @@ export interface Petition {
     profile_photo?: string | null;
   };
 }
-export interface subHeadings {
-  id: string;
-  title: string;
-  petition_id: string;
-  created_at: string;
-}
-export interface subDescription {
-  id: string;
-  description: string;
-  sub_heading_id: string;
-  created_at: string;
-}
-export interface subHeadingWithSubDescription extends subHeadings {
-  sub_description: subDescription[];
-}
-export interface PetitionWithSubHeading extends Petition {
-  sub_heading: subHeadingWithSubDescription[];
-}
-
 export interface PetitionWithUser extends Petition {
   user: {
     name: string;
@@ -46,18 +32,24 @@ export interface PetitionWithUser extends Petition {
   };
 }
 
-export interface Category {
-  id: string;
-  name: string;
-}
-
 export interface PetitionFormData {
   title: string;
   description: string;
   category: string;
   goal: string | number;
+  currency: string;
   coverImage: File | null;
+  image?: string;
+  multimedia?: File[];
   sections?: { heading: string; description: string }[];
   startDate?: Date | undefined;
   endDate?: Date | undefined;
+  video_links?: string[];
+}
+export interface PetitionFilterOptions {
+  category?: string;
+  status?: PetitionStatus;
+  userId?: string;
+  limit?: number;
+  offset?: number;
 }

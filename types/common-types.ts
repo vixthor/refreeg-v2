@@ -33,44 +33,7 @@ export interface BankDetailsFormData {
   sub_account_code: string;
 }
 
-export interface CauseSection {
-  heading: string;
-  description: string;
-}
-
-export interface CauseFormData {
-  title: string;
-  category: string;
-  goal: string | number;
-  currency: string;
-  coverImage: File | null;
-  image?: string;
-  multimedia?: File[];
-  sections: CauseSection[];
-  startDate?: Date | undefined;
-  endDate?: Date | undefined;
-  video_links?: string[];
-}
-
-export interface PetitionSection {
-  heading: string;
-  description: string;
-}
-
-export interface PetitionFormData {
-  title: string;
-  description: string;
-  category: string;
-  goal: string | number;
-  currency: string;
-  coverImage: File | null;
-  image?: string;
-  multimedia?: File[];
-  sections?: { heading: string; description: string }[];
-  startDate?: Date | undefined;
-  endDate?: Date | undefined;
-  video_links?: string[];
-}
+// FormData removed - moved to specialized type files
 
 export interface DonationFormData {
   amount: string | number;
@@ -110,13 +73,7 @@ export interface ICreateSubaccount {
   business_name: string;
 }
 
-export interface CauseFilterOptions {
-  category?: string;
-  status?: CauseStatus;
-  userId?: string;
-  limit?: number;
-  offset?: number;
-}
+// CauseFilterOptions removed - moved to cause-types.ts
 
 export interface Comment {
   id: string;
@@ -190,4 +147,28 @@ export interface UserStreak {
   last_active_date: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface Category {
+  id: string;
+  name: string;
+}
+
+export interface subHeadings {
+  id: string;
+  title: string;
+  cause_id?: string;
+  petition_id?: string;
+  created_at: string;
+}
+
+export interface subDescription {
+  id: string;
+  description: string;
+  sub_heading_id: string;
+  created_at: string;
+}
+
+export interface subHeadingWithSubDescription extends subHeadings {
+  sub_description: subDescription[];
 }
