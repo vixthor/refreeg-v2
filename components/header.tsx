@@ -312,6 +312,7 @@ export function Header() {
                   if (item.type === "link") {
                     return (
                       <Link
+                        key={item.href}
                         href={item.href}
                         className={`text-sm font-medium transition-colors hover:text-secondary px-3 py-2 rounded-md ${
                           pathname === item.href
@@ -448,7 +449,10 @@ export function Header() {
 
                 return (
                   <>
-                    <Link href="/dashboard/causes/create">
+                    <Link
+                      href="/dashboard/causes/create"
+                      className="hidden md:block"
+                    >
                       <Button
                         variant="outline"
                         size="sm"
