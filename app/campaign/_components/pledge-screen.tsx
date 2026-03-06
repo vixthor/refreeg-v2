@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { ReactNode } from "react";
-import { motion } from "framer-motion";
+import { motion, type Variants } from "framer-motion";
 import { HandHeart, ShieldAlert } from "lucide-react";
 import type { Cause } from "@/types";
 import { createPledge } from "@/actions";
@@ -37,17 +37,31 @@ type PledgeScreenProps = {
 
 const pledgePresets = [5000, 10000, 25000, 50000];
 
-const fadeUp = {
+const fadeUp: Variants = {
   hidden: { opacity: 0, y: 16 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.5, ease: "easeOut" as const },
+  },
 };
 
-function StatItem({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
+function StatItem({
+  icon,
+  label,
+  value,
+}: {
+  icon: ReactNode;
+  label: string;
+  value: string;
+}) {
   return (
     <div className="flex items-center gap-3 rounded-[14px] border border-[#E5E7EB] bg-white px-3 py-2 text-sm shadow-[0_10px_30px_rgba(0,0,0,0.06)]">
       <span className="text-[#64748B]">{icon}</span>
       <div>
-        <p className="text-xs uppercase tracking-[0.15em] text-[#64748B]">{label}</p>
+        <p className="text-xs uppercase tracking-[0.15em] text-[#64748B]">
+          {label}
+        </p>
         <p className="font-semibold text-[#0F172A]">{value}</p>
       </div>
     </div>
@@ -87,7 +101,9 @@ export default function PledgeScreen({ cause, profile }: PledgeScreenProps) {
   };
 
   const handleFieldChange = (setter: (value: string) => void) => {
-    return (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    return (
+      event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+    ) => {
       setter(event.target.value);
       resetSubmissionState();
     };
@@ -189,7 +205,8 @@ export default function PledgeScreen({ cause, profile }: PledgeScreenProps) {
       setPledgeId(data?.id ?? null);
       setPledgeSubmitted(true);
     } catch (err) {
-      const message = err instanceof Error ? err.message : "We could not save your pledge.";
+      const message =
+        err instanceof Error ? err.message : "We could not save your pledge.";
       setPledgeError(message);
       setPledgeSubmitted(false);
     } finally {
@@ -256,7 +273,9 @@ export default function PledgeScreen({ cause, profile }: PledgeScreenProps) {
             viewport={{ once: true, amount: 0.2 }}
           >
             <div className="flex items-center justify-between">
-              <p className="text-xs uppercase tracking-[0.15em] text-slate-500">Pledge</p>
+              <p className="text-xs uppercase tracking-[0.15em] text-slate-500">
+                Pledge
+              </p>
               <HandHeart className="h-4 w-4 text-[#2563EB]" />
             </div>
 
@@ -264,8 +283,8 @@ export default function PledgeScreen({ cause, profile }: PledgeScreenProps) {
               Pledge to donate later
             </h3>
             <p className="mt-2 text-sm text-slate-600">
-              Make a pledge today and we will remind you by email on the date you choose. This is a
-              commitment only — no donation is taken now.
+              Make a pledge today and we will remind you by email on the date
+              you choose. This is a commitment only — no donation is taken now.
             </p>
 
             <div className="mt-4 grid gap-3">
@@ -290,7 +309,9 @@ export default function PledgeScreen({ cause, profile }: PledgeScreenProps) {
                   ))}
                 </div>
                 <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2">
-                  <span className="text-sm font-semibold text-slate-500">₦</span>
+                  <span className="text-sm font-semibold text-slate-500">
+                    ₦
+                  </span>
                   <input
                     type="text"
                     inputMode="numeric"
@@ -304,7 +325,9 @@ export default function PledgeScreen({ cause, profile }: PledgeScreenProps) {
                   />
                 </div>
                 {fieldErrors.amount && (
-                  <p className="text-xs font-semibold text-rose-600">{fieldErrors.amount}</p>
+                  <p className="text-xs font-semibold text-rose-600">
+                    {fieldErrors.amount}
+                  </p>
                 )}
                 <p className="text-xs text-slate-500">
                   Choose the amount you plan to donate later.
@@ -326,15 +349,20 @@ export default function PledgeScreen({ cause, profile }: PledgeScreenProps) {
                   className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none"
                 />
                 {fieldErrors.date && (
-                  <p className="text-xs font-semibold text-rose-600">{fieldErrors.date}</p>
+                  <p className="text-xs font-semibold text-rose-600">
+                    {fieldErrors.date}
+                  </p>
                 )}
                 <p className="text-xs text-slate-500">
-                  We will send a reminder on this date by email. SMS reminders can be added later.
+                  We will send a reminder on this date by email. SMS reminders
+                  can be added later.
                 </p>
               </label>
 
               <label className="grid gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
-                <span className="text-xs uppercase tracking-[0.15em] text-slate-500">Email</span>
+                <span className="text-xs uppercase tracking-[0.15em] text-slate-500">
+                  Email
+                </span>
                 <input
                   type="email"
                   value={pledgeEmail}
@@ -346,12 +374,16 @@ export default function PledgeScreen({ cause, profile }: PledgeScreenProps) {
                   className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none"
                 />
                 {fieldErrors.email && (
-                  <p className="text-xs font-semibold text-rose-600">{fieldErrors.email}</p>
+                  <p className="text-xs font-semibold text-rose-600">
+                    {fieldErrors.email}
+                  </p>
                 )}
               </label>
 
               <label className="grid gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
-                <span className="text-xs uppercase tracking-[0.15em] text-slate-500">Name</span>
+                <span className="text-xs uppercase tracking-[0.15em] text-slate-500">
+                  Name
+                </span>
                 <input
                   type="text"
                   value={pledgeName}
@@ -363,9 +395,13 @@ export default function PledgeScreen({ cause, profile }: PledgeScreenProps) {
                   className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none"
                 />
                 {fieldErrors.name && (
-                  <p className="text-xs font-semibold text-rose-600">{fieldErrors.name}</p>
+                  <p className="text-xs font-semibold text-rose-600">
+                    {fieldErrors.name}
+                  </p>
                 )}
-                <p className="text-xs text-slate-500">We will only email about this pledge.</p>
+                <p className="text-xs text-slate-500">
+                  We will only email about this pledge.
+                </p>
               </label>
 
               <label className="grid gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
@@ -396,10 +432,13 @@ export default function PledgeScreen({ cause, profile }: PledgeScreenProps) {
                 className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"
                 aria-live="polite"
               >
-                Pledge saved. We will remind you on {pledgeDate || "your selected date"} to complete
-                your ₦{Number(pledgeAmount || 0).toLocaleString()} contribution.
+                Pledge saved. We will remind you on{" "}
+                {pledgeDate || "your selected date"} to complete your ₦
+                {Number(pledgeAmount || 0).toLocaleString()} contribution.
                 {pledgeId && (
-                  <span className="mt-1 block text-xs text-emerald-700">Reference: {pledgeId}</span>
+                  <span className="mt-1 block text-xs text-emerald-700">
+                    Reference: {pledgeId}
+                  </span>
                 )}
                 <span className="mt-1 block text-xs text-emerald-700">
                   Check your email for confirmation.
@@ -420,7 +459,9 @@ export default function PledgeScreen({ cause, profile }: PledgeScreenProps) {
               disabled={pledgeSubmitting}
               className="mt-4 w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 disabled:cursor-not-allowed disabled:opacity-70"
             >
-              {pledgeSubmitting ? "Saving pledge..." : "Save pledge & remind me"}
+              {pledgeSubmitting
+                ? "Saving pledge..."
+                : "Save pledge & remind me"}
             </button>
 
             <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-[#7C2D12]">
@@ -443,7 +484,9 @@ export default function PledgeScreen({ cause, profile }: PledgeScreenProps) {
             whileInView="show"
             viewport={{ once: true, amount: 0.2 }}
           >
-            <p className="text-xs uppercase tracking-[0.15em] text-slate-500">Campaign</p>
+            <p className="text-xs uppercase tracking-[0.15em] text-slate-500">
+              Campaign
+            </p>
             <div className="mt-3 flex items-start gap-3">
               <div className="h-12 w-12 overflow-hidden rounded-lg bg-slate-100">
                 {cause.image ? (
@@ -455,9 +498,13 @@ export default function PledgeScreen({ cause, profile }: PledgeScreenProps) {
                 ) : null}
               </div>
               <div>
-                <p className="text-base font-semibold text-slate-900">{cause.title}</p>
+                <p className="text-base font-semibold text-slate-900">
+                  {cause.title}
+                </p>
                 {cause.location ? (
-                  <p className="mt-1 text-xs text-slate-500">{cause.location}</p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    {cause.location}
+                  </p>
                 ) : null}
               </div>
             </div>
@@ -478,7 +525,10 @@ export default function PledgeScreen({ cause, profile }: PledgeScreenProps) {
               <div className="mt-2 flex items-center justify-between">
                 <span>Progress</span>
                 <span className="font-semibold text-emerald-700">
-                  {cause.goal ? Math.round((cause.raised / cause.goal) * 100) : 0}%
+                  {cause.goal
+                    ? Math.round((cause.raised / cause.goal) * 100)
+                    : 0}
+                  %
                 </span>
               </div>
               <div className="mt-3 h-2 w-full rounded-full bg-white">
@@ -504,10 +554,13 @@ export default function PledgeScreen({ cause, profile }: PledgeScreenProps) {
             whileInView="show"
             viewport={{ once: true, amount: 0.2 }}
           >
-            <p className="text-xs uppercase tracking-[0.15em] text-slate-500">What happens next</p>
+            <p className="text-xs uppercase tracking-[0.15em] text-slate-500">
+              What happens next
+            </p>
             <p className="mt-3">
-              We will email you on your selected reminder date with a direct link to complete the
-              contribution. You can edit or cancel the pledge at any time before then.
+              We will email you on your selected reminder date with a direct
+              link to complete the contribution. You can edit or cancel the
+              pledge at any time before then.
             </p>
           </motion.div>
         </aside>

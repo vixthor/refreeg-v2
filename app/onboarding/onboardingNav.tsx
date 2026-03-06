@@ -1,6 +1,5 @@
 "use client";
 
-import { Navbar, NavbarBrand, NavbarContent, NavbarItem } from "@heroui/navbar";
 import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
 import { UserNav } from "@/components/user-nav";
@@ -18,25 +17,25 @@ export default function OnboardingNav({
   showUserNav = false,
 }: OnboardingNavProps) {
   return (
-    <Navbar
-      position="sticky"
-      isBordered
+    <nav
       className="
-        bg-white/30 
-        backdrop-blur-md 
-        backdrop-saturate-150 
+        sticky top-0 z-50
+        bg-white/30
+        backdrop-blur-md
+        backdrop-saturate-150
         supports-[backdrop-filter]:bg-white/40
-        py-2 
-        px-2 
+        py-2 px-4
         shadow-sm
       "
     >
-      <NavbarBrand>
-        <Logo />
-      </NavbarBrand>
+      <div className="max-w-7xl mx-auto flex items-center justify-between">
+        {/* Left side */}
+        <div className="flex items-center">
+          <Logo />
+        </div>
 
-      <NavbarContent justify="end">
-        <NavbarItem>
+        {/* Right side */}
+        <div className="flex items-center">
           {showUserNav ? (
             <UserNav />
           ) : (
@@ -53,8 +52,8 @@ export default function OnboardingNav({
               </Button>
             )
           )}
-        </NavbarItem>
-      </NavbarContent>
-    </Navbar>
+        </div>
+      </div>
+    </nav>
   );
 }

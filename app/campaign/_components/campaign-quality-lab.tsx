@@ -31,6 +31,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { CommentsSection } from "@/components/comments/comment-section";
 import type { Comment } from "@/types/common-types";
+import Image from "next/image";
 
 const tabs = [
   "Story",
@@ -335,7 +336,7 @@ function TrustPanel({
                 key={`${item}-${index}`}
                 className="aspect-square overflow-hidden rounded-xl border border-slate-200 bg-slate-100"
               >
-                <img
+                <Image
                   src={item}
                   alt="Proof"
                   className="h-full w-full object-cover"

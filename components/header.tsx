@@ -37,17 +37,6 @@ import {
   LightbulbIcon,
   Heart,
 } from "lucide-react";
-import {
-  Navbar,
-  NavbarBrand,
-  NavbarItem,
-  Dropdown,
-  DropdownTrigger,
-  DropdownMenu,
-  DropdownItem,
-  DropdownSection,
-  Button as HeroButton,
-} from "@heroui/react";
 
 interface NavLink {
   title: string;
@@ -313,101 +302,87 @@ export function Header() {
   return (
     <>
       <div className="sticky top-0 left-0 right-0 z-50">
-        <Navbar
-          isBordered
-          className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-2 md:p-4"
-        >
+        <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-2 md:p-4">
           <div className="flex items-center justify-between w-full">
             <div className="flex items-center gap-4">
-              <NavbarBrand>
-                <Logo />
-              </NavbarBrand>
+              <Logo />
 
               <div className="hidden md:flex gap-0 items-center">
                 {publicNavItems.map((item) => {
                   if (item.type === "link") {
                     return (
-                      <NavbarItem
-                        key={item.href}
-                        isActive={pathname === item.href}
+                      <Link
+                        href={item.href}
+                        className={`text-sm font-medium transition-colors hover:text-secondary px-3 py-2 rounded-md ${
+                          pathname === item.href
+                            ? "text-foreground bg-primary/10"
+                            : "text-muted-foreground hover:bg-gray-100"
+                        }`}
                       >
-                        <Link
-                          href={item.href}
-                          className={`text-sm font-medium transition-colors hover:text-secondary px-3 py-2 rounded-md ${
-                            pathname === item.href
-                              ? "text-foreground bg-primary/10"
-                              : "text-muted-foreground hover:bg-gray-100"
-                          }`}
-                        >
-                          {item.title}
-                        </Link>
-                      </NavbarItem>
+                        {item.title}
+                      </Link>
                     );
                   } else {
                     return (
-                      <NavbarItem key={item.title}>
-                        <div
-                          key={item.title}
-                          className="relative"
-                          onMouseEnter={() => openMenu(item.title)}
-                          onMouseLeave={scheduleCloseMenu}
+                      <div
+                        key={item.title}
+                        className="relative"
+                        onMouseEnter={() => openMenu(item.title)}
+                        onMouseLeave={scheduleCloseMenu}
+                      >
+                        <button
+                          type="button"
+                          className={`text-sm flex items-center font-medium text-muted-foreground hover:text-secondary hover:bg-gray-100 px-3 py-2 rounded-md transition-all duration-200 group ${
+                            openDropdown === item.title
+                              ? "bg-gray-100 text-secondary"
+                              : ""
+                          }`}
                         >
-                          <HeroButton
-                            variant="light"
-                            className={`text-sm items-center font-medium text-muted-foreground hover:text-secondary hover:bg-gray-100 px-3 py-2 rounded-md transition-all duration-200 group ${
+                          {item.title}
+                          <ChevronDown
+                            className={`ml-1 h-4 w-4 transition-transform duration-200 ${
                               openDropdown === item.title
-                                ? "bg-gray-100 text-secondary"
+                                ? "rotate-180 text-secondary"
                                 : ""
                             }`}
-                            endContent={
-                              <ChevronDown
-                                className={`text-small transition-transform duration-200 ${
-                                  openDropdown === item.title
-                                    ? "rotate-180 text-secondary"
-                                    : ""
-                                }`}
-                              />
-                            }
-                          >
-                            {item.title}
-                          </HeroButton>
+                          />
+                        </button>
 
-                          {/* Dropdown on hover */}
-                          {openDropdown === item.title && (
-                            <div
-                              onMouseEnter={() => openMenu(item.title)}
-                              onMouseLeave={scheduleCloseMenu}
-                              className={`absolute top-full mt-2 bg-white shadow-xl rounded-lg border border-gray-100 z-50 animate-in fade-in-50 slide-in-from-top-1 duration-150
+                        {/* Dropdown on hover */}
+                        {openDropdown === item.title && (
+                          <div
+                            onMouseEnter={() => openMenu(item.title)}
+                            onMouseLeave={scheduleCloseMenu}
+                            className={`absolute top-full mt-2 bg-white shadow-xl rounded-lg border border-gray-100 z-50 animate-in fade-in-50 slide-in-from-top-1 duration-150
                                 ${item.title.includes("About") ? "right-0 left-auto" : "left-0"}
                                 max-w-[90vw] overflow-hidden`}
-                            >
-                              <div className="p-3 font-semibold text-sm text-foreground border-b">
-                                {item.header}
-                              </div>
-                              <div className="p-2">
-                                {item.items.map((dropdownItem) => (
-                                  <Link
-                                    key={dropdownItem.href}
-                                    href={dropdownItem.href}
-                                    className="flex items-start gap-3 py-3 px-4 rounded-md transition-all duration-200 hover:bg-blue-50 hover:border-l-4 hover:border-l-blue-500"
-                                  >
-                                    {/* optional icon */}
-                                    {/* <dropdownItem.icon className="h-5 w-5 text-gray-400 mt-0.5 flex-shrink-0 group-hover:text-blue-600 transition-colors" /> */}
-                                    <div className="flex-1">
-                                      <p className="font-medium text-sm text-gray-900 hover:text-blue-700">
-                                        {dropdownItem.title}
-                                      </p>
-                                      <p className="text-xs text-gray-500 mt-1">
-                                        {dropdownItem.description}
-                                      </p>
-                                    </div>
-                                  </Link>
-                                ))}
-                              </div>
+                          >
+                            <div className="p-3 font-semibold text-sm text-foreground border-b">
+                              {item.header}
                             </div>
-                          )}
-                        </div>
-                      </NavbarItem>
+                            <div className="p-2">
+                              {item.items.map((dropdownItem) => (
+                                <Link
+                                  key={dropdownItem.href}
+                                  href={dropdownItem.href}
+                                  className="flex items-start gap-3 py-3 px-4 rounded-md transition-all duration-200 hover:bg-blue-50 hover:border-l-4 hover:border-l-blue-500"
+                                >
+                                  {/* optional icon */}
+                                  {/* <dropdownItem.icon className="h-5 w-5 text-gray-400 mt-0.5 flex-shrink-0 group-hover:text-blue-600 transition-colors" /> */}
+                                  <div className="flex-1">
+                                    <p className="font-medium text-sm text-gray-900 hover:text-blue-700">
+                                      {dropdownItem.title}
+                                    </p>
+                                    <p className="text-xs text-gray-500 mt-1">
+                                      {dropdownItem.description}
+                                    </p>
+                                  </div>
+                                </Link>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     );
                   }
                 })}
@@ -509,7 +484,7 @@ export function Header() {
               </button>
             </div>
           </div>
-        </Navbar>
+        </nav>
 
         <div
           className={`md:hidden fixed top-[64px] left-0 right-0 bottom-0
