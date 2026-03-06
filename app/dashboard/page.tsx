@@ -11,6 +11,14 @@ import { DashboardStats } from "@/components/dashboard-stats";
 import { getCurrentUser } from "@/actions/auth-actions";
 import { DashboardPetitions } from "@/components/dashboard-petitions";
 
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Dashboard",
+  description:
+    "Manage your causes, petitions, and track your social impact on RefreeG.",
+};
+
 export default async function DashboardPage() {
   const user = await getCurrentUser();
   return (

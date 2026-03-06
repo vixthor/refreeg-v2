@@ -22,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Calendar } from "@/components/ui/calendar";
+import dynamic from "next/dynamic";
 import {
   Popover,
   PopoverContent,
@@ -32,7 +32,6 @@ import { Icons } from "@/components/icons";
 import { useAuth } from "@/hooks/use-auth";
 import { useCause } from "@/hooks/use-cause";
 import { Progress } from "@/components/ui/progress";
-import { ImageUpload } from "@/components/ui/image-upload";
 import type { Cause } from "@/types";
 import { categories } from "@/lib/categories";
 import {
@@ -45,8 +44,30 @@ import {
 } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import MultimediaCarousel from "@/components/MultimediaCarousel";
+import { Skeleton } from "@/components/ui/skeleton";
 import { sendCauseEditedEmail } from "@/services/mail";
+
+const Calendar = dynamic(
+  () => import("@/components/ui/calendar").then((mod) => mod.Calendar),
+  {
+    ssr: false,
+    loading: () => <Skeleton className="h-[300px] w-full" />,
+  },
+);
+const ImageUpload = dynamic(
+  () => import("@/components/ui/image-upload").then((mod) => mod.ImageUpload),
+  {
+    ssr: false,
+    loading: () => <Skeleton className="h-40 w-full" />,
+  },
+);
+const MultimediaCarousel = dynamic(
+  () => import("@/components/MultimediaCarousel"),
+  {
+    ssr: false,
+    loading: () => <Skeleton className="h-64 w-full" />,
+  },
+);
 
 const currencies = [{ id: "NGN", name: "Naira (₦)" }];
 const MAX_DURATION_DAYS = 180;

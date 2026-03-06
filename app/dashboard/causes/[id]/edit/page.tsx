@@ -2,7 +2,12 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { hasBankDetails } from "@/actions/profile-actions";
 import { getCause } from "@/actions/cause-actions";
-import EditCauseForm from "./edit-cause-form";
+import dynamic from "next/dynamic";
+import { Skeleton } from "@/components/ui/skeleton";
+
+const EditCauseForm = dynamic(() => import("./edit-cause-form"), {
+  loading: () => <Skeleton className="h-[600px] w-full" />,
+});
 
 export default async function EditCausePage({
   params,

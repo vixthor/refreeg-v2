@@ -1,7 +1,12 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { getPetition } from "@/actions/petition-actions";
-import EditPetitionForm from "./edit-petition-form";
+import dynamic from "next/dynamic";
+import { Skeleton } from "@/components/ui/skeleton";
+
+const EditPetitionForm = dynamic(() => import("./edit-petition-form"), {
+  loading: () => <Skeleton className="h-[600px] w-full" />,
+});
 
 export default async function EditPetitionPage({
   params,

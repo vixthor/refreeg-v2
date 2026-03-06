@@ -8,6 +8,33 @@ import {
 import { listCommentsForCause } from "@/actions/comment-actions";
 import CampaignQualityLab from "@/app/campaign/_components/campaign-quality-lab";
 
+import { Metadata } from "next";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const cause = await getCause(id);
+
+  if (!cause) {
+    return {
+      title: "Cause Not Found",
+    };
+  }
+
+  return {
+    title: cause.title,
+    description: cause.description?.substring(0, 160),
+    openGraph: {
+      title: cause.title,
+      description: cause.description?.substring(0, 160),
+      images: cause.image ? [{ url: cause.image }] : [],
+    },
+  };
+}
+
 export default async function CauseDetailPage({
   params,
 }: {
