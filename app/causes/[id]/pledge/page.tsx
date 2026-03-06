@@ -5,9 +5,10 @@ import PledgeScreen from "@/app/campaign/_components/pledge-screen";
 export default async function CausePledgePage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
-  const cause = await getCause(params.id);
+  const { id } = await params;
+  const cause = await getCause(id);
   if (!cause) {
     notFound();
   }

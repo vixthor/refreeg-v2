@@ -25,7 +25,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Icons } from "@/components/icons";
 import { useAuth } from "@/hooks/use-auth";
 import { useAdmin } from "@/hooks/use-admin";
-import { getCause } from "@/actions/cause-actions";
+import { getCause, updateCauseTrustMetrics } from "@/actions/cause-actions";
 import type { Cause, CauseSection, CauseStatus, CauseWithUser } from "@/types";
 import Image from "next/image";
 import { useQueryState } from "nuqs";
@@ -50,6 +50,15 @@ import { MoreHorizontal } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import NavigationLoader from "../NavigationLoader";
 import MultimediaCarousel from "../MultimediaCarousel";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function ManageCauses() {
   const router = useRouter();
@@ -86,6 +95,26 @@ export default function ManageCauses() {
     isLoading: boolean;
   }>({ open: false, cause: null, isLoading: false });
 
+  const [trustMetricsDialog, setTrustMetricsDialog] = useState<{
+    open: boolean;
+    causeId: string;
+    metrics: {
+      impact: string;
+      readability: string;
+      transparency: string;
+      status: string;
+    };
+  }>({
+    open: false,
+    causeId: "",
+    metrics: {
+      impact: "B+",
+      readability: "A",
+      transparency: "High",
+      status: "pending",
+    },
+  });
+
   const { showNotification } = useNotifications();
 
   const handleApprove = async (causeId: string) => {
@@ -112,6 +141,39 @@ export default function ManageCauses() {
   const handleReject = async () => {
     await rejectCause(rejectDialog.causeId, rejectDialog.reason);
     setRejectDialog((prev) => ({ ...prev, open: false }));
+  };
+
+  const openTrustMetricsDialog = (cause: any) => {
+    setTrustMetricsDialog({
+      open: true,
+      causeId: cause.id,
+      metrics: {
+        impact: cause.trust_score?.impact || "B+",
+        readability: cause.trust_score?.readability || "A",
+        transparency: cause.trust_score?.transparency || "High",
+        status: cause.verified_status || "pending",
+      },
+    });
+  };
+
+  const handleUpdateTrustMetrics = async () => {
+    try {
+      await updateCauseTrustMetrics(trustMetricsDialog.causeId, {
+        trust_score: {
+          impact: trustMetricsDialog.metrics.impact,
+          readability: trustMetricsDialog.metrics.readability,
+          transparency: trustMetricsDialog.metrics.transparency,
+        },
+        verified_status: trustMetricsDialog.metrics.status,
+      });
+      setTrustMetricsDialog((prev) => ({ ...prev, open: false }));
+      showNotification("Metrics Updated", {
+        body: "Cause trust metrics have been updated.",
+      });
+      router.refresh();
+    } catch (error) {
+      console.error("Error updating trust metrics:", error);
+    }
   };
 
   const openDetailDialog = async (item: any) => {
@@ -277,6 +339,11 @@ export default function ManageCauses() {
                             >
                               Preview
                             </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => openTrustMetricsDialog(item)}
+                            >
+                              Trust Metrics
+                            </DropdownMenuItem>
                             {activeTab === "pending" && (
                               <>
                                 <DropdownMenuItem
@@ -369,6 +436,135 @@ export default function ManageCauses() {
             >
               Reject Cause
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={trustMetricsDialog.open}
+        onOpenChange={(open) =>
+          setTrustMetricsDialog((prev) => ({ ...prev, open }))
+        }
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Update Trust Metrics</DialogTitle>
+            <DialogDescription>
+              Adjust the quality scores and verification status for this cause.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="impact" className="text-right">
+                Impact Score
+              </Label>
+              <Select
+                value={trustMetricsDialog.metrics.impact}
+                onValueChange={(val) =>
+                  setTrustMetricsDialog((prev) => ({
+                    ...prev,
+                    metrics: { ...prev.metrics, impact: val },
+                  }))
+                }
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select score" />
+                </SelectTrigger>
+                <SelectContent>
+                  {["A+", "A", "A-", "B+", "B", "B-", "C+", "C", "C-"].map(
+                    (s) => (
+                      <SelectItem key={s} value={s}>
+                        {s}
+                      </SelectItem>
+                    ),
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="readability" className="text-right">
+                Readability
+              </Label>
+              <Select
+                value={trustMetricsDialog.metrics.readability}
+                onValueChange={(val) =>
+                  setTrustMetricsDialog((prev) => ({
+                    ...prev,
+                    metrics: { ...prev.metrics, readability: val },
+                  }))
+                }
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select score" />
+                </SelectTrigger>
+                <SelectContent>
+                  {["High", "Medium", "Low"].map((s) => (
+                    <SelectItem key={s} value={s}>
+                      {s}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="transparency" className="text-right">
+                Transparency
+              </Label>
+              <Select
+                value={trustMetricsDialog.metrics.transparency}
+                onValueChange={(val) =>
+                  setTrustMetricsDialog((prev) => ({
+                    ...prev,
+                    metrics: { ...prev.metrics, transparency: val },
+                  }))
+                }
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select score" />
+                </SelectTrigger>
+                <SelectContent>
+                  {["High", "Medium", "Low"].map((s) => (
+                    <SelectItem key={s} value={s}>
+                      {s}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="status" className="text-right">
+                Status
+              </Label>
+              <Select
+                value={trustMetricsDialog.metrics.status}
+                onValueChange={(val) =>
+                  setTrustMetricsDialog((prev) => ({
+                    ...prev,
+                    metrics: { ...prev.metrics, status: val },
+                  }))
+                }
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pending">Pending Review</SelectItem>
+                  <SelectItem value="in_review">In Review</SelectItem>
+                  <SelectItem value="verified">Verified</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() =>
+                setTrustMetricsDialog((prev) => ({ ...prev, open: false }))
+              }
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleUpdateTrustMetrics}>Save Changes</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

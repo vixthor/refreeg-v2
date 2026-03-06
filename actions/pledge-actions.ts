@@ -35,8 +35,9 @@ export async function createPledge(input: CreatePledgeInput) {
       note: input.note ?? null,
       currency: "NGN",
       status: "pending",
+      token: user?.id ? null : crypto.randomUUID(), // Generate token for guests
     })
-    .select("id")
+    .select()
     .single();
 
   if (error) {

@@ -35,9 +35,10 @@ export async function getCause(causeId: string): Promise<CauseWithUser | null> {
         heading,
         description
       )
-    `
+    `,
     )
     .eq("id", causeId)
+    .order("id", { foreignTable: "cause_sections", ascending: true })
     .single();
 
   const isAdmin = user?.id ? await isAdminOrManager(user.id) : false;
@@ -69,6 +70,15 @@ export async function getCause(causeId: string): Promise<CauseWithUser | null> {
     sections: data.cause_sections || [],
     multimedia: data.multimedia || [],
     video_links: data.video_links || [],
+    trust_score: data.trust_score || {
+      impact: "B+",
+      readability: "A",
+      transparency: "High",
+    },
+    verified_status: data.verified_status || "pending",
+    summary: data.summary || null,
+    location: data.location || null,
+    faqs: data.faqs || [],
   } as unknown as CauseWithUser;
 
   delete (cause as any).profiles;
@@ -83,7 +93,7 @@ export async function getCause(causeId: string): Promise<CauseWithUser | null> {
 async function uploadImageToSupabase(
   file: File,
   userId: string,
-  type: "cover" | "additional"
+  type: "cover" | "additional",
 ): Promise<string> {
   const supabase = await createClient();
 
@@ -119,7 +129,7 @@ async function uploadImageToSupabase(
  */
 export async function createCause(
   userId: string,
-  causeData: CauseFormData
+  causeData: CauseFormData,
 ): Promise<Cause> {
   const supabase = await createClient();
 
@@ -128,7 +138,7 @@ export async function createCause(
     coverImageUrl = await uploadImageToSupabase(
       causeData.coverImage,
       userId,
-      "cover"
+      "cover",
     );
   }
 
@@ -150,7 +160,7 @@ export async function createCause(
     }
 
     daysActive = Math.ceil(
-      (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
+      (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
     );
   }
 
@@ -163,8 +173,8 @@ export async function createCause(
     try {
       multimediaUrls = await Promise.all(
         causeData.multimedia.map((file) =>
-          uploadImageToSupabase(file, userId, "additional")
-        )
+          uploadImageToSupabase(file, userId, "additional"),
+        ),
       );
     } catch (error) {
       console.error("Error uploading multimedia:", error);
@@ -230,7 +240,7 @@ export async function createCause(
         profile.full_name || "User",
         profile.email,
         causeData.title,
-        reviewUrl
+        reviewUrl,
       );
     }
   } catch (error) {
@@ -247,7 +257,7 @@ export async function createCause(
 export async function updateCause(
   causeId: string,
   userId: string,
-  causeData: Partial<CauseFormData>
+  causeData: Partial<CauseFormData>,
 ): Promise<any> {
   const supabase = await createClient();
 
@@ -271,7 +281,7 @@ export async function updateCause(
     }
 
     daysActive = Math.ceil(
-      (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
+      (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
     );
   }
 
@@ -284,8 +294,8 @@ export async function updateCause(
     try {
       multimediaUrls = await Promise.all(
         causeData.multimedia.map((file) =>
-          uploadImageToSupabase(file, userId, "additional")
-        )
+          uploadImageToSupabase(file, userId, "additional"),
+        ),
       );
     } catch (error) {
       console.error("Error uploading multimedia:", error);
@@ -353,7 +363,7 @@ export async function updateCause(
         profile.full_name || "User",
         profile.email,
         causeData.title || "Cause Edit",
-        reviewUrl
+        reviewUrl,
       );
     }
   } catch (error) {
@@ -368,7 +378,7 @@ export async function updateCause(
  * List causes with filtering options
  */
 export async function listCauses(
-  options: CauseFilterOptions = {}
+  options: CauseFilterOptions = {},
 ): Promise<Cause[]> {
   const supabase = await createClient();
 
@@ -400,7 +410,7 @@ export async function listCauses(
   if (options.offset) {
     query = query.range(
       options.offset,
-      options.offset + (options.limit || 10) - 1
+      options.offset + (options.limit || 10) - 1,
     );
   }
 
@@ -414,7 +424,7 @@ export async function listCauses(
   const causes = (data as Cause[]) || [];
 
   const nowExpired = causes.filter(
-    (c) => (c.days_active ?? 0) <= 0 && c.status === ("approved" as any)
+    (c) => (c.days_active ?? 0) <= 0 && c.status === ("approved" as any),
   );
 
   if (nowExpired.length > 0) {
@@ -438,7 +448,7 @@ export async function listCauses(
  * Count causes with filtering options
  */
 export async function countCauses(
-  options: CauseFilterOptions = {}
+  options: CauseFilterOptions = {},
 ): Promise<number> {
   const supabase = await createClient();
 
@@ -478,7 +488,7 @@ export async function countCauses(
 export async function updateCauseStatus(
   causeId: string,
   status: "approved" | "rejected",
-  rejectionReason?: string
+  rejectionReason?: string,
 ): Promise<Cause> {
   const supabase = await createClient();
 
@@ -608,7 +618,7 @@ export async function getCauseEdits(): Promise<any[]> {
         heading,
         description
       )
-    `
+    `,
     )
     .eq("status", "pending")
     .order("created_at", { ascending: false });
@@ -643,7 +653,7 @@ export async function getUserCauses(userId: string): Promise<Cause[]> {
 
 export async function getUserCausesWithStatus(
   userId: string,
-  status?: string
+  status?: string,
 ): Promise<Cause[]> {
   const supabase = await createClient();
 
@@ -678,10 +688,51 @@ export async function deleteCause(causeId: string): Promise<void> {
   }
 }
 
+export async function updateCauseTrustMetrics(
+  causeId: string,
+  metrics: {
+    trust_score?: {
+      impact: string;
+      readability: string;
+      transparency: string;
+    };
+    verified_status?: string;
+  },
+): Promise<void> {
+  const supabase = await createClient();
+  const user = await getCurrentUser();
+
+  const isAdmin = user?.id ? await isAdminOrManager(user.id) : false;
+
+  if (!isAdmin) {
+    throw new Error("Unauthorized: Only admins can update trust metrics");
+  }
+
+  const { error } = await supabase
+    .from("causes")
+    .update({
+      trust_score: metrics.trust_score,
+      verified_status: metrics.verified_status,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", causeId);
+
+  if (error) {
+    console.error("Error updating trust metrics:", error);
+    throw error;
+  }
+
+  revalidatePath("/dashboard/admin/causes");
+  revalidatePath(`/causes/${causeId}`);
+}
+
 /**
  * Save a cause share to the database
  */
-export async function saveCauseShare(causeId: string, userId?: string): Promise<void> {
+export async function saveCauseShare(
+  causeId: string,
+  userId?: string,
+): Promise<void> {
   const supabase = await createClient();
 
   const { error: shareError, data: causeData } = await supabase
@@ -728,7 +779,10 @@ export async function saveCauseShare(causeId: string, userId?: string): Promise<
 /**
  * Record a cause share with user tracking
  */
-export async function shareCause(causeId: string, userId: string): Promise<void> {
+export async function shareCause(
+  causeId: string,
+  userId: string,
+): Promise<void> {
   // Record the share
   await saveCauseShare(causeId, userId);
 }
