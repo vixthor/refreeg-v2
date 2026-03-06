@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Card,
   CardContent,
@@ -49,7 +51,9 @@ import {
 import { MoreHorizontal } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import NavigationLoader from "../NavigationLoader";
-import MultimediaCarousel from "../MultimediaCarousel";
+const MultimediaCarousel = dynamic(() => import("../MultimediaCarousel"), {
+  loading: () => <Skeleton className="h-64 w-full" />,
+});
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import {
