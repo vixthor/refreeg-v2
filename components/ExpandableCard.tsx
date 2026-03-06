@@ -14,7 +14,7 @@ interface ExpandableCardItem {
   id: string;
   title: string;
   description: string;
-  image: string | null;
+  image?: string | null;
   goal: number;
   raised?: number; // for causes
   signatures?: number; // for petitions

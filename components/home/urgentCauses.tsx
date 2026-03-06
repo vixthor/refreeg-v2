@@ -10,7 +10,7 @@ import { Progress } from "@/components/ui/progress";
 import { DonateButton } from "@/components/donate-button";
 import { H2, P, H4 } from "../typograpy";
 import { Button } from "../ui/button";
-import { listCauses } from "@/actions";
+import { listCauses } from "@/actions/cause-actions";
 import AnimatedCard from "./components/AnimatedCard";
 import AnimatedHeader from "@/components/home/components/AnimatedHeader";
 import { ArrowRight } from "lucide-react";
@@ -40,7 +40,7 @@ export async function UrgentCauses() {
   });
 
   const normalCauses = allCauses.filter(
-    (cause) => !urgentCauses.includes(cause)
+    (cause) => !urgentCauses.includes(cause),
   );
 
   const combinedCauses = [...urgentCauses, ...normalCauses];

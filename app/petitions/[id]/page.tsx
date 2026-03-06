@@ -8,14 +8,13 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { SignatureForm } from "@/components/signature-form";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { getPetition } from "@/actions/petition-actions";
+import { getCurrentUser } from "@/actions/auth-actions";
+import { getProfile, getProfileByUsername } from "@/actions/profile-actions";
 import {
-  getPetition,
-  getCurrentUser,
-  getProfile,
   listSignaturesForPetition,
-  getProfileByUsername,
-  checkUserSignature, // Add this import
-} from "@/actions";
+  checkUserSignature,
+} from "@/actions/signature-actions";
 import { notFound } from "next/navigation";
 import { ShareModal } from "@/components/share-modal";
 import { getBaseURL } from "@/lib/utils";
@@ -387,7 +386,7 @@ export default async function PetitionDetailPage({
               {/* Sections */}
               {petition.sections &&
                 petition.sections.length > 0 &&
-                petition.sections.map((section, index) => (
+                petition.sections.map((section: any, index: number) => (
                   <div key={index} className="mt-4">
                     <h3 className="text-xl font-semibold">{section.heading}</h3>
                     <p className="text-muted-foreground whitespace-pre-line">

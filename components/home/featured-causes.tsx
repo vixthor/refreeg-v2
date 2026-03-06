@@ -10,7 +10,7 @@ import { Progress } from "@/components/ui/progress";
 import { DonateButton } from "@/components/donate-button";
 import { H2, P, H4 } from "../typograpy";
 import { Button } from "../ui/button";
-import { listCauses } from "@/actions";
+import { listCauses } from "@/actions/cause-actions";
 import AnimatedCard from "./components/AnimatedCard";
 import AnimatedHeader from "@/components/home/components/AnimatedHeader";
 import { ArrowRight } from "lucide-react";
@@ -25,7 +25,7 @@ import {
 
 export async function FeaturedCauses() {
   const featuredCauses = (await listCauses()).filter(
-    (c) => (c.days_active ?? 0) > 0 && c.status !== ("expired" as any)
+    (c) => (c.days_active ?? 0) > 0 && c.status !== ("expired" as any),
   );
 
   if (!featuredCauses || featuredCauses.length === 0) {

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { toast } from "@/components/ui/use-toast";
 import type { BankDetailsFormData, ICreateSubaccount } from "@/types";
-import { updateBankDetails } from "@/actions";
+import { updateBankDetails } from "@/actions/profile-actions";
 import { useQueryClient } from "@tanstack/react-query";
 
 interface UseBankProps {
@@ -68,7 +68,7 @@ export function useBank({ initialData, userId }: UseBankProps) {
         const uniqueBanks = banksList.reduce(
           (
             acc: { name: string; code: string }[],
-            bank: { name: string; code: string }
+            bank: { name: string; code: string },
           ) => {
             const key = `${bank.code}-${bank.name}`;
             if (!acc.some((b) => `${b.code}-${b.name}` === key)) {
@@ -76,7 +76,7 @@ export function useBank({ initialData, userId }: UseBankProps) {
             }
             return acc;
           },
-          []
+          [],
         );
         setBanks(uniqueBanks);
       } catch (error) {
@@ -134,7 +134,7 @@ export function useBank({ initialData, userId }: UseBankProps) {
         setIsVerifying(false);
       }
     },
-    []
+    [],
   );
 
   useEffect(() => {

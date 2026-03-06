@@ -88,8 +88,10 @@ export interface SignatureFormData {
   isAnonymous: boolean;
 }
 
-export interface TransactionData
-  extends Pick<Profile, "email" | "full_name" | "id"> {
+export interface TransactionData extends Pick<
+  Profile,
+  "email" | "full_name" | "id"
+> {
   amount: number;
   serviceFee: number;
   causeId: string;
@@ -116,115 +118,6 @@ export interface CauseFilterOptions {
   offset?: number;
 }
 
-export interface Cause {
-  id: string;
-  user_id: string;
-  title: string;
-  description: string;
-  category: string;
-  goal: number;
-  raised: number;
-  status: CauseStatus;
-  image: string | null;
-  created_at: string;
-  updated_at: string;
-  rejection_reason?: string | null;
-  days_active?: number | null;
-  sections?: CauseSection[];
-  profiles?: {
-    name: string;
-    email: string;
-  };
-}
-
-export interface CauseWithUser extends Cause {
-  user: {
-    name: string;
-    email: string;
-    sub_account_code: string;
-  };
-  multimedia?: string[];
-  sections: CauseSection[];
-}
-
-export interface PetitionFilterOptions {
-  category?: string;
-  status?: CauseStatus;
-  userId?: string;
-  limit?: number;
-  offset?: number;
-}
-
-export interface Petition {
-  id: string;
-  user_id: string;
-  title: string;
-  description: string;
-  category: string;
-  goal: number;
-  raised: number;
-  status: PetitionStatus;
-  rejection_reason: string | null;
-  created_at: string;
-  updated_at: string;
-  image?: string | null;
-  days_active?: number | null;
-  sections?: PetitionSection[];
-  profiles?: {
-    full_name: string;
-    email: string;
-  };
-}
-
-export interface PetitionWithUser extends Petition {
-  user: {
-    name: string;
-    email: string;
-    sub_account_code: string;
-  };
-
-  sections: PetitionSection[];
-}
-
-export interface PetitionFilterOptions {
-  category?: string;
-  status?: CauseStatus;
-  userId?: string;
-  limit?: number;
-  offset?: number;
-}
-
-export interface Petition {
-  id: string;
-  user_id: string;
-  title: string;
-  description: string;
-  category: string;
-  goal: number;
-  raised: number;
-  status: PetitionStatus;
-  rejection_reason: string | null;
-  created_at: string;
-  updated_at: string;
-  image?: string | null;
-  days_active?: number | null;
-  sections?: PetitionSection[];
-  profiles?: {
-    full_name: string;
-    email: string;
-  };
-}
-
-export interface PetitionWithUser extends Petition {
-  user: {
-    name: string;
-    email: string;
-    sub_account_code: string;
-  };
-
-  sections: PetitionSection[];
-}
-
 export interface Comment {
   id: string;
   cause_id: string;
@@ -242,16 +135,29 @@ export interface Comment {
   replies?: Comment[];
   replies_count?: number;
 }
+
 export interface Event {
   id: string;
   user_id: string;
-  event_type: "comment" | "share" | "donation" | "login" | "weekly_streak" | "monthly_active";
+  event_type:
+    | "comment"
+    | "share"
+    | "donation"
+    | "login"
+    | "weekly_streak"
+    | "monthly_active";
   metadata: Record<string, any>;
   created_at: string;
 }
 
 export interface RewardEvent {
-  type: "comment" | "share" | "donation" | "login" | "weekly_streak" | "monthly_active";
+  type:
+    | "comment"
+    | "share"
+    | "donation"
+    | "login"
+    | "weekly_streak"
+    | "monthly_active";
   userId: string;
   amount?: number;
   metadata?: Record<string, any>;

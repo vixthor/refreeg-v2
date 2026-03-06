@@ -30,7 +30,6 @@ const AdminAnalytics = dynamic(
         </div>
       </div>
     ),
-    ssr: false, // Recharts needs window
   },
 );
 

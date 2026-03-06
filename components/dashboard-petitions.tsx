@@ -11,11 +11,9 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Plus } from "lucide-react";
-import {
-  getCurrentUser,
-  getUserPetitions,
-  listSignaturesForPetition,
-} from "@/actions";
+import { getCurrentUser } from "@/actions/auth-actions";
+import { getUserPetitions } from "@/actions/petition-actions";
+import { listSignaturesForPetition } from "@/actions/signature-actions";
 
 export async function DashboardPetitions() {
   const user = await getCurrentUser();
@@ -40,7 +38,7 @@ export async function DashboardPetitions() {
     petitions.map(async (petition) => {
       const signers = await listSignaturesForPetition(petition.id);
       return { ...petition, signatures: signers.length };
-    })
+    }),
   );
 
   return (
@@ -88,8 +86,8 @@ export async function DashboardPetitions() {
                       petition.status === "approved"
                         ? "default"
                         : petition.status === "pending"
-                        ? "secondary"
-                        : "destructive"
+                          ? "secondary"
+                          : "destructive"
                     }
                   >
                     {petition.status}
@@ -110,7 +108,7 @@ export async function DashboardPetitions() {
                   <Progress
                     value={Math.min(
                       (petition.signatures / petition.goal) * 100,
-                      100
+                      100,
                     )}
                   />
                 </div>

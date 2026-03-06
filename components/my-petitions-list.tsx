@@ -21,8 +21,8 @@ import {
 import {
   deletePetition,
   getUserPetitionsWithStatus,
-  listSignaturesForPetition,
-} from "@/actions";
+} from "@/actions/petition-actions";
+import { listSignaturesForPetition } from "@/actions/signature-actions";
 import { PetitionDropdown } from "./petition-dropdown";
 
 // Mock data for user's petitions
@@ -100,7 +100,7 @@ export async function MyPetitionsList({
         ...petition,
         signatures: signers.length,
       };
-    })
+    }),
   );
 
   if (petitionsWithSigners.length === 0) {
@@ -148,8 +148,8 @@ export async function MyPetitionsList({
                     petition.status === "approved"
                       ? "default"
                       : petition.status === "pending"
-                      ? "secondary"
-                      : "destructive"
+                        ? "secondary"
+                        : "destructive"
                   }
                 >
                   {petition.status}
@@ -171,7 +171,7 @@ export async function MyPetitionsList({
               <Progress
                 value={Math.min(
                   (petition.signatures / petition.goal) * 100,
-                  100
+                  100,
                 )}
               />
             </div>

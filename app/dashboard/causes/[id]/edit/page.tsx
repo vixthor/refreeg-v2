@@ -35,8 +35,8 @@ export default async function EditCausePage({
   }
 
   return (
-    <div className="md:container py-10">
-      <div className="md:mx-auto max-w-2xl">
+    <div className="">
+      <div className="md:mx-auto">
         {!hasBankInfo ? (
           <div className="text-center space-y-4">
             <h1 className="text-2xl font-bold">Bank Details Required</h1>
