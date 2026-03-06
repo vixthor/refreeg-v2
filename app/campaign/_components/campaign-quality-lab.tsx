@@ -20,18 +20,54 @@ import {
   Users,
 } from "lucide-react";
 import type { Cause } from "@/types";
-import { DonationForm } from "@/components/donation-form";
-import SolanaDonationButtonWrapper from "@/components/crypto-details/SolanaDonationButtonWrapper";
+import dynamic from "next/dynamic";
 import { Progress } from "@/components/ui/progress";
-import { ShareModal } from "@/components/share-modal";
-import MultimediaCarousel from "@/components/MultimediaCarousel";
 import { getBaseURL } from "@/lib/utils";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { CommentsSection } from "@/components/comments/comment-section";
 import type { Comment } from "@/types/common-types";
 import Image from "next/image";
+import { Skeleton } from "@/components/ui/skeleton";
+
+const DonationForm = dynamic(
+  () => import("@/components/donation-form").then((mod) => mod.DonationForm),
+  {
+    loading: () => <Skeleton className="h-[400px] w-full rounded-xl" />,
+  },
+);
+
+const SolanaDonationButtonWrapper = dynamic(
+  () => import("@/components/crypto-details/SolanaDonationButtonWrapper"),
+  {
+    loading: () => <Skeleton className="h-10 w-full rounded-full" />,
+    ssr: false,
+  },
+);
+
+const ShareModal = dynamic(
+  () => import("@/components/share-modal").then((mod) => mod.ShareModal),
+  {
+    loading: () => <Skeleton className="h-10 w-10 rounded-full" />,
+  },
+);
+
+const MultimediaCarousel = dynamic(
+  () => import("@/components/MultimediaCarousel"),
+  {
+    loading: () => <Skeleton className="h-64 w-full rounded-xl" />,
+  },
+);
+
+const CommentsSection = dynamic(
+  () =>
+    import("@/components/comments/comment-section").then(
+      (mod) => mod.CommentsSection,
+    ),
+  {
+    loading: () => <Skeleton className="h-40 w-full rounded-xl" />,
+  },
+);
 
 const tabs = [
   "Story",
