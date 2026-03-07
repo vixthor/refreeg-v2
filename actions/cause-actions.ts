@@ -187,7 +187,6 @@ export async function createCause(
     .insert({
       user_id: userId,
       title: causeData.title,
-
       category: causeData.category,
       goal:
         typeof causeData.goal === "string"
@@ -198,6 +197,8 @@ export async function createCause(
       days_active: daysActive,
       multimedia: multimediaUrls,
       video_links: causeData.video_links || [],
+      summary: causeData.summary || null,
+      location: causeData.location || null,
     })
     .select()
     .single();
@@ -317,6 +318,8 @@ export async function updateCause(
     days_active: daysActive,
     multimedia: multimediaUrls.length > 0 ? multimediaUrls : [],
     video_links: causeData.video_links || [],
+    summary: causeData.summary || null,
+    location: causeData.location || null,
     status: "pending",
   };
 
@@ -787,4 +790,50 @@ export async function shareCause(
 ): Promise<void> {
   // Record the share
   await saveCauseShare(causeId, userId);
+}
+
+/**
+ * Follow a campaign — requires authentication
+ * Returns { error: 'unauthenticated' } if no session so the UI can show a login modal
+ */
+export async function followCampaign(
+  causeId: string,
+): Promise<{ data: null; error: string } | { data: any; error: null }> {
+  const supabase = await createClient();
+  const user = await getCurrentUser();
+
+  if (!user) {
+    return { data: null, error: "unauthenticated" };
+  }
+
+  // Get email from profile
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("email")
+    .eq("id", user.id)
+    .single();
+
+  if (!profile?.email) {
+    return { data: null, error: "No email found for your account." };
+  }
+
+  const { data, error } = await supabase
+    .from("campaign_follows")
+    .upsert(
+      {
+        cause_id: causeId,
+        user_id: user.id,
+        email: profile.email,
+      },
+      { onConflict: "cause_id,email", ignoreDuplicates: true },
+    )
+    .select()
+    .single();
+
+  if (error && error.code !== "23505") {
+    // ignore unique constraint violation (already following)
+    return { data: null, error: error.message };
+  }
+
+  return { data: data ?? { already_following: true }, error: null };
 }

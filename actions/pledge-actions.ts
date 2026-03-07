@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { sendPledgeConfirmationEmail } from "@/services/mail";
 
 type CreatePledgeInput = {
   causeId: string;
@@ -9,6 +10,7 @@ type CreatePledgeInput = {
   name: string;
   email: string;
   note?: string | null;
+  causeTitle?: string;
 };
 
 export async function createPledge(input: CreatePledgeInput) {
@@ -44,5 +46,20 @@ export async function createPledge(input: CreatePledgeInput) {
     return { data: null, error: error.message };
   }
 
+  // Fire-and-forget confirmation email — works for guests and logged-in users
+  const baseUrl =
+    process.env.NEXT_PUBLIC_APP_URL || "https://www.refreeg.com";
+  sendPledgeConfirmationEmail({
+    to: input.email,
+    userName: input.name,
+    causeTitle: input.causeTitle || "this campaign",
+    amount: input.amount,
+    reminderDate: input.reminderDate,
+    donateUrl: `${baseUrl}/causes/${input.causeId}`,
+  }).catch((err) =>
+    console.error("Background pledge confirmation email error:", err),
+  );
+
   return { data, error: null };
 }
+

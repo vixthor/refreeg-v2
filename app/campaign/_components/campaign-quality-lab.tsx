@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, useTransition } from "react";
 import type { ReactNode } from "react";
 import { motion } from "framer-motion";
 import {
@@ -18,6 +18,8 @@ import {
   Share2,
   Target,
   Users,
+  Bell,
+  CheckCheck,
 } from "lucide-react";
 import type { Cause } from "@/types";
 import dynamic from "next/dynamic";
@@ -29,6 +31,14 @@ import { Button } from "@/components/ui/button";
 import type { Comment } from "@/types/common-types";
 import Image from "next/image";
 import { Skeleton } from "@/components/ui/skeleton";
+import { followCampaign } from "@/actions/cause-actions";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 
 const DonationForm = dynamic(
   () => import("@/components/donation-form").then((mod) => mod.DonationForm),
@@ -955,9 +965,36 @@ function DonateCard({
 
 function CampaignHealthCard({
   donorsPreview,
+  causeId,
+  currentUserId,
 }: {
   donorsPreview: { id: string; name: string; amount: number }[];
+  causeId: string;
+  currentUserId?: string;
 }) {
+  const [followed, setFollowed] = useState(false);
+  const [followError, setFollowError] = useState<string | null>(null);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [isPending, startTransition] = useTransition();
+
+  const handleFollow = () => {
+    if (!currentUserId) {
+      setShowLoginModal(true);
+      return;
+    }
+    startTransition(async () => {
+      setFollowError(null);
+      const result = await followCampaign(causeId);
+      if (result.error && result.error !== "unauthenticated") {
+        setFollowError(result.error);
+      } else if (result.error === "unauthenticated") {
+        setShowLoginModal(true);
+      } else {
+        setFollowed(true);
+      }
+    });
+  };
+
   return (
     <motion.div
       className="rounded-[14px] border border-[#E5E7EB] bg-white p-4 shadow-[0_10px_30px_rgba(0,0,0,0.06)] sm:p-6"
@@ -996,12 +1033,63 @@ function CampaignHealthCard({
           <div className="text-sm text-slate-500">Be the first to donate.</div>
         )}
       </div>
-      <button
-        type="button"
-        className="mt-4 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs uppercase tracking-[0.15em] text-slate-600"
-      >
-        Follow campaign
-      </button>
+
+      {/* Follow campaign button */}
+      {followed ? (
+        <div className="mt-4 flex items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm text-emerald-700">
+          <CheckCheck className="h-4 w-4" />
+          Following this campaign
+        </div>
+      ) : (
+        <>
+          <button
+            type="button"
+            onClick={handleFollow}
+            disabled={isPending}
+            className="mt-4 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs uppercase tracking-[0.15em] text-slate-600 transition hover:border-slate-400 disabled:opacity-50 flex items-center justify-center gap-2"
+          >
+            <Bell className="h-3 w-3" />
+            {isPending ? "Following..." : "Follow campaign"}
+          </button>
+          {followError && (
+            <p className="mt-1 text-center text-xs text-red-500">{followError}</p>
+          )}
+        </>
+      )}
+
+      {/* Login modal for guests */}
+      <Dialog open={showLoginModal} onOpenChange={setShowLoginModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Sign in to follow</DialogTitle>
+            <DialogDescription>
+              Create a free account or sign in to follow this campaign and
+              receive updates when milestones are reached.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="mt-4 flex flex-col gap-3">
+            <Button
+              className="w-full rounded-full bg-[#0F172A] text-white hover:bg-[#1E293B]"
+              onClick={() => {
+                setShowLoginModal(false);
+                window.location.href = `/login?redirect=/causes/${causeId}`;
+              }}
+            >
+              Sign in
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full rounded-full"
+              onClick={() => {
+                setShowLoginModal(false);
+                window.location.href = `/register?redirect=/causes/${causeId}`;
+              }}
+            >
+              Create account
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </motion.div>
   );
 }
@@ -1158,7 +1246,11 @@ export default function CampaignQualityLab({
               />
             </div>
             <PledgesCard cause={cause} profile={profile} />
-            <CampaignHealthCard donorsPreview={donorsPreview} />
+            <CampaignHealthCard
+              donorsPreview={donorsPreview}
+              causeId={cause.id}
+              currentUserId={currentUserId}
+            />
           </div>
         </aside>
 

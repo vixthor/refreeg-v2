@@ -21,6 +21,7 @@ export interface Cause {
   days_active?: number | null;
   multimedia?: string[];
   video_links?: string[];
+  sections?: { heading: string; description: string }[];
   trust_score?: {
     impact: string;
     readability: string;
@@ -51,7 +52,7 @@ export interface CauseWithUser extends Cause {
 
 export interface CauseFormData {
   title: string;
-  description: string;
+  description?: string;
   category: string;
   goal: string | number;
   currency: string;
@@ -62,6 +63,8 @@ export interface CauseFormData {
   endDate?: Date | undefined;
   multimedia: File[];
   video_links?: string[];
+  summary?: string | null;
+  location?: string | null;
 }
 export interface CauseFilterOptions {
   category?: string;

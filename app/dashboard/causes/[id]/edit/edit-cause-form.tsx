@@ -87,6 +87,8 @@ const MAX_DURATION_DAYS = 180;
 
 type FormData = {
   title: string;
+  summary: string;
+  location: string;
   category: string;
   goal: string;
   currency: string;
@@ -124,6 +126,8 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<FormData>({
     title: cause.title,
+    summary: (cause as any).summary || "",
+    location: (cause as any).location || "",
     category: cause.category,
     goal: cause.goal.toString(),
     currency: "NGN",
@@ -325,8 +329,10 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
       return;
     }
 
-    const causeData: Partial<FormData> & { video_links?: string[] } = {
+    const causeData: Partial<FormData> & { video_links?: string[]; summary?: string; location?: string } = {
       title: formData.title,
+      summary: formData.summary,
+      location: formData.location,
       category: formData.category,
       goal: formData.goal,
       coverImage: formData.coverImage,
@@ -385,6 +391,36 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
                     {errors.title}
                   </p>
                 )}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="summary" className="text-base font-semibold text-gray-700">
+                    Short Summary <span className="text-gray-400 font-normal">(optional)</span>
+                  </Label>
+                  <Input
+                    id="summary"
+                    name="summary"
+                    placeholder="One-line description shown on the cause hero"
+                    value={formData.summary}
+                    onChange={handleChange}
+                    maxLength={200}
+                    className="h-12 premium-input"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="location" className="text-base font-semibold text-gray-700">
+                    Location <span className="text-gray-400 font-normal">(optional)</span>
+                  </Label>
+                  <Input
+                    id="location"
+                    name="location"
+                    placeholder="e.g., Lagos, Nigeria"
+                    value={formData.location}
+                    onChange={handleChange}
+                    className="h-12 premium-input"
+                  />
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

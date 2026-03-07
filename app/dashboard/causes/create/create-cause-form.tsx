@@ -90,6 +90,8 @@ const MAX_DURATION_DAYS = 180;
 
 type FormData = {
   title: string;
+  summary: string;
+  location: string;
   category: string;
   goal: string;
   currency: string;
@@ -114,6 +116,8 @@ type FormErrors = {
 
 type CauseFormData = {
   title: string;
+  summary: string;
+  location: string;
   category: string;
   goal: string;
   currency: string;
@@ -199,6 +203,8 @@ export default function CreateCauseForm() {
   const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     title: "",
+    summary: "",
+    location: "",
     category: "",
     goal: "",
     currency: "NGN",
@@ -451,6 +457,8 @@ export default function CreateCauseForm() {
     }
     const causeData: CauseFormData = {
       title: formData.title,
+      summary: formData.summary,
+      location: formData.location,
       category: formData.category,
       goal: formData.goal,
       currency: formData.currency,
@@ -538,6 +546,36 @@ export default function CreateCauseForm() {
                     {errors.title}
                   </p>
                 )}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="summary" className="text-base font-semibold text-gray-700">
+                    Short Summary <span className="text-gray-400 font-normal">(optional)</span>
+                  </Label>
+                  <Input
+                    id="summary"
+                    name="summary"
+                    placeholder="One-line description shown on the cause hero"
+                    value={formData.summary}
+                    onChange={handleChange}
+                    maxLength={200}
+                    className="h-12 premium-input"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="location" className="text-base font-semibold text-gray-700">
+                    Location <span className="text-gray-400 font-normal">(optional)</span>
+                  </Label>
+                  <Input
+                    id="location"
+                    name="location"
+                    placeholder="e.g., Lagos, Nigeria"
+                    value={formData.location}
+                    onChange={handleChange}
+                    className="h-12 premium-input"
+                  />
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

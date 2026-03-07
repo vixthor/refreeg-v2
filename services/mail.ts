@@ -420,6 +420,126 @@ export async function sendCauseEditedEmail({
   });
 }
 
+export async function sendPledgeConfirmationEmail({
+  to,
+  userName,
+  causeTitle,
+  amount,
+  reminderDate,
+  donateUrl,
+}: {
+  to: string;
+  userName: string;
+  causeTitle: string;
+  amount: number;
+  reminderDate: string;
+  donateUrl: string;
+}) {
+  const currentYear = new Date().getFullYear();
+  return sendMail({
+    to,
+    subject: `Your pledge to "${causeTitle}" is confirmed 🤝`,
+    templateName: "pledge-confirmation",
+    context: {
+      userName,
+      causeTitle,
+      amount: amount.toLocaleString(),
+      reminderDate,
+      donateUrl,
+      currentYear,
+    },
+  });
+}
+
+export async function sendPledgeReminderEmail({
+  to,
+  userName,
+  causeTitle,
+  amount,
+  reminderDate,
+  donateUrl,
+}: {
+  to: string;
+  userName: string;
+  causeTitle: string;
+  amount: number;
+  reminderDate: string;
+  donateUrl: string;
+}) {
+  const currentYear = new Date().getFullYear();
+  return sendMail({
+    to,
+    subject: `⏰ Reminder: Your pledge to "${causeTitle}" is due today`,
+    templateName: "pledge-reminder",
+    context: {
+      userName,
+      causeTitle,
+      amount: amount.toLocaleString(),
+      reminderDate,
+      donateUrl,
+      currentYear,
+    },
+  });
+}
+
+export async function sendMilestoneEmail({
+  to,
+  causeTitle,
+  causeUrl,
+  milestone,
+}: {
+  to: string;
+  causeTitle: string;
+  causeUrl: string;
+  milestone: 50 | 100;
+}) {
+  const currentYear = new Date().getFullYear();
+  return sendMail({
+    to,
+    subject:
+      milestone === 100
+        ? `Goal Achieved! 🎉 "${causeTitle}" is 100% funded`
+        : `Halfway there! 🚀 "${causeTitle}" reached 50%`,
+    templateName: `milestone-${milestone}`,
+    context: {
+      causeTitle,
+      causeUrl,
+      currentYear,
+    },
+  });
+}
+
+export async function sendCampaignExpiringEmail({
+  to,
+  causeTitle,
+  causeUrl,
+  amountRaised,
+  goalAmount,
+  percent,
+}: {
+  to: string;
+  causeTitle: string;
+  causeUrl: string;
+  amountRaised: number;
+  goalAmount: number;
+  percent: number;
+}) {
+  const currentYear = new Date().getFullYear();
+  return sendMail({
+    to,
+    subject: `⏳ 48 hours left: Support "${causeTitle}"`,
+    templateName: "campaign-expiring",
+    context: {
+      causeTitle,
+      causeUrl,
+      amountRaised: amountRaised.toLocaleString(),
+      goalAmount: goalAmount.toLocaleString(),
+      percent,
+      currentYear,
+    },
+  });
+}
+
 export const sendTestEmail = async (email: string) => {
   return sendMail({
     to: email,
