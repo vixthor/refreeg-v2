@@ -183,6 +183,7 @@ type CauseDetail = Cause & {
   multimedia?: string[];
   video_links?: string[];
   faqs?: { question: string; answer: string }[];
+  isFollowing?: boolean;
 };
 
 type CampaignQualityLabProps = {
@@ -974,12 +975,14 @@ function CampaignHealthCard({
   donorsPreview,
   causeId,
   currentUserId,
+  isFollowing,
 }: {
   donorsPreview: { id: string; name: string; amount: number }[];
   causeId: string;
   currentUserId?: string;
+  isFollowing?: boolean;
 }) {
-  const [followed, setFollowed] = useState(false);
+  const [followed, setFollowed] = useState(isFollowing || false);
   const [followError, setFollowError] = useState<string | null>(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -1275,6 +1278,7 @@ export default function CampaignQualityLab({
               donorsPreview={donorsPreview}
               causeId={cause.id}
               currentUserId={currentUserId}
+              isFollowing={cause.isFollowing}
             />
           </div>
         </aside>

@@ -59,6 +59,18 @@ export async function getCause(causeId: string): Promise<CauseWithUser | null> {
     throw error;
   }
 
+  // Check if current user is following this cause
+  let isFollowing = false;
+  if (user?.id) {
+    const { data: followData } = await supabase
+      .from("campaign_follows")
+      .select("id")
+      .eq("cause_id", causeId)
+      .eq("user_id", user.id)
+      .maybeSingle();
+    isFollowing = !!followData;
+  }
+
   const cause = {
     ...data,
     user: {
@@ -79,6 +91,7 @@ export async function getCause(causeId: string): Promise<CauseWithUser | null> {
     summary: data.summary || null,
     location: data.location || null,
     faqs: data.faqs || [],
+    isFollowing,
   } as unknown as CauseWithUser;
 
   delete (cause as any).profiles;
