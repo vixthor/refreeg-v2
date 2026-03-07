@@ -36,6 +36,8 @@ interface DonationFormProps {
   status: "pending" | "rejected" | "approved";
   causeName?: string; // Add causeName prop
   causeUrl?: string; // Add causeUrl prop for the continue link
+  recurring?: "one_time" | "weekly" | "monthly";
+  tip?: number;
 }
 
 export function DonationForm({
@@ -45,6 +47,8 @@ export function DonationForm({
   subaccount,
   causeName = "this cause", // Default value
   causeUrl = "/causes", // Default value
+  recurring = "one_time",
+  tip = 0,
 }: DonationFormProps) {
   const { initializePayment, isLoading } = usePayment();
   const [formData, setFormData] = useState({
@@ -187,6 +191,14 @@ export function DonationForm({
     // Clear donation attempt when user successfully submits
     localStorage.removeItem("donationAttempt");
 
+    // Map recurring to Paystack Plan IDs
+    let plan: string | undefined = undefined;
+    if (recurring === "weekly") {
+      plan = process.env.NEXT_PUBLIC_PAYSTACK_PLAN_ID_WEEKLY;
+    } else if (recurring === "monthly") {
+      plan = process.env.NEXT_PUBLIC_PAYSTACK_PLAN_ID_MONTHLY;
+    }
+
     await initializePayment({
       email: formData.email,
       amount: Number(formData.amount),
@@ -194,6 +206,8 @@ export function DonationForm({
       id: profile.id || "",
       full_name: formData.name,
       serviceFee: serviceFee,
+      tipAmount: tip,
+      plan: plan,
       subaccounts: [
         { subaccount: subaccount || "", share: Number(formData.amount) * 100 },
       ],
@@ -204,7 +218,7 @@ export function DonationForm({
 
   const donationAmount = Number(formData.amount) || 0;
   const serviceFee = calculateServiceFee(donationAmount);
-  const totalAmount = donationAmount + serviceFee;
+  const totalAmount = donationAmount + serviceFee + tip;
 
   return (
     <Card>
@@ -285,12 +299,25 @@ export function DonationForm({
                 <span className="text-muted-foreground">Service Fee</span>
                 <span>₦{serviceFee.toLocaleString()}</span>
               </div>
+              {tip > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Platform Tip</span>
+                  <span>₦{tip.toLocaleString()}</span>
+                </div>
+              )}
+              {recurring !== "one_time" && (
+                <div className="flex justify-between text-sm font-medium text-blue-600">
+                  <span className="text-muted-foreground">Schedule</span>
+                  <span className="capitalize">{recurring}</span>
+                </div>
+              )}
               <div className="flex justify-between font-medium pt-2 border-t">
                 <span>Total Amount</span>
                 <span>₦{totalAmount.toLocaleString()}</span>
               </div>
             </div>
           )}
+
         </CardContent>
         <CardFooter className="flex flex-col gap-4">
           {/* REMOVE THIS TEST BUTTON IN PRODUCTION */}

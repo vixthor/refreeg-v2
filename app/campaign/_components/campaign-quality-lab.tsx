@@ -940,6 +940,8 @@ function DonateCard({
           subaccount={cause?.user.sub_account_code ?? undefined}
           causeName={cause.title}
           causeUrl={`/causes/${cause.id}`}
+          recurring={recurring}
+          tip={tip}
         />
         <Link
           href={`/causes/${cause.id}/pledge`}
