@@ -38,6 +38,7 @@ interface DonationFormProps {
   causeUrl?: string; // Add causeUrl prop for the continue link
   recurring?: "one_time" | "weekly" | "monthly";
   tip?: number;
+  initialAmount?: number;
 }
 
 export function DonationForm({
@@ -49,6 +50,7 @@ export function DonationForm({
   causeUrl = "/causes", // Default value
   recurring = "one_time",
   tip = 0,
+  initialAmount = 0,
 }: DonationFormProps) {
   const { initializePayment, isLoading } = usePayment();
   const [formData, setFormData] = useState({
@@ -58,6 +60,13 @@ export function DonationForm({
     message: "",
     isAnonymous: false,
   });
+
+  // Sync internal amount with prop when prop changes
+  useEffect(() => {
+    if (initialAmount > 0) {
+      setFormData((prev) => ({ ...prev, amount: initialAmount.toString() }));
+    }
+  }, [initialAmount]);
 
   // Track donation attempt progress
   const [donationAttempt, setDonationAttempt] = useState({
