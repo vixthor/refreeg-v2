@@ -8,7 +8,8 @@ import { recordEvent } from "@/actions/event-reward-actions";
 export async function createDonation(
   causeId: string,
   userId: string | null,
-  donationData: DonationFormData
+  donationData: DonationFormData,
+  tipAmount: number = 0
 ): Promise<Donation> {
   const supabase = await createClient();
 
@@ -23,6 +24,7 @@ export async function createDonation(
       cause_id: causeId,
       ...(userId ? { user_id: userId } : {}),
       amount: donationAmount,
+      tip_amount: tipAmount > 0 ? tipAmount : 0,
       name:
         String(donationData.isAnonymous).toLocaleLowerCase() === "true"
           ? "Anonymous"
@@ -59,6 +61,81 @@ export async function createDonation(
     }
   }
 
+  // Auto-fulfill any pending pledge from the same donor for this cause
+  if (donationData.email) {
+    try {
+      await supabase
+        .from("pledges")
+        .update({ status: "fulfilled" })
+        .eq("cause_id", causeId)
+        .eq("email", donationData.email)
+        .eq("status", "pending");
+    } catch (pledgeError) {
+      console.error("Error fulfilling pledge:", pledgeError);
+      // Non-fatal — don't break the donation flow
+    }
+  }
+
+  // Milestone notifications for followers (50% and 100%)
+  try {
+    const { data: cause, error: causeError } = await supabase
+      .from("causes")
+      .select("title, raised, goal")
+      .eq("id", causeId)
+      .single();
+
+    if (cause && !causeError) {
+      const raisedAfter = Number(cause.raised);
+      const raisedBefore = raisedAfter - donationAmount;
+      const goal = Number(cause.goal);
+
+      if (goal > 0) {
+        const percentBefore = (raisedBefore / goal) * 100;
+        const percentAfter = (raisedAfter / goal) * 100;
+
+        let milestoneReached: 50 | 100 | null = null;
+        if (percentBefore < 50 && percentAfter >= 50 && percentAfter < 100) {
+          milestoneReached = 50;
+        } else if (percentBefore < 100 && percentAfter >= 100) {
+          milestoneReached = 100;
+        }
+
+        if (milestoneReached) {
+          // Fetch followers
+          const { data: followers } = await supabase
+            .from("campaign_follows")
+            .select("email")
+            .eq("cause_id", causeId);
+
+          if (followers && followers.length > 0) {
+            const followerEmails = followers.map((f) => f.email);
+            const appUrl =
+              process.env.NEXT_PUBLIC_APP_URL || "https://www.refreeg.com";
+
+            // Call the follower-update API bridge (fire and forget)
+            fetch(`${appUrl}/api/mail/follower-update`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                type: "milestone",
+                data: {
+                  followers: followerEmails,
+                  causeTitle: cause.title,
+                  causeUrl: `${appUrl}/causes/${causeId}`,
+                  milestone: milestoneReached,
+                },
+              }),
+            }).catch((err) =>
+              console.error("Error calling follower-update API:", err)
+            );
+          }
+        }
+      }
+    }
+  } catch (milestoneError) {
+    console.error("Error in milestone detection:", milestoneError);
+  }
+
   revalidatePath(`/causes/${causeId}`);
   revalidatePath("/causes");
   revalidatePath("/");
@@ -68,6 +145,7 @@ export async function createDonation(
 
   return data as Donation;
 }
+
 
 export async function listDonationsForCause(
   causeId: string

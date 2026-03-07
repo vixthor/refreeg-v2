@@ -194,6 +194,7 @@ export default function PledgeScreen({ cause, profile }: PledgeScreenProps) {
         name: trimmedName,
         email: trimmedEmail,
         note: trimmedNote ? trimmedNote : null,
+        causeTitle: cause.title,
       });
 
       if (error) {
@@ -342,6 +343,12 @@ export default function PledgeScreen({ cause, profile }: PledgeScreenProps) {
                   type="date"
                   value={pledgeDate}
                   min={getDefaultPledgeDate()}
+                  max={(() => {
+                    if (!cause.days_active) return undefined;
+                    const end = new Date();
+                    end.setDate(end.getDate() + cause.days_active);
+                    return end.toISOString().split("T")[0];
+                  })()}
                   onChange={(event) => {
                     handleFieldChange(setPledgeDate)(event);
                     clearFieldError("date");
@@ -354,7 +361,7 @@ export default function PledgeScreen({ cause, profile }: PledgeScreenProps) {
                   </p>
                 )}
                 <p className="text-xs text-slate-500">
-                  We will send a reminder on this date by email. SMS reminders
+                  We will send a reminder on this date by email.{cause.days_active ? ` Date must be before the campaign ends.` : ""} SMS reminders
                   can be added later.
                 </p>
               </label>
