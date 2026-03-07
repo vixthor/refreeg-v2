@@ -41,6 +41,7 @@ export interface DonationFormData {
   email: string;
   message: string;
   isAnonymous: boolean;
+  tip_amount?: number;
 }
 
 export interface SignatureFormData {
@@ -57,9 +58,11 @@ export interface TransactionData extends Pick<
 > {
   amount: number;
   serviceFee: number;
+  tipAmount?: number;
   causeId: string;
   message: string;
   isAnonymous: boolean;
+  plan?: string;
   subaccounts: {
     subaccount: string;
     share: number;

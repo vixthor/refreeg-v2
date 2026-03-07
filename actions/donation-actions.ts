@@ -18,13 +18,16 @@ export async function createDonation(
       ? Number.parseFloat(donationData.amount)
       : donationData.amount;
 
+  const finalTipAmount =
+    tipAmount > 0 ? tipAmount : donationData.tip_amount || 0;
+
   const { data, error } = await supabase
     .from("donations")
     .insert({
       cause_id: causeId,
       ...(userId ? { user_id: userId } : {}),
       amount: donationAmount,
-      tip_amount: tipAmount > 0 ? tipAmount : 0,
+      tip_amount: finalTipAmount,
       name:
         String(donationData.isAnonymous).toLocaleLowerCase() === "true"
           ? "Anonymous"
