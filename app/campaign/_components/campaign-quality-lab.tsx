@@ -24,7 +24,7 @@ import {
 import type { Cause } from "@/types";
 import dynamic from "next/dynamic";
 import { Progress } from "@/components/ui/progress";
-import { getBaseURL } from "@/lib/utils";
+import { getBaseURL, calculateServiceFee } from "@/lib/utils";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -380,7 +380,7 @@ function TrustPanel({
             {proofMedia.slice(0, 3).map((item: any, index: any) => (
               <div
                 key={`${item}-${index}`}
-                className="aspect-square overflow-hidden rounded-xl border border-slate-200 bg-slate-100"
+                className="relative aspect-square overflow-hidden rounded-xl border border-slate-200 bg-slate-100"
               >
                 <Image
                   src={item}
@@ -732,11 +732,13 @@ function DonateCard({
   setRecurring,
   tip,
   setTip,
+  serviceFee,
   totalWithTip,
   impactText,
   profile,
   creatorHasWallet,
   donorsPreview,
+  raisedToday,
 }: {
   cause: CauseDetail;
   donation: number;
@@ -745,11 +747,13 @@ function DonateCard({
   setRecurring: (value: "one_time" | "weekly" | "monthly") => void;
   tip: number;
   setTip: (value: number) => void;
+  serviceFee: number;
   totalWithTip: number;
   impactText: string;
   profile: ProfileSummary;
   creatorHasWallet: boolean;
   donorsPreview: { id: string; name: string; amount: number }[];
+  raisedToday: number;
 }) {
   return (
     <motion.div
@@ -899,11 +903,35 @@ function DonateCard({
           Impact estimate
         </p>
         <p className="mt-2 text-sm text-[#0F172A]">{impactText}</p>
+        {donation > 0 && (
+          <div className="mt-3 space-y-1 border-t border-slate-100 pt-3">
+            <div className="flex justify-between text-xs text-slate-500">
+              <span>Donation amount</span>
+              <span>₦{donation.toLocaleString()}</span>
+            </div>
+            <div className="flex justify-between text-xs text-slate-500">
+              <span>Service fee</span>
+              <span>₦{serviceFee.toLocaleString()}</span>
+            </div>
+            {tip > 0 && (
+              <div className="flex justify-between text-xs text-slate-500">
+                <span>Platform tip</span>
+                <span>₦{tip.toLocaleString()}</span>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
-      <div className="mt-4 flex items-center justify-between text-sm text-[#64748B]">
-        <span>Total today</span>
-        <span className="text-[#0F172A]">₦{totalWithTip.toLocaleString()}</span>
+      <div className="mt-4 space-y-2 text-sm text-[#64748B]">
+        <div className="flex items-center justify-between">
+          <span>Total raised today</span>
+          <span className="text-[#0F172A] font-medium">₦{raisedToday.toLocaleString()}</span>
+        </div>
+        <div className="flex items-center justify-between border-t border-slate-100 pt-2">
+          <span className="font-semibold text-slate-700">Checkout total</span>
+          <span className="text-[#2563EB] font-bold">₦{totalWithTip.toLocaleString()}</span>
+        </div>
       </div>
 
       <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-xs text-slate-600">
@@ -942,6 +970,7 @@ function DonateCard({
           causeUrl={`/causes/${cause.id}`}
           recurring={recurring}
           tip={tip}
+          initialAmount={donation}
         />
         <Link
           href={`/causes/${cause.id}/pledge`}
@@ -1170,7 +1199,18 @@ export default function CampaignQualityLab({
     );
   }, [cause.summary]);
 
-  const totalWithTip = useMemo(() => donation + tip, [donation, tip]);
+  const serviceFee = useMemo(() => calculateServiceFee(donation), [donation]);
+  const totalWithTip = useMemo(() => donation + tip + serviceFee, [donation, tip, serviceFee]);
+
+  const raisedToday = useMemo(() => {
+    const today = new Date().toISOString().split("T")[0];
+    return donors.reduce((sum, donor) => {
+      if (!donor.created_at) return sum;
+      const donorDate = new Date(donor.created_at).toISOString().split("T")[0];
+      return donorDate === today ? sum + (donor.amount || 0) : sum;
+    }, 0);
+  }, [donors]);
+
   const donorsPreview = useMemo(
     () =>
       donors.slice(0, 5).map((donor) => ({
@@ -1240,11 +1280,13 @@ export default function CampaignQualityLab({
                 setRecurring={setRecurring}
                 tip={tip}
                 setTip={setTip}
+                serviceFee={serviceFee}
                 totalWithTip={totalWithTip}
                 impactText={impactText}
                 profile={profile}
                 creatorHasWallet={creatorHasWallet}
                 donorsPreview={donorsPreview}
+                raisedToday={raisedToday}
               />
             </div>
             <PledgesCard cause={cause} profile={profile} />
