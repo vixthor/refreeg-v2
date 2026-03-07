@@ -827,13 +827,13 @@ export async function followCampaign(
       },
       { onConflict: "cause_id,email", ignoreDuplicates: true },
     )
-    .select()
-    .single();
+    .select();
 
   if (error && error.code !== "23505") {
     // ignore unique constraint violation (already following)
     return { data: null, error: error.message };
   }
 
-  return { data: data ?? { already_following: true }, error: null };
+  // data will be empty if ignoreDuplicates triggered
+  return { data: (data && data.length > 0) ? data[0] : { already_following: true }, error: null };
 }

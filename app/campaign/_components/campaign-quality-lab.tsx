@@ -79,14 +79,7 @@ const CommentsSection = dynamic(
   },
 );
 
-const tabs = [
-  "Story",
-  "Milestones",
-  "Updates",
-  "Budget",
-  "Comments",
-  "FAQ",
-] as const;
+const tabs = ["Milestones", "Updates", "Budget", "Comments", "FAQ"] as const;
 const donationPresets = [1000, 10000, 100000, 1000000];
 const tipPresets = [100, 500, 1000];
 
@@ -630,29 +623,6 @@ function TabsCard({
       </div>
 
       <div className="p-4 sm:p-6">
-        {activeTab === "Story" && (
-          <div className="space-y-4 text-sm text-slate-600">
-            <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
-              <span>Created by</span>
-              <span className="font-medium text-slate-800">
-                {cause.user.name}
-              </span>
-              <span className="text-slate-300">•</span>
-              <span className="capitalize">{cause.category}</span>
-              <span className="text-slate-300">•</span>
-              <span>{formattedDate}</span>
-            </div>
-            {cause.sections && cause.sections.length > 0 ? (
-              <StorySections sections={cause.sections} />
-            ) : (
-              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-                No story sections yet. Add campaign milestones and evidence to
-                build trust.
-              </div>
-            )}
-          </div>
-        )}
-
         {activeTab === "Milestones" && (
           <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-6 text-sm text-slate-600">
             Milestones are not yet configured for this campaign. Add milestone
@@ -926,11 +896,15 @@ function DonateCard({
       <div className="mt-4 space-y-2 text-sm text-[#64748B]">
         <div className="flex items-center justify-between">
           <span>Total raised today</span>
-          <span className="text-[#0F172A] font-medium">₦{raisedToday.toLocaleString()}</span>
+          <span className="text-[#0F172A] font-medium">
+            ₦{raisedToday.toLocaleString()}
+          </span>
         </div>
         <div className="flex items-center justify-between border-t border-slate-100 pt-2">
           <span className="font-semibold text-slate-700">Checkout total</span>
-          <span className="text-[#2563EB] font-bold">₦{totalWithTip.toLocaleString()}</span>
+          <span className="text-[#2563EB] font-bold">
+            ₦{totalWithTip.toLocaleString()}
+          </span>
         </div>
       </div>
 
@@ -972,12 +946,12 @@ function DonateCard({
           tip={tip}
           initialAmount={donation}
         />
-        <Link
+        {/* <Link
           href={`/causes/${cause.id}/pledge`}
           className="inline-flex w-full items-center justify-center rounded-xl bg-[#2563EB] px-4 py-3 text-base font-semibold text-white shadow-[0_12px_24px_rgba(37,99,235,0.25)] transition hover:bg-[#1D4ED8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#93C5FD]"
         >
           Pledge to donate later
-        </Link>
+        </Link> */}
       </div>
 
       <div className="mt-4 flex items-start gap-2 text-xs text-[#64748B]">
@@ -986,10 +960,12 @@ function DonateCard({
         rewards.
       </div>
 
-      <div className="mt-4 flex items-center justify-between rounded-xl border border-[#E5E7EB] bg-white px-4 py-3 text-xs text-[#64748B]">
-        <span>Guest checkout</span>
-        <span className="text-[#22C55E]">Enabled</span>
-      </div>
+      {!profile.id && (
+        <div className="mt-4 flex items-center justify-between rounded-xl border border-[#E5E7EB] bg-white px-4 py-3 text-xs text-[#64748B]">
+          <span>Guest checkout</span>
+          <span className="text-[#22C55E]">Enabled</span>
+        </div>
+      )}
     </motion.div>
   );
 }
@@ -1083,7 +1059,9 @@ function CampaignHealthCard({
             {isPending ? "Following..." : "Follow campaign"}
           </button>
           {followError && (
-            <p className="mt-1 text-center text-xs text-red-500">{followError}</p>
+            <p className="mt-1 text-center text-xs text-red-500">
+              {followError}
+            </p>
           )}
         </>
       )}
@@ -1170,7 +1148,7 @@ export default function CampaignQualityLab({
   currentUserId,
 }: CampaignQualityLabProps) {
   const [donation, setDonation] = useState(25);
-  const [activeTab, setActiveTab] = useState<TabKey>("Story");
+  const [activeTab, setActiveTab] = useState<TabKey>("Comments");
   const [recurring, setRecurring] = useState<"one_time" | "weekly" | "monthly">(
     "one_time",
   );
@@ -1200,7 +1178,10 @@ export default function CampaignQualityLab({
   }, [cause.summary]);
 
   const serviceFee = useMemo(() => calculateServiceFee(donation), [donation]);
-  const totalWithTip = useMemo(() => donation + tip + serviceFee, [donation, tip, serviceFee]);
+  const totalWithTip = useMemo(
+    () => donation + tip + serviceFee,
+    [donation, tip, serviceFee],
+  );
 
   const raisedToday = useMemo(() => {
     const today = new Date().toISOString().split("T")[0];
@@ -1313,14 +1294,30 @@ export default function CampaignQualityLab({
             <p className="text-xs uppercase tracking-[0.15em] text-slate-500">
               Story
             </p>
-            {cause.description ? (
-              <p className="mt-3 whitespace-pre-line">{cause.description}</p>
-            ) : (
-              <p className="mt-3 text-slate-500">
-                No story yet. The campaign creator can add the full context and
-                plan here.
-              </p>
-            )}
+            <div className="mt-3 space-y-4">
+              <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                <span>Created by</span>
+                <span className="font-medium text-slate-800">
+                  {cause.user.name}
+                </span>
+                <span className="text-slate-300">•</span>
+                <span className="capitalize">{cause.category}</span>
+                <span className="text-slate-300">•</span>
+                <span>{formattedDate}</span>
+              </div>
+              {cause.sections && cause.sections.length > 0 ? (
+                <StorySections sections={cause.sections} />
+              ) : cause.description ? (
+                <p className="whitespace-pre-line text-sm text-slate-600">
+                  {cause.description}
+                </p>
+              ) : (
+                <p className="text-sm text-slate-500">
+                  No story yet. The campaign creator can add the full context
+                  and plan here.
+                </p>
+              )}
+            </div>
           </motion.div>
         </section>
 
