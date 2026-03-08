@@ -265,7 +265,40 @@ export default function PledgeScreen({ cause, profile }: PledgeScreenProps) {
       </div>
 
       <main className="container grid gap-6 px-4 pt-6 sm:pt-8 lg:grid-cols-[1.1fr_0.9fr]">
-        <section className="space-y-6">
+        <section className="order-2 space-y-6 lg:order-1">
+          <motion.div
+            className="rounded-[14px] border border-[#E5E7EB] bg-white p-4 text-sm text-slate-600 shadow-[0_10px_30px_rgba(0,0,0,0.06)] sm:p-6"
+            variants={fadeUp}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, amount: 0.2 }}
+          >
+            <p className="text-xs uppercase tracking-[0.15em] text-slate-500">
+              Story
+            </p>
+            <div className="mt-3 space-y-3">
+              <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                <span>Created by</span>
+                <span className="font-medium text-slate-800">
+                  {cause.user.name}
+                </span>
+                <span className="text-slate-300">•</span>
+                <span className="capitalize">{cause.category}</span>
+              </div>
+              {cause.description ? (
+                <p className="whitespace-pre-line text-sm text-slate-600">
+                  {cause.description}
+                </p>
+              ) : cause.summary ? (
+                <p className="text-sm text-slate-600">{cause.summary}</p>
+              ) : (
+                <p className="text-sm text-slate-500">
+                  No story yet. The campaign creator can add the full context
+                  and plan here.
+                </p>
+              )}
+            </div>
+          </motion.div>
           <motion.div
             className="rounded-[14px] border border-[#E5E7EB] bg-white p-4 shadow-[0_10px_30px_rgba(0,0,0,0.06)] sm:p-6"
             variants={fadeUp}
@@ -483,7 +516,7 @@ export default function PledgeScreen({ cause, profile }: PledgeScreenProps) {
           </motion.div>
         </section>
 
-        <aside className="space-y-6">
+        <aside className="order-1 space-y-6 lg:order-2">
           <motion.div
             className="rounded-[14px] border border-[#E5E7EB] bg-white p-4 text-sm text-slate-600 shadow-[0_10px_30px_rgba(0,0,0,0.06)] sm:p-6"
             variants={fadeUp}
