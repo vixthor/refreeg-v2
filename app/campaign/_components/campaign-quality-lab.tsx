@@ -1253,7 +1253,7 @@ export default function CampaignQualityLab({
       </div>
 
       <main className="container grid items-start gap-6 px-4 pb-24 pt-6 sm:py-8 lg:grid-cols-[1.05fr_0.95fr]">
-        <aside className="order-1 self-start space-y-6 lg:order-2 lg:col-start-2 lg:row-span-2 lg:self-start">
+        <aside className="order-2 self-start space-y-6 lg:order-2 lg:col-start-2 lg:row-span-2 lg:self-start">
           <div className="space-y-6 lg:sticky lg:top-24">
             <div ref={donateRef}>
               <DonateCard
@@ -1283,11 +1283,9 @@ export default function CampaignQualityLab({
           </div>
         </aside>
 
-        <section className="order-2 space-y-6 lg:order-1 lg:col-start-1 lg:col-end-2">
+        <section className="order-1 space-y-6 lg:order-1 lg:col-start-1 lg:col-end-2">
           <MediaCard media={media} cause={cause} />
           <ProgressCard cause={cause} percentRaised={percentRaised} />
-          <ImpactCard cause={cause} />
-          <TrustPanel baseUrl={baseUrl} cause={cause} />
           <motion.div
             className="rounded-[14px] border border-[#E5E7EB] bg-white p-4 text-sm text-slate-600 shadow-[0_10px_30px_rgba(0,0,0,0.06)] sm:p-6"
             variants={fadeUp}
@@ -1323,6 +1321,8 @@ export default function CampaignQualityLab({
               )}
             </div>
           </motion.div>
+          <ImpactCard cause={cause} />
+          <TrustPanel baseUrl={baseUrl} cause={cause} />
         </section>
 
         <section className="order-3 lg:col-start-1 lg:col-end-2">
