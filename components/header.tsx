@@ -356,25 +356,25 @@ export function Header() {
                             onMouseLeave={scheduleCloseMenu}
                             className={`absolute top-full mt-2 bg-white shadow-xl rounded-lg border border-gray-100 z-50 animate-in fade-in-50 slide-in-from-top-1 duration-150
                                 ${item.title.includes("About") ? "right-0 left-auto" : "left-0"}
-                                max-w-[90vw] overflow-hidden`}
+                                w-[600px] max-w-[90vw] overflow-hidden`}
                           >
-                            <div className="p-3 font-semibold text-sm text-foreground border-b">
+                            <div className="p-4 font-semibold text-sm text-slate-800 border-b bg-slate-50/50">
                               {item.header}
                             </div>
-                            <div className="p-2">
+                            <div className="p-3 grid grid-cols-2 gap-2">
                               {item.items.map((dropdownItem) => (
                                 <Link
                                   key={dropdownItem.href}
                                   href={dropdownItem.href}
-                                  className="flex items-start gap-3 py-3 px-4 rounded-md transition-all duration-200 hover:bg-blue-50 hover:border-l-4 hover:border-l-blue-500"
+                                  className="flex items-start gap-3 py-3 px-4 rounded-md transition-all duration-200 hover:bg-blue-50/80 hover:border-blue-200 border border-transparent"
                                 >
-                                  {/* optional icon */}
-                                  {/* <dropdownItem.icon className="h-5 w-5 text-gray-400 mt-0.5 flex-shrink-0 group-hover:text-blue-600 transition-colors" /> */}
-                                  <div className="flex-1">
-                                    <p className="font-medium text-sm text-gray-900 hover:text-blue-700">
+                                  {/* optional icon placeholder */}
+                                  {/* <dropdownItem.icon className="h-5 w-5 text-blue-500 mt-0.5 flex-shrink-0" /> */}
+                                  <div className="flex-1 min-w-0">
+                                    <p className="font-medium text-sm text-slate-900 group-hover:text-blue-700 truncate">
                                       {dropdownItem.title}
                                     </p>
-                                    <p className="text-xs text-gray-500 mt-1">
+                                    <p className="text-xs text-slate-500 mt-1 line-clamp-2 leading-relaxed">
                                       {dropdownItem.description}
                                     </p>
                                   </div>

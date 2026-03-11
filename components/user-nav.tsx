@@ -79,18 +79,18 @@ export function UserNav() {
             )}
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-56" align="end" forceMount>
+        <DropdownMenuContent className="w-64" align="end" forceMount>
           <DropdownMenuLabel className="font-normal">
             <div className="flex flex-col space-y-1">
               <div className="flex items-center gap-1.5">
-                <p className="text-sm font-medium leading-none">
+                <p className="text-sm font-medium leading-none truncate w-full">
                   {profile?.full_name || user.email}
                 </p>
                 {isVerified && (
-                  <CheckCircle className="h-3.5 w-3.5 text-blue-500 fill-blue-100" />
+                  <CheckCircle className="h-3.5 w-3.5 text-blue-500 fill-blue-100 flex-shrink-0" />
                 )}
               </div>
-              <p className="text-xs leading-none text-muted-foreground">
+              <p className="text-xs leading-none text-muted-foreground truncate w-full">
                 {user.email}
               </p>
 
