@@ -120,6 +120,14 @@ export function UserNav() {
           <DropdownMenuGroup>
             <div className="">
               <DropdownMenuItem asChild>
+                <Link 
+                  href={profile?.username ? `/${profile.username}` : "/dashboard/settings/profile"} 
+                  className="cursor-pointer"
+                >
+                  Profile
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
                 <Link href="/dashboard" className="cursor-pointer">
                   Dashboard
                 </Link>
