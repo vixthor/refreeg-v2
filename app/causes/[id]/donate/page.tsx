@@ -35,6 +35,7 @@ export default async function QuickDonatePage({
       causeId={cause.id}
       causeTitle={cause.title}
       causeImage={cause.image}
+      causeMultimedia={cause.multimedia}
       goal={cause.goal}
       raised={cause.raised}
       subaccount={(cause as any).user?.sub_account_code ?? undefined}
