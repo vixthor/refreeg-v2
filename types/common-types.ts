@@ -19,13 +19,19 @@ export interface ProfileFormData {
   profile_photo?: string | null;
   email: string;
   bio: string;
+  account_type?:
+    | "individual"
+    | "creator"
+    | "non-profit"
+    | "organization"
+    | "community"
+    | null;
   twitter_url?: string | null;
   facebook_url?: string | null;
   instagram_url?: string | null;
   linkedin_url?: string | null;
   username?: string;
 }
-
 export interface BankDetailsFormData {
   accountNumber: string;
   bankName: string;
