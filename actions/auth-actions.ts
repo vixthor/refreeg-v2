@@ -2,11 +2,13 @@
 
 import { createClient } from "@/lib/supabase/server"
 import { recordEvent, updateUserStreaks } from "@/actions/event-reward-actions"
+import { cache } from "react"
 
 /**
  * Get the current user
+ * Cached to prevent multiple fetch calls during a single request/render.
  */
-export async function getCurrentUser() {
+export const getCurrentUser = cache(async () => {
   const supabase = await createClient()
 
   const { data: { user }, error } = await supabase.auth.getUser()
@@ -16,7 +18,7 @@ export async function getCurrentUser() {
   }
 
   return user
-}
+})
 
 /**
  * Track user login and update streaks

@@ -18,6 +18,7 @@ import {
   X,
   Upload,
   Check,
+  MapPin,
   type LucideIcon,
   type LucideProps,
 } from "lucide-react";
@@ -43,6 +44,7 @@ export const Icons = {
   sun: SunMedium,
   upload: Upload,
   mail: Check,
+  mapPin: MapPin,
   gitHub: ({ ...props }: LucideProps) => (
     <svg
       aria-hidden="true"
