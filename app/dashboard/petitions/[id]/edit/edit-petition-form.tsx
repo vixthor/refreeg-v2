@@ -81,7 +81,6 @@ type FormData = {
   title: string;
   category: string;
   goal: string;
-  currency: string;
   coverImage: File | null;
   image: string;
   sections: { heading: string; description: string }[];
@@ -117,7 +116,6 @@ export default function EditPetitionForm({ petition }: EditPetitionFormProps) {
     title: petition.title,
     category: petition.category,
     goal: petition.goal.toString(),
-    currency: "NGN",
     coverImage: null,
     image: petition.image || "",
     sections: petition.sections || [{ heading: "", description: "" }],
@@ -760,9 +758,9 @@ export default function EditPetitionForm({ petition }: EditPetitionFormProps) {
             </div>
 
             <div className="space-y-2">
-              <h4 className="font-medium">Funding Goal</h4>
+              <h4 className="font-medium">Signature Goal</h4>
               <p className="text-sm">
-                {formData.currency} {formData.goal}
+                {formData.goal} Signatures
               </p>
             </div>
 

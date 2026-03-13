@@ -85,7 +85,6 @@ type FormData = {
   description: string;
   category: string;
   goal: string;
-  currency: string;
   coverImage: File | null;
   sections: { heading: string; description: string }[];
   startDate: Date | undefined;
@@ -110,7 +109,6 @@ type PetitionFormData = {
   description: string;
   category: string;
   goal: string;
-  currency: string;
   coverImage: File | null;
   sections: { heading: string; description: string }[];
   startDate: Date | undefined;
@@ -202,7 +200,6 @@ export default function CreatePetitionForm() {
     description: "",
     category: "",
     goal: "",
-    currency: "NGN",
     coverImage: null,
     sections: [{ heading: "", description: "" }],
     startDate: undefined,
@@ -455,7 +452,6 @@ export default function CreatePetitionForm() {
       description: formData.description,
       category: formData.category,
       goal: formData.goal,
-      currency: formData.currency,
       coverImage: formData.coverImage,
       sections: formData.sections,
       startDate: formData.startDate,
@@ -596,6 +592,9 @@ export default function CreatePetitionForm() {
                         errors.goal ? "border-red-500" : "",
                       )}
                     />
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-brand/40 uppercase tracking-tighter">
+                      Signatures
+                    </div>
                   </div>
                   {errors.goal && (
                     <p className="text-sm text-red-500 font-medium">
@@ -943,7 +942,7 @@ export default function CreatePetitionForm() {
             <div className="space-y-2">
               <h4 className="font-medium">Signature Goal</h4>
               <p className="text-sm">
-                {formData.currency} {formData.goal}
+                {formData.goal} Signatures
               </p>
             </div>
 
