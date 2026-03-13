@@ -24,6 +24,9 @@ export interface Petition {
     email: string;
     profile_photo?: string | null;
   };
+  sections?: { heading: string; description: string }[];
+  multimedia?: string[];
+  video_links?: string[];
 }
 export interface PetitionWithUser extends Petition {
   user: {
@@ -37,7 +40,6 @@ export interface PetitionFormData {
   description: string;
   category: string;
   goal: string | number;
-  currency: string;
   coverImage: File | null;
   image?: string;
   multimedia?: File[];
