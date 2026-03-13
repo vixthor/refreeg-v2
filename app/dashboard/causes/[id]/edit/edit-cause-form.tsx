@@ -103,6 +103,8 @@ type FormData = {
 
 type FormErrors = {
   title?: string;
+  summary?: string;
+  location?: string;
   category?: string;
   goal?: string;
   coverImage?: string;
@@ -405,8 +407,16 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
                     value={formData.summary}
                     onChange={handleChange}
                     maxLength={200}
-                    className="h-12 premium-input"
+                    className={cn(
+                      "h-12 premium-input",
+                      errors.summary ? "border-red-500" : ""
+                    )}
                   />
+                  {errors.summary && (
+                    <p className="text-sm text-red-500 font-medium">
+                      {errors.summary}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="location" className="text-base font-semibold text-gray-700">
@@ -418,8 +428,16 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
                     placeholder="e.g., Lagos, Nigeria"
                     value={formData.location}
                     onChange={handleChange}
-                    className="h-12 premium-input"
+                    className={cn(
+                      "h-12 premium-input",
+                      errors.location ? "border-red-500" : ""
+                    )}
                   />
+                  {errors.location && (
+                    <p className="text-sm text-red-500 font-medium">
+                      {errors.location}
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -623,18 +641,38 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-4">
-                <Label className="text-base font-semibold text-gray-700 block mb-2">
+                <Label htmlFor="start-date" className="text-base font-semibold text-gray-700 block mb-2">
                   Start Date
                 </Label>
-                <div className="glass-panel p-4 rounded-2xl border-brand/5">
-                  <Calendar
-                    mode="single"
-                    selected={formData.startDate}
-                    onSelect={(date) => handleDateChange(date, "startDate")}
-                    disabled={(date) => isBefore(date, startOfDay(new Date()))}
-                    initialFocus
-                  />
-                </div>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      id="start-date"
+                      variant="outline"
+                      className={cn(
+                        "w-full h-14 justify-start text-left font-normal premium-input rounded-2xl border-brand/10",
+                        !formData.startDate && "text-muted-foreground",
+                        errors.startDate && "border-red-500",
+                      )}
+                    >
+                      <CalendarIcon className="mr-3 h-5 w-5 text-brand" />
+                      {formData.startDate ? (
+                        format(formData.startDate, "PPP")
+                      ) : (
+                        <span>Pick a date</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={formData.startDate}
+                      onSelect={(date) => handleDateChange(date, "startDate")}
+                      disabled={(date) => isBefore(date, startOfDay(new Date()))}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
                 {errors.startDate && (
                   <p className="text-sm text-red-500 font-medium">
                     {errors.startDate}
@@ -643,23 +681,43 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
               </div>
 
               <div className="space-y-4">
-                <Label className="text-base font-semibold text-gray-700 block mb-2">
+                <Label htmlFor="end-date" className="text-base font-semibold text-gray-700 block mb-2">
                   End Date
                 </Label>
-                <div className="glass-panel p-4 rounded-2xl border-brand/5">
-                  <Calendar
-                    mode="single"
-                    selected={formData.endDate}
-                    onSelect={(date) => handleDateChange(date, "endDate")}
-                    disabled={(date) => {
-                      const today = startOfDay(new Date());
-                      const start = formData.startDate || today;
-                      const maxEnd = addDays(start, MAX_DURATION_DAYS);
-                      return isBefore(date, start) || isAfter(date, maxEnd);
-                    }}
-                    initialFocus
-                  />
-                </div>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      id="end-date"
+                      variant="outline"
+                      className={cn(
+                        "w-full h-14 justify-start text-left font-normal premium-input rounded-2xl border-brand/10",
+                        !formData.endDate && "text-muted-foreground",
+                        errors.endDate && "border-red-500",
+                      )}
+                    >
+                      <CalendarIcon className="mr-3 h-5 w-5 text-brand" />
+                      {formData.endDate ? (
+                        format(formData.endDate, "PPP")
+                      ) : (
+                        <span>Pick a date</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={formData.endDate}
+                      onSelect={(date) => handleDateChange(date, "endDate")}
+                      disabled={(date) => {
+                        const today = startOfDay(new Date());
+                        const start = formData.startDate || today;
+                        const maxEnd = addDays(start, MAX_DURATION_DAYS);
+                        return isBefore(date, start) || isAfter(date, maxEnd);
+                      }}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
                 {errors.endDate && (
                   <p className="text-sm text-red-500 font-medium">
                     {errors.endDate}
@@ -871,7 +929,32 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
                 {/* Content Review */}
                 <div className="space-y-6">
                   <div>
-                    <h4 className="text-xl font-bold mb-4">{formData.title}</h4>
+                    <h4 className="text-xl font-bold mb-2">{formData.title}</h4>
+                    {(formData.summary || formData.location) && (
+                      <div className="flex flex-wrap gap-4 mb-4">
+                        {formData.location && (
+                          <div className="flex items-center gap-1.5 text-sm font-medium text-brand bg-brand/5 px-2.5 py-1 rounded-full border border-brand/10">
+                            <Icons.mapPin className="w-3.5 h-3.5" />
+                            {formData.location}
+                          </div>
+                        )}
+                        {formData.category && (
+                          <div className="flex items-center gap-1.5 text-sm font-medium text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full border border-blue-100">
+                            {categories.find((c) => c.id === formData.category)?.name}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {formData.summary && (
+                      <p className="text-gray-500 italic mb-4 border-l-4 border-brand/20 pl-4 py-1">
+                        "{formData.summary}"
+                      </p>
+                    )}
+                    {formData.sections[0]?.heading && (
+                      <h5 className="text-lg font-semibold text-gray-800 mb-2">
+                        {formData.sections[0].heading}
+                      </h5>
+                    )}
                     <p className="text-gray-600 leading-relaxed whitespace-pre-line">
                       {formData.sections[0]?.description}
                     </p>
@@ -1024,6 +1107,14 @@ function validateForm(formData: FormData): FormErrors {
 
   if (!formData.category) {
     errors.category = "Category is required";
+  }
+
+  if (formData.summary && formData.summary.length > 200) {
+    errors.summary = "Summary must be less than 200 characters";
+  }
+
+  if (formData.location && formData.location.length > 100) {
+    errors.location = "Location must be less than 100 characters";
   }
 
   if (!formData.goal) {

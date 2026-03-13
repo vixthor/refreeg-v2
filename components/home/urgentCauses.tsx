@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/carousel";
 
 export async function UrgentCauses() {
-  const allCauses = await listCauses();
+  const allCauses = await listCauses({ limit: 24, status: "approved" });
 
   // Split urgent vs normal
   const now = new Date();

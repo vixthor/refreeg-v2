@@ -12,6 +12,7 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "./auth-actions";
 import { isAdminOrManager } from "./role-actions";
 import { sendCauseSubmissionAdminNotification } from "@/services/mail";
+import { cache } from "react";
 
 /**
  * Get a cause by ID
@@ -395,9 +396,13 @@ export async function updateCause(
 /**
  * List causes with filtering options
  */
-export async function listCauses(
+/**
+ * Get causes with filtering options.
+ * Using React cache to deduplicate requests in the same render pass.
+ */
+export const listCauses = cache(async (
   options: CauseFilterOptions = {},
-): Promise<Cause[]> {
+): Promise<Cause[]> => {
   const supabase = await createClient();
 
   let query = supabase
@@ -441,18 +446,8 @@ export async function listCauses(
 
   const causes = (data as Cause[]) || [];
 
-  const nowExpired = causes.filter(
-    (c) => (c.days_active ?? 0) <= 0 && c.status === ("approved" as any),
-  );
-
-  if (nowExpired.length > 0) {
-    try {
-      const ids = nowExpired.map((c) => c.id);
-      await supabase.from("causes").update({ status: "expired" }).in("id", ids);
-    } catch (e) {
-      console.error("Failed to auto-expire causes:", e);
-    }
-  }
+  // Side effect removed from getter to avoid unnecessary POST/UPDATE requests 
+  // on every page load. Expiry should be handled by a cleanup job.
 
   const isOwnerScoped = !!options.userId;
   const result = isOwnerScoped
@@ -460,7 +455,7 @@ export async function listCauses(
     : causes.filter((c) => c.status !== ("expired" as any));
 
   return result;
-}
+});
 
 /**
  * Count causes with filtering options

@@ -16,6 +16,7 @@ import {
   sendPetitionRejectedEmailForUser,
 } from "@/services/mail";
 import { sendPetitionSubmissionAdminNotification } from "@/services/mail";
+import { cache } from "react";
 
 export async function getPetition(
   petitionId: string,
@@ -336,9 +337,9 @@ export async function updatePetition(
   return data;
 }
 
-export async function listPetitions(
+export const listPetitions = cache(async (
   options: PetitionFilterOptions = {},
-): Promise<Petition[]> {
+): Promise<Petition[]> => {
   const supabase = await createClient();
 
   let query = supabase
@@ -381,21 +382,8 @@ export async function listPetitions(
   }
 
   const petitions = (data as Petition[]) || [];
-  const nowExpired = petitions.filter(
-    (p) => (p.days_active ?? 0) <= 0 && p.status === ("approved" as any),
-  );
-
-  if (nowExpired.length > 0) {
-    try {
-      const ids = nowExpired.map((p) => p.id);
-      await supabase
-        .from("petitions")
-        .update({ status: "expired" })
-        .in("id", ids);
-    } catch (e) {
-      console.error("Failed to auto-expire petitions:", e);
-    }
-  }
+  
+  // Expiry side effect removed to optimize landing page (prevent unnecessary POST/UPDATE)
 
   const isOwnerScoped = !!options.userId;
   const result = isOwnerScoped
@@ -403,7 +391,7 @@ export async function listPetitions(
     : petitions.filter((p) => p.status !== ("expired" as any));
 
   return result;
-}
+});
 
 export async function countPetitions(
   options: PetitionFilterOptions = {},
