@@ -69,7 +69,7 @@ export default function FeaturedPetitionsCarousel({ petitions }) {
               className="group block h-full"
             >
               <AnimatedCard>
-                <Card className="overflow-hidden cursor-pointer transition hover:shadow-2xl shadow-lg h-[420px] flex flex-col border border-gray-300">
+                <Card className="overflow-hidden cursor-pointer transition h-[420px] flex flex-col border border-gray-300">
                   
                   <div className="aspect-video w-full overflow-hidden">
                     <img

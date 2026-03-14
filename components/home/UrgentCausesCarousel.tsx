@@ -70,7 +70,7 @@ export default function UrgentCausesCarousel({ causes }) {
             >
               <Link href={`/causes/${cause.id}`} className="group block h-full">
                 <AnimatedCard>
-                  <Card className="overflow-hidden cursor-pointer transition hover:shadow-2xl shadow-lg h-full flex flex-col border border-gray-300">
+                  <Card className="overflow-hidden cursor-pointer transition h-full flex flex-col border border-gray-300">
 
                     <div className="aspect-video w-full overflow-hidden rounded-t-lg">
                       <img
