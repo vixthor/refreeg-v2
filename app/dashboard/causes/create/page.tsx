@@ -20,8 +20,8 @@ export default async function CreateCausePage() {
   const hasBankInfo = await hasBankDetails(user.id);
 
   return (
-    <div className="md:container py-10">
-      <div className="md:mx-auto max-w-2xl">
+    <div className="">
+      <div className="md:mx-auto">
         {!hasBankInfo ? (
           <Alert variant="destructive" className="mb-6">
             <AlertCircle className="h-4 w-4" />

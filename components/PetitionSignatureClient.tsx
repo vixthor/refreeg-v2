@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
  * - profile: the user's profile info (object)
  * - petitionStatus: the status string ('approved' or ...)
  * - creatorProfile: the petition creator's profile obj
+ * - hasSigned: whether the current user has already signed this petition
  */
 const PetitionSignatureClient = ({
   petition,
@@ -26,12 +27,14 @@ const PetitionSignatureClient = ({
   profile,
   petitionStatus,
   creatorProfile,
+  hasSigned,
 }: {
   petition: any;
   user: any;
   profile: any;
   petitionStatus: string;
   creatorProfile: any;
+  hasSigned: boolean;
 }) => {
   const [showSignupModal, setShowSignupModal] = useState(false);
 
@@ -42,6 +45,7 @@ const PetitionSignatureClient = ({
         profile={profile}
         status={petitionStatus as "pending" | "rejected" | "approved"}
         subaccount={petition?.user?.sub_account_code}
+        hasSigned={hasSigned}
         petitionData={{
           title: petition.title,
           creatorId: petition.user_id,

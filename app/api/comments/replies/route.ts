@@ -17,25 +17,42 @@ export async function GET(request: Request) {
 
     const { data: replies, error } = await supabase
       .from(table)
-      .select(`*, user:profiles(full_name, profile_photo, username)`)
+      .select(`
+        *,
+        user:profiles(id, full_name, profile_photo, username)
+      `)
       .eq("parent_id", parentId)
-      .order("created_at", { ascending: true });
+      .order("created_at", { ascending: true })
+      .limit(100); // Standard pagination limit
 
     if (error) throw error;
 
-    const repliesWithCounts = await Promise.all(
-      (replies || []).map(async (reply) => {
-        const { count } = await supabase
-          .from(table)
-          .select("*", { count: "exact" })
-          .eq("parent_id", reply.id);
+    if (!replies || replies.length === 0) {
+      return NextResponse.json([]);
+    }
 
-        return {
-          ...reply,
-          replies_count: count || 0,
-        };
-      })
-    );
+    // Fix N+1 Query: Fetch all replies to these replies in one single query
+    const replyIds = replies.map((r) => r.id);
+    
+    // Check if any of these replies have their own replies
+    const { data: nestedReplies, error: nestedError } = await supabase
+      .from(table)
+      .select("parent_id")
+      .in("parent_id", replyIds);
+
+    if (nestedError) throw nestedError;
+
+    // Build a map of counts
+    const countsMap = (nestedReplies || []).reduce((acc: Record<string, number>, curr) => {
+      const pId = curr.parent_id as string;
+      acc[pId] = (acc[pId] || 0) + 1;
+      return acc;
+    }, {});
+
+    const repliesWithCounts = replies.map((reply) => ({
+      ...reply,
+      replies_count: countsMap[reply.id] || 0,
+    }));
 
     return NextResponse.json(repliesWithCounts);
   } catch (error) {

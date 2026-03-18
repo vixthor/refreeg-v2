@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { listCauses } from "@/actions";
+import { listCauses } from "@/actions/cause-actions";
 import { DonateButton } from "@/components/donate-button";
 import {
   GraduationCap,
@@ -135,7 +135,7 @@ export async function FeaturedCauses() {
       {featuredCauses.map((cause) => {
         // Find the category based on the cause's category id
         const category = categoriesWithIcons.find(
-          (cat) => cat.id === cause.category
+          (cat) => cat.id === cause.category,
         );
 
         return (
