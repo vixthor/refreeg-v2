@@ -17,9 +17,12 @@ export function formatCurrency(amount: number): string {
 export function getBaseURL(): string {
   return process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 }
+const SERVICE_FEE_CAP_NAIRA = 10000;
+
 export const calculateServiceFee = (amount: number): number => {
   const serviceFeePercentage = Number(
     process.env.NEXT_PUBLIC_REFREEG_SERVICE_FEE || "0"
   );
-  return Math.round(amount * (serviceFeePercentage / 100) || 0);
+  const fee = Math.round(amount * (serviceFeePercentage / 100) || 0);
+  return Math.min(fee, SERVICE_FEE_CAP_NAIRA);
 };

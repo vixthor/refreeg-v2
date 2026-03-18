@@ -39,44 +39,7 @@ export interface BankDetailsFormData {
   sub_account_code: string;
 }
 
-export interface CauseSection {
-  heading: string;
-  description: string;
-}
-
-export interface CauseFormData {
-  title: string;
-  category: string;
-  goal: string | number;
-  currency: string;
-  coverImage: File | null;
-  image?: string;
-  multimedia?: File[];
-  sections: CauseSection[];
-  startDate?: Date | undefined;
-  endDate?: Date | undefined;
-  video_links?: string[];
-}
-
-export interface PetitionSection {
-  heading: string;
-  description: string;
-}
-
-export interface PetitionFormData {
-  title: string;
-  description: string;
-  category: string;
-  goal: string | number;
-  currency: string;
-  coverImage: File | null;
-  image?: string;
-  multimedia?: File[];
-  sections?: { heading: string; description: string }[];
-  startDate?: Date | undefined;
-  endDate?: Date | undefined;
-  video_links?: string[];
-}
+// FormData removed - moved to specialized type files
 
 export interface DonationFormData {
   amount: string | number;
@@ -84,6 +47,7 @@ export interface DonationFormData {
   email: string;
   message: string;
   isAnonymous: boolean;
+  tip_amount?: number;
 }
 
 export interface SignatureFormData {
@@ -100,9 +64,11 @@ export interface TransactionData extends Pick<
 > {
   amount: number;
   serviceFee: number;
+  tipAmount?: number;
   causeId: string;
   message: string;
   isAnonymous: boolean;
+  plan?: string;
   subaccounts: {
     subaccount: string;
     share: number;
@@ -116,122 +82,7 @@ export interface ICreateSubaccount {
   business_name: string;
 }
 
-export interface CauseFilterOptions {
-  category?: string;
-  status?: CauseStatus;
-  userId?: string;
-  limit?: number;
-  offset?: number;
-}
-
-export interface Cause {
-  id: string;
-  user_id: string;
-  title: string;
-  description: string;
-  category: string;
-  goal: number;
-  raised: number;
-  status: CauseStatus;
-  image: string | null;
-  created_at: string;
-  updated_at: string;
-  rejection_reason?: string | null;
-  days_active?: number | null;
-  sections?: CauseSection[];
-  profiles?: {
-    name: string;
-    email: string;
-  };
-}
-
-export interface CauseWithUser extends Cause {
-  user: {
-    name: string;
-    email: string;
-    sub_account_code: string;
-  };
-  multimedia?: string[];
-  sections: CauseSection[];
-}
-
-export interface PetitionFilterOptions {
-  category?: string;
-  status?: CauseStatus;
-  userId?: string;
-  limit?: number;
-  offset?: number;
-}
-
-export interface Petition {
-  id: string;
-  user_id: string;
-  title: string;
-  description: string;
-  category: string;
-  goal: number;
-  raised: number;
-  status: PetitionStatus;
-  rejection_reason: string | null;
-  created_at: string;
-  updated_at: string;
-  image?: string | null;
-  days_active?: number | null;
-  sections?: PetitionSection[];
-  profiles?: {
-    full_name: string;
-    email: string;
-  };
-}
-
-export interface PetitionWithUser extends Petition {
-  user: {
-    name: string;
-    email: string;
-    sub_account_code: string;
-  };
-
-  sections: PetitionSection[];
-}
-
-export interface PetitionFilterOptions {
-  category?: string;
-  status?: CauseStatus;
-  userId?: string;
-  limit?: number;
-  offset?: number;
-}
-
-export interface Petition {
-  id: string;
-  user_id: string;
-  title: string;
-  description: string;
-  category: string;
-  goal: number;
-  raised: number;
-  status: PetitionStatus;
-  rejection_reason: string | null;
-  created_at: string;
-  updated_at: string;
-  image?: string | null;
-  days_active?: number | null;
-  sections?: PetitionSection[];
-  profiles?: {
-    full_name: string;
-    email: string;
-  };
-}
-
-export interface PetitionWithUser extends Petition {
-  user: {
-    name: string;
-    email: string;
-    sub_account_code: string;
-  };
-
-  sections: PetitionSection[];
-}
+// CauseFilterOptions removed - moved to cause-types.ts
 
 export interface Comment {
   id: string;
@@ -249,4 +100,84 @@ export interface Comment {
   };
   replies?: Comment[];
   replies_count?: number;
+}
+
+export interface Event {
+  id: string;
+  user_id: string;
+  event_type:
+    | "comment"
+    | "share"
+    | "donation"
+    | "login"
+    | "weekly_streak"
+    | "monthly_active";
+  metadata: Record<string, any>;
+  created_at: string;
+}
+
+export interface RewardEvent {
+  type:
+    | "comment"
+    | "share"
+    | "donation"
+    | "login"
+    | "weekly_streak"
+    | "monthly_active";
+  userId: string;
+  amount?: number;
+  metadata?: Record<string, any>;
+}
+
+export interface RewardTransaction {
+  id: string;
+  user_id: string;
+  amount: number;
+  transaction_type: string;
+  event_id: string;
+  status: "completed" | "pending" | "failed";
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface UserWallet {
+  id: string;
+  user_id: string;
+  balance: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UserStreak {
+  id: string;
+  user_id: string;
+  weekly_streak: number;
+  is_monthly_active: boolean;
+  last_active_date: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Category {
+  id: string;
+  name: string;
+}
+
+export interface subHeadings {
+  id: string;
+  title: string;
+  cause_id?: string;
+  petition_id?: string;
+  created_at: string;
+}
+
+export interface subDescription {
+  id: string;
+  description: string;
+  sub_heading_id: string;
+  created_at: string;
+}
+
+export interface subHeadingWithSubDescription extends subHeadings {
+  sub_description: subDescription[];
 }
