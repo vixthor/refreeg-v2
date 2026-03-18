@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { Comment } from "@/types/common-types";
+import { recordEvent } from "@/actions/event-reward-actions";
 
 export async function createComment(
   causeId: string,
@@ -26,6 +27,23 @@ export async function createComment(
     .single();
 
   if (error) throw error;
+
+  // Record event for reward tracking
+  try {
+    await recordEvent({
+      type: "comment",
+      userId,
+      metadata: {
+        cause_id: causeId,
+        comment_id: data.id,
+        has_parent: !!parentId,
+      },
+    });
+  } catch (eventError) {
+    console.error("Error recording comment event:", eventError);
+    // Don't throw - event tracking shouldn't break the main action
+  }
+
   return data;
 }
 

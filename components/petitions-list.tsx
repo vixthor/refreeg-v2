@@ -10,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { PaginationButton } from "@/components/pagination-button";
-import { listPetitions } from "@/actions";
+import { listPetitions } from "@/actions/petition-actions";
 import { listSignaturesForPetition } from "@/actions/signature-actions";
 import {
   GraduationCap,
@@ -208,7 +208,7 @@ export async function PetitionsList({
 
   const paginatedPetitions = filteredPetitions.slice(
     (page - 1) * pageSize,
-    page * pageSize
+    page * pageSize,
   );
   const totalPetitions = filteredPetitions.length;
   const totalPages = Math.ceil(totalPetitions / pageSize);
@@ -221,7 +221,7 @@ export async function PetitionsList({
         ...petition,
         signatures: signers.length,
       };
-    })
+    }),
   );
 
   if (paginatedPetitions.length === 0) {

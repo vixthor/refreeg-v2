@@ -2,7 +2,12 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { hasBankDetails } from "@/actions/profile-actions";
 import { getCause } from "@/actions/cause-actions";
-import EditCauseForm from "./edit-cause-form";
+import dynamic from "next/dynamic";
+import { Skeleton } from "@/components/ui/skeleton";
+
+const EditCauseForm = dynamic(() => import("./edit-cause-form"), {
+  loading: () => <Skeleton className="h-[600px] w-full" />,
+});
 
 export default async function EditCausePage({
   params,
@@ -30,8 +35,8 @@ export default async function EditCausePage({
   }
 
   return (
-    <div className="md:container py-10">
-      <div className="md:mx-auto max-w-2xl">
+    <div className="">
+      <div className="md:mx-auto">
         {!hasBankInfo ? (
           <div className="text-center space-y-4">
             <h1 className="text-2xl font-bold">Bank Details Required</h1>

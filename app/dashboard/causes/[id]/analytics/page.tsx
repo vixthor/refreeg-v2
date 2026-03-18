@@ -2,8 +2,27 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { formatCurrency } from "@/lib/utils";
-import { DonationTrends } from "@/components/charts/donation-trends";
-import { EngagementMetrics } from "@/components/charts/engagement-metrics";
+import dynamic from "next/dynamic";
+import { Skeleton } from "@/components/ui/skeleton";
+
+const DonationTrends = dynamic(
+  () =>
+    import("@/components/charts/donation-trends").then(
+      (mod) => mod.DonationTrends,
+    ),
+  {
+    loading: () => <Skeleton className="h-[300px] w-full" />,
+  },
+);
+const EngagementMetrics = dynamic(
+  () =>
+    import("@/components/charts/engagement-metrics").then(
+      (mod) => mod.EngagementMetrics,
+    ),
+  {
+    loading: () => <Skeleton className="h-[200px] w-full" />,
+  },
+);
 import { getCauseAnalytics } from "@/actions/dashboard-actions";
 
 export default async function AnalyticsPage({

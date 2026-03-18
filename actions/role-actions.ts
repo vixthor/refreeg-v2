@@ -318,20 +318,20 @@ export async function getAllUsers(): Promise<UserWithRole[]> {
 }
 
 /**
- * Get all admin and manager email addresses
+ * Get all admin email addresses (excluding managers)
  */
-export async function getAdminManagerEmails(): Promise<string[]> {
+export async function getAdminEmails(): Promise<string[]> {
   const supabase = await createClient();
 
   try {
-    // Get all roles that are admin or manager
+    // Get all roles that are admin
     const { data: roles, error: rolesError } = await supabase
       .from("roles")
       .select("user_id")
-      .in("role", ["admin", "manager"]);
+      .eq("role", "admin");
 
     if (rolesError) {
-      console.error("Error fetching admin/manager roles:", rolesError);
+      console.error("Error fetching admin roles:", rolesError);
       return [];
     }
 
@@ -347,7 +347,7 @@ export async function getAdminManagerEmails(): Promise<string[]> {
       .in("id", userIds);
 
     if (profilesError) {
-      console.error("Error fetching admin/manager emails:", profilesError);
+      console.error("Error fetching admin emails:", profilesError);
       return [];
     }
 
@@ -358,7 +358,7 @@ export async function getAdminManagerEmails(): Promise<string[]> {
         .filter((email): email is string => !!email) || []
     );
   } catch (error) {
-    console.error("Error in getAdminManagerEmails:", error);
+    console.error("Error in getAdminEmails:", error);
     return [];
   }
 }

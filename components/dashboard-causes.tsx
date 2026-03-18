@@ -1,10 +1,18 @@
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
-import { Plus } from "lucide-react"
-import { getCurrentUser, getUserCauses } from "@/actions"
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Plus } from "lucide-react";
+import { getCurrentUser } from "@/actions/auth-actions";
+import { getUserCauses } from "@/actions/cause-actions";
 
 // Mock data for user's causes
 // const userCauses = [
@@ -41,8 +49,8 @@ import { getCurrentUser, getUserCauses } from "@/actions"
 // ]
 
 export async function DashboardCauses() {
-  const user = await getCurrentUser()
-  const userCauses = await getUserCauses(user?.id ?? '')
+  const user = await getCurrentUser();
+  const userCauses = await getUserCauses(user?.id ?? "");
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
@@ -61,7 +69,9 @@ export async function DashboardCauses() {
             <Plus className="h-8 w-8 text-muted-foreground" />
           </div>
           <h4 className="text-lg font-medium mb-2">No causes yet</h4>
-          <p className="text-muted-foreground mb-4">Start making a difference by creating your first cause</p>
+          <p className="text-muted-foreground mb-4">
+            Start making a difference by creating your first cause
+          </p>
           <Link href="/dashboard/causes/create">
             <Button>
               <Plus className="mr-2 h-4 w-4" />
@@ -77,11 +87,17 @@ export async function DashboardCauses() {
                 <div className="flex justify-between items-start">
                   <div>
                     <CardTitle className="text-lg">{cause.title}</CardTitle>
-                    <CardDescription className="line-clamp-2">{cause.description}</CardDescription>
+                    <CardDescription className="line-clamp-2">
+                      {cause.description}
+                    </CardDescription>
                   </div>
                   <Badge
                     variant={
-                      cause.status === "approved" ? "default" : cause.status === "pending" ? "secondary" : "destructive"
+                      cause.status === "approved"
+                        ? "default"
+                        : cause.status === "pending"
+                          ? "secondary"
+                          : "destructive"
                     }
                   >
                     {cause.status}
@@ -91,8 +107,12 @@ export async function DashboardCauses() {
               <CardContent className="pb-2">
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className="font-medium">₦{cause.raised.toLocaleString()}</span>
-                    <span className="text-muted-foreground">of ₦{cause.goal.toLocaleString()}</span>
+                    <span className="font-medium">
+                      ₦{cause.raised.toLocaleString()}
+                    </span>
+                    <span className="text-muted-foreground">
+                      of ₦{cause.goal.toLocaleString()}
+                    </span>
                   </div>
                   <Progress value={(cause.raised / cause.goal) * 100} />
                 </div>
@@ -114,6 +134,5 @@ export async function DashboardCauses() {
         </div>
       )}
     </div>
-  )
+  );
 }
-

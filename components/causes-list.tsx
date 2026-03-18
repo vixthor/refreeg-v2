@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { PaginationButton } from "@/components/pagination-button";
-import { listCauses } from "@/actions";
+import { listCauses } from "@/actions/cause-actions";
 import {
   GraduationCap,
   HeartPulse,
@@ -204,7 +204,7 @@ export async function CausesList({
 
   const paginatedCauses = filteredCauses.slice(
     (page - 1) * pageSize,
-    page * pageSize
+    page * pageSize,
   );
   const totalCauses = filteredCauses.length;
   const totalPages = Math.ceil(totalCauses / pageSize);
