@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus } from "lucide-react";
 import { MyCausesList } from "@/components/my-causes-list";
-import { getCurrentUser } from "@/actions";
+import { getCurrentUser } from "@/actions/auth-actions";
 export default async function MyCausesPage({
   searchParams,
 }: {

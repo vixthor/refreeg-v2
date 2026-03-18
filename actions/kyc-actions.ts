@@ -119,12 +119,13 @@ export async function uploadKycDocument(
         const baseUrl =
           process.env.NEXT_PUBLIC_APP_URL || "https://www.refreeg.com";
         const kycReviewUrl = `${baseUrl}/dashboard/admin/users/kyc/${userId}`;
-        await sendKycSubmissionAdminNotification(
+        // Send notification in background - do not await
+        sendKycSubmissionAdminNotification(
           profile?.email || "",
           personalData.fullName,
           userId,
           kycReviewUrl,
-        );
+        ).catch((err) => console.error("Background notification error:", err));
       } catch (emailError) {
         console.error("Error sending KYC submission email:", emailError);
       }
@@ -207,12 +208,13 @@ export async function uploadKycDocument(
         const baseUrl =
           process.env.NEXT_PUBLIC_APP_URL || "https://www.refreeg.com";
         const kycReviewUrl = `${baseUrl}/dashboard/admin/users/kyc/${userId}`;
-        await sendKycSubmissionAdminNotification(
+        // Send notification in background - do not await
+        sendKycSubmissionAdminNotification(
           profile?.email || "",
           personalData.fullName,
           userId,
           kycReviewUrl,
-        );
+        ).catch((err) => console.error("Background notification error:", err));
       } catch (emailError) {
         console.error("Error sending KYC submission email:", emailError);
       }

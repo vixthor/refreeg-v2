@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus } from "lucide-react";
 import { MyPetitionsList } from "@/components/my-petitions-list";
-import { getCurrentUser } from "@/actions";
+import { getCurrentUser } from "@/actions/auth-actions";
 export default async function MyPetitionsPage({
   searchParams,
 }: {

@@ -8,14 +8,13 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { SignatureForm } from "@/components/signature-form";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { getPetition } from "@/actions/petition-actions";
+import { getCurrentUser } from "@/actions/auth-actions";
+import { getProfile, getProfileByUsername } from "@/actions/profile-actions";
 import {
-  getPetition,
-  getCurrentUser,
-  getProfile,
   listSignaturesForPetition,
-  getProfileByUsername,
-  checkUserSignature, // Add this import
-} from "@/actions";
+  checkUserSignature,
+} from "@/actions/signature-actions";
 import { notFound } from "next/navigation";
 import { ShareModal } from "@/components/share-modal";
 import { getBaseURL } from "@/lib/utils";
@@ -91,6 +90,33 @@ const mockSigners = [
   },
 ];
 
+import { Metadata } from "next";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const petition = await getPetition(id);
+
+  if (!petition) {
+    return {
+      title: "Petition Not Found",
+    };
+  }
+
+  return {
+    title: petition.title,
+    description: petition.description?.substring(0, 160),
+    openGraph: {
+      title: petition.title,
+      description: petition.description?.substring(0, 160),
+      images: petition.image ? [{ url: petition.image }] : [],
+    },
+  };
+}
+
 export default async function PetitionDetailPage({
   params,
 }: {
@@ -108,9 +134,8 @@ export default async function PetitionDetailPage({
 
   let comments: any[] = [];
   try {
-    const { listPetitionComments } = await import(
-      "@/actions/petition-comment-actions"
-    );
+    const { listPetitionComments } =
+      await import("@/actions/petition-comment-actions");
     comments = await listPetitionComments(petition.id);
   } catch (e) {
     comments = [];
@@ -138,7 +163,7 @@ export default async function PetitionDetailPage({
 
   const mergedComments = [...comments, ...signerMessages].sort(
     (a, b) =>
-      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
   );
 
   // Format the date
@@ -148,14 +173,14 @@ export default async function PetitionDetailPage({
       year: "numeric",
       month: "long",
       day: "numeric",
-    }
+    },
   );
 
   // Calculate signature progress based on number of signatures amount
   // Calculate signature progress based on total donated amount
   const percentRaised = Math.min(
     Math.round((amount / petition.goal) * 100),
-    100
+    100,
   );
 
   const user = await getCurrentUser();
@@ -361,7 +386,7 @@ export default async function PetitionDetailPage({
               {/* Sections */}
               {petition.sections &&
                 petition.sections.length > 0 &&
-                petition.sections.map((section, index) => (
+                petition.sections.map((section: any, index: number) => (
                   <div key={index} className="mt-4">
                     <h3 className="text-xl font-semibold">{section.heading}</h3>
                     <p className="text-muted-foreground whitespace-pre-line">

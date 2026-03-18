@@ -39,6 +39,7 @@ interface SignatureFormProps {
     creatorName?: string;
   };
   hasSigned: boolean;
+  onSuccess?: () => void;
 }
 
 export function SignatureForm({
@@ -48,6 +49,7 @@ export function SignatureForm({
   subaccount,
   petitionData = {},
   hasSigned,
+  onSuccess,
 }: SignatureFormProps) {
   const { createUserSignature, isLoading } = useSignature();
   const [friendlyError, setFriendlyError] = useState<string | null>(null);
@@ -108,6 +110,11 @@ export function SignatureForm({
       }
 
       setFriendlyError(null);
+
+      // Call the onSuccess callback if provided
+      if (onSuccess) {
+        onSuccess();
+      }
 
       // Send confirmation email to the signer
       try {

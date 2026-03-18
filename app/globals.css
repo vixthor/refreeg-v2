@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -126,7 +126,9 @@ select:focus {
 
   body {
     @apply bg-background text-foreground font-montserrat;
-    font-feature-settings: "rlig" 1, "calt" 1;
+    font-feature-settings:
+      "rlig" 1,
+      "calt" 1;
   }
 }
 
@@ -148,7 +150,8 @@ select:focus {
 .ToastRoot {
   background-color: white;
   border-radius: 6px;
-  box-shadow: hsl(206 22% 7% / 35%) 0px 10px 38px -10px,
+  box-shadow:
+    hsl(206 22% 7% / 35%) 0px 10px 38px -10px,
     hsl(206 22% 7% / 20%) 0px 10px 20px -15px;
   padding: 15px;
   display: grid;
@@ -244,4 +247,70 @@ select:focus {
   list-style: none;
   z-index: 2147483647;
   outline: none;
+}
+
+/* Premium Glassmorphism & UI Utilities */
+.glass-panel {
+  @apply bg-white/70 backdrop-blur-md border border-white/20 shadow-xl;
+}
+
+.premium-gradient {
+  background: linear-gradient(135deg, #003366 0%, #004080 50%, #0059b3 100%);
+}
+
+.mesh-gradient {
+  background-color: #ffffff;
+  background-image:
+    radial-gradient(at 0% 0%, hsla(210, 100%, 20%, 0.15) 0, transparent 50%),
+    radial-gradient(at 50% 0%, hsla(210, 100%, 40%, 0.1) 0, transparent 50%),
+    radial-gradient(at 100% 0%, hsla(210, 100%, 20%, 0.15) 0, transparent 50%);
+}
+
+.text-gradient {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-[#003366] to-[#0059b3];
+}
+
+.glass-card {
+  @apply bg-white/80 backdrop-blur-lg border border-white/40 shadow-2xl rounded-2xl;
+}
+
+.premium-input {
+  @apply bg-white/50 border-gray-200/50 focus:border-brand/50 focus:ring-brand/20 transition-all duration-300;
+}
+
+.stepper-line {
+  @apply h-1 flex-1 bg-gray-100 rounded-full overflow-hidden relative;
+}
+
+.stepper-line-progress {
+  @apply absolute inset-y-0 left-0 bg-brand transition-all duration-500 ease-out;
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes slow-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-slow-spin {
+  animation: slow-spin 20s linear infinite;
 }

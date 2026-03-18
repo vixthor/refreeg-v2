@@ -4,11 +4,24 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
-import Step1 from "./step1";
-import Step2 from "./step2";
-import Step3 from "./step3";
-import Step4 from "./step4";
-import Step5 from "./step5";
+import dynamic from "next/dynamic";
+import { Skeleton } from "@/components/ui/skeleton";
+
+const Step1 = dynamic(() => import("./step1"), {
+  loading: () => <Skeleton className="h-[400px] w-full" />,
+});
+const Step2 = dynamic(() => import("./step2"), {
+  loading: () => <Skeleton className="h-[400px] w-full" />,
+});
+const Step3 = dynamic(() => import("./step3"), {
+  loading: () => <Skeleton className="h-[400px] w-full" />,
+});
+const Step4 = dynamic(() => import("./step4"), {
+  loading: () => <Skeleton className="h-[400px] w-full" />,
+});
+const Step5 = dynamic(() => import("./step5"), {
+  loading: () => <Skeleton className="h-[400px] w-full" />,
+});
 import NavigationLoader from "@/components/NavigationLoader";
 import OnboardingNav from "./onboardingNav";
 import {
@@ -99,7 +112,7 @@ export default function OnboardingPage() {
 
         console.log(
           `Resuming onboarding from step ${currentStepFromDB}`,
-          existingData
+          existingData,
         );
       } catch (error) {
         console.error("Error loading onboarding progress:", error);
@@ -210,7 +223,7 @@ export default function OnboardingPage() {
           accountType: onboardingData.accountType || "individual",
           gender: onboardingData.gender || "",
         },
-        user.user_metadata?.avatar_url
+        user.user_metadata?.avatar_url,
       );
 
       // Don't clear onboarding data yet, just move to step 4
@@ -244,7 +257,7 @@ export default function OnboardingPage() {
     setOnboardingData((prev) => ({ ...prev, [key]: value }));
     localStorage.setItem(
       `onboarding_${key}`,
-      typeof value === "string" ? value : JSON.stringify(value)
+      typeof value === "string" ? value : JSON.stringify(value),
     );
   };
 

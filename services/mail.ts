@@ -4,7 +4,8 @@ import nodemailer from "nodemailer";
 import fs from "fs";
 import path from "path";
 import Handlebars from "handlebars";
-import { getCurrentUser, getProfile } from "@/actions";
+import { getCurrentUser } from "@/actions/auth-actions";
+import { getProfile } from "@/actions/profile-actions";
 
 export async function getDeviceInfo() {
   if (typeof window === "undefined") return "Unknown Device";
@@ -85,7 +86,7 @@ export async function sendCauseUnderReviewEmail(context: {
 }) {
   const user = await getCurrentUser();
   if (!user) {
-    throw new Error("User not found");
+    return { success: false, error: "User not found" };
   }
   const profile = await getProfile(user.id);
   const currentYear = new Date().getFullYear();
@@ -111,7 +112,7 @@ export async function sendPetitionUnderReviewEmail(context: {
 }) {
   const user = await getCurrentUser();
   if (!user) {
-    throw new Error("User not found");
+    return { success: false, error: "User not found" };
   }
   const profile = await getProfile(user.id);
   return sendMail({
@@ -129,7 +130,7 @@ export async function sendPetitionUnderReviewEmail(context: {
 
 export async function sendPetitionApprovedEmailForUser(
   userId: string,
-  context: { petitionName: string }
+  context: { petitionName: string },
 ) {
   const profile = await getProfile(userId);
   if (!profile?.email) throw new Error("Recipient email not found");
@@ -152,7 +153,7 @@ export async function sendPetitionApprovedEmailForUser(
 
 export async function sendPetitionRejectedEmailForUser(
   userId: string,
-  context: { petitionName: string; rejectionReason?: string }
+  context: { petitionName: string; rejectionReason?: string },
 ) {
   const profile = await getProfile(userId);
   if (!profile?.email) throw new Error("Recipient email not found");
@@ -180,7 +181,7 @@ export async function sendBankAccountAddedEmail(context: {
 }) {
   const user = await getCurrentUser();
   if (!user) {
-    throw new Error("User not found");
+    return { success: false, error: "User not found" };
   }
   const profile = await getProfile(user.id);
   const currentYear = new Date().getFullYear();
@@ -198,7 +199,7 @@ export async function sendBankAccountAddedEmail(context: {
 
 export async function sendKycSubmittedEmail(
   userEmail: string,
-  userName: string
+  userName: string,
 ) {
   return sendMail({
     to: userEmail,
@@ -215,7 +216,7 @@ export async function sendKycSubmittedEmail(
 
 export async function sendKycApprovedEmail(
   userEmail: string,
-  userName: string
+  userName: string,
 ) {
   return sendMail({
     to: userEmail,
@@ -232,7 +233,7 @@ export async function sendKycApprovedEmail(
 export async function sendKycRejectedEmail(
   userEmail: string,
   userName: string,
-  rejectionReason: string
+  rejectionReason: string,
 ) {
   return sendMail({
     to: userEmail,
@@ -251,25 +252,25 @@ export async function sendCauseSubmissionAdminNotification(
   userName: string,
   userEmail: string,
   causeTitle: string,
-  reviewUrl: string
+  reviewUrl: string,
 ) {
-  const { getAdminManagerEmails } = await import("@/actions/role-actions");
-  const adminManagerEmails = await getAdminManagerEmails();
+  const { getAdminEmails } = await import("@/actions/role-actions");
+  const adminEmails = await getAdminEmails();
 
-  if (adminManagerEmails.length === 0) {
-    console.warn("No admin/manager emails found to send cause notification");
-    return { success: false, error: "No admin/manager emails found" };
+  if (adminEmails.length === 0) {
+    console.warn("No admin emails found to send cause notification");
+    return { success: false, error: "No admin emails found" };
   }
 
   const currentYear = new Date().getFullYear();
 
-  const emailPromises = adminManagerEmails.map((email) =>
+  const emailPromises = adminEmails.map((email: string) =>
     sendMail({
       to: email,
       subject: "New Cause Submission Requires Review - Refreeg",
       templateName: "cause-submission-admin-notification",
       context: {
-        adminName: "Admin/Manager",
+        adminName: "Admin",
         userName,
         userEmail,
         causeTitle,
@@ -277,7 +278,7 @@ export async function sendCauseSubmissionAdminNotification(
         organizationName: "Refreeg",
         currentYear,
       },
-    })
+    }),
   );
 
   try {
@@ -286,7 +287,7 @@ export async function sendCauseSubmissionAdminNotification(
     const failed = results.filter((r) => r.status === "rejected").length;
 
     console.log(
-      `Cause admin notification sent: ${successful} successful, ${failed} failed`
+      `Cause admin notification sent: ${successful} successful, ${failed} failed`,
     );
 
     return {
@@ -308,25 +309,25 @@ export async function sendPetitionSubmissionAdminNotification(
   userName: string,
   userEmail: string,
   petitionTitle: string,
-  reviewUrl: string
+  reviewUrl: string,
 ) {
-  const { getAdminManagerEmails } = await import("@/actions/role-actions");
-  const adminManagerEmails = await getAdminManagerEmails();
+  const { getAdminEmails } = await import("@/actions/role-actions");
+  const adminEmails = await getAdminEmails();
 
-  if (adminManagerEmails.length === 0) {
-    console.warn("No admin/manager emails found to send petition notification");
-    return { success: false, error: "No admin/manager emails found" };
+  if (adminEmails.length === 0) {
+    console.warn("No admin emails found to send petition notification");
+    return { success: false, error: "No admin emails found" };
   }
 
   const currentYear = new Date().getFullYear();
 
-  const emailPromises = adminManagerEmails.map((email) =>
+  const emailPromises = adminEmails.map((email: string) =>
     sendMail({
       to: email,
       subject: "New Petition Submission Requires Review - Refreeg",
       templateName: "petition-submission-admin-notification",
       context: {
-        adminName: "Admin/Manager",
+        adminName: "Admin",
         userName,
         userEmail,
         petitionTitle,
@@ -334,7 +335,7 @@ export async function sendPetitionSubmissionAdminNotification(
         organizationName: "Refreeg",
         currentYear,
       },
-    })
+    }),
   );
 
   try {
@@ -343,7 +344,7 @@ export async function sendPetitionSubmissionAdminNotification(
     const failed = results.filter((r) => r.status === "rejected").length;
 
     console.log(
-      `Petition admin notification sent: ${successful} successful, ${failed} failed`
+      `Petition admin notification sent: ${successful} successful, ${failed} failed`,
     );
 
     return {
@@ -351,7 +352,7 @@ export async function sendPetitionSubmissionAdminNotification(
       sent: successful,
       failed,
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error sending petition admin notifications:", error);
     return {
       success: false,
@@ -368,7 +369,7 @@ export async function sendLoginNotificationEmail(context: {
 }) {
   const user = await getCurrentUser();
   if (!user) {
-    throw new Error("User not found");
+    return { success: false, error: "User not found" };
   }
   const profile = await getProfile(user.id);
   const currentYear = new Date().getFullYear();
@@ -398,7 +399,7 @@ export async function sendCauseEditedEmail({
 }) {
   const user = await getCurrentUser();
   if (!user) {
-    throw new Error("User not found");
+    return { success: false, error: "User not found" };
   }
   const profile = await getProfile(user.id);
   const currentYear = new Date().getFullYear();
@@ -412,6 +413,126 @@ export async function sendCauseEditedEmail({
       causeName,
       reviewTimeframe,
       dashboardUrl,
+      currentYear,
+    },
+  });
+}
+
+export async function sendPledgeConfirmationEmail({
+  to,
+  userName,
+  causeTitle,
+  amount,
+  reminderDate,
+  donateUrl,
+}: {
+  to: string;
+  userName: string;
+  causeTitle: string;
+  amount: number;
+  reminderDate: string;
+  donateUrl: string;
+}) {
+  const currentYear = new Date().getFullYear();
+  return sendMail({
+    to,
+    subject: `Your pledge to "${causeTitle}" is confirmed 🤝`,
+    templateName: "pledge-confirmation",
+    context: {
+      userName,
+      causeTitle,
+      amount: amount.toLocaleString(),
+      reminderDate,
+      donateUrl,
+      currentYear,
+    },
+  });
+}
+
+export async function sendPledgeReminderEmail({
+  to,
+  userName,
+  causeTitle,
+  amount,
+  reminderDate,
+  donateUrl,
+}: {
+  to: string;
+  userName: string;
+  causeTitle: string;
+  amount: number;
+  reminderDate: string;
+  donateUrl: string;
+}) {
+  const currentYear = new Date().getFullYear();
+  return sendMail({
+    to,
+    subject: `⏰ Reminder: Your pledge to "${causeTitle}" is due today`,
+    templateName: "pledge-reminder",
+    context: {
+      userName,
+      causeTitle,
+      amount: amount.toLocaleString(),
+      reminderDate,
+      donateUrl,
+      currentYear,
+    },
+  });
+}
+
+export async function sendMilestoneEmail({
+  to,
+  causeTitle,
+  causeUrl,
+  milestone,
+}: {
+  to: string;
+  causeTitle: string;
+  causeUrl: string;
+  milestone: 50 | 100;
+}) {
+  const currentYear = new Date().getFullYear();
+  return sendMail({
+    to,
+    subject:
+      milestone === 100
+        ? `Goal Achieved! 🎉 "${causeTitle}" is 100% funded`
+        : `Halfway there! 🚀 "${causeTitle}" reached 50%`,
+    templateName: `milestone-${milestone}`,
+    context: {
+      causeTitle,
+      causeUrl,
+      currentYear,
+    },
+  });
+}
+
+export async function sendCampaignExpiringEmail({
+  to,
+  causeTitle,
+  causeUrl,
+  amountRaised,
+  goalAmount,
+  percent,
+}: {
+  to: string;
+  causeTitle: string;
+  causeUrl: string;
+  amountRaised: number;
+  goalAmount: number;
+  percent: number;
+}) {
+  const currentYear = new Date().getFullYear();
+  return sendMail({
+    to,
+    subject: `⏳ 48 hours left: Support "${causeTitle}"`,
+    templateName: "campaign-expiring",
+    context: {
+      causeTitle,
+      causeUrl,
+      amountRaised: amountRaised.toLocaleString(),
+      goalAmount: goalAmount.toLocaleString(),
+      percent,
       currentYear,
     },
   });
@@ -436,7 +557,7 @@ export async function sendIncompleteCauseSetupEmail(context: {
 }) {
   const user = await getCurrentUser();
   if (!user) {
-    throw new Error("User not found");
+    return { success: false, error: "User not found" };
   }
   const profile = await getProfile(user.id);
   const currentYear = new Date().getFullYear();
@@ -458,7 +579,7 @@ export async function sendIncompleteKycVerificationEmail(context: {
 }) {
   const user = await getCurrentUser();
   if (!user) {
-    throw new Error("User not found");
+    return { success: false, error: "User not found" };
   }
   const profile = await getProfile(user.id);
   const currentYear = new Date().getFullYear();
@@ -479,7 +600,7 @@ export async function sendIncompletePetitionDraftEmail(context: {
 }) {
   const user = await getCurrentUser();
   if (!user) {
-    throw new Error("User not found");
+    return { success: false, error: "User not found" };
   }
   const profile = await getProfile(user.id);
   const currentYear = new Date().getFullYear();
@@ -502,7 +623,7 @@ export async function sendUnfinishedDonationEmail(context: {
 }) {
   const user = await getCurrentUser();
   if (!user) {
-    throw new Error("User not found");
+    return { success: false, error: "User not found" };
   }
   const profile = await getProfile(user.id);
   const currentYear = new Date().getFullYear();
@@ -522,7 +643,7 @@ export async function sendUnfinishedDonationEmail(context: {
 export async function sendWelcomeEmailToUser(
   userEmail: string,
   userName: string,
-  profileSetupUrl: string
+  profileSetupUrl: string,
 ) {
   return sendMail({
     to: userEmail,
@@ -541,7 +662,7 @@ export async function sendPetitionSignedEmailToUser(
   userName: string,
   petitionName: string,
   petitionUrl: string,
-  isAnonymous: boolean = false
+  isAnonymous: boolean = false,
 ) {
   return sendMail({
     to: userEmail,
@@ -563,7 +684,7 @@ export async function sendNewSignatureNotificationEmail(
   petitionName: string,
   petitionUrl: string,
   signerName: string,
-  message?: string
+  message?: string,
 ) {
   return sendMail({
     to: creatorEmail,
@@ -587,7 +708,7 @@ export async function sendPetitionGoalReachedEmail(
   petitionName: string,
   petitionUrl: string,
   totalSignatures: number,
-  goalAmount: number
+  goalAmount: number,
 ) {
   return sendMail({
     to: creatorEmail,
@@ -608,30 +729,30 @@ export async function sendKycSubmissionAdminNotification(
   userEmail: string,
   userName: string,
   userId: string,
-  kycReviewUrl: string
+  kycReviewUrl: string,
 ) {
-  const { getAdminManagerEmails } = await import("@/actions/role-actions");
-  const adminManagerEmails = await getAdminManagerEmails();
+  const { getAdminEmails } = await import("@/actions/role-actions");
+  const adminEmails = await getAdminEmails();
 
-  if (adminManagerEmails.length === 0) {
-    console.warn("No admin/manager emails found to send KYC notification");
-    return { success: false, error: "No admin/manager emails found" };
+  if (adminEmails.length === 0) {
+    console.warn("No admin emails found to send KYC notification");
+    return { success: false, error: "No admin emails found" };
   }
 
-  const emailPromises = adminManagerEmails.map((email) =>
+  const emailPromises = adminEmails.map((email: string) =>
     sendMail({
       to: email,
       subject: "New KYC Submission Requires Review - Refreeg",
       templateName: "kyc-submission-admin-notification",
       context: {
-        adminName: "Admin/Manager",
+        adminName: "Admin",
         userName,
         userEmail,
         kycReviewUrl,
         organizationName: "Refreeg",
         currentYear: new Date().getFullYear(),
       },
-    })
+    }),
   );
 
   try {
@@ -640,7 +761,7 @@ export async function sendKycSubmissionAdminNotification(
     const failed = results.filter((r) => r.status === "rejected").length;
 
     console.log(
-      `KYC admin notification sent: ${successful} successful, ${failed} failed`
+      `KYC admin notification sent: ${successful} successful, ${failed} failed`,
     );
 
     return {

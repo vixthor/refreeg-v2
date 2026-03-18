@@ -10,11 +10,13 @@ import { Progress } from "@/components/ui/progress";
 import { DonateButton } from "@/components/donate-button";
 import { H2, P, H4 } from "../typograpy";
 import { Button } from "../ui/button";
-import { listPetitions } from "@/actions";
+import { listPetitions } from "@/actions/petition-actions";
 import { listSignaturesForPetition } from "@/actions/signature-actions";
 import AnimatedCard from "./components/AnimatedCard";
 import AnimatedHeader from "@/components/home/components/AnimatedHeader";
 import { ArrowRight } from "lucide-react";
+import { createClient } from "@/lib/supabase/server";
+import { Signature } from "@/types";
 
 import {
   Carousel,
@@ -25,32 +27,44 @@ import {
 } from "@/components/ui/carousel";
 
 export async function FeaturedPetitions() {
-  const featuredPetitions = (await listPetitions()).filter(
-    (p) => (p.days_active ?? 0) > 0 && p.status !== ("expired" as any)
+  const featuredPetitions = (await listPetitions({ limit: 12 })).filter(
+    (p) => (p.days_active ?? 0) > 0 && p.status !== ("expired" as any),
   );
 
-  const petitionsWithSigners = await Promise.all(
-    featuredPetitions.map(async (petition) => {
-      const signers = await listSignaturesForPetition(petition.id);
+  if (!featuredPetitions || featuredPetitions.length === 0) {
+    return null;
+  }
 
-      const signerCount = signers?.length || 0;
+  const supabase = await createClient();
+  const petitionIds = featuredPetitions.map((p) => p.id);
 
-      const totalAmount = signers.reduce((sum, s) => sum + (s.amount || 0), 0);
+  // Batch fetch all signatures for featured petitions in one query
+  const { data: allSigners, error: signaturesError } = await supabase
+    .from("signatures")
+    .select("*")
+    .in("petition_id", petitionIds);
 
-      const percentRaised = Math.min(
-        Math.round((totalAmount / petition.goal) * 100),
-        100
-      );
+  if (signaturesError) {
+    console.error("Error batch fetching signatures:", signaturesError);
+  }
 
-      return {
-        ...petition,
-        signers,
-        signerCount,
-        totalAmount,
-        percentRaised,
-      };
-    })
-  );
+  const petitionsWithSigners = featuredPetitions.map((petition) => {
+    const signers = (allSigners as Signature[])?.filter((s) => s.petition_id === petition.id) || [];
+    const signerCount = signers.length;
+    const totalAmount = signers.reduce((sum: number, s: Signature) => sum + (s.amount || 0), 0);
+    const percentRaised = Math.min(
+      Math.round((totalAmount / (petition.goal || 1)) * 100),
+      100,
+    );
+
+    return {
+      ...petition,
+      signers,
+      signerCount,
+      totalAmount,
+      percentRaised,
+    };
+  });
 
   if (!featuredPetitions || featuredPetitions.length === 0) {
     return <div></div>;
