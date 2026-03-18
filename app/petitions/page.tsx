@@ -6,6 +6,14 @@ import { categories } from "@/lib/categories";
 import AdBanner from "@/components/AdBanner";
 // Mock categories for filtering
 
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Explore Petitions",
+  description:
+    "Discover and sign petitions that are driving global change and social impact.",
+};
+
 export default async function PetitionsPage({
   searchParams,
 }: {
@@ -20,7 +28,9 @@ export default async function PetitionsPage({
     <div className="p-10">
       <div className="space-y-6">
         <div className="space-y-2">
-          <h1 className="text-3xl font-bold tracking-tight">Explore Petitions</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Explore Petitions
+          </h1>
           <p className="text-muted-foreground">
             Discover and support petitions that are making a difference.
           </p>

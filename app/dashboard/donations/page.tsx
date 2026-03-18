@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MyDonationsList } from "@/components/my-donations-list";
-import { getCurrentUser, listUserDonations } from "@/actions";
+import { getCurrentUser } from "@/actions/auth-actions";
 
 export default async function MyDonationsPage() {
   const user = await getCurrentUser();

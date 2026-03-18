@@ -5,10 +5,32 @@ import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import Image from "next/image";
 
-// ✅ Import MUI icons
-import MaleIcon from '@mui/icons-material/Male';
-import FemaleIcon from "@mui/icons-material/Female";
-import QuestionMarkIcon from "@mui/icons-material/QuestionMark";
+import { User, CircleHelp } from "lucide-react";
+
+// Custom Venus icon component (female symbol ♀)
+const Venus = ({
+  size = 32,
+  className = "",
+  ...props
+}: React.SVGProps<SVGSVGElement> & { size?: number | string }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+    {...props}
+  >
+    <circle cx="12" cy="8" r="6" />
+    <line x1="12" y1="14" x2="12" y2="22" />
+    <line x1="8" y1="18" x2="16" y2="18" />
+  </svg>
+);
 
 interface Step2Props {
   user: any;
@@ -18,11 +40,11 @@ interface Step2Props {
   updateOnboardingData: (key: string, value: any) => void;
 }
 
-// ✅ Replace symbols with MUI icons
+// ✅ Replace symbols with Lucide React icons
 const genderOptions = [
-  { id: "male", label: "Male", icon: <MaleIcon fontSize="large" /> },
-  { id: "female", label: "Female", icon: <FemaleIcon fontSize="large" /> },
-  { id: "other", label: "Other", icon: <QuestionMarkIcon fontSize="large" /> },
+  { id: "male", label: "Male", icon: <User size={32} /> },
+  { id: "female", label: "Female", icon: <Venus size={32} /> },
+  { id: "other", label: "Other", icon: <CircleHelp size={32} /> },
 ];
 
 export default function Step2({
@@ -33,7 +55,7 @@ export default function Step2({
   updateOnboardingData,
 }: Step2Props) {
   const [selectedGender, setSelectedGender] = useState<string | null>(
-    onboardingData.gender || null
+    onboardingData.gender || null,
   );
 
   const handleNext = () => {

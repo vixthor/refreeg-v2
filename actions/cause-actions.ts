@@ -12,6 +12,7 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "./auth-actions";
 import { isAdminOrManager } from "./role-actions";
 import { sendCauseSubmissionAdminNotification } from "@/services/mail";
+import { cache } from "react";
 
 /**
  * Get a cause by ID
@@ -35,9 +36,10 @@ export async function getCause(causeId: string): Promise<CauseWithUser | null> {
         heading,
         description
       )
-    `
+    `,
     )
     .eq("id", causeId)
+    .order("id", { foreignTable: "cause_sections", ascending: true })
     .single();
 
   const isAdmin = user?.id ? await isAdminOrManager(user.id) : false;
@@ -58,6 +60,18 @@ export async function getCause(causeId: string): Promise<CauseWithUser | null> {
     throw error;
   }
 
+  // Check if current user is following this cause
+  let isFollowing = false;
+  if (user?.id) {
+    const { data: followData } = await supabase
+      .from("campaign_follows")
+      .select("id")
+      .eq("cause_id", causeId)
+      .eq("user_id", user.id)
+      .maybeSingle();
+    isFollowing = !!followData;
+  }
+
   const cause = {
     ...data,
     user: {
@@ -69,6 +83,16 @@ export async function getCause(causeId: string): Promise<CauseWithUser | null> {
     sections: data.cause_sections || [],
     multimedia: data.multimedia || [],
     video_links: data.video_links || [],
+    trust_score: data.trust_score || {
+      impact: "B+",
+      readability: "A",
+      transparency: "High",
+    },
+    verified_status: data.verified_status || "pending",
+    summary: data.summary || null,
+    location: data.location || null,
+    faqs: data.faqs || [],
+    isFollowing,
   } as unknown as CauseWithUser;
 
   delete (cause as any).profiles;
@@ -83,7 +107,7 @@ export async function getCause(causeId: string): Promise<CauseWithUser | null> {
 async function uploadImageToSupabase(
   file: File,
   userId: string,
-  type: "cover" | "additional"
+  type: "cover" | "additional",
 ): Promise<string> {
   const supabase = await createClient();
 
@@ -119,7 +143,7 @@ async function uploadImageToSupabase(
  */
 export async function createCause(
   userId: string,
-  causeData: CauseFormData
+  causeData: CauseFormData,
 ): Promise<Cause> {
   const supabase = await createClient();
 
@@ -128,7 +152,7 @@ export async function createCause(
     coverImageUrl = await uploadImageToSupabase(
       causeData.coverImage,
       userId,
-      "cover"
+      "cover",
     );
   }
 
@@ -150,7 +174,7 @@ export async function createCause(
     }
 
     daysActive = Math.ceil(
-      (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
+      (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
     );
   }
 
@@ -163,8 +187,8 @@ export async function createCause(
     try {
       multimediaUrls = await Promise.all(
         causeData.multimedia.map((file) =>
-          uploadImageToSupabase(file, userId, "additional")
-        )
+          uploadImageToSupabase(file, userId, "additional"),
+        ),
       );
     } catch (error) {
       console.error("Error uploading multimedia:", error);
@@ -177,7 +201,6 @@ export async function createCause(
     .insert({
       user_id: userId,
       title: causeData.title,
-
       category: causeData.category,
       goal:
         typeof causeData.goal === "string"
@@ -188,6 +211,8 @@ export async function createCause(
       days_active: daysActive,
       multimedia: multimediaUrls,
       video_links: causeData.video_links || [],
+      summary: causeData.summary || null,
+      location: causeData.location || null,
     })
     .select()
     .single();
@@ -226,12 +251,13 @@ export async function createCause(
         process.env.NEXT_PUBLIC_APP_URL || "https://www.refreeg.com";
       const reviewUrl = `${baseUrl}/dashboard/admin/causes?tab=pending`;
 
-      await sendCauseSubmissionAdminNotification(
+      // Send notification in background - do not await
+      sendCauseSubmissionAdminNotification(
         profile.full_name || "User",
         profile.email,
         causeData.title,
-        reviewUrl
-      );
+        reviewUrl,
+      ).catch((err) => console.error("Background notification error:", err));
     }
   } catch (error) {
     console.error("Error sending cause admin notification:", error);
@@ -247,7 +273,7 @@ export async function createCause(
 export async function updateCause(
   causeId: string,
   userId: string,
-  causeData: Partial<CauseFormData>
+  causeData: Partial<CauseFormData>,
 ): Promise<any> {
   const supabase = await createClient();
 
@@ -271,7 +297,7 @@ export async function updateCause(
     }
 
     daysActive = Math.ceil(
-      (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
+      (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
     );
   }
 
@@ -284,8 +310,8 @@ export async function updateCause(
     try {
       multimediaUrls = await Promise.all(
         causeData.multimedia.map((file) =>
-          uploadImageToSupabase(file, userId, "additional")
-        )
+          uploadImageToSupabase(file, userId, "additional"),
+        ),
       );
     } catch (error) {
       console.error("Error uploading multimedia:", error);
@@ -306,6 +332,8 @@ export async function updateCause(
     days_active: daysActive,
     multimedia: multimediaUrls.length > 0 ? multimediaUrls : [],
     video_links: causeData.video_links || [],
+    summary: causeData.summary || null,
+    location: causeData.location || null,
     status: "pending",
   };
 
@@ -349,12 +377,13 @@ export async function updateCause(
         process.env.NEXT_PUBLIC_APP_URL || "https://www.refreeg.com";
       const reviewUrl = `${baseUrl}/dashboard/admin/causes`;
 
-      await sendCauseSubmissionAdminNotification(
+      // Send notification in background - do not await
+      sendCauseSubmissionAdminNotification(
         profile.full_name || "User",
         profile.email,
         causeData.title || "Cause Edit",
-        reviewUrl
-      );
+        reviewUrl,
+      ).catch((err) => console.error("Background notification error:", err));
     }
   } catch (error) {
     console.error("Error sending cause edit admin notification:", error);
@@ -367,9 +396,13 @@ export async function updateCause(
 /**
  * List causes with filtering options
  */
-export async function listCauses(
-  options: CauseFilterOptions = {}
-): Promise<Cause[]> {
+/**
+ * Get causes with filtering options.
+ * Using React cache to deduplicate requests in the same render pass.
+ */
+export const listCauses = cache(async (
+  options: CauseFilterOptions = {},
+): Promise<Cause[]> => {
   const supabase = await createClient();
 
   let query = supabase
@@ -400,7 +433,7 @@ export async function listCauses(
   if (options.offset) {
     query = query.range(
       options.offset,
-      options.offset + (options.limit || 10) - 1
+      options.offset + (options.limit || 10) - 1,
     );
   }
 
@@ -413,18 +446,8 @@ export async function listCauses(
 
   const causes = (data as Cause[]) || [];
 
-  const nowExpired = causes.filter(
-    (c) => (c.days_active ?? 0) <= 0 && c.status === ("approved" as any)
-  );
-
-  if (nowExpired.length > 0) {
-    try {
-      const ids = nowExpired.map((c) => c.id);
-      await supabase.from("causes").update({ status: "expired" }).in("id", ids);
-    } catch (e) {
-      console.error("Failed to auto-expire causes:", e);
-    }
-  }
+  // Side effect removed from getter to avoid unnecessary POST/UPDATE requests 
+  // on every page load. Expiry should be handled by a cleanup job.
 
   const isOwnerScoped = !!options.userId;
   const result = isOwnerScoped
@@ -432,13 +455,13 @@ export async function listCauses(
     : causes.filter((c) => c.status !== ("expired" as any));
 
   return result;
-}
+});
 
 /**
  * Count causes with filtering options
  */
 export async function countCauses(
-  options: CauseFilterOptions = {}
+  options: CauseFilterOptions = {},
 ): Promise<number> {
   const supabase = await createClient();
 
@@ -478,7 +501,7 @@ export async function countCauses(
 export async function updateCauseStatus(
   causeId: string,
   status: "approved" | "rejected",
-  rejectionReason?: string
+  rejectionReason?: string,
 ): Promise<Cause> {
   const supabase = await createClient();
 
@@ -608,7 +631,7 @@ export async function getCauseEdits(): Promise<any[]> {
         heading,
         description
       )
-    `
+    `,
     )
     .eq("status", "pending")
     .order("created_at", { ascending: false });
@@ -643,7 +666,7 @@ export async function getUserCauses(userId: string): Promise<Cause[]> {
 
 export async function getUserCausesWithStatus(
   userId: string,
-  status?: string
+  status?: string,
 ): Promise<Cause[]> {
   const supabase = await createClient();
 
@@ -678,10 +701,51 @@ export async function deleteCause(causeId: string): Promise<void> {
   }
 }
 
+export async function updateCauseTrustMetrics(
+  causeId: string,
+  metrics: {
+    trust_score?: {
+      impact: string;
+      readability: string;
+      transparency: string;
+    };
+    verified_status?: string;
+  },
+): Promise<void> {
+  const supabase = await createClient();
+  const user = await getCurrentUser();
+
+  const isAdmin = user?.id ? await isAdminOrManager(user.id) : false;
+
+  if (!isAdmin) {
+    throw new Error("Unauthorized: Only admins can update trust metrics");
+  }
+
+  const { error } = await supabase
+    .from("causes")
+    .update({
+      trust_score: metrics.trust_score,
+      verified_status: metrics.verified_status,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", causeId);
+
+  if (error) {
+    console.error("Error updating trust metrics:", error);
+    throw error;
+  }
+
+  revalidatePath("/dashboard/admin/causes");
+  revalidatePath(`/causes/${causeId}`);
+}
+
 /**
  * Save a cause share to the database
  */
-export async function saveCauseShare(causeId: string): Promise<void> {
+export async function saveCauseShare(
+  causeId: string,
+  userId?: string,
+): Promise<void> {
   const supabase = await createClient();
 
   const { error: shareError, data: causeData } = await supabase
@@ -705,5 +769,79 @@ export async function saveCauseShare(causeId: string): Promise<void> {
     throw causeError;
   }
 
+  // Record event for reward tracking if userId provided
+  if (userId) {
+    try {
+      const { recordEvent } = await import("@/actions/event-reward-actions");
+      await recordEvent({
+        type: "share",
+        userId,
+        metadata: {
+          cause_id: causeId,
+        },
+      });
+    } catch (eventError) {
+      console.error("Error recording share event:", eventError);
+      // Don't throw - event tracking shouldn't break the main action
+    }
+  }
+
   return mine;
+}
+
+/**
+ * Record a cause share with user tracking
+ */
+export async function shareCause(
+  causeId: string,
+  userId: string,
+): Promise<void> {
+  // Record the share
+  await saveCauseShare(causeId, userId);
+}
+
+/**
+ * Follow a campaign — requires authentication
+ * Returns { error: 'unauthenticated' } if no session so the UI can show a login modal
+ */
+export async function followCampaign(
+  causeId: string,
+): Promise<{ data: null; error: string } | { data: any; error: null }> {
+  const supabase = await createClient();
+  const user = await getCurrentUser();
+
+  if (!user) {
+    return { data: null, error: "unauthenticated" };
+  }
+
+  // Get email from profile
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("email")
+    .eq("id", user.id)
+    .single();
+
+  if (!profile?.email) {
+    return { data: null, error: "No email found for your account." };
+  }
+
+  const { data, error } = await supabase
+    .from("campaign_follows")
+    .upsert(
+      {
+        cause_id: causeId,
+        user_id: user.id,
+        email: profile.email,
+      },
+      { onConflict: "cause_id,email", ignoreDuplicates: true },
+    )
+    .select();
+
+  if (error && error.code !== "23505") {
+    // ignore unique constraint violation (already following)
+    return { data: null, error: error.message };
+  }
+
+  // data will be empty if ignoreDuplicates triggered
+  return { data: (data && data.length > 0) ? data[0] : { already_following: true }, error: null };
 }
