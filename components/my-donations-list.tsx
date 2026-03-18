@@ -1,9 +1,16 @@
-import Link from "next/link"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Download, ExternalLink } from "lucide-react"
-import { listUserDonations } from "@/actions"
+import Link from "next/link";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Download, ExternalLink } from "lucide-react";
+import { listUserDonations } from "@/actions/donation-actions";
 
 // Mock data for user's donations
 const mockUserDonations = [
@@ -57,29 +64,37 @@ const mockUserDonations = [
     receipt_url: "#",
     is_anonymous: true,
   },
-]
+];
 
 interface MyDonationsListProps {
-  userId: string
-  timeframe?: "all" | "recent"
-  showReceipts?: boolean
+  userId: string;
+  timeframe?: "all" | "recent";
+  showReceipts?: boolean;
 }
 
-export async function MyDonationsList({ userId, timeframe = "all", showReceipts = false }: MyDonationsListProps) {
-  
-  const donations = await listUserDonations(userId, timeframe)
+export async function MyDonationsList({
+  userId,
+  timeframe = "all",
+  showReceipts = false,
+}: MyDonationsListProps) {
+  const donations = await listUserDonations(userId, timeframe);
 
   // Use mock data for now
-  let filteredDonations = donations
+  let filteredDonations = donations;
   if (timeframe === "recent") {
     // Filter to only show donations from the last 30 days
-    const thirtyDaysAgo = new Date()
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
-    filteredDonations = filteredDonations.filter((donation) => new Date(donation.created_at) >= thirtyDaysAgo)
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    filteredDonations = filteredDonations.filter(
+      (donation) => new Date(donation.created_at) >= thirtyDaysAgo,
+    );
   }
 
   // Calculate total amount donated
-  const totalDonated = filteredDonations.reduce((sum, donation) => sum + donation.amount, 0)
+  const totalDonated = filteredDonations.reduce(
+    (sum, donation) => sum + donation.amount,
+    0,
+  );
 
   if (filteredDonations.length === 0) {
     return (
@@ -94,16 +109,19 @@ export async function MyDonationsList({ userId, timeframe = "all", showReceipts 
           <Button>Explore Causes</Button>
         </Link>
       </div>
-    )
+    );
   }
 
   return (
     <div className="space-y-6">
       <div className="bg-muted/50 p-4 rounded-lg">
         <div className="text-sm text-muted-foreground">Total Donated</div>
-        <div className="text-3xl font-bold">₦{totalDonated.toLocaleString()}</div>
+        <div className="text-3xl font-bold">
+          ₦{totalDonated.toLocaleString()}
+        </div>
         <div className="text-sm text-muted-foreground mt-1">
-          Across {filteredDonations.length} donation{filteredDonations.length !== 1 ? "s" : ""}
+          Across {filteredDonations.length} donation
+          {filteredDonations.length !== 1 ? "s" : ""}
         </div>
       </div>
 
@@ -113,7 +131,9 @@ export async function MyDonationsList({ userId, timeframe = "all", showReceipts 
             <CardHeader className="pb-2">
               <div className="flex justify-between items-start">
                 <div>
-                  <CardTitle className="text-lg">{donation.cause.title}</CardTitle>
+                  <CardTitle className="text-lg">
+                    {donation.cause.title}
+                  </CardTitle>
                   <CardDescription>
                     {new Date(donation.created_at).toLocaleDateString("en-US", {
                       year: "numeric",
@@ -123,13 +143,17 @@ export async function MyDonationsList({ userId, timeframe = "all", showReceipts 
                   </CardDescription>
                 </div>
                 <div className="flex items-center">
-                  <Badge variant="outline">{donation.is_anonymous ? "Anonymous" : "Public"}</Badge>
+                  <Badge variant="outline">
+                    {donation.is_anonymous ? "Anonymous" : "Public"}
+                  </Badge>
                 </div>
               </div>
             </CardHeader>
             <CardContent className="pb-2">
               <div className="flex justify-between items-center">
-                <div className="text-2xl font-bold">₦{donation.amount.toLocaleString()}</div>
+                <div className="text-2xl font-bold">
+                  ₦{donation.amount.toLocaleString()}
+                </div>
                 <Badge variant="default">{donation.status}</Badge>
               </div>
             </CardContent>
@@ -149,6 +173,5 @@ export async function MyDonationsList({ userId, timeframe = "all", showReceipts 
         ))}
       </div>
     </div>
-  )
+  );
 }
-

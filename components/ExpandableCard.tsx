@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useId, useRef, useState } from "react";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion } from "framer-motion";
 import { useOutsideClick } from "@/hooks/use-outside-click";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -14,7 +14,7 @@ interface ExpandableCardItem {
   id: string;
   title: string;
   description: string;
-  image: string | null;
+  image?: string | null;
   goal: number;
   raised?: number; // for causes
   signatures?: number; // for petitions

@@ -1,7 +1,12 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { getPetition } from "@/actions/petition-actions";
-import EditPetitionForm from "./edit-petition-form";
+import dynamic from "next/dynamic";
+import { Skeleton } from "@/components/ui/skeleton";
+
+const EditPetitionForm = dynamic(() => import("./edit-petition-form"), {
+  loading: () => <Skeleton className="h-[600px] w-full" />,
+});
 
 export default async function EditPetitionPage({
   params,
@@ -28,8 +33,8 @@ export default async function EditPetitionPage({
   }
 
   return (
-    <div className="md:container py-10">
-      <div className="md:mx-auto max-w-2xl">
+    <div className="">
+      <div className="md:mx-auto">
         <EditPetitionForm petition={petition} />
       </div>
     </div>

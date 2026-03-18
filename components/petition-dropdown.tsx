@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { deletePetition } from "@/actions";
+import { deletePetition } from "@/actions/petition-actions";
 
 interface PetitionDropdownProps {
   petitionId: string;

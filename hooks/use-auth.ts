@@ -11,6 +11,8 @@ import {
 import { subscribeToConvertKit } from "@/services/convertkit";
 import { hasCompletedOnboarding } from "@/actions/profile-actions";
 
+import { useAuthContext } from "@/components/auth-provider";
+
 function getDeviceInfo() {
   if (typeof window === "undefined") return "Unknown Device";
   const ua = window.navigator.userAgent;
@@ -23,60 +25,8 @@ function getDeviceInfo() {
 }
 
 export function useAuth() {
-  const [user, setUser] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { user, isLoading, supabase } = useAuthContext();
   const router = useRouter();
-  const [supabase] = useState(() => createClient());
-
-  useEffect(() => {
-    let isMounted = true;
-
-    const applyInitialSession = async () => {
-      try {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-
-        if (!isMounted) return;
-
-        if (session?.user) {
-          setUser(session.user);
-        } else {
-          setUser(null);
-        }
-      } catch (error) {
-        console.error("Error getting initial auth session:", error);
-        if (isMounted) {
-          setUser(null);
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      }
-    };
-
-    setIsLoading(true);
-    applyInitialSession();
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!isMounted) return;
-
-      if (session?.user) {
-        setUser(session.user);
-      } else {
-        setUser(null);
-      }
-      setIsLoading(false);
-    });
-
-    return () => {
-      isMounted = false;
-      subscription.unsubscribe();
-    };
-  }, [supabase.auth]);
 
   const signIn = async (email: string, password: string) => {
     try {
@@ -176,6 +126,33 @@ export function useAuth() {
           variant: "destructive",
         });
         return;
+      }
+
+      // Initialize wallet (bonus handled separately)
+      if (data?.user?.id) {
+        try {
+          const { initializeUserWallet } = await import("@/actions/auth-actions");
+          await initializeUserWallet(data.user.id, 0);
+        } catch (walletError) {
+          console.error("Error initializing user wallet:", walletError);
+          // Don't fail signup if wallet initialization fails
+        }
+      }
+
+      // Track first login for daily reward
+      if (data?.user?.id) {
+        try {
+          const { trackLogin, recordSignupReward } = await import("@/actions/auth-actions");
+          await trackLogin(data.user.id);
+          await recordSignupReward(data.user.id, 1);
+          toast({
+            title: "Rewards credited",
+            description: "Signup bonus (1 EIZA) and daily login bonus (0.5 EIZA) have been added.",
+          });
+        } catch (loginError) {
+          console.error("Error tracking signup login:", loginError);
+          // Don't fail signup if login tracking fails
+        }
       }
 
       try {

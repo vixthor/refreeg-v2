@@ -48,6 +48,13 @@ export interface Database {
           updated_at: string;
           image: string | null;
           days_active: number | null;
+          trust_score: any; // jsonb
+          verified_status: string;
+          summary: string | null;
+          location: string | null;
+          multimedia: string[];
+          video_links: string[];
+          faqs: any; // jsonb
         };
         Insert: {
           id?: string;
@@ -63,6 +70,13 @@ export interface Database {
           updated_at?: string;
           image?: string | null;
           days_active?: number | null;
+          trust_score?: any; // jsonb
+          verified_status?: string;
+          summary?: string | null;
+          location?: string | null;
+          multimedia?: string[];
+          video_links?: string[];
+          faqs?: any; // jsonb
         };
         Update: {
           id?: string;
@@ -78,6 +92,115 @@ export interface Database {
           updated_at?: string;
           image?: string | null;
           days_active?: number | null;
+          trust_score?: any; // jsonb
+          verified_status?: string;
+          summary?: string | null;
+          location?: string | null;
+          multimedia?: string[];
+          video_links?: string[];
+          faqs?: any; // jsonb
+        };
+      };
+      pledges: {
+        Row: {
+          id: string;
+          cause_id: string;
+          user_id: string | null;
+          token: string | null;
+          amount: number;
+          currency: string;
+          name: string;
+          email: string;
+          note: string | null;
+          reminder_date: string;
+          status: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          cause_id: string;
+          user_id?: string | null;
+          token?: string | null;
+          amount: number;
+          currency?: string;
+          name: string;
+          email: string;
+          note?: string | null;
+          reminder_date: string;
+          status?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          cause_id?: string;
+          user_id?: string | null;
+          token?: string | null;
+          amount?: number;
+          currency?: string;
+          name?: string;
+          email?: string;
+          note?: string | null;
+          reminder_date?: string;
+          status?: string;
+          created_at?: string;
+        };
+      };
+      subscriptions: {
+        Row: {
+          id: string;
+          user_id: string | null;
+          cause_id: string | null;
+          paystack_subscription_code: string;
+          paystack_email_token: string | null;
+          amount: number;
+          interval: string;
+          status: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id?: string | null;
+          cause_id?: string | null;
+          paystack_subscription_code: string;
+          paystack_email_token?: string | null;
+          amount: number;
+          interval: string;
+          status?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string | null;
+          cause_id?: string | null;
+          paystack_subscription_code?: string;
+          paystack_email_token?: string | null;
+          amount?: number;
+          interval?: string;
+          status?: string;
+          created_at?: string;
+        };
+      };
+      campaign_follows: {
+        Row: {
+          id: string;
+          cause_id: string;
+          user_id: string | null;
+          email: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          cause_id: string;
+          user_id?: string | null;
+          email: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          cause_id?: string;
+          user_id?: string | null;
+          email?: string;
+          created_at?: string;
         };
       };
       petitions: {
@@ -140,6 +263,7 @@ export interface Database {
           status: string;
           receipt_url: string | null;
           created_at: string;
+          tip_amount: number;
         };
         Insert: {
           id?: string;
@@ -153,6 +277,7 @@ export interface Database {
           status?: string;
           receipt_url?: string | null;
           created_at?: string;
+          tip_amount?: number;
         };
         Update: {
           id?: string;
@@ -166,6 +291,7 @@ export interface Database {
           status?: string;
           receipt_url?: string | null;
           created_at?: string;
+          tip_amount?: number;
         };
       };
       signatures: {

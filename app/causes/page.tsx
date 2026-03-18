@@ -7,6 +7,14 @@ import CausesFilterRow from "@/components/causes-filter-row";
 import { H1 } from "@/components/typograpy";
 import { H5 } from "@/components/typograpy";
 
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Explore Causes",
+  description:
+    "Browse and discover fundraising causes that make a real difference in the world.",
+};
+
 export default async function CausesPage({
   searchParams,
 }: {
