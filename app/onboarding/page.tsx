@@ -285,13 +285,13 @@ export default function OnboardingPage() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-white flex flex-col items-center justify-center">
+    <div className="min-h-screen w-full bg-white flex flex-col items-center justify-start">
       <OnboardingNav
         currentStep={currentStep}
         onBack={handleBack}
         showUserNav={currentStep >= 4}
       />
-      <div className="w-full  px-8 py-12">
+      <div className="w-full flex-1 flex flex-col items-center justify-center px-8 py-12">
         {/* Progress indicator */}
         <div className="mb-8 flex justify-center space-x-2">
           {[...Array(5)].map((_, i) => (
