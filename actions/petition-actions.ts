@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createClient as createSupabaseAdmin } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
 import type {
   Petition,
@@ -433,10 +434,32 @@ export async function updatePetitionStatus(
   status: "approved" | "rejected",
   rejectionReason?: string,
 ): Promise<Petition> {
-  const supabase = await createClient();
+  const user = await getCurrentUser();
+  if (!user) throw new Error("Not authenticated");
+
+  const isAuthorized = await isAdminOrManager(user.id);
+  if (!isAuthorized) throw new Error("Unauthorized");
+
+  if (
+    !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    !process.env.SUPABASE_SERVICE_ROLE_KEY
+  ) {
+    throw new Error("Server configuration error: Missing Supabase keys");
+  }
+
+  const supabaseAdmin = createSupabaseAdmin(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    },
+  );
 
   if (status === "approved") {
-    const { data: edit, error: editError } = await supabase
+    const { data: edit, error: editError } = await supabaseAdmin
       .from("petition_edits")
       .select("*")
       .eq("original_petition_id", petitionId)
@@ -465,7 +488,7 @@ export async function updatePetitionStatus(
         status: "approved",
         updated_at: new Date().toISOString(),
       };
-      const { data: updated, error: updateError } = await supabase
+      const { data: updated, error: updateError } = await supabaseAdmin
         .from("petitions")
         .update(updateData)
         .eq("id", petitionId)
@@ -479,13 +502,13 @@ export async function updatePetitionStatus(
         throw updateError;
       }
 
-      const { data: editSections } = await supabase
+      const { data: editSections } = await supabaseAdmin
         .from("petition_edit_sections")
         .select("id, heading, description")
         .eq("petition_edit_id", edit.id);
 
       if (editSections && editSections.length > 0) {
-        const { error: delErr } = await supabase
+        const { error: delErr } = await supabaseAdmin
           .from("petition_sections")
           .delete()
           .eq("petition_id", petitionId);
@@ -494,7 +517,7 @@ export async function updatePetitionStatus(
           throw delErr;
         }
 
-        const { error: insErr } = await supabase
+        const { error: insErr } = await supabaseAdmin
           .from("petition_sections")
           .insert(
             editSections.map((s: any) => ({
@@ -509,15 +532,15 @@ export async function updatePetitionStatus(
         }
       }
 
-      await supabase
+      await supabaseAdmin
         .from("petition_edit_sections")
         .delete()
         .eq("petition_edit_id", edit.id);
-      await supabase.from("petition_edits").delete().eq("id", edit.id);
+      await supabaseAdmin.from("petition_edits").delete().eq("id", edit.id);
 
       updatedPetition = updated;
     } else {
-      const { data: updated, error: updateError } = await supabase
+      const { data: updated, error: updateError } = await supabaseAdmin
         .from("petitions")
         .update({
           status: "approved",
@@ -534,7 +557,7 @@ export async function updatePetitionStatus(
       updatedPetition = updated;
     }
 
-    const { data: petition } = await supabase
+    const { data: petition } = await supabaseAdmin
       .from("petitions")
       .select("user_id, title, id")
       .eq("id", petitionId)
@@ -551,7 +574,7 @@ export async function updatePetitionStatus(
   }
 
   if (status === "rejected") {
-    const { data: edit, error: editError } = await supabase
+    const { data: edit, error: editError } = await supabaseAdmin
       .from("petition_edits")
       .select("*")
       .eq("original_petition_id", petitionId)
@@ -561,13 +584,13 @@ export async function updatePetitionStatus(
       .single();
 
     if (edit && !editError) {
-      await supabase
+      await supabaseAdmin
         .from("petition_edits")
         .update({ status: "rejected", rejection_reason: rejectionReason })
         .eq("id", edit.id);
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from("petitions")
       .update({
         status: "rejected",
@@ -583,7 +606,7 @@ export async function updatePetitionStatus(
       throw error;
     }
 
-    const { data: petition } = await supabase
+    const { data: petition } = await supabaseAdmin
       .from("petitions")
       .select("user_id, title, id")
       .eq("id", petitionId)
