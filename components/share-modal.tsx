@@ -40,7 +40,7 @@ export function ShareModal({
   const qrRef = useRef<HTMLDivElement>(null);
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.refreeg.com";
-  const donateUrl =
+  const qrUrl =
     entityType === "cause" ? `${appUrl}/causes/${entityId}/donate` : url;
 
   // Generate short URL on mount
@@ -63,16 +63,31 @@ export function ShareModal({
       shareMessage: `Please donate to my cause on RefreeG 🌍✨: ${shortUrl}`,
       dialogTitle: "Share this cause",
       dialogDescription: "Inspire others to care. ❤️",
+      qrText: "Scan to donate directly to this cause",
+      qrDownloadName: `cause-qr-${entityId}.png`,
+      qrShareTitle: `Donate to ${title}`,
+      qrShareText: `Scan this QR to donate to ${title} on RefreeG`,
     },
     petition: {
       shareMessage: `Please sign my petition on RefreeG ✍️💡: ${shortUrl}`,
       dialogTitle: "Share this petition",
       dialogDescription: "Help amplify this petition. ❤️",
+      qrText: "Scan to sign this petition",
+      qrDownloadName: `petition-qr-${entityId}.png`,
+      qrShareTitle: `Sign ${title}`,
+      qrShareText: `Scan this QR to sign ${title} on RefreeG`,
     },
   } as const;
 
-  const { shareMessage, dialogTitle, dialogDescription } =
-    templates[entityType] || templates["cause"];
+  const {
+    shareMessage,
+    dialogTitle,
+    dialogDescription,
+    qrText,
+    qrDownloadName,
+    qrShareTitle,
+    qrShareText,
+  } = templates[entityType] || templates["cause"];
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(shortUrl);
@@ -143,7 +158,7 @@ export function ShareModal({
         if (!blob) return;
         const a = document.createElement("a");
         a.href = URL.createObjectURL(blob);
-        a.download = `donate-qr-${entityId}.png`;
+        a.download = qrDownloadName;
         a.click();
         URL.revokeObjectURL(a.href);
       }, "image/png");
@@ -153,8 +168,8 @@ export function ShareModal({
 
   const shareQR = async () => {
     if (!navigator.share) {
-      navigator.clipboard.writeText(donateUrl);
-      toast({ title: "Copied!", description: "Donation link copied to clipboard." });
+      navigator.clipboard.writeText(qrUrl);
+      toast({ title: "Copied!", description: "Link copied to clipboard." });
       return;
     }
 
@@ -180,17 +195,17 @@ export function ShareModal({
       canvas.toBlob(async (blob) => {
         if (!blob) return;
         try {
-          const file = new File([blob], `donate-qr-${entityId}.png`, { type: "image/png" });
+          const file = new File([blob], qrDownloadName, { type: "image/png" });
           await navigator.share({
-            title: `Donate to ${title}`,
-            text: `Scan this QR to donate to ${title} on RefreeG`,
-            url: donateUrl,
+            title: qrShareTitle,
+            text: qrShareText,
+            url: qrUrl,
             files: [file],
           });
         } catch {
           // fallback
-          navigator.clipboard.writeText(donateUrl);
-          toast({ title: "Copied!", description: "Donation link copied to clipboard." });
+          navigator.clipboard.writeText(qrUrl);
+          toast({ title: "Copied!", description: "Link copied to clipboard." });
         }
       }, "image/png");
     };
@@ -321,7 +336,7 @@ export function ShareModal({
         {activeTab === "qr" && (
           <div className="space-y-4">
             <p className="text-center text-xs text-slate-500">
-              Scan to donate directly to this cause
+              {qrText}
             </p>
 
             {/* QR code */}
@@ -330,7 +345,7 @@ export function ShareModal({
               className="flex items-center justify-center rounded-2xl border border-slate-200 bg-white p-5"
             >
               <QRCode
-                value={donateUrl}
+                value={qrUrl}
                 size={220}
                 bgColor="#ffffff"
                 fgColor="#0f172a"
@@ -339,7 +354,7 @@ export function ShareModal({
             </div>
 
             <p className="text-center text-[11px] text-slate-400 break-all">
-              {donateUrl}
+              {qrUrl}
             </p>
 
             {/* Actions */}
