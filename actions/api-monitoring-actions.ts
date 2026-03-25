@@ -138,7 +138,7 @@ export async function getApiMonitoringSummary(): Promise<ApiMonitoringSummary> {
     adminClient.from("api_keys").select("id, revoked_at, last_used_at", { count: "exact" }),
     adminClient.from("api_campaigns").select("id, status", { count: "exact" }),
     adminClient
-      .from("campaign_reports")
+      .from("api_campaign_reports")
       .select("id", { count: "exact", head: true })
       .eq("status", "pending"),
     adminClient.from("api_donations").select("amount, status"),
@@ -203,14 +203,14 @@ export async function listAdminApiCampaigns(): Promise<AdminApiCampaignRow[]> {
       ? adminClient.from("api_keys").select("id, name").in("id", apiKeyIds)
       : Promise.resolve({ data: [] as Array<{ id: string; name: string }> }),
     campaigns?.length
-      ? adminClient.from("campaign_reports").select("campaign_id, status").in("campaign_id", campaigns.map((campaign) => campaign.id))
-      : Promise.resolve({ data: [] as Array<{ campaign_id: string; status: string }> }),
+      ? adminClient.from("api_campaign_reports").select("api_campaign_id, status").in("api_campaign_id", campaigns.map((campaign) => campaign.id))
+      : Promise.resolve({ data: [] as Array<{ api_campaign_id: string; status: string }> }),
   ]);
 
   const keyMap = new Map((apiKeys ?? []).map((key) => [key.id, key.name]));
   const reportCountMap = new Map<string, number>();
   (reports ?? []).forEach((report) => {
-    reportCountMap.set(report.campaign_id, (reportCountMap.get(report.campaign_id) ?? 0) + 1);
+    reportCountMap.set(report.api_campaign_id, (reportCountMap.get(report.api_campaign_id) ?? 0) + 1);
   });
 
   const campaignsWithProfiles = mapProfiles(campaigns ?? [], profiles ?? []);
@@ -299,15 +299,15 @@ export async function listCampaignReports(): Promise<CampaignReportRow[]> {
   const adminClient = createAdminClient();
 
   const { data: reports, error } = await adminClient
-    .from("campaign_reports")
-    .select("id, campaign_id, developer_id, api_key_id, reason, message, status, created_at, resolved_at, resolution_notes")
+    .from("api_campaign_reports")
+    .select("id, api_campaign_id, developer_id, api_key_id, reason, message, status, created_at, resolved_at, resolution_notes")
     .order("created_at", { ascending: false });
 
   if (error) {
     throw new Error(`Failed to fetch campaign reports: ${error.message}`);
   }
 
-  const campaignIds = [...new Set((reports ?? []).map((report) => report.campaign_id))];
+  const campaignIds = [...new Set((reports ?? []).map((report) => report.api_campaign_id))];
   const developerIds = [...new Set((reports ?? []).map((report) => report.developer_id))];
   const apiKeyIds = [
     ...new Set((reports ?? []).map((report) => report.api_key_id).filter(Boolean)),
@@ -339,9 +339,9 @@ export async function listCampaignReports(): Promise<CampaignReportRow[]> {
 
   return (reports ?? []).map((report) => ({
     id: report.id,
-    campaignId: report.campaign_id,
-    campaignTitle: campaignMap.get(report.campaign_id)?.title ?? "Unknown campaign",
-    campaignStatus: campaignMap.get(report.campaign_id)?.status ?? "unknown",
+    campaignId: report.api_campaign_id,
+    campaignTitle: campaignMap.get(report.api_campaign_id)?.title ?? "Unknown campaign",
+    campaignStatus: campaignMap.get(report.api_campaign_id)?.status ?? "unknown",
     developerId: report.developer_id,
     developerName: profileMap.get(report.developer_id)?.name ?? "Unknown developer",
     developerEmail: profileMap.get(report.developer_id)?.email ?? "Unknown email",
@@ -442,7 +442,7 @@ export async function takeDownApiCampaign(formData: FormData) {
 
   if (reportId) {
     const { error: reportError } = await adminClient
-      .from("campaign_reports")
+      .from("api_campaign_reports")
       .update({
         status: "resolved",
         resolved_at: new Date().toISOString(),
