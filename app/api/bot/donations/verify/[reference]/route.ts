@@ -3,37 +3,47 @@ import { validateApiKey, rateLimit } from "@/utils/api-bot/api-auth";
 import { createClient } from "@/lib/supabase/server";
 import Paystack from "@/services/paystack";
 import { dispatchWebhook } from "@/utils/api-bot/webhook-utils";
+import { logApiRequest } from "@/utils/api-bot/request-logger";
 
 export async function GET(
   req: NextRequest,
   { params }: { params: { reference: string } }
 ) {
+  const startedAt = Date.now();
   try {
     const reference = params.reference;
 
     if (!reference) {
-      return NextResponse.json({ error: "Missing reference" }, { status: 400 });
+      const response = NextResponse.json({ error: "Missing reference" }, { status: 400 });
+      await logApiRequest({ request: req, statusCode: response.status, errorCode: "bad_request", startedAt });
+      return response;
     }
 
     // Rate limiting
     const isLimited = await rateLimit(req.headers.get("Authorization") || "anonymous");
     if (isLimited) {
-      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+      const response = NextResponse.json({ error: "Too many requests" }, { status: 429 });
+      await logApiRequest({ request: req, statusCode: response.status, errorCode: "rate_limited", startedAt });
+      return response;
     }
 
     // Auth
     const auth = await validateApiKey(req);
     if (!auth || !auth.userId) {
-      return auth.errorResponse || NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      const response = auth.errorResponse || NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      await logApiRequest({ request: req, statusCode: response.status, errorCode: "unauthorized", startedAt });
+      return response;
     }
 
     // Verify with Paystack
     const transaction = await Paystack.verifyTransactionFull(reference);
     if (!transaction || transaction.status !== "success") {
-      return NextResponse.json({ 
+      const response = NextResponse.json({ 
         error: "Transaction not successful", 
         status: transaction?.status || "unknown" 
       }, { status: 400 });
+      await logApiRequest({ request: req, statusCode: response.status, apiKeyId: auth.apiKeyId, userId: auth.userId, mode: auth.mode, errorCode: "payment_failed", startedAt });
+      return response;
     }
 
     const metadata = transaction.metadata;
@@ -55,10 +65,12 @@ export async function GET(
       .single();
 
     if (existingDonation) {
-      return NextResponse.json({ 
+      const response = NextResponse.json({ 
         message: "Donation already processed",
         donation_id: existingDonation.id 
       }, { status: 200 });
+      await logApiRequest({ request: req, statusCode: response.status, apiKeyId: auth.apiKeyId, userId: auth.userId, mode: auth.mode, startedAt });
+      return response;
     }
 
     // Fetch campaign and verify ownership
@@ -69,11 +81,15 @@ export async function GET(
       .single();
 
     if (campaignError || !campaign) {
-      return NextResponse.json({ error: "Campaign not found" }, { status: 404 });
+      const response = NextResponse.json({ error: "Campaign not found" }, { status: 404 });
+      await logApiRequest({ request: req, statusCode: response.status, apiKeyId: auth.apiKeyId, userId: auth.userId, mode: auth.mode, errorCode: "not_found", startedAt });
+      return response;
     }
 
     if (campaign.developer_id !== auth.userId) {
-      return NextResponse.json({ error: "Unauthorized access to campaign" }, { status: 403 });
+      const response = NextResponse.json({ error: "Unauthorized access to campaign" }, { status: 403 });
+      await logApiRequest({ request: req, statusCode: response.status, apiKeyId: auth.apiKeyId, userId: auth.userId, mode: auth.mode, errorCode: "forbidden", startedAt });
+      return response;
     }
 
     // Record donation and update campaign total
@@ -96,7 +112,9 @@ export async function GET(
 
     if (donationError) {
       console.error("Failed to record donation:", donationError);
-      return NextResponse.json({ error: "Failed to record donation" }, { status: 500 });
+      const response = NextResponse.json({ error: "Failed to record donation" }, { status: 500 });
+      await logApiRequest({ request: req, statusCode: response.status, apiKeyId: auth.apiKeyId, userId: auth.userId, mode: auth.mode, errorCode: "internal_error", startedAt });
+      return response;
     }
 
     // Update campaign raised_amount
@@ -120,7 +138,7 @@ export async function GET(
       metadata: metadata || {}
     }).catch(console.error);
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       data: {
         id: donation.id,
@@ -131,12 +149,16 @@ export async function GET(
         created_at: donation.created_at
       }
     });
+    await logApiRequest({ request: req, statusCode: response.status, apiKeyId: auth.apiKeyId, userId: auth.userId, mode: auth.mode, startedAt });
+    return response;
 
   } catch (error: any) {
     console.error("Verification error:", error);
-    return NextResponse.json(
+    const response = NextResponse.json(
       { error: error.message || "Internal server error" },
       { status: 500 }
     );
+    await logApiRequest({ request: req, statusCode: response.status, errorCode: "internal_error", startedAt });
+    return response;
   }
 }

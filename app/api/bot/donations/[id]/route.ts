@@ -1,28 +1,36 @@
 import { NextRequest, NextResponse } from "next/server";
 import { validateApiKey, rateLimit } from "@/utils/api-bot/api-auth";
 import { createClient } from "@/lib/supabase/server";
+import { logApiRequest } from "@/utils/api-bot/request-logger";
 
 export async function GET(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const startedAt = Date.now();
   try {
     const donationId = params.id;
 
     if (!donationId) {
-      return NextResponse.json({ error: "Missing donation ID" }, { status: 400 });
+      const response = NextResponse.json({ error: "Missing donation ID" }, { status: 400 });
+      await logApiRequest({ request: req, statusCode: response.status, errorCode: "bad_request", startedAt });
+      return response;
     }
 
     // Rate limiting
     const isLimited = await rateLimit(req.headers.get("Authorization") || "anonymous");
     if (isLimited) {
-      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+      const response = NextResponse.json({ error: "Too many requests" }, { status: 429 });
+      await logApiRequest({ request: req, statusCode: response.status, errorCode: "rate_limited", startedAt });
+      return response;
     }
 
     // Auth
     const auth = await validateApiKey(req);
     if (!auth || !auth.userId) {
-      return auth.errorResponse || NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      const response = auth.errorResponse || NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      await logApiRequest({ request: req, statusCode: response.status, errorCode: "unauthorized", startedAt });
+      return response;
     }
 
     const supabase = await createClient();
@@ -40,17 +48,21 @@ export async function GET(
       .single();
 
     if (error || !donation) {
-      return NextResponse.json({ error: "Donation not found" }, { status: 404 });
+      const response = NextResponse.json({ error: "Donation not found" }, { status: 404 });
+      await logApiRequest({ request: req, statusCode: response.status, apiKeyId: auth.apiKeyId, userId: auth.userId, mode: auth.mode, errorCode: "not_found", startedAt });
+      return response;
     }
 
     // Verify developer ownership
     // @ts-ignore - Supabase join structure
     if (donation.api_campaigns.developer_id !== auth.userId) {
-      return NextResponse.json({ error: "Unauthorized access to donation" }, { status: 403 });
+      const response = NextResponse.json({ error: "Unauthorized access to donation" }, { status: 403 });
+      await logApiRequest({ request: req, statusCode: response.status, apiKeyId: auth.apiKeyId, userId: auth.userId, mode: auth.mode, errorCode: "forbidden", startedAt });
+      return response;
     }
 
     // Return donation details
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       data: {
         id: donation.id,
@@ -66,12 +78,16 @@ export async function GET(
         campaign_id: donation.api_campaign_id
       }
     });
+    await logApiRequest({ request: req, statusCode: response.status, apiKeyId: auth.apiKeyId, userId: auth.userId, mode: auth.mode, startedAt });
+    return response;
 
   } catch (error: any) {
     console.error("Donation fetch error:", error);
-    return NextResponse.json(
+    const response = NextResponse.json(
       { error: error.message || "Internal server error" },
       { status: 500 }
     );
+    await logApiRequest({ request: req, statusCode: response.status, errorCode: "internal_error", startedAt });
+    return response;
   }
 }

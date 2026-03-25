@@ -6,6 +6,7 @@ import Paystack from "@/services/paystack";
 import { createClient } from "@supabase/supabase-js";
 import { Database } from "@/types/database-types";
 import { dispatchWebhook } from "@/utils/api-bot/webhook-utils";
+import { logApiRequest } from "@/utils/api-bot/request-logger";
 
 const supabaseAdmin = createClient<Database>(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -13,18 +14,25 @@ const supabaseAdmin = createClient<Database>(
 );
 
 export async function POST(request: NextRequest) {
+  const startedAt = Date.now();
   const limitRes = rateLimit(request);
-  if (limitRes?.errorResponse) return limitRes.errorResponse;
+  if (limitRes?.errorResponse) {
+    await logApiRequest({ request, statusCode: 429, errorCode: "rate_limited", startedAt });
+    return limitRes.errorResponse;
+  }
 
   const authRes = await validateApiKey(request);
-  if (authRes.errorResponse) return authRes.errorResponse;
+  if (authRes.errorResponse) {
+    await logApiRequest({ request, statusCode: 401, errorCode: "unauthorized", startedAt });
+    return authRes.errorResponse;
+  }
 
   try {
     const body = await request.json();
     const result = CreateCampaignSchema.safeParse(body);
     
     if (!result.success) {
-      return NextResponse.json({
+      const response = NextResponse.json({
         status: "error",
         error: { 
           code: "validation_error", 
@@ -32,6 +40,9 @@ export async function POST(request: NextRequest) {
           details: result.error.format() 
         }
       }, { status: 400 });
+
+      await logApiRequest({ request, statusCode: response.status, apiKeyId: authRes.apiKeyId, userId: authRes.userId, mode: authRes.mode, errorCode: "validation_error", startedAt });
+      return response;
     }
     
     const data = result.data;
@@ -48,13 +59,16 @@ export async function POST(request: NextRequest) {
       subAccountCode = subAccount.subaccount_code;
     } catch (err: any) {
       console.error("Failed to create Paystack sub-account:", err);
-      return NextResponse.json({
+      const response = NextResponse.json({
         status: "error",
         error: { 
           code: "payment_setup_failed", 
           message: "Failed to verify bank details with payment provider. Please ensure the account number and bank code are correct." 
         }
       }, { status: 400 });
+
+      await logApiRequest({ request, statusCode: response.status, apiKeyId: authRes.apiKeyId, userId: authRes.userId, mode: authRes.mode, errorCode: "payment_setup_failed", startedAt });
+      return response;
     }
 
     const { data: campaign, error } = await supabaseAdmin.from("api_campaigns").insert({
@@ -77,34 +91,50 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error("Failed to insert api_campaigns:", error);
-      return NextResponse.json({
+      const response = NextResponse.json({
         status: "error",
         error: { code: "internal_error", message: "Failed to create campaign" }
       }, { status: 500 });
+
+      await logApiRequest({ request, statusCode: response.status, apiKeyId: authRes.apiKeyId, userId: authRes.userId, mode: authRes.mode, errorCode: "internal_error", startedAt });
+      return response;
     }
 
     // Trigger webhook
     dispatchWebhook(authRes.userId!, "campaign.created", campaign).catch(console.error);
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       status: "success",
       data: campaign
     }, { status: 201 });
 
+    await logApiRequest({ request, statusCode: response.status, apiKeyId: authRes.apiKeyId, userId: authRes.userId, mode: authRes.mode, startedAt });
+    return response;
+
   } catch (err: any) {
-    return NextResponse.json({
+    const response = NextResponse.json({
       status: "error",
       error: { code: "bad_request", message: "Invalid JSON format" }
     }, { status: 400 });
+
+    await logApiRequest({ request, statusCode: response.status, errorCode: "bad_request", startedAt });
+    return response;
   }
 }
 
 export async function GET(request: NextRequest) {
+  const startedAt = Date.now();
   const limitRes = rateLimit(request);
-  if (limitRes?.errorResponse) return limitRes.errorResponse;
+  if (limitRes?.errorResponse) {
+    await logApiRequest({ request, statusCode: 429, errorCode: "rate_limited", startedAt });
+    return limitRes.errorResponse;
+  }
 
   const authRes = await validateApiKey(request);
-  if (authRes.errorResponse) return authRes.errorResponse;
+  if (authRes.errorResponse) {
+    await logApiRequest({ request, statusCode: 401, errorCode: "unauthorized", startedAt });
+    return authRes.errorResponse;
+  }
 
   const url = new URL(request.url);
   const limit = Math.min(parseInt(url.searchParams.get("limit") || "10"), 100);
@@ -120,13 +150,16 @@ export async function GET(request: NextRequest) {
 
   if (error) {
     console.error("Failed to fetch campaigns:", error);
-    return NextResponse.json({
+    const response = NextResponse.json({
       status: "error",
       error: { code: "internal_error", message: "Failed to fetch campaigns" }
     }, { status: 500 });
+
+    await logApiRequest({ request, statusCode: response.status, apiKeyId: authRes.apiKeyId, userId: authRes.userId, mode: authRes.mode, errorCode: "internal_error", startedAt });
+    return response;
   }
 
-  return NextResponse.json({
+  const response = NextResponse.json({
     status: "success",
     data: campaigns,
     meta: {
@@ -135,4 +168,7 @@ export async function GET(request: NextRequest) {
       offset
     }
   });
+
+  await logApiRequest({ request, statusCode: response.status, apiKeyId: authRes.apiKeyId, userId: authRes.userId, mode: authRes.mode, startedAt });
+  return response;
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { validateApiKey } from "@/utils/api-bot/api-auth";
 import { rateLimit } from "@/utils/api-bot/rate-limit";
+import { logApiRequest } from "@/utils/api-bot/request-logger";
 
 // Static categories based on TDD specification
 const CATEGORIES = [
@@ -15,14 +16,32 @@ const CATEGORIES = [
 ];
 
 export async function GET(request: NextRequest) {
+  const startedAt = Date.now();
   const limitRes = rateLimit(request);
-  if (limitRes?.errorResponse) return limitRes.errorResponse;
+  if (limitRes?.errorResponse) {
+    await logApiRequest({ request, statusCode: 429, errorCode: "rate_limited", startedAt });
+    return limitRes.errorResponse;
+  }
 
   const authRes = await validateApiKey(request);
-  if (authRes.errorResponse) return authRes.errorResponse;
+  if (authRes.errorResponse) {
+    await logApiRequest({ request, statusCode: 401, errorCode: "unauthorized", startedAt });
+    return authRes.errorResponse;
+  }
 
-  return NextResponse.json({
+  const response = NextResponse.json({
     status: "success",
     data: CATEGORIES
   });
+
+  await logApiRequest({
+    request,
+    statusCode: response.status,
+    apiKeyId: authRes.apiKeyId,
+    userId: authRes.userId,
+    mode: authRes.mode,
+    startedAt,
+  });
+
+  return response;
 }
