@@ -1,0 +1,64 @@
+{
+	"info": {
+		"_postman_id": "refreeg-api-v1",
+		"name": "RefreeG API v1",
+		"description": "Comprehensive collection for the RefreeG Crowdfunding-as-a-Service API.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Campaigns",
+			"item": [
+				{
+					"name": "Create Campaign",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{api_key}}", "type": "text" },
+							{ "key": "Content-Type", "value": "application/json", "type": "text" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Support for Community Library\",\n  \"description\": \"Raising funds to buy books and furniture...\",\n  \"category\": \"education\",\n  \"goal_amount\": 500000,\n  \"bank_account_number\": \"0123456789\",\n  \"bank_code\": \"058\",\n  \"bank_account_name\": \"John Doe\",\n  \"payout_mode\": \"immediate\"\n}"
+						},
+						"url": { "raw": "{{base_url}}/api/bot/campaigns", "host": ["{{base_url}}"], "path": ["api", "bot", "campaigns"] }
+					}
+				},
+				{
+					"name": "Get Campaign Details",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{api_key}}", "type": "text" }
+						],
+						"url": { "raw": "{{base_url}}/api/bot/campaigns/:id", "host": ["{{base_url}}"], "path": ["api", "bot", "campaigns", ":id"], "variable": [{ "key": "id", "value": "campaign-uuid" }] }
+					}
+				}
+			]
+		},
+		{
+			"name": "Donations",
+			"item": [
+				{
+					"name": "Initialize Donation",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{api_key}}", "type": "text" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"campaign_id\": \"{{campaign_id}}\",\n  \"amount\": 5000,\n  \"name\": \"Jane Smith\",\n  \"email\": \"jane@example.com\"\n}"
+						},
+						"url": { "raw": "{{base_url}}/api/bot/donations/initialize", "host": ["{{base_url}}"], "path": ["api", "bot", "donations", "initialize"] }
+					}
+				}
+			]
+		}
+	],
+	"variable": [
+		{ "key": "base_url", "value": "http://localhost:3000", "type": "string" },
+		{ "key": "api_key", "value": "rg_test_sk_...", "type": "string" },
+		{ "key": "campaign_id", "value": "", "type": "string" }
+	]
+}

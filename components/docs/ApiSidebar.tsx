@@ -1,0 +1,112 @@
+"use client";
+
+import React from "react";
+import { 
+  BookOpen, 
+  Terminal, 
+  Zap, 
+  Settings, 
+  ShieldCheck, 
+  AlertCircle,
+  Play,
+  Box
+} from "lucide-react";
+
+interface SidebarItem {
+  id: string;
+  label: string;
+  icon: React.ReactNode;
+}
+
+interface SidebarSection {
+  title: string;
+  items: SidebarItem[];
+}
+
+export default function ApiSidebar({
+  selected,
+  onSelect,
+}: {
+  selected: string;
+  onSelect: (id: string) => void;
+}) {
+  const sections: SidebarSection[] = [
+    {
+      title: "Getting Started",
+      items: [
+        { id: "Introduction", label: "Introduction", icon: <BookOpen className="w-4 h-4" /> },
+        { id: "Authentication", label: "Authentication", icon: <ShieldCheck className="w-4 h-4" /> },
+        { id: "Quickstart", label: "Quickstart", icon: <Zap className="w-4 h-4" /> },
+      ],
+    },
+    {
+      title: "Campaigns API",
+      items: [
+        { id: "Create Campaign", label: "Create Campaign", icon: <Terminal className="w-4 h-4" /> },
+        { id: "List Campaigns", label: "List Campaigns", icon: <Settings className="w-4 h-4" /> },
+        { id: "Update Campaign", label: "Update Campaign", icon: <Settings className="w-4 h-4" /> },
+        { id: "Validate Campaign", label: "Validate (AI)", icon: <Zap className="w-4 h-4" /> },
+        { id: "List Categories", label: "Categories", icon: <BookOpen className="w-4 h-4" /> },
+        { id: "Report Campaign", label: "Report Fraud", icon: <AlertCircle className="w-4 h-4" /> },
+      ],
+    },
+    {
+      title: "Donations API",
+      items: [
+        { id: "Initialize Donation", label: "Initialize", icon: <Terminal className="w-4 h-4" /> },
+        { id: "Verify Donation", label: "Verify Payment", icon: <ShieldCheck className="w-4 h-4" /> },
+      ],
+    },
+    {
+      title: "Webhooks",
+      items: [
+        { id: "Webhook Registration", label: "Registration", icon: <Settings className="w-4 h-4" /> },
+        { id: "Webhook Security", label: "Security & HMAC", icon: <ShieldCheck className="w-4 h-4" /> },
+      ],
+    },
+    {
+      title: "Testing & SDKs",
+      items: [
+        { id: "API Playground", label: "Interactive Playground", icon: <Play className="w-4 h-4" /> },
+        { id: "SDKs", label: "SDKs & Libraries", icon: <Box className="w-4 h-4" /> },
+        { id: "Errors", label: "Error Codes", icon: <AlertCircle className="w-4 h-4" /> },
+      ],
+    },
+  ];
+
+  return (
+    <aside className="hidden md:block w-72 h-[calc(100vh-2rem)] sticky top-4 overflow-y-auto pr-4 no-scrollbar">
+      <div className="space-y-8">
+        {sections.map((section) => (
+          <div key={section.title}>
+            <h5 className="mb-3 text-[12px] font-bold uppercase tracking-wider text-gray-400 px-3">
+              {section.title}
+            </h5>
+            <ul className="space-y-1">
+              {section.items.map((item) => {
+                const isActive = selected === item.id;
+                return (
+                  <li key={item.id}>
+                    <button
+                      onClick={() => onSelect(item.id)}
+                      className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                        isActive
+                          ? "bg-[#0A2A5C] text-white shadow-md shadow-blue-900/10"
+                          : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                      }`}
+                    >
+                      <span className={`${isActive ? "text-white" : "text-gray-400"}`}>
+                        {item.icon}
+                      </span>
+                      {item.label}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        ))}
+      </div>
+    </aside>
+  );
+}

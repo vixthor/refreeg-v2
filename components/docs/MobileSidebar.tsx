@@ -2,26 +2,53 @@
 
 import React from "react";
 import SidebarItem from "./SidebarItem";
-import { X, Home, FileText, Users, HeartHandshake, LifeBuoy } from "lucide-react";
+import { 
+  X, 
+  Home, 
+  FileText, 
+  Users, 
+  HeartHandshake, 
+  LifeBuoy,
+  Zap,
+  Key,
+  Terminal,
+  Activity,
+  ShieldAlert,
+  Play
+} from "lucide-react";
 
 export default function MobileSidebar({
   open,
   onClose,
   selected,
   onSelect,
+  activeTab = "Get Started",
 }: {
   open: boolean;
   onClose: () => void;
   selected: string;
   onSelect: (label: string) => void;
+  activeTab?: string;
 }) {
-  const items = [
+  const platformItems = [
     { label: "Overview", icon: Home },
     { label: "Introduction", icon: FileText },
     { label: "For Fundraisers", icon: Users },
     { label: "For Donors", icon: HeartHandshake },
     { label: "Support", icon: LifeBuoy },
   ];
+
+  const apiItems = [
+    { label: "Quickstart", icon: Zap },
+    { label: "Authentication", icon: Key },
+    { label: "Campaigns API", icon: Terminal },
+    { label: "Donations API", icon: HeartHandshake },
+    { label: "Webhooks API", icon: Activity },
+    { label: "Error Codes", icon: ShieldAlert },
+    { label: "API Playground", icon: Play },
+  ];
+
+  const items = activeTab === "Developer API" ? apiItems : platformItems;
 
   return (
     <div
