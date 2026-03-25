@@ -35,3 +35,8 @@ export const InitiateDonationSchema = z.object({
   tip_amount: z.number().nonnegative().optional().default(0),
   callback_url: z.string().url().optional()
 });
+
+export const ReportCampaignSchema = z.object({
+  reason: z.string().min(5).max(100),
+  message: z.string().max(2000).optional(),
+});

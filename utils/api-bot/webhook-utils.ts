@@ -8,7 +8,7 @@ const supabaseAdmin = createClient<Database>(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-export type WebhookEvent = "campaign.created" | "donation.success" | "campaign.completed" | "campaign.updated";
+export type WebhookEvent = "campaign.created" | "donation.success" | "campaign.completed" | "campaign.updated" | "campaign.reported" | "campaign.taken_down";
 
 /**
  * Dispatches a webhook notification to all active endpoints subscribed to the given event.

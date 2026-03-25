@@ -563,6 +563,34 @@ export interface Database {
           attempts?: number;
         };
       };
+      api_campaign_reports: {
+        Row: {
+          id: string;
+          api_campaign_id: string;
+          reason: string;
+          message: string | null;
+          status: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          api_campaign_id: string;
+          reason: string;
+          message?: string | null;
+          status?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          api_campaign_id?: string;
+          reason?: string;
+          message?: string | null;
+          status?: string;
+          updated_at?: string;
+        };
+      };
     };
   };
 }

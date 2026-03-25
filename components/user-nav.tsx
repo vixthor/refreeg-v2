@@ -192,6 +192,11 @@ export function UserNav() {
                     KYC Reviews
                   </Link>
                 </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/dashboard/admin/api-reports" className="cursor-pointer">
+                    API Reports
+                  </Link>
+                </DropdownMenuItem>
               </DropdownMenuGroup>
               <DropdownMenuSeparator />
             </>
