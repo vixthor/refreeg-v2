@@ -1,28 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
-import { validateApiKey, rateLimit } from "@/utils/api-bot/api-auth";
+import { validateApiKey } from "@/utils/api-bot/api-auth";
+import { rateLimit } from "@/utils/api-bot/rate-limit";
 import { createClient } from "@/lib/supabase/server";
+import { logApiRequest } from "@/utils/api-bot/request-logger";
+import { 
+  successResponse, 
+  errorResponse, 
+  ApiErrorCode 
+} from "@/utils/api-bot/response-utils";
 
 export async function GET(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const startedAt = Date.now();
   try {
     const donationId = params.id;
 
-    if (!donationId) {
-      return NextResponse.json({ error: "Missing donation ID" }, { status: 400 });
+    const limitRes = rateLimit(req);
+    if (limitRes?.errorResponse) {
+      await logApiRequest({ request: req, statusCode: 429, errorCode: ApiErrorCode.RATE_LIMIT_EXCEEDED, startedAt });
+      return limitRes.errorResponse;
     }
 
-    // Rate limiting
-    const isLimited = await rateLimit(req.headers.get("Authorization") || "anonymous");
-    if (isLimited) {
-      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
-    }
-
-    // Auth
     const auth = await validateApiKey(req);
-    if (!auth || !auth.userId) {
-      return auth.errorResponse || NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (auth.errorResponse) {
+      await logApiRequest({ request: req, statusCode: 401, errorCode: ApiErrorCode.UNAUTHORIZED, startedAt });
+      return auth.errorResponse;
     }
 
     const supabase = await createClient();
@@ -40,38 +44,40 @@ export async function GET(
       .single();
 
     if (error || !donation) {
-      return NextResponse.json({ error: "Donation not found" }, { status: 404 });
+      const response = errorResponse("Donation not found", ApiErrorCode.NOT_FOUND, 404);
+      await logApiRequest({ request: req, statusCode: response.status, apiKeyId: auth.apiKeyId, userId: auth.userId, mode: auth.mode, errorCode: ApiErrorCode.NOT_FOUND, startedAt });
+      return response;
     }
 
     // Verify developer ownership
     // @ts-ignore - Supabase join structure
     if (donation.api_campaigns.developer_id !== auth.userId) {
-      return NextResponse.json({ error: "Unauthorized access to donation" }, { status: 403 });
+      const response = errorResponse("Unauthorized access to donation", ApiErrorCode.FORBIDDEN, 403);
+      await logApiRequest({ request: req, statusCode: response.status, apiKeyId: auth.apiKeyId, userId: auth.userId, mode: auth.mode, errorCode: ApiErrorCode.FORBIDDEN, startedAt });
+      return response;
     }
 
     // Return donation details
-    return NextResponse.json({
-      success: true,
-      data: {
-        id: donation.id,
-        amount: donation.amount,
-        tip_amount: donation.tip_amount,
-        donor_name: donation.donor_name,
-        donor_email: donation.donor_email,
-        message: donation.message,
-        is_anonymous: donation.is_anonymous,
-        status: donation.status,
-        reference: donation.paystack_reference,
-        created_at: donation.created_at,
-        campaign_id: donation.api_campaign_id
-      }
+    const response = successResponse({
+      id: donation.id,
+      amount: donation.amount,
+      tip_amount: donation.tip_amount,
+      donor_name: donation.donor_name,
+      donor_email: donation.donor_email,
+      message: donation.message,
+      is_anonymous: donation.is_anonymous,
+      status: donation.status,
+      reference: donation.paystack_reference,
+      created_at: donation.created_at,
+      campaign_id: donation.api_campaign_id
     });
+    await logApiRequest({ request: req, statusCode: response.status, apiKeyId: auth.apiKeyId, userId: auth.userId, mode: auth.mode, startedAt });
+    return response;
 
   } catch (error: any) {
     console.error("Donation fetch error:", error);
-    return NextResponse.json(
-      { error: error.message || "Internal server error" },
-      { status: 500 }
-    );
+    const response = errorResponse(error.message || "Internal server error", ApiErrorCode.INTERNAL_ERROR, 500);
+    await logApiRequest({ request: req, statusCode: response.status, errorCode: ApiErrorCode.INTERNAL_ERROR, startedAt });
+    return response;
   }
 }

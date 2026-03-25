@@ -5,6 +5,11 @@ import { validateApiKey } from "@/utils/api-bot/api-auth";
 import { rateLimit } from "@/utils/api-bot/rate-limit";
 import { ReportCampaignSchema } from "@/utils/api-bot/schemas";
 import { dispatchWebhook } from "@/utils/api-bot/webhook-utils";
+import { 
+  successResponse, 
+  errorResponse, 
+  ApiErrorCode 
+} from "@/utils/api-bot/response-utils";
 
 const supabaseAdmin = createClient<Database>(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -27,14 +32,11 @@ export async function GET(
       .from("api_campaigns")
       .select("id")
       .eq("id", params.id)
-      .eq("user_id", developerId)
+      .eq("developer_id", developerId)
       .single();
 
     if (campaignError || !campaign) {
-      return NextResponse.json(
-        { status: "error", error: { code: "not_found", message: "Campaign not found or unauthorized to view its reports" } },
-        { status: 404 }
-      );
+      return errorResponse("Campaign not found or unauthorized to view its reports", ApiErrorCode.NOT_FOUND, 404);
     }
 
     const { data: reports, error: reportsError } = await supabaseAdmin
@@ -45,19 +47,13 @@ export async function GET(
 
     if (reportsError) {
       console.error("Error fetching reports:", reportsError);
-      return NextResponse.json(
-        { status: "error", error: { code: "internal_error", message: "Failed to fetch reports" } },
-        { status: 500 }
-      );
+      return errorResponse("Failed to fetch reports", ApiErrorCode.INTERNAL_ERROR, 500);
     }
 
-    return NextResponse.json({ status: "success", data: { reports } }, { status: 200 });
+    return successResponse({ reports });
   } catch (error) {
     console.error("Fetch reports error:", error);
-    return NextResponse.json(
-      { status: "error", error: { code: "internal_error", message: "Internal server error" } },
-      { status: 500 }
-    );
+    return errorResponse("Internal server error", ApiErrorCode.INTERNAL_ERROR, 500);
   }
 }
 
@@ -74,25 +70,19 @@ export async function POST(
 
     const { data: campaign, error: campaignError } = await supabaseAdmin
       .from("api_campaigns")
-      .select("id, user_id")
+      .select("id, developer_id")
       .eq("id", params.id)
       .single();
 
     if (campaignError || !campaign) {
-      return NextResponse.json(
-        { status: "error", error: { code: "not_found", message: "Campaign not found" } },
-        { status: 404 }
-      );
+      return errorResponse("Campaign not found", ApiErrorCode.NOT_FOUND, 404);
     }
 
     const body = await request.json();
     const result = ReportCampaignSchema.safeParse(body);
 
     if (!result.success) {
-      return NextResponse.json(
-        { status: "error", error: { code: "validation_failed", details: result.error.format() } },
-        { status: 400 }
-      );
+      return errorResponse("Validation failed", ApiErrorCode.VALIDATION_ERROR, 400, result.error.format());
     }
 
     const { reason, message } = result.data;
@@ -110,15 +100,12 @@ export async function POST(
 
     if (insertError || !report) {
       console.error("Error inserting report:", insertError);
-      return NextResponse.json(
-        { status: "error", error: { code: "internal_error", message: "Failed to submit report" } },
-        { status: 500 }
-      );
+      return errorResponse("Failed to submit report", ApiErrorCode.INTERNAL_ERROR, 500);
     }
 
     // Notify the developer whose campaign was reported via webhook
     await dispatchWebhook(
-      campaign.user_id,
+      campaign.developer_id,
       "campaign.reported",
       {
         campaign_id: campaign.id,
@@ -130,15 +117,9 @@ export async function POST(
       }
     );
 
-    return NextResponse.json(
-      { status: "success", data: { message: "Report submitted successfully", report } },
-      { status: 201 }
-    );
+    return successResponse({ message: "Report submitted successfully", report }, 201);
   } catch (error) {
     console.error("Report error:", error);
-    return NextResponse.json(
-      { status: "error", error: { code: "internal_error", message: "Internal server error" } },
-      { status: 500 }
-    );
+    return errorResponse("Internal server error", ApiErrorCode.INTERNAL_ERROR, 500);
   }
 }

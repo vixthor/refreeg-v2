@@ -1,7 +1,10 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
 const AdminAnalytics = dynamic(
   () => import("@/components/admin/AdminAnalytics"),
@@ -34,5 +37,23 @@ const AdminAnalytics = dynamic(
 );
 
 export default function AdminAnalyticsPage() {
-  return <AdminAnalytics />;
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>API Monitoring</CardTitle>
+          <CardDescription>
+            Review public API health, API-created campaigns, donation throughput, and flagged reports.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button asChild variant="outline">
+            <Link href="/dashboard/admin/api-monitoring">Open API monitoring</Link>
+          </Button>
+        </CardContent>
+      </Card>
+
+      <AdminAnalytics />
+    </div>
+  );
 }

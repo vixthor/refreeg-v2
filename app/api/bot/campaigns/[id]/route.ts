@@ -4,6 +4,12 @@ import { rateLimit } from "@/utils/api-bot/rate-limit";
 import { UpdateCampaignSchema } from "@/utils/api-bot/schemas";
 import { createClient } from "@supabase/supabase-js";
 import { Database } from "@/types/database-types";
+import { logApiRequest } from "@/utils/api-bot/request-logger";
+import { 
+  successResponse, 
+  errorResponse, 
+  ApiErrorCode 
+} from "@/utils/api-bot/response-utils";
 
 const supabaseAdmin = createClient<Database>(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -11,11 +17,18 @@ const supabaseAdmin = createClient<Database>(
 );
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+  const startedAt = Date.now();
   const limitRes = rateLimit(request);
-  if (limitRes?.errorResponse) return limitRes.errorResponse;
+  if (limitRes?.errorResponse) {
+    await logApiRequest({ request, statusCode: 429, errorCode: ApiErrorCode.RATE_LIMIT_EXCEEDED, startedAt });
+    return limitRes.errorResponse;
+  }
 
   const authRes = await validateApiKey(request);
-  if (authRes.errorResponse) return authRes.errorResponse;
+  if (authRes.errorResponse) {
+    await logApiRequest({ request, statusCode: 401, errorCode: ApiErrorCode.UNAUTHORIZED, startedAt });
+    return authRes.errorResponse;
+  }
 
   const { data: campaign, error } = await supabaseAdmin
     .from("api_campaigns")
@@ -26,34 +39,41 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     .single();
 
   if (error || !campaign) {
-    return NextResponse.json({
-      status: "error",
-      error: { code: "not_found", message: "Campaign not found or access denied" }
-    }, { status: 404 });
+    const response = errorResponse("Campaign not found or access denied", ApiErrorCode.NOT_FOUND, 404);
+
+    await logApiRequest({ request, statusCode: response.status, apiKeyId: authRes.apiKeyId, userId: authRes.userId, mode: authRes.mode, errorCode: ApiErrorCode.NOT_FOUND, startedAt });
+    return response;
   }
 
-  return NextResponse.json({
-    status: "success",
-    data: campaign
-  });
+  const response = successResponse(campaign);
+
+  await logApiRequest({ request, statusCode: response.status, apiKeyId: authRes.apiKeyId, userId: authRes.userId, mode: authRes.mode, startedAt });
+  return response;
 }
 
 export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+  const startedAt = Date.now();
   const limitRes = rateLimit(request);
-  if (limitRes?.errorResponse) return limitRes.errorResponse;
+  if (limitRes?.errorResponse) {
+    await logApiRequest({ request, statusCode: 429, errorCode: ApiErrorCode.RATE_LIMIT_EXCEEDED, startedAt });
+    return limitRes.errorResponse;
+  }
 
   const authRes = await validateApiKey(request);
-  if (authRes.errorResponse) return authRes.errorResponse;
+  if (authRes.errorResponse) {
+    await logApiRequest({ request, statusCode: 401, errorCode: ApiErrorCode.UNAUTHORIZED, startedAt });
+    return authRes.errorResponse;
+  }
 
   try {
     const body = await request.json();
     const result = UpdateCampaignSchema.safeParse(body);
     
     if (!result.success) {
-      return NextResponse.json({
-        status: "error",
-        error: { code: "validation_error", message: "Invalid updates", details: result.error.format() }
-      }, { status: 400 });
+      const response = errorResponse("Invalid updates", ApiErrorCode.VALIDATION_ERROR, 400, result.error.format());
+
+      await logApiRequest({ request, statusCode: response.status, apiKeyId: authRes.apiKeyId, userId: authRes.userId, mode: authRes.mode, errorCode: ApiErrorCode.VALIDATION_ERROR, startedAt });
+      return response;
     }
 
     // Update in DB
@@ -66,31 +86,38 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       .single();
 
     if (error || !campaign) {
-      return NextResponse.json({
-        status: "error",
-        error: { code: "not_found", message: "Campaign not found or access denied" }
-      }, { status: 404 });
+      const response = errorResponse("Campaign not found or access denied", ApiErrorCode.NOT_FOUND, 404);
+
+      await logApiRequest({ request, statusCode: response.status, apiKeyId: authRes.apiKeyId, userId: authRes.userId, mode: authRes.mode, errorCode: ApiErrorCode.NOT_FOUND, startedAt });
+      return response;
     }
 
-    return NextResponse.json({
-      status: "success",
-      data: campaign
-    });
+    const response = successResponse(campaign);
+
+    await logApiRequest({ request, statusCode: response.status, apiKeyId: authRes.apiKeyId, userId: authRes.userId, mode: authRes.mode, startedAt });
+    return response;
 
   } catch (err) {
-    return NextResponse.json({
-      status: "error",
-      error: { code: "bad_request", message: "Invalid JSON format" }
-    }, { status: 400 });
+    const response = errorResponse("Invalid JSON format", ApiErrorCode.BAD_REQUEST, 400);
+
+    await logApiRequest({ request, statusCode: response.status, apiKeyId: authRes.apiKeyId, userId: authRes.userId, mode: authRes.mode, errorCode: ApiErrorCode.BAD_REQUEST, startedAt });
+    return response;
   }
 }
 
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+  const startedAt = Date.now();
   const limitRes = rateLimit(request);
-  if (limitRes?.errorResponse) return limitRes.errorResponse;
+  if (limitRes?.errorResponse) {
+    await logApiRequest({ request, statusCode: 429, errorCode: ApiErrorCode.RATE_LIMIT_EXCEEDED, startedAt });
+    return limitRes.errorResponse;
+  }
 
   const authRes = await validateApiKey(request);
-  if (authRes.errorResponse) return authRes.errorResponse;
+  if (authRes.errorResponse) {
+    await logApiRequest({ request, statusCode: 401, errorCode: ApiErrorCode.UNAUTHORIZED, startedAt });
+    return authRes.errorResponse;
+  }
 
   // We do not physically delete campaigns, just set status = 'cancelled'
   const { data: campaign, error } = await supabaseAdmin.from("api_campaigns")
@@ -102,14 +129,14 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     .single();
 
   if (error || !campaign) {
-    return NextResponse.json({
-      status: "error",
-      error: { code: "not_found", message: "Campaign not found or access denied" }
-    }, { status: 404 });
+    const response = errorResponse("Campaign not found or access denied", ApiErrorCode.NOT_FOUND, 404);
+
+    await logApiRequest({ request, statusCode: response.status, apiKeyId: authRes.apiKeyId, userId: authRes.userId, mode: authRes.mode, errorCode: ApiErrorCode.NOT_FOUND, startedAt });
+    return response;
   }
 
-  return NextResponse.json({
-    status: "success",
-    data: { id: campaign.id, status: campaign.status }
-  });
+  const response = successResponse({ id: campaign.id, status: campaign.status });
+
+  await logApiRequest({ request, statusCode: response.status, apiKeyId: authRes.apiKeyId, userId: authRes.userId, mode: authRes.mode, startedAt });
+  return response;
 }
