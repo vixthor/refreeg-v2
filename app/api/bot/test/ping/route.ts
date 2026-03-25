@@ -1,18 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
 import { validateApiKey } from "@/utils/api-bot/api-auth";
 import { rateLimit } from "@/utils/api-bot/rate-limit";
+import { logApiRequest } from "@/utils/api-bot/request-logger";
 
 export async function GET(request: NextRequest) {
+  const startedAt = Date.now();
   // 1. Rate limiting check (100 req / minute by default)
   const rateLimitResult = rateLimit(request);
-  if (rateLimitResult?.errorResponse) return rateLimitResult.errorResponse;
+  if (rateLimitResult?.errorResponse) {
+    await logApiRequest({ request, statusCode: 429, errorCode: "rate_limited", startedAt });
+    return rateLimitResult.errorResponse;
+  }
 
   // 2. Auth check
   const authResult = await validateApiKey(request);
-  if (authResult.errorResponse) return authResult.errorResponse;
+  if (authResult.errorResponse) {
+    await logApiRequest({ request, statusCode: 401, errorCode: "unauthorized", startedAt });
+    return authResult.errorResponse;
+  }
 
   // 3. Success
-  return NextResponse.json({
+  const response = NextResponse.json({
     status: "success",
     data: {
       message: "pong",
@@ -21,4 +29,15 @@ export async function GET(request: NextRequest) {
       timestamp: new Date().toISOString(),
     },
   });
+
+  await logApiRequest({
+    request,
+    statusCode: response.status,
+    apiKeyId: authResult.apiKeyId,
+    userId: authResult.userId,
+    mode: authResult.mode,
+    startedAt,
+  });
+
+  return response;
 }

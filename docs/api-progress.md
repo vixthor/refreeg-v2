@@ -48,6 +48,17 @@ We are specifically tackling the following backend and core API phases from the 
 - **Real-time Events:** Integrated event triggers for `campaign.created` and `donation.success` across the API.
 - **Delivery Logging:** Automated logging of all webhook attempts, including status codes and response bodies for developer debugging.
 
+### [March 25, 2026] - Phase 8: Admin Dashboard Integration
+- **API Monitoring Hub:** Added `/dashboard/admin/api-monitoring` with overview cards for key usage, campaigns, donations, reports, and API health.
+- **Campaign Oversight:** Added API campaign and API donation admin views for monitoring throughput and fee revenue.
+- **Trust & Safety:** Added campaign reports review and takedown flow for flagged API campaigns.
+- **Usage Analytics:** Added request logging infrastructure plus admin usage views for request volume, endpoint mix, active keys, and recent failures.
+
+### [March 25, 2026] - Phase 9: SDK & Developer Experience
+- **JavaScript SDK:** Scaffolded `sdks/javascript` as `refreeg-js` with campaign, donation, and webhook helpers.
+- **Python SDK:** Scaffolded `sdks/python` as `refreeg-python` with matching campaign and donation primitives.
+- **Docs Site:** Added SDK docs pages under `/docs/sdks`, `/docs/sdks/javascript`, and `/docs/sdks/python`.
+
 ---
 
 > **Note to other developers:** If you are working on the SDKs (Phase 9), Admin Dashboard UI (Phase 8), Documentation Site (Phase 7), or Launch Prep (Phase 12), please refer to the main `AI-BOT-TDD.md` document for your specific checklist and architectural guidelines.
