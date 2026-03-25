@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { Database } from "@/types/database-types";
-import { validateApiKey } from "@/utils/api-bot/api-auth";
-import { rateLimit } from "@/utils/api-bot/rate-limit";
+import { validateApiKey, rateLimit, handlePreflight } from "@/utils/api-bot/api-auth";
 import { ReportCampaignSchema } from "@/utils/api-bot/schemas";
 import { dispatchWebhook } from "@/utils/api-bot/webhook-utils";
 import { 
@@ -124,4 +123,8 @@ export async function POST(
     console.error("Report error:", error);
     return errorResponse("Internal server error", ApiErrorCode.INTERNAL_ERROR, 500);
   }
+}
+
+export async function OPTIONS() {
+  return handlePreflight();
 }

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { validateApiKey } from "@/utils/api-bot/api-auth";
-import { rateLimit } from "@/utils/api-bot/rate-limit";
+import { validateApiKey, rateLimit, handlePreflight } from "@/utils/api-bot/api-auth";
 import { createClient } from "@/lib/supabase/server";
 import Paystack from "@/services/paystack";
 import { dispatchWebhook } from "@/utils/api-bot/webhook-utils";
@@ -153,4 +152,8 @@ export async function GET(
     await logApiRequest({ request: req, statusCode: response.status, errorCode: ApiErrorCode.INTERNAL_ERROR, startedAt });
     return response;
   }
+}
+
+export async function OPTIONS() {
+  return handlePreflight();
 }
