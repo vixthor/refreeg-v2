@@ -119,12 +119,15 @@ export default function Step3({
           .from("profiles")
           .select("username")
           .eq("username", formData.username)
+          .neq("id", user.id)
           .single();
 
         if (error && error.code === "PGRST116") {
           setIsUsernameAvailable(true); // Username is available
+          setErrors((prev) => ({ ...prev, username: "" }));
         } else if (data) {
           setIsUsernameAvailable(false); // Username is taken
+          setErrors((prev) => ({ ...prev, username: "Username is already taken" }));
         }
       } catch (error) {
         console.error("Error checking username:", error);
@@ -215,6 +218,8 @@ export default function Step3({
         "Username can only contain letters, numbers, and underscores";
     } else if (isUsernameAvailable === false) {
       newErrors.username = "Username is already taken";
+    } else if (isCheckingUsername) {
+      newErrors.username = "Checking username availability...";
     }
 
     if (!formData.location.trim()) {
@@ -422,6 +427,9 @@ export default function Step3({
                     </TooltipProvider>
                   )}
                 </div>
+                {errors.username && (
+                  <p className="text-sm text-red-500 mt-1">{errors.username}</p>
+                )}
               </div>
 
               {/* Location */}
