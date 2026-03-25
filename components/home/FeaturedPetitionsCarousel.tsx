@@ -24,7 +24,11 @@ import { DonateButton } from "@/components/donate-button";
 import { H4, P } from "../typograpy";
 import AnimatedCard from "./components/AnimatedCard";
 
-export default function FeaturedPetitionsCarousel({ petitions }) {
+export default function FeaturedPetitionsCarousel({
+  petitions,
+}: {
+  petitions: any[];
+}) {
   const [api, setApi] = useState<any>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 

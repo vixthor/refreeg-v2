@@ -1,6 +1,41 @@
 export interface Database {
   public: {
     Tables: {
+      api_keys: {
+        Row: {
+          id: string;
+          user_id: string;
+          name: string;
+          key_prefix: string;
+          key_hash: string;
+          mode: "live" | "test";
+          created_at: string;
+          last_used_at: string | null;
+          revoked_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          name: string;
+          key_prefix: string;
+          key_hash: string;
+          mode?: "live" | "test";
+          created_at?: string;
+          last_used_at?: string | null;
+          revoked_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          name?: string;
+          key_prefix?: string;
+          key_hash?: string;
+          mode?: "live" | "test";
+          created_at?: string;
+          last_used_at?: string | null;
+          revoked_at?: string | null;
+        };
+      };
       profiles: {
         Row: {
           id: string;
