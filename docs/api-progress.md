@@ -9,7 +9,8 @@ We are specifically tackling the following backend and core API phases from the 
 - [x] **Phase 1: Foundation & API Key System** - Completed
 - [x] **Phase 2: Project (Campaign) API** - Completed
 - [x] **Phase 3: Donation & Payment API** - Completed
-- [ ] **Phase 4: Webhook System** - Next
+- [x] **Phase 4: Webhook System** - Completed
+- [ ] **Phase 5: Campaign Reporting System** - Next
 - [ ] **Phase 5: Campaign Reporting System**
 - [ ] **Phase 6: Standardized API Response Format**
 - [ ] **Phase 11: Security Hardening**
@@ -34,6 +35,13 @@ We are specifically tackling the following backend and core API phases from the 
 - **Payment Verification:** Developed `GET /api/bot/donations/verify/[reference]` which handles secure transaction checks, campaign balance updates, and isolated donation logging.
 - **Donation Tracking:** Created the `api_donations` table and corresponding GET endpoint for fetching historical data.
 - **Metadata Support:** Enabled anonymous donations and custom metadata pass-through for developers.
+
+### [March 25, 2026] - Phase 4: Webhook System
+- **Database Infrastructure:** Created `api_webhooks` and `api_webhook_logs` tables with full RLS protection.
+- **Management APIs:** Implemented RESTful endpoints for registering, listing, updating, and deleting webhook subscriptions.
+- **Secure Dispatching:** Built a robust `dispatchWebhook` utility using HMAC-SHA256 signatures (`X-RefreeG-Signature`) for payload integrity.
+- **Real-time Events:** Integrated event triggers for `campaign.created` and `donation.success` across the API.
+- **Delivery Logging:** Automated logging of all webhook attempts, including status codes and response bodies for developer debugging.
 
 ---
 

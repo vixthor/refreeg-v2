@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { validateApiKey, rateLimit } from "@/utils/api-bot/api-auth";
 import { createClient } from "@/lib/supabase/server";
 import Paystack from "@/services/paystack";
+import { dispatchWebhook } from "@/utils/api-bot/webhook-utils";
 
 export async function GET(
   req: NextRequest,
@@ -104,6 +105,20 @@ export async function GET(
       .from("api_campaigns")
       .update({ raised_amount: newRaisedAmount })
       .eq("id", campaignId);
+
+    // Trigger webhook
+    dispatchWebhook(campaign.developer_id, "donation.success", {
+      id: donation.id,
+      campaign_id: campaignId,
+      amount: amount,
+      tip_amount: tipAmount,
+      total_amount: amount + tipAmount,
+      donor_name: donorName,
+      donor_email: donorEmail,
+      status: "success",
+      reference: reference,
+      metadata: metadata || {}
+    }).catch(console.error);
 
     return NextResponse.json({
       success: true,

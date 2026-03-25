@@ -5,6 +5,7 @@ import { CreateCampaignSchema } from "@/utils/api-bot/schemas";
 import Paystack from "@/services/paystack";
 import { createClient } from "@supabase/supabase-js";
 import { Database } from "@/types/database-types";
+import { dispatchWebhook } from "@/utils/api-bot/webhook-utils";
 
 const supabaseAdmin = createClient<Database>(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -81,6 +82,9 @@ export async function POST(request: NextRequest) {
         error: { code: "internal_error", message: "Failed to create campaign" }
       }, { status: 500 });
     }
+
+    // Trigger webhook
+    dispatchWebhook(authRes.userId!, "campaign.created", campaign).catch(console.error);
 
     return NextResponse.json({
       status: "success",
