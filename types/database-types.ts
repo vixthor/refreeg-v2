@@ -36,6 +36,68 @@ export interface Database {
           revoked_at?: string | null;
         };
       };
+      api_campaigns: {
+        Row: {
+          id: string;
+          developer_id: string;
+          api_key_id: string | null;
+          title: string;
+          description: string;
+          goal_amount: number;
+          raised_amount: number;
+          currency: string;
+          status: string;
+          payout_mode: string;
+          deadline: string | null;
+          bank_account_number: string;
+          bank_code: string;
+          bank_account_name: string;
+          sub_account_code: string | null;
+          created_at: string;
+          updated_at: string;
+          mode: string;
+        };
+        Insert: {
+          id?: string;
+          developer_id: string;
+          api_key_id?: string | null;
+          title: string;
+          description: string;
+          goal_amount: number;
+          raised_amount?: number;
+          currency?: string;
+          status?: string;
+          payout_mode: string;
+          deadline?: string | null;
+          bank_account_number: string;
+          bank_code: string;
+          bank_account_name: string;
+          sub_account_code?: string | null;
+          created_at?: string;
+          updated_at?: string;
+          mode?: string;
+        };
+        Update: {
+          id?: string;
+          developer_id?: string;
+          api_key_id?: string | null;
+          title?: string;
+          description?: string;
+          goal_amount?: number;
+          raised_amount?: number;
+          currency?: string;
+          status?: string;
+          payout_mode?: string;
+          deadline?: string | null;
+          bank_account_number?: string;
+          bank_code?: string;
+          bank_account_name?: string;
+          sub_account_code?: string | null;
+          created_at?: string;
+          updated_at?: string;
+          mode?: string;
+        };
+      };
       profiles: {
         Row: {
           id: string;

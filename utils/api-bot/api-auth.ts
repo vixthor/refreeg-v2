@@ -41,7 +41,7 @@ export async function validateApiKey(request: NextRequest) {
 
   const { data: apiKey, error } = await supabaseAdmin
     .from("api_keys")
-    .select("user_id, mode")
+    .select("id, user_id, mode")
     .eq("key_hash", keyHash)
     .is("revoked_at", null)
     .single();
@@ -61,6 +61,7 @@ export async function validateApiKey(request: NextRequest) {
     });
 
   return {
+    apiKeyId: apiKey.id,
     userId: apiKey.user_id,
     mode: apiKey.mode as "live" | "test",
   };
