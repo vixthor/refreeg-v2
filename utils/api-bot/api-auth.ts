@@ -15,7 +15,7 @@ export const UnauthorizedResponse = () =>
 
 /**
  * Validates an API key from the Authorization header.
- * Use this at the top of your `app/api/v1/*` route handlers.
+ * Use this at the top of your `app/api/bot/*` route handlers.
  *
  * @returns { user_id, mode } if valid, otherwise returns a NextResponse that should be yielded.
  */
