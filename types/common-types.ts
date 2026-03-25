@@ -69,6 +69,7 @@ export interface TransactionData extends Pick<
   message: string;
   isAnonymous: boolean;
   plan?: string;
+  callbackUrl?: string;
   subaccounts: {
     subaccount: string;
     share: number;

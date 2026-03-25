@@ -460,6 +460,47 @@ export interface Database {
           parent_id?: string | null;
         };
       };
+      api_donations: {
+        Row: {
+          id: string;
+          api_campaign_id: string;
+          amount: number;
+          tip_amount: number;
+          donor_name: string;
+          donor_email: string;
+          message: string | null;
+          is_anonymous: boolean;
+          status: string;
+          paystack_reference: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          api_campaign_id: string;
+          amount: number;
+          tip_amount?: number;
+          donor_name: string;
+          donor_email: string;
+          message?: string | null;
+          is_anonymous?: boolean;
+          status?: string;
+          paystack_reference: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          api_campaign_id?: string;
+          amount?: number;
+          tip_amount?: number;
+          donor_name?: string;
+          donor_email?: string;
+          message?: string | null;
+          is_anonymous?: boolean;
+          status?: string;
+          paystack_reference?: string;
+          created_at?: string;
+        };
+      };
     };
   };
 }

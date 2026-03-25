@@ -66,3 +66,26 @@ export async function validateApiKey(request: NextRequest) {
     mode: apiKey.mode as "live" | "test",
   };
 }
+
+/**
+ * Simple in-memory rate limiter for API keys.
+ * For production, this should use Redis or a similar store.
+ */
+const rateLimitMap = new Map<string, { count: number; lastReset: number }>();
+const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
+const MAX_REQUESTS_PER_WINDOW = 60; // 60 requests per minute
+
+export async function rateLimit(key: string): Promise<boolean> {
+  const now = Date.now();
+  const userData = rateLimitMap.get(key) || { count: 0, lastReset: now };
+
+  if (now - userData.lastReset > RATE_LIMIT_WINDOW_MS) {
+    userData.count = 1;
+    userData.lastReset = now;
+  } else {
+    userData.count++;
+  }
+
+  rateLimitMap.set(key, userData);
+  return userData.count > MAX_REQUESTS_PER_WINDOW;
+}
