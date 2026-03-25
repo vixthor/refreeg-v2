@@ -501,6 +501,68 @@ export interface Database {
           created_at?: string;
         };
       };
+      api_webhooks: {
+        Row: {
+          id: string;
+          user_id: string;
+          url: string;
+          secret: string;
+          events: string[];
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          url: string;
+          secret: string;
+          events?: string[];
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          url?: string;
+          secret?: string;
+          events?: string[];
+          is_active?: boolean;
+          updated_at?: string;
+        };
+      };
+      api_webhook_logs: {
+        Row: {
+          id: string;
+          webhook_id: string;
+          event: string;
+          payload: any;
+          status_code: number | null;
+          response_body: string | null;
+          attempts: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          webhook_id: string;
+          event: string;
+          payload: any;
+          status_code?: number | null;
+          response_body?: string | null;
+          attempts?: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          webhook_id?: string;
+          event?: string;
+          payload?: any;
+          status_code?: number | null;
+          response_body?: string | null;
+          attempts?: number;
+        };
+      };
     };
   };
 }
