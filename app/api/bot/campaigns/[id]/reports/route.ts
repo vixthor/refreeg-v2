@@ -91,6 +91,8 @@ export async function POST(
       .from("api_campaign_reports")
       .insert({
         api_campaign_id: campaign.id,
+        developer_id: campaign.developer_id,
+        api_key_id: authRes.apiKeyId,
         reason,
         message,
         status: "pending",

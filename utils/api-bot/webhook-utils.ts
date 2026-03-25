@@ -66,7 +66,7 @@ export async function dispatchWebhook(
       // Log the delivery attempt
       await supabaseAdmin.from("api_webhook_logs").insert({
         webhook_id: webhook.id,
-        event,
+        event_type: event,
         payload,
         status_code: response.status,
         response_body: responseText.slice(0, 1000), // Truncate long responses
@@ -79,7 +79,7 @@ export async function dispatchWebhook(
       // Log the failed attempt
       await supabaseAdmin.from("api_webhook_logs").insert({
         webhook_id: webhook.id,
-        event,
+        event_type: event,
         payload,
         status_code: null,
         response_body: dispatchError.message || "Failed to connect",
