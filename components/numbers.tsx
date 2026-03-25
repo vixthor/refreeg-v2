@@ -10,19 +10,19 @@ export default function Numbers() {
       img: "/profile.png",
       alt: "profile",
       label: "Registered Donors",
-      value: "1,000+",
+      value: "2,000+",
     },
     {
       img: "/cash.png",
       alt: "cash",
       label: "Donated",
-      value: "$2,000+",
+      value: "$5,000+",
     },
     {
       img: "/forms.png",
       alt: "forms",
       label: "Petition Signatures",
-      value: "1,000+",
+      value: "20,000+",
     },
   ];
 
