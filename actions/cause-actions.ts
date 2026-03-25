@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createClient as createSupabaseAdmin } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
 import type {
   Cause,
@@ -503,10 +504,32 @@ export async function updateCauseStatus(
   status: "approved" | "rejected",
   rejectionReason?: string,
 ): Promise<Cause> {
-  const supabase = await createClient();
+  const user = await getCurrentUser();
+  if (!user) throw new Error("Not authenticated");
+
+  const isAuthorized = await isAdminOrManager(user.id);
+  if (!isAuthorized) throw new Error("Unauthorized");
+
+  if (
+    !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    !process.env.SUPABASE_SERVICE_ROLE_KEY
+  ) {
+    throw new Error("Server configuration error: Missing Supabase keys");
+  }
+
+  const supabaseAdmin = createSupabaseAdmin(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    },
+  );
 
   if (status === "approved") {
-    const { data: edit, error: editError } = await supabase
+    const { data: edit, error: editError } = await supabaseAdmin
       .from("cause_edits")
       .select("*")
       .eq("original_cause_id", causeId)
@@ -533,7 +556,7 @@ export async function updateCauseStatus(
         updated_at: new Date().toISOString(),
       };
 
-      const { data: updated, error: updateError } = await supabase
+      const { data: updated, error: updateError } = await supabaseAdmin
         .from("causes")
         .update(updateData)
         .eq("id", causeId)
@@ -545,12 +568,12 @@ export async function updateCauseStatus(
         throw updateError;
       }
 
-      await supabase.from("cause_edits").delete().eq("id", edit.id);
+      await supabaseAdmin.from("cause_edits").delete().eq("id", edit.id);
 
       revalidatePath("/dashboard/admin/causes");
       return updated as Cause;
     } else {
-      const { data: updated, error: updateError } = await supabase
+      const { data: updated, error: updateError } = await supabaseAdmin
         .from("causes")
         .update({
           status: "approved",
@@ -571,7 +594,7 @@ export async function updateCauseStatus(
   }
 
   if (status === "rejected") {
-    const { data: edit, error: editError } = await supabase
+    const { data: edit, error: editError } = await supabaseAdmin
       .from("cause_edits")
       .select("*")
       .eq("original_cause_id", causeId)
@@ -581,13 +604,13 @@ export async function updateCauseStatus(
       .single();
 
     if (edit && !editError) {
-      await supabase
+      await supabaseAdmin
         .from("cause_edits")
         .update({ status: "rejected", rejection_reason: rejectionReason })
         .eq("id", edit.id);
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from("causes")
       .update({
         status: "rejected",
