@@ -17,6 +17,7 @@ import {
   Wallet,
   Share2,
   Flag,
+  Activity,
 } from "lucide-react";
 import { useAdmin } from "@/hooks/use-admin";
 import { useAuth } from "@/hooks/use-auth";
@@ -80,6 +81,11 @@ const adminNavItems = [
     title: "Analytics",
     href: "/dashboard/admin/analytics",
     icon: BarChart3,
+  },
+  {
+    title: "API Monitoring",
+    href: "/dashboard/admin/api-monitoring",
+    icon: Activity,
   },
   {
     title: "Logs",

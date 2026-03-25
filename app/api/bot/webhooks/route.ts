@@ -4,18 +4,31 @@ import { rateLimit } from "@/utils/api-bot/rate-limit";
 import { createClient } from "@/lib/supabase/server";
 import { z } from "zod";
 import crypto from "crypto";
+import { logApiRequest } from "@/utils/api-bot/request-logger";
+import { 
+  successResponse, 
+  errorResponse, 
+  ApiErrorCode 
+} from "@/utils/api-bot/response-utils";
 
 const RegisterWebhookSchema = z.object({
   url: z.string().url("A valid HTTPS URL is required").startsWith("https://", "Webhooks must use HTTPS for security"),
-  events: z.array(z.enum(["campaign.created", "donation.success", "campaign.completed", "campaign.updated"])).min(1, "At least one event must be selected"),
+  events: z.array(z.enum(["campaign.created", "donation.success", "campaign.completed", "campaign.updated", "campaign.reported"])).min(1, "At least one event must be selected"),
 });
 
 export async function POST(req: NextRequest) {
+  const startedAt = Date.now();
   const limitRes = rateLimit(req);
-  if (limitRes?.errorResponse) return limitRes.errorResponse;
+  if (limitRes?.errorResponse) {
+    await logApiRequest({ request: req, statusCode: 429, errorCode: ApiErrorCode.RATE_LIMIT_EXCEEDED, startedAt });
+    return limitRes.errorResponse;
+  }
 
   const auth = await validateApiKey(req);
-  if (auth.errorResponse) return auth.errorResponse;
+  if (auth.errorResponse) {
+    await logApiRequest({ request: req, statusCode: 401, errorCode: ApiErrorCode.UNAUTHORIZED, startedAt });
+    return auth.errorResponse;
+  }
 
   try {
     const body = await req.json();
@@ -40,34 +53,46 @@ export async function POST(req: NextRequest) {
 
     if (error) {
       console.error("Error registering webhook:", error);
-      return NextResponse.json({ error: "Failed to register webhook", code: "DATABASE_ERROR" }, { status: 500 });
+      const response = errorResponse("Failed to register webhook", ApiErrorCode.DATABASE_ERROR, 500);
+      await logApiRequest({ request: req, statusCode: response.status, apiKeyId: auth.apiKeyId, userId: auth.userId, mode: auth.mode, errorCode: ApiErrorCode.DATABASE_ERROR, startedAt });
+      return response;
     }
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        id: data.id,
-        url: data.url,
-        events: data.events,
-        secret: data.secret, // Return once during registration
-        created_at: data.created_at
-      }
-    });
+    const response = successResponse({
+      id: data.id,
+      url: data.url,
+      events: data.events,
+      secret: data.secret, // Return once during registration
+      created_at: data.created_at
+    }, 201);
+    await logApiRequest({ request: req, statusCode: response.status, apiKeyId: auth.apiKeyId, userId: auth.userId, mode: auth.mode, startedAt });
+    return response;
 
   } catch (err) {
     if (err instanceof z.ZodError) {
-      return NextResponse.json({ error: err.errors[0].message, code: "INVALID_REQUEST" }, { status: 400 });
+      const response = errorResponse("Invalid request", ApiErrorCode.VALIDATION_ERROR, 400, err.format());
+      await logApiRequest({ request: req, statusCode: response.status, apiKeyId: auth.apiKeyId, userId: auth.userId, mode: auth.mode, errorCode: ApiErrorCode.VALIDATION_ERROR, startedAt });
+      return response;
     }
-    return NextResponse.json({ error: "Internal server error", code: "INTERNAL_ERROR" }, { status: 500 });
+    const response = errorResponse("Internal server error", ApiErrorCode.INTERNAL_ERROR, 500);
+    await logApiRequest({ request: req, statusCode: response.status, apiKeyId: auth.apiKeyId, userId: auth.userId, mode: auth.mode, errorCode: ApiErrorCode.INTERNAL_ERROR, startedAt });
+    return response;
   }
 }
 
 export async function GET(req: NextRequest) {
+  const startedAt = Date.now();
   const limitRes = rateLimit(req);
-  if (limitRes?.errorResponse) return limitRes.errorResponse;
+  if (limitRes?.errorResponse) {
+    await logApiRequest({ request: req, statusCode: 429, errorCode: ApiErrorCode.RATE_LIMIT_EXCEEDED, startedAt });
+    return limitRes.errorResponse;
+  }
 
   const auth = await validateApiKey(req);
-  if (auth.errorResponse) return auth.errorResponse;
+  if (auth.errorResponse) {
+    await logApiRequest({ request: req, statusCode: 401, errorCode: ApiErrorCode.UNAUTHORIZED, startedAt });
+    return auth.errorResponse;
+  }
 
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -76,11 +101,13 @@ export async function GET(req: NextRequest) {
     .eq("user_id", auth.userId!);
 
   if (error) {
-    return NextResponse.json({ error: "Failed to fetch webhooks", code: "DATABASE_ERROR" }, { status: 500 });
+    const response = errorResponse("Failed to fetch webhooks", ApiErrorCode.DATABASE_ERROR, 500);
+    await logApiRequest({ request: req, statusCode: response.status, apiKeyId: auth.apiKeyId, userId: auth.userId, mode: auth.mode, errorCode: ApiErrorCode.DATABASE_ERROR, startedAt });
+    return response;
   }
 
-  return NextResponse.json({
-    success: true,
-    data
-  });
+  const response = successResponse({ webhooks: data });
+
+  await logApiRequest({ request: req, statusCode: response.status, apiKeyId: auth.apiKeyId, userId: auth.userId, mode: auth.mode, startedAt });
+  return response;
 }
