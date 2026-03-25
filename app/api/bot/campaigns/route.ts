@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { validateApiKey } from "@/utils/api-bot/api-auth";
-import { rateLimit } from "@/utils/api-bot/rate-limit";
+import { validateApiKey, rateLimit, handlePreflight } from "@/utils/api-bot/api-auth";
 import { CreateCampaignSchema } from "@/utils/api-bot/schemas";
 import Paystack from "@/services/paystack";
 import { createClient } from "@supabase/supabase-js";
@@ -154,4 +153,8 @@ export async function GET(request: NextRequest) {
 
   await logApiRequest({ request, statusCode: response.status, apiKeyId: authRes.apiKeyId, userId: authRes.userId, mode: authRes.mode, startedAt });
   return response;
+}
+
+export async function OPTIONS() {
+  return handlePreflight();
 }

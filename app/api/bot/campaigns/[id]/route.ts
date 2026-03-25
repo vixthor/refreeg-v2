@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { validateApiKey } from "@/utils/api-bot/api-auth";
-import { rateLimit } from "@/utils/api-bot/rate-limit";
+import { validateApiKey, rateLimit, handlePreflight } from "@/utils/api-bot/api-auth";
 import { UpdateCampaignSchema } from "@/utils/api-bot/schemas";
 import { createClient } from "@supabase/supabase-js";
 import { Database } from "@/types/database-types";
@@ -139,4 +138,8 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
 
   await logApiRequest({ request, statusCode: response.status, apiKeyId: authRes.apiKeyId, userId: authRes.userId, mode: authRes.mode, startedAt });
   return response;
+}
+
+export async function OPTIONS() {
+  return handlePreflight();
 }

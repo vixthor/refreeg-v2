@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { validateApiKey } from "@/utils/api-bot/api-auth";
-import { rateLimit } from "@/utils/api-bot/rate-limit";
+import { validateApiKey, rateLimit, handlePreflight } from "@/utils/api-bot/api-auth";
 import { createClient } from "@/lib/supabase/server";
 import { z } from "zod";
 import { logApiRequest } from "@/utils/api-bot/request-logger";
@@ -107,4 +106,8 @@ export async function PATCH(
     await logApiRequest({ request: req, statusCode: response.status, apiKeyId: auth.apiKeyId, userId: auth.userId, mode: auth.mode, errorCode: ApiErrorCode.INTERNAL_ERROR, startedAt });
     return response;
   }
+}
+
+export async function OPTIONS() {
+  return handlePreflight();
 }

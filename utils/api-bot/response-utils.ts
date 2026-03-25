@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { CORS_HEADERS } from "@/utils/api-bot/cors";
 
 /**
  * Standardized API Error Codes
@@ -30,7 +31,7 @@ export function successResponse(data: any, status = 200) {
       status: "success",
       data,
     },
-    { status }
+    { status, headers: CORS_HEADERS }
   );
 }
 
@@ -52,7 +53,7 @@ export function errorResponse(
         ...(details ? { details } : {}),
       },
     },
-    { status }
+    { status, headers: CORS_HEADERS }
   );
 }
 
@@ -76,6 +77,6 @@ export function paginatedResponse(
         offset,
       },
     },
-    { status }
+    { status, headers: CORS_HEADERS }
   );
 }

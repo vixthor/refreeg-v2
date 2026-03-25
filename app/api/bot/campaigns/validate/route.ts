@@ -1,20 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
-import { validateApiKey } from "@/utils/api-bot/api-auth";
-import { rateLimit } from "@/utils/api-bot/rate-limit";
+import { validateApiKey, rateLimit, handlePreflight } from "@/utils/api-bot/api-auth";
 import { CreateCampaignSchema } from "@/utils/api-bot/schemas";
 import { logApiRequest } from "@/utils/api-bot/request-logger";
+import { 
+  successResponse, 
+  errorResponse, 
+  ApiErrorCode 
+} from "@/utils/api-bot/response-utils";
 
 export async function POST(request: NextRequest) {
   const startedAt = Date.now();
   const limitRes = rateLimit(request);
   if (limitRes?.errorResponse) {
-    await logApiRequest({ request, statusCode: 429, errorCode: "rate_limited", startedAt });
+    await logApiRequest({ request, statusCode: 429, errorCode: ApiErrorCode.RATE_LIMIT_EXCEEDED, startedAt });
     return limitRes.errorResponse;
   }
 
   const authRes = await validateApiKey(request);
   if (authRes.errorResponse) {
-    await logApiRequest({ request, statusCode: 401, errorCode: "unauthorized", startedAt });
+    await logApiRequest({ request, statusCode: 401, errorCode: ApiErrorCode.UNAUTHORIZED, startedAt });
     return authRes.errorResponse;
   }
 
@@ -23,14 +27,7 @@ export async function POST(request: NextRequest) {
     const result = CreateCampaignSchema.safeParse(body);
 
     if (!result.success) {
-      const response = NextResponse.json({
-        status: "error",
-        error: { 
-          code: "validation_error", 
-          message: "Validation failed", 
-          details: result.error.format() 
-        }
-      }, { status: 400 });
+      const response = errorResponse("Validation failed", ApiErrorCode.VALIDATION_ERROR, 400, result.error.format());
 
       await logApiRequest({
         request,
@@ -38,17 +35,14 @@ export async function POST(request: NextRequest) {
         apiKeyId: authRes.apiKeyId,
         userId: authRes.userId,
         mode: authRes.mode,
-        errorCode: "validation_error",
+        errorCode: ApiErrorCode.VALIDATION_ERROR,
         startedAt,
       });
 
       return response;
     }
 
-    const response = NextResponse.json({
-      status: "success",
-      data: { valid: true, message: "Campaign data is valid" }
-    });
+    const response = successResponse({ valid: true, message: "Campaign data is valid" });
 
     await logApiRequest({
       request,
@@ -61,10 +55,7 @@ export async function POST(request: NextRequest) {
 
     return response;
   } catch (err) {
-    const response = NextResponse.json({
-      status: "error",
-      error: { code: "bad_request", message: "Invalid JSON format" }
-    }, { status: 400 });
+    const response = errorResponse("Invalid JSON format", ApiErrorCode.BAD_REQUEST, 400);
 
     await logApiRequest({
       request,
@@ -72,10 +63,14 @@ export async function POST(request: NextRequest) {
       apiKeyId: authRes.apiKeyId,
       userId: authRes.userId,
       mode: authRes.mode,
-      errorCode: "bad_request",
+      errorCode: ApiErrorCode.BAD_REQUEST,
       startedAt,
     });
 
     return response;
   }
+}
+
+export async function OPTIONS() {
+  return handlePreflight();
 }
