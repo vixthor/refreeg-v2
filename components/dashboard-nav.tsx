@@ -16,6 +16,7 @@ import {
   ClipboardCheckIcon,
   Wallet,
   Share2,
+  Flag,
 } from "lucide-react";
 import { useAdmin } from "@/hooks/use-admin";
 import { useAuth } from "@/hooks/use-auth";
@@ -84,6 +85,11 @@ const adminNavItems = [
     title: "Logs",
     href: "/dashboard/admin/logs",
     icon: ClipboardCheckIcon,
+  },
+  {
+    title: "API Reports",
+    href: "/dashboard/admin/api-reports",
+    icon: Flag,
   },
 ];
 

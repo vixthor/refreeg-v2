@@ -12,8 +12,12 @@ We are specifically tackling the following backend and core API phases from the 
 - [x] **Phase 2: Project (Campaign) API** - Completed
 - [x] **Phase 3: Donation & Payment API** - Completed
 - [x] **Phase 4: Webhook System** - Completed
-- [ ] **Phase 5: Campaign Reporting System** - Next
-- [ ] **Phase 6: Standardized API Response Format**
+- [x] **Phase 5: Campaign Reporting System** - Completed
+- [x] **Phase 5.1: Post-completion Fixes & Consolidation**
+  - [x] Fix `moddatetime` error in `api_campaign_reports` migration
+  - [x] Consolidate `report/` and `reports/` API routes into a single plural route (`/api/bot/campaigns/[id]/reports`)
+  - [x] Implement proper admin role verification in server actions (Phase 11 preview)
+- [ ] **Phase 6: Standardized API Response Format** - Next
 - [ ] **Phase 11: Security Hardening**
 
 ## Progress Log
@@ -47,6 +51,21 @@ We are specifically tackling the following backend and core API phases from the 
 - **Secure Dispatching:** Built a robust `dispatchWebhook` utility using HMAC-SHA256 signatures (`X-RefreeG-Signature`) for payload integrity.
 - **Real-time Events:** Integrated event triggers for `campaign.created` and `donation.success` across the API.
 - **Delivery Logging:** Automated logging of all webhook attempts, including status codes and response bodies for developer debugging.
+
+### [March 25, 2026] - Phase 5: Campaign Reporting System
+
+- **Database Infrastructure:** Created `api_campaign_reports` table for tracking abuse reports related to API-generated campaigns.
+- **Reporting APIs:** Implemented `POST /api/bot/campaigns/[id]/reports` for submitting reports and `GET` for developers to fetch their reports.
+- **Admin Dashboard Integration:** Built an interface (`/dashboard/admin/api-reports`) for RefreeG administrators to investigate and take action against fraudulent campaigns.
+- **Developer Oversight:** Added a Developer Dashboard page (`/dashboard/developer/reports`) enabling developers to monitor moderation reports filed against their API campaigns.
+- **Takedown Workflow:** Built automated workflow integrating campaign cancellation with `campaign.taken_down` webhooks to instantly notify developers of moderation takedowns.
+
+### [March 25, 2026] - **Phase 5.1: Campaign Reporting & Takedown Consolidation** - COMPLETE
+  - Consistently managed fraudulent/abusive API campaigns with admin/dev visibility.
+  - Consolidated `/api/bot/campaigns/[id]/reports` endpoint for both submission (POST) and list (GET).
+  - Implemented secure admin-only takedown flow with automated webhook notifications.
+  - Fixed `moddatetime` error in `api_campaign_reports` migration.
+  - Implemented proper admin role verification in server actions (Phase 11 preview).
 
 ---
 

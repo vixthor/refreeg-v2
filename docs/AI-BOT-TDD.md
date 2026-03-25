@@ -440,7 +440,7 @@ Test:        https://sandbox.refreeg.com/api/v1
 | `GET` | `/campaigns/:id/donations` | List donations for a campaign | API Key |
 | `GET` | `/campaigns/categories` | List valid categories | API Key |
 | `POST` | `/campaigns/validate` | Validate campaign data (for AI output) | API Key |
-| `POST` | `/campaigns/:id/report` | Report a campaign to RefreeG | API Key |
+| `POST` | `/campaigns/:id/reports` | Report a campaign to RefreeG | API Key |
 
 > [!NOTE]
 > **No `/banks` endpoint.** Developers are responsible for verifying bank account details on their side before submitting to the API. The `bank_account` fields are validated via Zod schemas (account_number must be 10 digits, bank_code and account_name are required strings).
@@ -500,7 +500,7 @@ Test:        https://sandbox.refreeg.com/api/v1
 > Campaign is **immediately active** and can start receiving donations. No approval queue.
 > Bank account is verified via Paystack during creation.
 
-#### POST /campaigns/:id/report — Report a Campaign
+#### POST /campaigns/:id/reports — Report a Campaign
 
 **Request:**
 ```json

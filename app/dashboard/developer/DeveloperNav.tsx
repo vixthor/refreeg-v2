@@ -9,6 +9,7 @@ export default function DeveloperNav() {
   const navItems = [
     { name: "API Keys", href: "/dashboard/developer/api-keys" },
     { name: "Webhooks", href: "/dashboard/developer/webhooks" },
+    { name: "Reports", href: "/dashboard/developer/reports" },
   ];
 
   return (
