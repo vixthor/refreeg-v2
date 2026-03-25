@@ -24,3 +24,14 @@ export const UpdateCampaignSchema = z.object({
   description: z.string().min(20).max(5000).optional(),
   deadline: z.string().datetime().optional()
 });
+
+export const InitiateDonationSchema = z.object({
+  campaign_id: z.string().uuid(),
+  amount: z.number().positive(),
+  name: z.string().min(2),
+  email: z.string().email(),
+  message: z.string().optional(),
+  is_anonymous: z.boolean().optional().default(false),
+  tip_amount: z.number().nonnegative().optional().default(0),
+  callback_url: z.string().url().optional()
+});
