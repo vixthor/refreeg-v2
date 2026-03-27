@@ -1,32 +1,43 @@
-import { NextRequest, NextResponse } from "next/server";
-import { validateApiKey } from "@/utils/api-bot/api-auth";
-import { rateLimit } from "@/utils/api-bot/rate-limit";
+import { NextRequest } from "next/server";
+import { validateApiKey, rateLimit } from "@/utils/api-bot/api-auth";
 import { createClient } from "@supabase/supabase-js";
 import { Database } from "@/types/database-types";
 import { logApiRequest } from "@/utils/api-bot/request-logger";
-import { 
-  successResponse, 
-  errorResponse, 
+import {
+  errorResponse,
   paginatedResponse,
-  ApiErrorCode 
+  ApiErrorCode,
 } from "@/utils/api-bot/response-utils";
 
 const supabaseAdmin = createClient<Database>(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
 );
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } },
+) {
   const startedAt = Date.now();
   const limitRes = rateLimit(request);
   if (limitRes?.errorResponse) {
-    await logApiRequest({ request, statusCode: 429, errorCode: ApiErrorCode.RATE_LIMIT_EXCEEDED, startedAt });
+    await logApiRequest({
+      request,
+      statusCode: 429,
+      errorCode: ApiErrorCode.RATE_LIMIT_EXCEEDED,
+      startedAt,
+    });
     return limitRes.errorResponse;
   }
 
   const authRes = await validateApiKey(request);
   if (authRes.errorResponse) {
-    await logApiRequest({ request, statusCode: 401, errorCode: ApiErrorCode.UNAUTHORIZED, startedAt });
+    await logApiRequest({
+      request,
+      statusCode: 401,
+      errorCode: ApiErrorCode.UNAUTHORIZED,
+      startedAt,
+    });
     return authRes.errorResponse;
   }
 
@@ -40,9 +51,21 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     .single();
 
   if (campaignError || !campaign) {
-    const response = errorResponse("Campaign not found or access denied", ApiErrorCode.NOT_FOUND, 404);
+    const response = errorResponse(
+      "Campaign not found or access denied",
+      ApiErrorCode.NOT_FOUND,
+      404,
+    );
 
-    await logApiRequest({ request, statusCode: response.status, apiKeyId: authRes.apiKeyId, userId: authRes.userId, mode: authRes.mode, errorCode: ApiErrorCode.NOT_FOUND, startedAt });
+    await logApiRequest({
+      request,
+      statusCode: response.status,
+      apiKeyId: authRes.apiKeyId,
+      userId: authRes.userId,
+      mode: authRes.mode,
+      errorCode: ApiErrorCode.NOT_FOUND,
+      startedAt,
+    });
     return response;
   }
 
@@ -50,7 +73,11 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   const limit = Math.min(parseInt(url.searchParams.get("limit") || "20"), 100);
   const offset = parseInt(url.searchParams.get("offset") || "0");
 
-  const { data: donations, error, count } = await supabaseAdmin
+  const {
+    data: donations,
+    error,
+    count,
+  } = await supabaseAdmin
     .from("api_donations")
     .select("*", { count: "exact" })
     .eq("api_campaign_id", params.id)
@@ -58,14 +85,38 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     .range(offset, offset + limit - 1);
 
   if (error) {
-    const response = errorResponse("Failed to fetch donations", ApiErrorCode.INTERNAL_ERROR, 500);
+    const response = errorResponse(
+      "Failed to fetch donations",
+      ApiErrorCode.INTERNAL_ERROR,
+      500,
+    );
 
-    await logApiRequest({ request, statusCode: response.status, apiKeyId: authRes.apiKeyId, userId: authRes.userId, mode: authRes.mode, errorCode: ApiErrorCode.INTERNAL_ERROR, startedAt });
+    await logApiRequest({
+      request,
+      statusCode: response.status,
+      apiKeyId: authRes.apiKeyId,
+      userId: authRes.userId,
+      mode: authRes.mode,
+      errorCode: ApiErrorCode.INTERNAL_ERROR,
+      startedAt,
+    });
     return response;
   }
 
-  const response = paginatedResponse(donations || [], count || 0, limit, offset);
+  const response = paginatedResponse(
+    donations || [],
+    count || 0,
+    limit,
+    offset,
+  );
 
-  await logApiRequest({ request, statusCode: response.status, apiKeyId: authRes.apiKeyId, userId: authRes.userId, mode: authRes.mode, startedAt });
+  await logApiRequest({
+    request,
+    statusCode: response.status,
+    apiKeyId: authRes.apiKeyId,
+    userId: authRes.userId,
+    mode: authRes.mode,
+    startedAt,
+  });
   return response;
 }

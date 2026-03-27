@@ -34,15 +34,6 @@ export default function ApiDocsPage() {
               href="/docs/get-started"
               className="flex items-center gap-2 group"
             >
-              <div className="rounded-lg text-white transition-colors">
-                <Image
-                  src="/logo.svg"
-                  width={24}
-                  height={24}
-                  alt="RefreeG"
-                  className="w-6 h-6"
-                />
-              </div>
               <span className="font-bold text-[18px] tracking-tight">
                 RefreeG <span className="text-blue-600">Dev</span>
               </span>
