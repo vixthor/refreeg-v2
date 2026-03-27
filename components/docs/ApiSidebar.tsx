@@ -26,9 +26,11 @@ interface SidebarSection {
 export default function ApiSidebar({
   selected,
   onSelect,
+  className = "",
 }: {
   selected: string;
   onSelect: (id: string) => void;
+  className?: string;
 }) {
   const sections: SidebarSection[] = [
     {
@@ -37,6 +39,7 @@ export default function ApiSidebar({
         { id: "Introduction", label: "Introduction", icon: <BookOpen className="w-4 h-4" /> },
         { id: "Authentication", label: "Authentication", icon: <ShieldCheck className="w-4 h-4" /> },
         { id: "Quickstart", label: "Quickstart", icon: <Zap className="w-4 h-4" /> },
+        { id: "Best Practices", label: "Best Practices", icon: <ShieldCheck className="w-4 h-4" /> },
       ],
     },
     {
@@ -75,7 +78,7 @@ export default function ApiSidebar({
   ];
 
   return (
-    <aside className="hidden md:block w-72 h-[calc(100vh-2rem)] sticky top-4 overflow-y-auto pr-4 no-scrollbar">
+    <aside className={`w-full h-full overflow-y-auto pr-2 no-scrollbar ${className}`}>
       <div className="space-y-8">
         {sections.map((section) => (
           <div key={section.title}>

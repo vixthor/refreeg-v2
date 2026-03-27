@@ -10,13 +10,41 @@ const ENDPOINTS = [
     path: "/api/bot/campaigns",
     body: {
       title: "Help for Education",
-      description: "Raising funds for a local school library project...",
-      category: "education",
+      description: "Raising funds for a local school library project with high impact outcomes.",
       goal_amount: 500000,
+      payout_mode: "immediate",
       bank_account_number: "0123456789",
       bank_code: "058",
-      bank_account_name: "John Doe",
-      payout_mode: "immediate"
+      bank_account_name: "John Doe"
+    }
+  },
+  {
+    name: "List Campaigns",
+    method: "GET",
+    path: "/api/bot/campaigns",
+    body: {}
+  },
+  {
+    name: "Update Campaign",
+    method: "PATCH",
+    path: "/api/bot/campaigns/{{campaign_id}}",
+    body: {
+      title: "Updated Campaign Title",
+      description: "Updated description for the campaign..."
+    }
+  },
+  {
+    name: "Validate (AI)",
+    method: "POST",
+    path: "/api/bot/campaigns/validate",
+    body: {
+      title: "Suspicious Campaign",
+      description: "A very clear and helpful campaign description for education purposes.",
+      goal_amount: 1000,
+      payout_mode: "immediate",
+      bank_account_number: "0123456789",
+      bank_code: "058",
+      bank_account_name: "Verification Admin"
     }
   },
   {
@@ -29,6 +57,12 @@ const ENDPOINTS = [
       name: "Sponsor Name",
       email: "sponsor@example.com"
     }
+  },
+  {
+    name: "List Categories",
+    method: "GET",
+    path: "/api/bot/campaigns/categories",
+    body: {}
   }
 ];
 
@@ -48,19 +82,31 @@ export default function ApiPlayground() {
 
   const handleRun = async () => {
     if (!apiKey) {
-      alert("Please enter your Test API Key");
+      alert("Please enter your Test API Key (Secret)");
       return;
     }
 
     setLoading(true);
     try {
-      const res = await fetch(selectedEndpoint.path, {
+      // Handle path parameters if any (like {{campaign_id}})
+      const finalBody = JSON.parse(requestBody);
+      let finalPath = selectedEndpoint.path;
+      if (finalPath.includes("{{campaign_id}}")) {
+         const id = prompt("Enter Campaign ID:", "c8b3ecf6...");
+         if (!id) {
+           setLoading(false);
+           return;
+         }
+         finalPath = finalPath.replace("{{campaign_id}}", id);
+      }
+
+      const res = await fetch(finalPath, {
         method: selectedEndpoint.method,
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${apiKey}`,
+          "X-RefreeG-Secret": apiKey,
         },
-        body: selectedEndpoint.method !== "GET" ? requestBody : undefined,
+        body: selectedEndpoint.method !== "GET" ? JSON.stringify(finalBody) : undefined,
       });
       const data = await res.json();
       setResponse(data);

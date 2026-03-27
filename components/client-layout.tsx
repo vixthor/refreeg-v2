@@ -13,7 +13,7 @@ interface ClientLayoutProps {
 export function ClientLayout({ children }: ClientLayoutProps) {
   const pathname = usePathname();
 
-  const noLayoutRoutes = ["/auth/signin", "/auth/signup", "/onboarding"];
+  const noLayoutRoutes = ["/auth/signin", "/auth/signup", "/onboarding", "/docs/api"];
   const hideLayout = noLayoutRoutes.some((route) => pathname.startsWith(route));
 
   return (

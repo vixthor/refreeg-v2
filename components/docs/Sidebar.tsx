@@ -35,17 +35,7 @@ export default function Sidebar({
     { label: "Support", icon: LifeBuoy },
   ];
 
-  const apiItems = [
-    { label: "Quickstart", icon: Zap },
-    { label: "Authentication", icon: Key },
-    { label: "Campaigns API", icon: Terminal },
-    { label: "Donations API", icon: HeartHandshake },
-    { label: "Webhooks API", icon: Activity },
-    { label: "Error Codes", icon: ShieldAlert },
-    { label: "API Playground", icon: Play },
-  ];
-
-  const items = activeTab === "Developer API" ? apiItems : platformItems;
+  const items = platformItems;
 
   // Filter items based on search query
   const filteredItems = items.filter((item) =>
