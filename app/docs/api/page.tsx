@@ -28,7 +28,9 @@ import SectionBestPractices from "@/components/docs/api/SectionBestPractices";
 import { 
   SectionCreateCampaign, 
   SectionUpdateCampaign, 
-  SectionListCampaigns 
+  SectionListCampaigns,
+  SectionRetrieveCampaign,
+  SectionBanks
 } from "@/components/docs/api/EndpointCampaigns";
 import { SectionDonations } from "@/components/docs/api/EndpointDonations";
 import { 
@@ -52,8 +54,10 @@ export default function ApiDocsPage() {
       case "Quickstart Guide": return <SectionQuickstart />;
       case "Best Practices": return <SectionBestPractices />;
       case "Create Campaign": return <SectionCreateCampaign />;
+      case "Retrieve Campaign": return <SectionRetrieveCampaign />;
       case "List Campaigns": return <SectionListCampaigns />;
       case "Update Campaign": return <SectionUpdateCampaign />;
+      case "Manage Banks": return <SectionBanks />;
       case "AI Blueprint Validation": return <SectionValidateAi />;
       case "Initialize Donation": return <SectionDonations />;
       case "Verify Donation": return <SectionDonations />; // Both in same component

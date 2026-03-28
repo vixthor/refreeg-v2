@@ -1,30 +1,50 @@
 import { z } from "zod";
 
+export const CreateBankSchema = z.object({
+  bank_account_number: z.string().min(10).max(20),
+  bank_code: z.string().min(2),
+  bank_account_name: z.string().min(2),
+});
+
 export const CreateCampaignSchema = z.object({
   title: z.string().min(5).max(100),
   description: z.string().min(20).max(5000),
   goal_amount: z.number().positive(),
-  payout_mode: z.enum(["immediate", "after_deadline"]),
-  deadline: z.string().datetime().optional(), // ISO 8601 string
-  bank_account_number: z.string().min(10).max(20), // Support varying lengths depending on country
-  bank_code: z.string().min(2),
-  bank_account_name: z.string().min(2),
+  payout_mode: z.enum(["manual", "automated"]), // Updated to match user's clarified modes
+  deadline: z.string().datetime().optional(),
+  category_id: z.string().uuid().optional(),
+  
+  // Accept either bank_id OR direct bank details
+  bank_id: z.string().uuid().optional(),
+  bank_account_number: z.string().min(10).max(20).optional(),
+  bank_code: z.string().min(2).optional(),
+  bank_account_name: z.string().min(2).optional(),
 }).refine((data) => {
-  if (data.payout_mode === "after_deadline" && !data.deadline) {
+  if (data.payout_mode === "automated" && !data.deadline) {
     return false;
   }
   return true;
 }, {
-  message: "Deadline is required when payout_mode is 'after_deadline'",
+  message: "Deadline is required when payout_mode is 'automated'",
   path: ["deadline"]
+}).refine((data) => {
+  if (!data.bank_id && (!data.bank_account_number || !data.bank_code || !data.bank_account_name)) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Either bank_id or full bank details are required",
+  path: ["bank_id"]
 });
 
 export const UpdateCampaignSchema = z.object({
   title: z.string().min(5).max(100).optional(),
   description: z.string().min(20).max(5000).optional(),
   goal_amount: z.number().positive().optional(),
-  payout_mode: z.enum(["immediate", "after_deadline"]).optional(),
+  payout_mode: z.enum(["manual", "automated"]).optional(),
   deadline: z.string().datetime().optional(),
+  category_id: z.string().uuid().optional(),
+  bank_id: z.string().uuid().optional(),
   bank_account_number: z.string().min(10).max(20).optional(),
   bank_code: z.string().min(2).optional(),
   bank_account_name: z.string().min(2).optional(),

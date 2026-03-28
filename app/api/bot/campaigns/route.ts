@@ -6,6 +6,7 @@ import { createClient } from "@supabase/supabase-js";
 import { Database } from "@/types/database-types";
 import { dispatchWebhook } from "@/utils/api-bot/webhook-utils";
 import { logApiRequest } from "@/utils/api-bot/request-logger";
+import { resolveBankDetails } from "@/utils/api-bot/bank-resolver";
 import { 
   successResponse, 
   errorResponse, 
@@ -53,26 +54,26 @@ export async function POST(request: NextRequest) {
     }
     
     const data = result.data;
-
-    let subAccountCode: string | null = null;
-    try {
-      // Auto-create Paystack sub-account from developer-provided bank_account
-      const subAccount = await Paystack.createSubaccount({
-        business_name: data.title,
+    const { bankDetails, error: bankErr, code: bankCode, status: bankStatus } = await resolveBankDetails(
+      authRes.userId!,
+      authRes.mode,
+      {
+        bank_id: data.bank_id,
+        bank_account_number: data.bank_account_number,
         bank_code: data.bank_code,
-        account_number: data.bank_account_number,
-        percentage_charge: 2 // 2% platform fee
-      });
-      subAccountCode = subAccount.subaccount_code;
-    } catch (err: any) {
-      const response = errorResponse(
-        "Failed to verify bank details with payment provider. Please ensure the account number and bank code are correct.", 
-        ApiErrorCode.PAYMENT_SETUP_FAILED, 
-        400
-      );
+        bank_account_name: data.bank_account_name,
+        title: data.title
+      }
+    );
 
-      await logApiRequest({ request, statusCode: response.status, apiKeyId: authRes.apiKeyId, userId: authRes.userId, mode: authRes.mode, errorCode: ApiErrorCode.PAYMENT_SETUP_FAILED, startedAt });
+    if (bankErr) {
+      const response = errorResponse(bankErr, bankCode as any, bankStatus as any);
+      await logApiRequest({ request, statusCode: response.status, apiKeyId: authRes.apiKeyId, userId: authRes.userId, mode: authRes.mode, errorCode: bankCode as any, startedAt });
       return response;
+    }
+
+    if (!bankDetails) {
+      return errorResponse("Internal error: Could not resolve bank details", ApiErrorCode.INTERNAL_ERROR, 500);
     }
 
     const { data: campaign, error } = await supabaseAdmin.from("api_campaigns").insert({
@@ -83,10 +84,12 @@ export async function POST(request: NextRequest) {
       goal_amount: data.goal_amount,
       payout_mode: data.payout_mode,
       deadline: data.deadline || null,
-      bank_account_number: data.bank_account_number,
-      bank_code: data.bank_code,
-      bank_account_name: data.bank_account_name,
-      sub_account_code: subAccountCode,
+      category_id: data.category_id || null,
+      bank_account_number: bankDetails.bank_account_number!,
+      bank_code: bankDetails.bank_code!,
+      bank_account_name: bankDetails.bank_account_name!,
+      sub_account_code: bankDetails.sub_account_code,
+      bank_account_id: bankDetails.bank_account_id,
       mode: authRes.mode,
       status: "active",
       currency: "NGN",
@@ -100,7 +103,6 @@ export async function POST(request: NextRequest) {
       return response;
     }
 
-    // Trigger webhook
     dispatchWebhook(authRes.userId!, "campaign.created", campaign).catch(console.error);
 
     const response = successResponse(campaign, 201);

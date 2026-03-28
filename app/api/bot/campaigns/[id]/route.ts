@@ -4,6 +4,7 @@ import { UpdateCampaignSchema } from "@/utils/api-bot/schemas";
 import { createClient } from "@supabase/supabase-js";
 import { Database } from "@/types/database-types";
 import { logApiRequest } from "@/utils/api-bot/request-logger";
+import { resolveBankDetails } from "@/utils/api-bot/bank-resolver";
 import { 
   successResponse, 
   errorResponse, 
@@ -75,9 +76,44 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       return response;
     }
 
+    const data = result.data;
+    
+    // Support bank updates if provided
+    let updateData: any = { ...data };
+    
+    if (data.bank_id || data.bank_account_number) {
+      const { bankDetails, error: bankErr, code: bankCode, status: bankStatus } = await resolveBankDetails(
+        authRes.userId!,
+        authRes.mode,
+        {
+          bank_id: data.bank_id,
+          bank_account_number: data.bank_account_number,
+          bank_code: data.bank_code,
+          bank_account_name: data.bank_account_name,
+          title: data.title
+        }
+      );
+
+      if (bankErr || !bankDetails) {
+        const response = errorResponse(bankErr || "Failed to resolve bank details", bankCode as any || ApiErrorCode.INTERNAL_ERROR, bankStatus as any || 500);
+        await logApiRequest({ request, statusCode: response.status, apiKeyId: authRes.apiKeyId, userId: authRes.userId, mode: authRes.mode, errorCode: bankCode as any || ApiErrorCode.INTERNAL_ERROR, startedAt });
+        return response;
+      }
+
+      // Map resolved details to DB fields
+      updateData.bank_account_number = bankDetails.bank_account_number;
+      updateData.bank_code = bankDetails.bank_code;
+      updateData.bank_account_name = bankDetails.bank_account_name;
+      updateData.sub_account_code = bankDetails.sub_account_code;
+      updateData.bank_account_id = bankDetails.bank_account_id;
+      
+      // Clean up internal keys
+      delete updateData.bank_id;
+    }
+
     // Update in DB
     const { data: campaign, error } = await supabaseAdmin.from("api_campaigns")
-      .update(result.data)
+      .update(updateData)
       .eq("id", params.id)
       .eq("developer_id", authRes.userId)
       .eq("mode", authRes.mode)
@@ -97,9 +133,8 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     return response;
 
   } catch (err) {
-    const response = errorResponse("Invalid JSON format", ApiErrorCode.BAD_REQUEST, 400);
-
-    await logApiRequest({ request, statusCode: response.status, apiKeyId: authRes.apiKeyId, userId: authRes.userId, mode: authRes.mode, errorCode: ApiErrorCode.BAD_REQUEST, startedAt });
+    const response = errorResponse("Internal server error", ApiErrorCode.INTERNAL_ERROR, 500);
+    await logApiRequest({ request, statusCode: response.status, apiKeyId: authRes.apiKeyId, userId: authRes.userId, mode: authRes.mode, errorCode: ApiErrorCode.INTERNAL_ERROR, startedAt });
     return response;
   }
 }

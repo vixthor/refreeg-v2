@@ -10,6 +10,7 @@ export default function DeveloperNav() {
     { name: "API Keys", href: "/dashboard/developer/api-keys" },
     { name: "Webhooks", href: "/dashboard/developer/webhooks" },
     { name: "Reports", href: "/dashboard/developer/reports" },
+    { name: "API Docs", href: "/docs/api" },
   ];
 
   return (
