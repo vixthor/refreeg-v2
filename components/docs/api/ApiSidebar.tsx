@@ -38,7 +38,8 @@ export default function ApiSidebar({
       items: [
         { id: "Introduction", label: "Introduction", icon: <BookOpen className="w-4 h-4" /> },
         { id: "Authentication", label: "Authentication", icon: <ShieldCheck className="w-4 h-4" /> },
-        { id: "Quickstart", label: "Quickstart", icon: <Zap className="w-4 h-4" /> },
+        { id: "Quickstart Guide", label: "Quickstart Guide", icon: <Zap className="w-4 h-4" /> },
+        { id: "AI Integration Blueprint", label: "AI Integration Blueprint", icon: <Zap className="w-4 h-4" /> },
         { id: "Best Practices", label: "Best Practices", icon: <ShieldCheck className="w-4 h-4" /> },
       ],
     },
@@ -48,7 +49,7 @@ export default function ApiSidebar({
         { id: "Create Campaign", label: "Create Campaign", icon: <Terminal className="w-4 h-4" /> },
         { id: "List Campaigns", label: "List Campaigns", icon: <Settings className="w-4 h-4" /> },
         { id: "Update Campaign", label: "Update Campaign", icon: <Settings className="w-4 h-4" /> },
-        { id: "Validate Campaign", label: "Validate (AI)", icon: <Zap className="w-4 h-4" /> },
+        { id: "AI Blueprint Validation", label: "Validate (AI)", icon: <Zap className="w-4 h-4" /> },
         { id: "List Categories", label: "Categories", icon: <BookOpen className="w-4 h-4" /> },
         { id: "Report Campaign", label: "Report Fraud", icon: <AlertCircle className="w-4 h-4" /> },
       ],
@@ -61,18 +62,17 @@ export default function ApiSidebar({
       ],
     },
     {
-      title: "Webhooks",
+      title: "Notifications",
       items: [
-        { id: "Webhook Registration", label: "Registration", icon: <Settings className="w-4 h-4" /> },
-        { id: "Webhook Security", label: "Security & HMAC", icon: <ShieldCheck className="w-4 h-4" /> },
+        { id: "Webhooks & Events", label: "Webhooks & Events", icon: <Settings className="w-4 h-4" /> },
       ],
     },
     {
-      title: "Testing & SDKs",
+      title: "Resources",
       items: [
         { id: "API Playground", label: "Interactive Playground", icon: <Play className="w-4 h-4" /> },
-        { id: "SDKs", label: "SDKs & Libraries", icon: <Box className="w-4 h-4" /> },
-        { id: "Errors", label: "Error Codes", icon: <AlertCircle className="w-4 h-4" /> },
+        { id: "SDKs & Libraries", label: "SDKs & Libraries", icon: <Box className="w-4 h-4" /> },
+        { id: "Error Reference", label: "Error Reference", icon: <AlertCircle className="w-4 h-4" /> },
       ],
     },
   ];

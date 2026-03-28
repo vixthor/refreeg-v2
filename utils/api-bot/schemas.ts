@@ -22,7 +22,13 @@ export const CreateCampaignSchema = z.object({
 export const UpdateCampaignSchema = z.object({
   title: z.string().min(5).max(100).optional(),
   description: z.string().min(20).max(5000).optional(),
-  deadline: z.string().datetime().optional()
+  goal_amount: z.number().positive().optional(),
+  payout_mode: z.enum(["immediate", "after_deadline"]).optional(),
+  deadline: z.string().datetime().optional(),
+  bank_account_number: z.string().min(10).max(20).optional(),
+  bank_code: z.string().min(2).optional(),
+  bank_account_name: z.string().min(2).optional(),
+  status: z.enum(["active", "completed", "paused", "cancelled"]).optional(),
 });
 
 export const InitiateDonationSchema = z.object({
