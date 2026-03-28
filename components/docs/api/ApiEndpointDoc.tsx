@@ -12,6 +12,7 @@ interface Parameter {
 interface ApiEndpointDocProps {
   method: "GET" | "POST" | "PATCH" | "DELETE";
   url: string;
+  title?: string;
   description: string;
   parameters?: Parameter[];
   requestExample?: string;
@@ -21,6 +22,7 @@ interface ApiEndpointDocProps {
 export default function ApiEndpointDoc({
   method,
   url,
+  title,
   description,
   parameters,
   requestExample,
@@ -36,6 +38,11 @@ export default function ApiEndpointDoc({
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       <div className="space-y-4">
+        {title && (
+          <h2 className="text-2xl font-extrabold text-[#0A2A5C] tracking-tight mb-2">
+            {title}
+          </h2>
+        )}
         <div className="flex items-center gap-3">
           <span className={`px-2 py-1 rounded font-bold text-[12px] border ${methodColor}`}>
             {method}

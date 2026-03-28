@@ -30,7 +30,11 @@ const ENDPOINTS = [
     path: "/api/bot/campaigns/{{campaign_id}}",
     body: {
       title: "Updated Campaign Title",
-      description: "Updated description for the campaign..."
+      description: "Updated description for the campaign...",
+      goal_amount: 600000,
+      bank_account_number: "0123456789",
+      bank_code: "058",
+      bank_account_name: "John Doe"
     }
   },
   {
