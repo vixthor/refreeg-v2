@@ -9,59 +9,70 @@ const campaignParameters = [
     name: "title",
     type: "string",
     required: true,
-    description: "The display title for the campaign. Minimum 5 characters, maximum 100.",
+    description: "Official name of the campaign. (5-100 characters)",
   },
   {
     name: "description",
     type: "string",
     required: true,
-    description: "A detailed description of the campaign (20-5000 characters). Supports standard Markdown formatting.",
+    description: "Detailed story/markdown of the campaign (20-5000 chars).",
   },
   {
     name: "goal_amount",
     type: "number",
     required: true,
-    description: "The target amount to be raised. Must be greater than 0.",
+    description: "Target amount in NGN.",
   },
   {
     name: "payout_mode",
     type: "string",
     required: true,
-    description: "Frequency of settlement. Options: 'after_deadline' or 'immediate'.",
+    description: "'manual' (on-demand) or 'automated' (at deadline).",
   },
   {
     name: "deadline",
     type: "string",
     required: false,
-    description: "ISO 8601 datetime string. Required if payout_mode is 'after_deadline'.",
+    description: "ISO 8601 string. **Required** if payout_mode is 'automated'.",
+  },
+  {
+    name: "category_id",
+    type: "string",
+    required: false,
+    description: "UUID from /campaigns/categories. Helps in discovery and search weighting.",
+  },
+  {
+    name: "bank_id",
+    type: "string",
+    required: false,
+    description: "UUID of a saved bank profile. Use this to skip providing direct bank details.",
   },
   {
     name: "bank_account_number",
     type: "string",
-    required: true,
-    description: "The 10-digit NUBAN account number for settlement.",
+    required: false,
+    description: "10-digit NUBAN. Required if bank_id is not provided.",
   },
   {
     name: "bank_code",
     type: "string",
-    required: true,
-    description: "The 3-digit bank code (e.g., '058' for GTB).",
+    required: false,
+    description: "3-digit code (e.g., '058'). Required if bank_id is not provided.",
   },
   {
     name: "bank_account_name",
     type: "string",
-    required: true,
-    description: "The official legal name associated with the bank account.",
+    required: false,
+    description: "Legal name. Required if bank_id is not provided.",
   },
 ];
 
 const updateParameters = campaignParameters.map(p => ({ ...p, required: false }));
-// Add status to update
 updateParameters.push({
   name: "status",
   type: "string",
   required: false,
-  description: "Manually set campaign status: 'active', 'paused', 'completed', or 'cancelled'.",
+  description: "Manually set status: 'active', 'paused', 'completed', 'cancelled'.",
 });
 
 export function SectionCreateCampaign() {
@@ -75,25 +86,28 @@ export function SectionCreateCampaign() {
       <div className="bg-blue-50/50 p-6 rounded-3xl border border-blue-100 flex flex-col gap-6">
         <h3 className="font-bold text-[#0A2A5C] flex items-center gap-2">
           <Banknote className="w-5 h-5 text-blue-600" />
-          Understanding Payout Modes
+          Flexible Settlement
         </h3>
+        <p className="text-slate-600 text-sm leading-relaxed">
+          You can provide bank details **directly** in the creation request, or use a pre-registered **bank_id** 
+          for better reuse and cleaner payloads. If direct details are used, we automatically save them to your profile.
+        </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
           <div className="p-5 bg-white rounded-2xl border border-blue-100/50 space-y-2">
              <div className="flex items-center gap-2 text-blue-600 font-bold mb-2">
-                <Zap className="w-4 h-4" /> Immediate Settlement
+                <Zap className="w-4 h-4" /> manual
              </div>
              <p className="text-slate-600 leading-relaxed">
                 Funds are pushed to your bank account as soon as donations are verified. 
-                Perfect for urgent needs like **medical emergencies** where liquidity is critical.
+                Perfect for urgent needs.
              </p>
           </div>
           <div className="p-5 bg-white rounded-2xl border border-blue-100/50 space-y-2">
              <div className="flex items-center gap-2 font-bold mb-2 text-indigo-600">
-                <Info className="w-4 h-4" /> After Deadline
+                <Info className="w-4 h-4" /> automated
              </div>
              <p className="text-slate-600 leading-relaxed">
-                Funds are held securely by RefreeG and settled in a single lump sum after the campaign deadline is reached. 
-                Ideal for **project-based** or community goals.
+                Funds are held by RefreeG and settled in a single lump sum after the deadline.
              </p>
           </div>
         </div>
@@ -103,23 +117,45 @@ export function SectionCreateCampaign() {
         title="Create Campaign"
         method="POST"
         url="/api/bot/campaigns"
-        description="Creates a new campaign. API campaigns are immediately active and can start receiving donations."
+        description="Creates a new campaign. API campaigns are immediately active."
         parameters={campaignParameters}
         requestExample={`{
   "title": "Hospital Recovery Fund",
-  "description": "Patient needs immediate surgery.",
+  "bank_id": "ba_987...",
   "goal_amount": 250000,
-  "payout_mode": "immediate",
-  "bank_account_number": "0123456789",
-  "bank_code": "058",
-  "bank_account_name": "Jane Cooper"
+  "payout_mode": "manual"
 }`}
         responseExample={`{
   "status": "success",
+  "data": { "id": "uuid...", "status": "active" }
+}`}
+      />
+    </div>
+  );
+}
+
+export function SectionRetrieveCampaign() {
+  return (
+    <div className="space-y-10 animate-in fade-in duration-500">
+      <header className="space-y-4">
+        <h1 className="text-3xl font-extrabold text-slate-900">Retrieve Campaign</h1>
+        <p className="text-slate-500 text-lg">Fetch the full details and current progress of a specific campaign.</p>
+      </header>
+
+      <ApiEndpointDoc
+        title="Get Campaign"
+        method="GET"
+        url="/api/bot/campaigns/[id]"
+        description="Returns a full campaign object including raised amounts and bank details."
+        parameters={[]}
+        responseExample={`{
+  "status": "success",
   "data": {
-    "id": "c8b3ecf6-02e1-450f-96a8...",
-    "status": "active",
-    "raised_amount": 0
+    "id": "c8b3ecf6...",
+    "title": "Clean Water",
+    "raised_amount": 54000,
+    "goal_amount": 100000,
+    "status": "active"
   }
 }`}
       />
@@ -141,15 +177,8 @@ export function SectionUpdateCampaign() {
         url="/api/bot/campaigns/[id]"
         description="Updates campaign details. Supports title, description, bank details, and status updates."
         parameters={updateParameters}
-        requestExample={`{
-  "title": "Optimized Recovery Fund",
-  "bank_account_number": "9876543210",
-  "status": "active"
-}`}
-        responseExample={`{
-  "status": "success",
-  "data": { "id": "uuid...", "title": "Optimized Recovery Fund", "status": "active" }
-}`}
+        requestExample={`{ "status": "paused" }`}
+        responseExample={`{ "status": "success", "data": { "id": "uuid...", "status": "paused" } }`}
       />
     </div>
   );
@@ -169,18 +198,53 @@ export function SectionListCampaigns() {
         url="/api/bot/campaigns"
         description="Filter campaigns by status or category."
         parameters={[
-          { name: "status", type: "string", required: false, description: "Filter by status: 'active', 'completed', 'paused', 'cancelled'." },
+          { name: "status", type: "string", required: false, description: "Filter by status." },
           { name: "category", type: "string", required: false, description: "Filter by category ID." },
-          { name: "limit", type: "number", required: false, description: "Max results (default: 10, max: 100)." },
+          { name: "limit", type: "number", required: false, description: "Max results (10-100)." },
           { name: "offset", type: "number", required: false, description: "Pagination offset." },
         ]}
+        responseExample={`{ "status": "success", "data": [...], "meta": { "total": 12 } }`}
+      />
+    </div>
+  );
+}
+
+export function SectionBanks() {
+  return (
+    <div className="space-y-10 animate-in fade-in duration-500">
+      <header className="space-y-4">
+        <h1 className="text-3xl font-extrabold text-slate-900">Banks API</h1>
+        <p className="text-slate-500 text-lg">Register and manage settlement bank accounts separately from campaigns.</p>
+      </header>
+
+      <ApiEndpointDoc
+        title="Register Bank Account"
+        method="POST"
+        url="/api/bot/banks"
+        description="Saves a bank account profile for future reuse in campaign settlement."
+        parameters={[
+          { name: "bank_account_number", type: "string", required: true, description: "10-digit NUBAN." },
+          { name: "bank_code", type: "string", required: true, description: "3-digit bank code." },
+          { name: "bank_account_name", type: "string", required: true, description: "Legal account name." },
+        ]}
+        requestExample={`{
+  "bank_account_number": "0022334455",
+  "bank_code": "058",
+  "bank_account_name": "Dev Account"
+}`}
         responseExample={`{
   "status": "success",
-  "data": [
-    { "id": "c8b3ecf6...", "title": "Clean Water", "status": "active", "raised_amount": 54000 }
-  ],
-  "meta": { "total": 12, "limit": 10, "offset": 0 }
+  "data": { "id": "ba_987...", "bank_account_name": "Dev Account" }
 }`}
+      />
+
+      <ApiEndpointDoc
+        title="List Bank Accounts"
+        method="GET"
+        url="/api/bot/banks"
+        description="Fetches all registered bank profiles for your account."
+        parameters={[]}
+        responseExample={`{ "status": "success", "data": [{ "id": "ba_987...", "bank_account_name": "..." }] }`}
       />
     </div>
   );

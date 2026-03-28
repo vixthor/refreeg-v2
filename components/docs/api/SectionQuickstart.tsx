@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import { Copy, Terminal, ChevronRight } from "lucide-react";
 
 export default function SectionQuickstart() {
@@ -22,7 +23,7 @@ export default function SectionQuickstart() {
             <h3 className="text-xl font-bold text-slate-900 tracking-tight">Generate API Keys</h3>
           </div>
           <p className="text-slate-600 leading-relaxed text-[15px] pl-12">
-            Navigate to the <span className="font-bold text-slate-900 underline decoration-blue-200">Developer Dashboard</span> and 
+            Navigate to the <Link href="/dashboard/developer" className="font-bold text-blue-600 hover:text-blue-700 underline underline-offset-4 decoration-blue-200">Developer Dashboard</Link> and 
             generate a set of Sandbox keys. You will need the **rg_test_sk_...** key to proceed.
           </p>
         </div>

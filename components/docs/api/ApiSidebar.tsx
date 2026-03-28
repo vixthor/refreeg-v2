@@ -47,11 +47,18 @@ export default function ApiSidebar({
       title: "Campaigns API",
       items: [
         { id: "Create Campaign", label: "Create Campaign", icon: <Terminal className="w-4 h-4" /> },
+        { id: "Retrieve Campaign", label: "Retrieve Campaign", icon: <Terminal className="w-4 h-4" /> },
         { id: "List Campaigns", label: "List Campaigns", icon: <Settings className="w-4 h-4" /> },
         { id: "Update Campaign", label: "Update Campaign", icon: <Settings className="w-4 h-4" /> },
         { id: "AI Blueprint Validation", label: "Validate (AI)", icon: <Zap className="w-4 h-4" /> },
         { id: "List Categories", label: "Categories", icon: <BookOpen className="w-4 h-4" /> },
         { id: "Report Campaign", label: "Report Fraud", icon: <AlertCircle className="w-4 h-4" /> },
+      ],
+    },
+    {
+      title: "Banks API",
+      items: [
+        { id: "Manage Banks", label: "Manage Banks", icon: <Terminal className="w-4 h-4" /> },
       ],
     },
     {

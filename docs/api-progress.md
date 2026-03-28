@@ -85,6 +85,15 @@ We are specifically tackling the following backend and core API phases from the 
 - **Responsive Navigation**: Refactored `ApiSidebar` and integrated a mobile-first navigation overlay, ensuring full accessibility across devices (Phase 6).
 - **Interactive Playground**: Synced `ApiPlayground` with the flattened data model and corrected endpoint paths (e.g., `/api/bot/campaigns/categories`).
 - **Technical Refinement**: Population of "Best Practices" (Security, Idempotency) and "Error Reference" (ApiErrorCode) sections (Phase 11).
+- **Update [March 28, 2026]**:
+    - **Modular Documentation**: Refactored `ApiDocsPage` into specialized components (`EndpointCampaigns`, `EndpointDonations`, etc.) for better maintainability and navigation.
+    - **Banks API Implementation**: Created `/api/bot/banks` for independent bank profile management.
+    - **Decoupled Architecture**: Updated Campaign API to support `bank_id`, allowing developers to reuse verified settlement profiles.
+    - **Blueprint Validation Clarity**: Enhanced documentation for the AI Blueprint Validation endpoint to support autonomous agent error-correction loops.
+    - **Dashboard Integration**: Added direct navigation links between the Documentation Portal and Developer Dashboard.
+
+### [March 29, 2026] - AI Blueprint Validation Refinement
+- **Documentation Update**: Updated `SectionValidateAi` in `EndpointMisc.tsx` to provide a clearer, more concise explanation of the validation dry-run process for AI agents.
 
 ---
 
