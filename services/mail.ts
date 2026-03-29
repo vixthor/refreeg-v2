@@ -4,19 +4,9 @@ import nodemailer from "nodemailer";
 import fs from "fs";
 import path from "path";
 import Handlebars from "handlebars";
+import { headers } from "next/headers";
 import { getCurrentUser } from "@/actions/auth-actions";
 import { getProfile } from "@/actions/profile-actions";
-
-export async function getDeviceInfo() {
-  if (typeof window === "undefined") return "Unknown Device";
-  const ua = window.navigator.userAgent;
-  if (/android/i.test(ua)) return "Android";
-  if (/iPad|iPhone|iPod/.test(ua)) return "iOS";
-  if (/Windows NT/.test(ua)) return "Windows";
-  if (/Macintosh/.test(ua)) return "Mac";
-  if (/Linux/.test(ua)) return "Linux";
-  return "Other";
-}
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || "smtp.gmail.com",
@@ -365,7 +355,6 @@ export async function sendPetitionSubmissionAdminNotification(
 }
 
 export async function sendLoginNotificationEmail(context: {
-  ipAddress?: string;
   device?: string;
   loginTime?: string;
 }) {
@@ -375,16 +364,26 @@ export async function sendLoginNotificationEmail(context: {
   }
   const profile = await getProfile(user.id);
   const currentYear = new Date().getFullYear();
+
+  // Resolve IP server-side from the request headers instead of
+  // relying on a client-side fetch to api.ipify.org.
+  let ipAddress = "Unknown IP";
+  try {
+    const headersList = await headers();
+    ipAddress = headersList.get("x-forwarded-for")?.split(",")[0]?.trim() || "Unknown IP";
+  } catch {
+    // headers() may fail outside of a request context
+  }
+
   return sendMail({
     to: profile?.email || "",
     subject: "New Login Notification",
     templateName: "login-notification",
     context: {
-      ...context,
       userName: profile?.full_name || "User",
       loginTime: context.loginTime || new Date().toLocaleString(),
       device: context.device || "Unknown Device",
-      ipAddress: context.ipAddress || "Unknown IP",
+      ipAddress,
       currentYear,
     },
   });
