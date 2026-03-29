@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { validateApiKey } from "@/utils/api-bot/api-auth";
-import { rateLimit } from "@/utils/api-bot/rate-limit";
+import { rateLimit } from "@/utils/api-bot/api-auth";
 import { logApiRequest } from "@/utils/api-bot/request-logger";
 
 export async function GET(request: NextRequest) {
