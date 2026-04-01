@@ -20,11 +20,22 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // 2. Update session and get user once. 
+  // 2. Update session and get user once.
   // updateSession already calls getUser() internally.
   const response = await updateSession(request);
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+
+  let user: any = null;
+  try {
+    const supabase = await createClient();
+    const result = await supabase.auth.getUser();
+    user = result?.data?.user ?? null;
+  } catch (err) {
+    // If Supabase fetch/auth fails, log and continue without blocking the request.
+    // This prevents middleware from terminating due to transient network/TLS errors.
+    // eslint-disable-next-line no-console
+    console.error("Supabase middleware getUser error:", err);
+    return response;
+  }
 
   if (!user) {
     return response;
