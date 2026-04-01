@@ -24,7 +24,15 @@ export async function UrgentCauses() {
     (cause) => !urgentCauses.includes(cause)
   );
 
-  const combinedCauses = [...urgentCauses, ...normalCauses];
+  const combinedCauses = [...urgentCauses, ...normalCauses].sort((a, b) => {
+  const percentA = a.goal > 0 ? a.raised / a.goal : 0;
+  const percentB = b.goal > 0 ? b.raised / b.goal : 0;
+
+  if (percentA === 0 && percentB !== 0) return 1;
+  if (percentB === 0 && percentA !== 0) return -1;
+
+  return (b.raised || 0) - (a.raised || 0);
+});
 
   if (combinedCauses.length === 0) {
     return null;
