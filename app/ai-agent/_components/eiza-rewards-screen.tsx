@@ -33,6 +33,9 @@ export default function EizaRewardsScreen() {
   const [loading, setLoading] = useState(true);
   const { user, isLoading: authLoading } = useAuth();
 
+  const streakSeries = useMemo(() => buildStreakSeries(stats), [stats]);
+  const streakPath = useMemo(() => buildStreakPath(streakSeries), [streakSeries]);
+
   // Fetch initial wallet data
   const fetchWalletData = useCallback(async () => {
     if (!user?.id) {
@@ -142,6 +145,12 @@ export default function EizaRewardsScreen() {
     }
   }, [authLoading, fetchWalletData]);
 
+  useEffect(() => {
+    if (!authLoading && user?.id) {
+      handleLoginReward();
+    }
+  }, [authLoading, user?.id, handleLoginReward]);
+
   const visibleBalance = useMemo(
     () => (showBalance ? `${balance.toLocaleString()} EIZA` : "••••• EIZA"),
     [showBalance, balance]
@@ -188,11 +197,26 @@ export default function EizaRewardsScreen() {
             </div>
             <svg className="mt-1 h-8 w-full" viewBox="0 0 240 32" fill="none">
               <path
-                d="M2 25C18 19 24 8 39 10C54 12 59 27 75 24C92 21 98 6 115 8C132 10 138 25 155 22C173 19 179 7 198 10C213 13 223 18 238 6"
+                d={streakPath}
                 stroke="rgba(186,230,253,0.95)"
                 strokeWidth="3"
                 strokeLinecap="round"
+                strokeLinejoin="round"
               />
+              {streakSeries.map((point, index) => {
+                const x = index * 40;
+                const y = point > 0 ? 8 : 24;
+
+                return (
+                  <circle
+                    key={`streak-point-${index}`}
+                    cx={x}
+                    cy={y}
+                    r="2"
+                    fill={point > 0 ? "rgba(16,185,129,0.95)" : "rgba(226,232,240,0.9)"}
+                  />
+                );
+              })}
             </svg>
           </div>
         </div>
@@ -319,6 +343,49 @@ export default function EizaRewardsScreen() {
       </div>
     </div>
   );
+}
+
+function buildStreakSeries(stats: UserStreak | null): number[] {
+  const series = new Array(7).fill(0);
+  const streak = stats?.weekly_streak || 0;
+  const lastActiveDate = stats?.last_active_date;
+
+  if (!streak || !lastActiveDate) return series;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const lastActive = new Date(lastActiveDate);
+  lastActive.setHours(0, 0, 0, 0);
+
+  const dayMs = 24 * 60 * 60 * 1000;
+  const daysSinceLastActive = Math.max(
+    0,
+    Math.floor((today.getTime() - lastActive.getTime()) / dayMs)
+  );
+
+  const endIndex = 6 - daysSinceLastActive;
+  const visibleStreak = Math.min(streak, 7);
+
+  for (let i = 0; i < visibleStreak; i += 1) {
+    const idx = endIndex - i;
+    if (idx < 0 || idx > 6) continue;
+    series[idx] = 1;
+  }
+
+  return series;
+}
+
+function buildStreakPath(series: number[]): string {
+  const points = series.map((point, index) => {
+    const x = index * 40;
+    const y = point > 0 ? 8 : 24;
+    return `${x} ${y}`;
+  });
+
+  if (points.length === 0) return "M0 24";
+
+  return `M${points[0]} L${points.slice(1).join(" L")}`;
 }
 
 function formatTransactionLabel(type: string): string {
