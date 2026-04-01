@@ -247,6 +247,8 @@ importers:
         specifier: ^5
         version: 5.8.2
 
+  sdks/javascript: {}
+
 packages:
 
   '@adraffy/ens-normalize@1.10.1':
