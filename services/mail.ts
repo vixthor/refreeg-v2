@@ -367,10 +367,21 @@ export async function sendLoginNotificationEmail(context: {
 
   // Resolve IP server-side from the request headers instead of
   // relying on a client-side fetch to api.ipify.org.
+  // This is faster and more secure for production.
   let ipAddress = "Unknown IP";
   try {
     const headersList = await headers();
-    ipAddress = headersList.get("x-forwarded-for")?.split(",")[0]?.trim() || "Unknown IP";
+    const xff = headersList.get("x-forwarded-for");
+    const xri = headersList.get("x-real-ip");
+    
+    let detectedIp = (xff?.split(",")[0] || xri || "Unknown IP").trim();
+    
+    // Label localhost clearly for local development
+    if (detectedIp === "::1" || detectedIp === "127.0.0.1") {
+      detectedIp = `${detectedIp} (Localhost)`;
+    }
+    
+    ipAddress = detectedIp;
   } catch {
     // headers() may fail outside of a request context
   }
