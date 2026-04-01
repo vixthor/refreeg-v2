@@ -11,25 +11,25 @@ interface FormStepperProps {
 
 export function FormStepper({ steps, currentStep }: FormStepperProps) {
   return (
-    <div className="w-full max-w-4xl mx-auto mb-8 md:mb-12 px-4">
+    <div className="mx-auto mb-6 w-full max-w-4xl px-0 sm:mb-8 md:mb-12 md:px-4">
       {/* Mobile Step Indicator (Simplified) */}
-      <div className="flex md:hidden items-center justify-between mb-4">
+      <div className="mb-5 flex items-start justify-between gap-3 md:hidden">
         <div className="flex flex-col">
           <span className="text-xs font-bold uppercase tracking-wider text-brand">
             Step {currentStep} of {steps.length}
           </span>
-          <span className="text-sm font-semibold text-gray-900 truncate max-w-[200px]">
+          <span className="max-w-[140px] text-sm font-semibold text-gray-900">
             {steps[currentStep - 1]}
           </span>
         </div>
-        <div className="flex gap-1">
+        <div className="flex flex-1 justify-end gap-1.5 pt-1">
           {steps.map((_, index) => (
             <div
               key={index}
               className={cn(
-                "h-1.5 w-6 rounded-full transition-all duration-300",
+                "h-1.5 min-w-0 flex-1 rounded-full transition-all duration-300",
                 currentStep === index + 1
-                  ? "bg-brand w-10"
+                  ? "bg-brand"
                   : currentStep > index + 1
                     ? "bg-brand/40"
                     : "bg-gray-100",
