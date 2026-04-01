@@ -1,8 +1,9 @@
 import { Users, CreditCard, TrendingUp } from "lucide-react";
 import { AnalyticsCard } from "@/components/analytics-card";
-import { getDashboardStats } from "@/actions/dashboard-actions";
-import { getCurrentUser } from "@/actions/auth-actions";
-import { getPetitionDashboardStats } from "@/actions/dashboard-actions";
+import {
+  getDashboardStats,
+  getPetitionDashboardStats,
+} from "@/actions/dashboard-actions";
 
 export async function DashboardStats({
   type = "all",
@@ -47,9 +48,9 @@ export async function DashboardStats({
       {petitionStats && (
         <>
           <AnalyticsCard
-            title="Total Signatures"
+            title="Unique Signers"
             value={petitionStats.totalDonors ?? 0}
-            description="Total number of petition signatures"
+            description="Total number of unique petition signers"
             icon={Users}
           />
           <AnalyticsCard
