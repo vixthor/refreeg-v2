@@ -78,8 +78,8 @@ export async function DashboardPetitions() {
                       petition.status === "approved"
                         ? "default"
                         : petition.status === "pending"
-                        ? "secondary"
-                        : "destructive"
+                          ? "secondary"
+                          : "destructive"
                     }
                   >
                     {petition.status}
@@ -100,7 +100,7 @@ export async function DashboardPetitions() {
                   <Progress
                     value={Math.min(
                       (petition.signatures / petition.goal) * 100,
-                      100
+                      100,
                     )}
                   />
                 </div>

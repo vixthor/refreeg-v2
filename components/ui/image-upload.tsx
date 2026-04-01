@@ -10,18 +10,20 @@ interface ImageUploadProps {
   onUpload: (files: File[]) => void;
   maxFiles?: number;
   accept?: string;
+  description?: string;
 }
 
 export function ImageUpload({
   onUpload,
   maxFiles = 1,
   accept = "image/*",
+  description,
 }: ImageUploadProps) {
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
       onUpload(acceptedFiles);
     },
-    [onUpload]
+    [onUpload],
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -55,9 +57,10 @@ export function ImageUpload({
           )}
         </div>
         <p className="text-xs text-muted-foreground">
-          {maxFiles === 1
-            ? "Upload a single file"
-            : `Upload up to ${maxFiles} files`}
+          {description ||
+            (maxFiles === 1
+              ? "Upload a single file"
+              : `Upload up to ${maxFiles} files`)}
         </p>
       </div>
     </div>

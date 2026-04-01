@@ -35,15 +35,6 @@ const nextConfig = {
     ],
   },
 
-  experimental: {
-    webpackBuildWorker: false,
-    parallelServerBuildTraces: false,
-    parallelServerCompiles: false,
-    serverActions: {
-      bodySizeLimit: "100mb",
-    },
-  },
-
   webpack(config, { dev, isServer }) {
     // Aceternity UI may import CSS that requires MiniCssExtractPlugin in prod
     if (!dev && !isServer) {
@@ -51,12 +42,12 @@ const nextConfig = {
         new MiniCssExtractPlugin({
           filename: "static/css/[name].[contenthash].css",
           chunkFilename: "static/css/[id].[contenthash].css",
-        })
+        }),
       );
 
       // Make sure CSS loader uses the plugin
       const cssRule = config.module.rules.find(
-        (r) => r.test && r.test.toString().includes(".css")
+        (r) => r.test && r.test.toString().includes(".css"),
       );
       if (cssRule) {
         cssRule.use = [

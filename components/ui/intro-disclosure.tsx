@@ -8,7 +8,7 @@ import {
   motion,
   useAnimation,
   type PanInfo,
-} from "motion/react";
+} from "framer-motion";
 
 import { cn } from "@/lib/utils";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
@@ -62,7 +62,7 @@ function useFeatureVisibility(featureId: string) {
 function useSwipe(onSwipe: (direction: "left" | "right") => void) {
   const handleDragEnd = (
     event: MouseEvent | TouchEvent | PointerEvent,
-    info: PanInfo
+    info: PanInfo,
   ) => {
     if (info.offset.x > 100) {
       onSwipe("right");
@@ -179,7 +179,7 @@ function StepTab({ step, isActive, onClick, isCompleted }: StepTabProps) {
       className={cn(
         "flex flex-col items-start rounded-lg px-4 py-2 text-left transition-colors w-full",
         isActive ? "bg-muted border border-border" : "hover:bg-muted/70",
-        "relative"
+        "relative",
       )}
       aria-current={isActive ? "step" : undefined}
       aria-label={`${step.title}${isCompleted ? " (completed)" : ""}`}
@@ -435,7 +435,7 @@ export function IntroDisclosure({
   const handleNext = () => {
     setDirection(1);
     setCompletedSteps((prev) =>
-      prev.includes(currentStep) ? prev : [...prev, currentStep]
+      prev.includes(currentStep) ? prev : [...prev, currentStep],
     );
     if (currentStep < steps.length - 1) {
       setCurrentStep(currentStep + 1);

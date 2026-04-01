@@ -19,18 +19,18 @@ export function Logo() {
       case "/disaster-relief":
         return "/logo-disaster-relief.svg";
       default:
-        return "/logo.svg"; // default/global logo
+        return "/logo.svg";
     }
   };
 
   return (
     <div>
       <Link href="/" className="flex items-center space-x-2">
-        <Image 
-          src={getLogoSrc()} 
-          alt="RefreeG logo" 
-          width={52} 
-          height={52} 
+        <Image
+          src={getLogoSrc()}
+          alt="RefreeG logo"
+          width={52}
+          height={52}
           priority
         />
       </Link>

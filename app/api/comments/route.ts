@@ -12,8 +12,9 @@ export async function POST(request: NextRequest) {
   }
 
   const { causeId, content, parentId, entityType } = await request.json();
-  if (!causeId || !content || typeof content !== "string") {
-    return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+  
+  if (!causeId || !content || typeof content !== "string" || content.trim().length === 0 || content.length > 2000) {
+    return NextResponse.json({ error: "Content must be provided and not exceed 2000 characters" }, { status: 400 });
   }
 
   try {
@@ -26,31 +27,19 @@ export async function POST(request: NextRequest) {
       .insert({
         [idColumn]: causeId,
         user_id: user.id,
-        content,
+        content: content.trim(),
         parent_id: parentId || null,
         is_edited: false,
       })
-      .select("*")
+      .select(`
+        *,
+        user:profiles(id, full_name, profile_photo, username)
+      `)
       .single();
 
     if (error) throw error;
 
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("full_name, profile_photo, username")
-      .eq("id", user.id)
-      .maybeSingle();
-
-    return NextResponse.json(
-      {
-        ...comment,
-        user: {
-          full_name: profile?.full_name || null,
-          profile_photo: profile?.profile_photo || null,
-        },
-      },
-      { status: 201 }
-    );
+    return NextResponse.json(comment, { status: 201 });
   } catch (error: any) {
     return NextResponse.json(
       { error: error?.message || "Failed to create comment" },
@@ -75,39 +64,18 @@ export async function GET(request: NextRequest) {
 
     const { data: comments, error } = await supabase
       .from(table)
-      .select("*")
+      .select(`
+        *,
+        user:profiles(id, full_name, profile_photo, username)
+      `)
       .eq(idColumn, causeId)
       .is("parent_id", null)
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .limit(100);
 
     if (error) throw error;
 
-    const userIds = Array.from(
-      new Set((comments || []).map((c: any) => c.user_id))
-    );
-    let profilesMap: Record<
-      string,
-      { full_name: string | null; profile_photo: string | null }
-    > = {};
-    if (userIds.length > 0) {
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("id, full_name, profile_photo, username")
-        .in("id", userIds);
-      (profiles || []).forEach((p: any) => {
-        profilesMap[p.id] = {
-          full_name: p.full_name || null,
-          profile_photo: p.profile_photo || null,
-        };
-      });
-    }
-
-    const response = (comments || []).map((c: any) => ({
-      ...c,
-      user: profilesMap[c.user_id] || { full_name: null, profile_photo: null },
-    }));
-
-    return NextResponse.json(response);
+    return NextResponse.json(comments);
   } catch (error: any) {
     return NextResponse.json(
       { error: error?.message || "Failed to fetch comments" },

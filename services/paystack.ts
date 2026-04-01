@@ -30,22 +30,28 @@ const Paystack = {
       }
       const baseUrl = await getBaseURL();
       console.log(data.isAnonymous);
+      const totalCharge = data.amount + data.serviceFee + (data.tipAmount || 0);
+      const feePlusTip = data.serviceFee + (data.tipAmount || 0);
+
       const requestData = {
         currency: "NGN",
         email: data.email,
-        amount: Math.round((data.amount + data.serviceFee) * 100),
+        amount: Math.round(totalCharge * 100),
         callback_url: `${baseUrl}/causes/${data.causeId}/payment/verify`,
-        transaction_charge: data.serviceFee * 100,
+        transaction_charge: Math.round(feePlusTip * 100),
         subaccount: data.subaccounts[0].subaccount,
         bearer: "subaccount",
+        plan: data.plan, // For recurring donations
         metadata: {
           user_id: data.id,
           amount: data.amount,
+          tip_amount: data.tipAmount || 0,
           customer_name: data.full_name,
           cause_id: data.causeId,
           email: data.email,
           message: data.message,
           is_anonymous: data.isAnonymous,
+          plan: data.plan,
         },
       };
 

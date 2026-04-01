@@ -11,7 +11,7 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { getCurrentUser } from "@/actions";
+import { getCurrentUser } from "@/actions/auth-actions";
 import { useToast } from "@/components/ui/use-toast";
 import NavigationLoader from "../NavigationLoader";
 
@@ -25,7 +25,7 @@ declare global {
       connect: () => Promise<{ publicKey: PublicKey }>;
       disconnect: () => Promise<void>;
       signAndSendTransaction: (
-        transaction: Transaction
+        transaction: Transaction,
       ) => Promise<{ signature: string }>;
     };
   }
@@ -39,7 +39,7 @@ interface SolDonationButtonProps {
 const fetchSolToNairaRate = async (): Promise<number> => {
   try {
     const response = await fetch(
-      "https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=ngn"
+      "https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=ngn",
     );
     const data = await response.json();
     return data.solana.ngn || DEFAULT_SOL_TO_NAIRA_RATE;
@@ -109,7 +109,7 @@ export default function SolDonationButton({
 
   const formatInputValue = (
     value: string,
-    cursorPosition: number
+    cursorPosition: number,
   ): { formattedValue: string; newCursorPosition: number } => {
     const cleanValue = removeCommas(value);
     const formattedValue = formatNumberWithCommas(cleanValue);
@@ -154,7 +154,7 @@ export default function SolDonationButton({
     // Format the value and get new cursor position
     const { formattedValue, newCursorPosition } = formatInputValue(
       sanitizedValue,
-      cursorPosition
+      cursorPosition,
     );
 
     setNairaInput(formattedValue);
@@ -164,7 +164,7 @@ export default function SolDonationButton({
       if (nairaInputRef.current) {
         nairaInputRef.current.setSelectionRange(
           newCursorPosition,
-          newCursorPosition
+          newCursorPosition,
         );
       }
     }, 0);
@@ -239,7 +239,7 @@ export default function SolDonationButton({
     amountInSol: number,
     amountInNaira: number,
     walletAddress: string,
-    recipientAddress: string
+    recipientAddress: string,
   ) => {
     try {
       const user = await getCurrentUser();
@@ -334,7 +334,7 @@ export default function SolDonationButton({
             balance / LAMPORTS_PER_SOL
           ).toFixed(6)} SOL, but need ${(
             amountInLamports / LAMPORTS_PER_SOL
-          ).toFixed(6)} SOL`
+          ).toFixed(6)} SOL`,
         );
       }
 
@@ -351,16 +351,15 @@ export default function SolDonationButton({
           fromPubkey: senderPublicKey,
           toPubkey: recipientPublicKey,
           lamports: amountInLamports,
-        })
+        }),
       );
 
       if (!window.solana) {
         throw new Error("Wallet is not available");
       }
 
-      const { signature } = await window.solana.signAndSendTransaction(
-        transaction
-      );
+      const { signature } =
+        await window.solana.signAndSendTransaction(transaction);
       setTxSignature(signature);
 
       toast({
@@ -375,8 +374,8 @@ export default function SolDonationButton({
           new Promise((_, reject) =>
             setTimeout(
               () => reject(new Error("Transaction confirmation timeout")),
-              30000
-            )
+              30000,
+            ),
           ),
         ]);
       } catch (confirmError) {

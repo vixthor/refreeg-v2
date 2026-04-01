@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createClient as createSupabaseAdmin } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
 import type {
   Petition,
@@ -16,9 +17,10 @@ import {
   sendPetitionRejectedEmailForUser,
 } from "@/services/mail";
 import { sendPetitionSubmissionAdminNotification } from "@/services/mail";
+import { cache } from "react";
 
 export async function getPetition(
-  petitionId: string
+  petitionId: string,
 ): Promise<PetitionWithUser | null> {
   const supabase = await createClient();
   const user = await getCurrentUser();
@@ -38,7 +40,7 @@ export async function getPetition(
         heading,
         description
       )
-    `
+    `,
     )
     .eq("id", petitionId)
     .single();
@@ -82,7 +84,7 @@ export async function getPetition(
 async function uploadImageToSupabase(
   file: File,
   userId: string,
-  type: "cover" | "additional"
+  type: "cover" | "additional",
 ): Promise<string> {
   const supabase = await createClient();
 
@@ -115,7 +117,7 @@ async function uploadImageToSupabase(
 
 export async function createPetition(
   userId: string,
-  petitionData: PetitionFormData
+  petitionData: PetitionFormData,
 ): Promise<Petition> {
   const supabase = await createClient();
 
@@ -124,7 +126,7 @@ export async function createPetition(
     coverImageUrl = await uploadImageToSupabase(
       petitionData.coverImage,
       userId,
-      "cover"
+      "cover",
     );
   }
 
@@ -146,7 +148,7 @@ export async function createPetition(
     }
 
     daysActive = Math.ceil(
-      (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
+      (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
     );
   }
 
@@ -159,8 +161,8 @@ export async function createPetition(
     try {
       multimediaUrls = await Promise.all(
         petitionData.multimedia.map((file) =>
-          uploadImageToSupabase(file, userId, "additional")
-        )
+          uploadImageToSupabase(file, userId, "additional"),
+        ),
       );
     } catch (error) {
       console.error("Error uploading multimedia:", error);
@@ -222,12 +224,13 @@ export async function createPetition(
         process.env.NEXT_PUBLIC_APP_URL || "https://www.refreeg.com";
       const reviewUrl = `${baseUrl}/dashboard/admin/petitions?tab=pending`;
 
-      await sendPetitionSubmissionAdminNotification(
+      // Send notification in background - do not await
+      sendPetitionSubmissionAdminNotification(
         profile.full_name || "User",
         profile.email,
         petitionData.title,
-        reviewUrl
-      );
+        reviewUrl,
+      ).catch((err) => console.error("Background notification error:", err));
     }
   } catch (error) {
     console.error("Error sending petition admin notification:", error);
@@ -240,7 +243,7 @@ export async function createPetition(
 export async function updatePetition(
   petitionId: string,
   userId: string,
-  petitionData: Partial<PetitionFormData>
+  petitionData: Partial<PetitionFormData>,
 ): Promise<Petition> {
   const supabase = await createClient();
 
@@ -264,7 +267,7 @@ export async function updatePetition(
     }
 
     daysActive = Math.ceil(
-      (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
+      (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
     );
   }
 
@@ -277,8 +280,8 @@ export async function updatePetition(
     try {
       multimediaUrls = await Promise.all(
         petitionData.multimedia.map((file) =>
-          uploadImageToSupabase(file, userId, "additional")
-        )
+          uploadImageToSupabase(file, userId, "additional"),
+        ),
       );
     } catch (error) {
       console.error("Error uploading multimedia:", error);
@@ -335,9 +338,9 @@ export async function updatePetition(
   return data;
 }
 
-export async function listPetitions(
-  options: PetitionFilterOptions = {}
-): Promise<Petition[]> {
+export const listPetitions = cache(async (
+  options: PetitionFilterOptions = {},
+): Promise<Petition[]> => {
   const supabase = await createClient();
 
   let query = supabase
@@ -368,7 +371,7 @@ export async function listPetitions(
   if (options.offset) {
     query = query.range(
       options.offset,
-      options.offset + (options.limit || 10) - 1
+      options.offset + (options.limit || 10) - 1,
     );
   }
 
@@ -380,21 +383,8 @@ export async function listPetitions(
   }
 
   const petitions = (data as Petition[]) || [];
-  const nowExpired = petitions.filter(
-    (p) => (p.days_active ?? 0) <= 0 && p.status === ("approved" as any)
-  );
-
-  if (nowExpired.length > 0) {
-    try {
-      const ids = nowExpired.map((p) => p.id);
-      await supabase
-        .from("petitions")
-        .update({ status: "expired" })
-        .in("id", ids);
-    } catch (e) {
-      console.error("Failed to auto-expire petitions:", e);
-    }
-  }
+  
+  // Expiry side effect removed to optimize landing page (prevent unnecessary POST/UPDATE)
 
   const isOwnerScoped = !!options.userId;
   const result = isOwnerScoped
@@ -402,10 +392,10 @@ export async function listPetitions(
     : petitions.filter((p) => p.status !== ("expired" as any));
 
   return result;
-}
+});
 
 export async function countPetitions(
-  options: PetitionFilterOptions = {}
+  options: PetitionFilterOptions = {},
 ): Promise<number> {
   const supabase = await createClient();
 
@@ -442,12 +432,34 @@ export async function countPetitions(
 export async function updatePetitionStatus(
   petitionId: string,
   status: "approved" | "rejected",
-  rejectionReason?: string
+  rejectionReason?: string,
 ): Promise<Petition> {
-  const supabase = await createClient();
+  const user = await getCurrentUser();
+  if (!user) throw new Error("Not authenticated");
+
+  const isAuthorized = await isAdminOrManager(user.id);
+  if (!isAuthorized) throw new Error("Unauthorized");
+
+  if (
+    !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    !process.env.SUPABASE_SERVICE_ROLE_KEY
+  ) {
+    throw new Error("Server configuration error: Missing Supabase keys");
+  }
+
+  const supabaseAdmin = createSupabaseAdmin(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    },
+  );
 
   if (status === "approved") {
-    const { data: edit, error: editError } = await supabase
+    const { data: edit, error: editError } = await supabaseAdmin
       .from("petition_edits")
       .select("*")
       .eq("original_petition_id", petitionId)
@@ -476,7 +488,7 @@ export async function updatePetitionStatus(
         status: "approved",
         updated_at: new Date().toISOString(),
       };
-      const { data: updated, error: updateError } = await supabase
+      const { data: updated, error: updateError } = await supabaseAdmin
         .from("petitions")
         .update(updateData)
         .eq("id", petitionId)
@@ -485,18 +497,18 @@ export async function updatePetitionStatus(
       if (updateError) {
         console.error(
           "Error updating petition with approved edit:",
-          updateError
+          updateError,
         );
         throw updateError;
       }
 
-      const { data: editSections } = await supabase
+      const { data: editSections } = await supabaseAdmin
         .from("petition_edit_sections")
         .select("id, heading, description")
         .eq("petition_edit_id", edit.id);
 
       if (editSections && editSections.length > 0) {
-        const { error: delErr } = await supabase
+        const { error: delErr } = await supabaseAdmin
           .from("petition_sections")
           .delete()
           .eq("petition_id", petitionId);
@@ -505,14 +517,14 @@ export async function updatePetitionStatus(
           throw delErr;
         }
 
-        const { error: insErr } = await supabase
+        const { error: insErr } = await supabaseAdmin
           .from("petition_sections")
           .insert(
             editSections.map((s: any) => ({
               petition_id: petitionId,
               heading: s.heading,
               description: s.description,
-            }))
+            })),
           );
         if (insErr) {
           console.error("Failed to insert new petition sections", insErr);
@@ -520,15 +532,15 @@ export async function updatePetitionStatus(
         }
       }
 
-      await supabase
+      await supabaseAdmin
         .from("petition_edit_sections")
         .delete()
         .eq("petition_edit_id", edit.id);
-      await supabase.from("petition_edits").delete().eq("id", edit.id);
+      await supabaseAdmin.from("petition_edits").delete().eq("id", edit.id);
 
       updatedPetition = updated;
     } else {
-      const { data: updated, error: updateError } = await supabase
+      const { data: updated, error: updateError } = await supabaseAdmin
         .from("petitions")
         .update({
           status: "approved",
@@ -545,7 +557,7 @@ export async function updatePetitionStatus(
       updatedPetition = updated;
     }
 
-    const { data: petition } = await supabase
+    const { data: petition } = await supabaseAdmin
       .from("petitions")
       .select("user_id, title, id")
       .eq("id", petitionId)
@@ -562,7 +574,7 @@ export async function updatePetitionStatus(
   }
 
   if (status === "rejected") {
-    const { data: edit, error: editError } = await supabase
+    const { data: edit, error: editError } = await supabaseAdmin
       .from("petition_edits")
       .select("*")
       .eq("original_petition_id", petitionId)
@@ -572,13 +584,13 @@ export async function updatePetitionStatus(
       .single();
 
     if (edit && !editError) {
-      await supabase
+      await supabaseAdmin
         .from("petition_edits")
         .update({ status: "rejected", rejection_reason: rejectionReason })
         .eq("id", edit.id);
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from("petitions")
       .update({
         status: "rejected",
@@ -594,7 +606,7 @@ export async function updatePetitionStatus(
       throw error;
     }
 
-    const { data: petition } = await supabase
+    const { data: petition } = await supabaseAdmin
       .from("petitions")
       .select("user_id, title, id")
       .eq("id", petitionId)
@@ -632,7 +644,7 @@ export async function getPetitionEdits(): Promise<any[]> {
         heading,
         description
       )
-    `
+    `,
     )
     .eq("status", "pending")
     .order("created_at", { ascending: false });
@@ -664,7 +676,7 @@ export async function getUserPetitions(userId: string): Promise<Petition[]> {
 
 export async function getUserPetitionsWithStatus(
   userId: string,
-  status?: string
+  status?: string,
 ): Promise<Petition[]> {
   const supabase = await createClient();
 
