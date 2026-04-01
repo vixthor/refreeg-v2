@@ -4,45 +4,12 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Plus } from "lucide-react"
-import { getCurrentUser, getUserCauses } from "@/actions"
-
-// Mock data for user's causes
-// const userCauses = [
-//   {
-//     id: "1",
-//     title: "Clean Water Initiative",
-//     description: "Providing clean water to communities in rural areas.",
-//     category: "Environment",
-//     raised: 12500,
-//     goal: 20000,
-//     status: "approved",
-//     created_at: "2023-05-15T10:30:00Z",
-//   },
-//   {
-//     id: "2",
-//     title: "Education for All",
-//     description: "Supporting education for underprivileged children.",
-//     category: "Education",
-//     raised: 8700,
-//     goal: 15000,
-//     status: "approved",
-//     created_at: "2023-06-10T14:45:00Z",
-//   },
-//   {
-//     id: "3",
-//     title: "Medical Supplies Drive",
-//     description: "Collecting medical supplies for local clinics.",
-//     category: "Healthcare",
-//     raised: 0,
-//     goal: 10000,
-//     status: "pending",
-//     created_at: "2023-07-05T09:15:00Z",
-//   },
-// ]
+import { getCurrentUser } from "@/actions"
+import { getUserCausesWithStats } from "@/actions/dashboard-actions"
 
 export async function DashboardCauses() {
   const user = await getCurrentUser()
-  const userCauses = await getUserCauses(user?.id ?? '')
+  const userCauses = await getUserCausesWithStats(user?.id ?? '')
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
