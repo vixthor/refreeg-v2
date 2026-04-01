@@ -11,9 +11,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Plus } from "lucide-react";
-import { getCurrentUser } from "@/actions/auth-actions";
-import { getUserPetitions } from "@/actions/petition-actions";
-import { listSignaturesForPetition } from "@/actions/signature-actions";
+import { getCurrentUser } from "@/actions";
+import { getUserPetitionsWithStats } from "@/actions/dashboard-actions";
 
 export async function DashboardPetitions() {
   const user = await getCurrentUser();
@@ -31,15 +30,8 @@ export async function DashboardPetitions() {
     );
   }
 
-  const petitions = await getUserPetitions(user.id);
-
-  // attach signatures count
-  const petitionsWithSigners = await Promise.all(
-    petitions.map(async (petition) => {
-      const signers = await listSignaturesForPetition(petition.id);
-      return { ...petition, signatures: signers.length };
-    }),
-  );
+  // Single batch query — no N+1 per petition
+  const petitionsWithSigners = await getUserPetitionsWithStats(user.id);
 
   return (
     <div className="space-y-4">

@@ -535,12 +535,12 @@ export default function CreateCauseForm() {
     switch (currentStep) {
       case 1:
         return (
-          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="space-y-6">
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 sm:space-y-8">
+            <div className="space-y-5 sm:space-y-6">
               <div className="space-y-2">
                 <Label
                   htmlFor="title"
-                  className="text-base font-semibold text-gray-700"
+                  className="text-sm font-semibold text-gray-700 sm:text-base"
                 >
                   Cause Title
                 </Label>
@@ -551,7 +551,7 @@ export default function CreateCauseForm() {
                   value={formData.title}
                   onChange={handleChange}
                   className={cn(
-                    "h-12 text-lg premium-input",
+                    "h-11 text-base premium-input sm:h-12 sm:text-lg",
                     errors.title ? "border-red-500" : "",
                   )}
                 />
@@ -562,9 +562,12 @@ export default function CreateCauseForm() {
                 )}
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="summary" className="text-base font-semibold text-gray-700">
+                  <Label
+                    htmlFor="summary"
+                    className="text-sm font-semibold text-gray-700 sm:text-base"
+                  >
                     Short Summary <span className="text-gray-400 font-normal">(optional)</span>
                   </Label>
                   <Input
@@ -575,7 +578,7 @@ export default function CreateCauseForm() {
                     onChange={handleChange}
                     maxLength={200}
                     className={cn(
-                      "h-12 premium-input",
+                      "h-11 premium-input sm:h-12",
                       errors.summary ? "border-red-500" : ""
                     )}
                   />
@@ -586,7 +589,10 @@ export default function CreateCauseForm() {
                   )}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="location" className="text-base font-semibold text-gray-700">
+                  <Label
+                    htmlFor="location"
+                    className="text-sm font-semibold text-gray-700 sm:text-base"
+                  >
                     Location <span className="text-gray-400 font-normal">(optional)</span>
                   </Label>
                   <Input
@@ -596,7 +602,7 @@ export default function CreateCauseForm() {
                     value={formData.location}
                     onChange={handleChange}
                     className={cn(
-                      "h-12 premium-input",
+                      "h-11 premium-input sm:h-12",
                       errors.location ? "border-red-500" : ""
                     )}
                   />
@@ -608,11 +614,11 @@ export default function CreateCauseForm() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 gap-5 md:grid-cols-2 md:gap-6">
                 <div className="space-y-2">
                   <Label
                     htmlFor="category"
-                    className="text-base font-semibold text-gray-700"
+                    className="text-sm font-semibold text-gray-700 sm:text-base"
                   >
                     Category
                   </Label>
@@ -624,7 +630,7 @@ export default function CreateCauseForm() {
                   >
                     <SelectTrigger
                       className={cn(
-                        "h-12 premium-input",
+                        "h-11 premium-input sm:h-12",
                         errors.category ? "border-red-500" : "",
                       )}
                     >
@@ -645,11 +651,11 @@ export default function CreateCauseForm() {
                   )}
                 </div>
 
-                <div className="grid grid-cols-3 gap-4 lg:grid-cols-3">
-                  <div className="col-span-2 space-y-2">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 lg:grid-cols-3">
+                  <div className="space-y-2 sm:col-span-2">
                     <Label
                       htmlFor="goal"
-                      className="text-base font-semibold text-gray-700"
+                      className="text-sm font-semibold text-gray-700 sm:text-base"
                     >
                       Funding Goal
                     </Label>
@@ -662,11 +668,11 @@ export default function CreateCauseForm() {
                         value={formData.goal}
                         onChange={handleChange}
                         className={cn(
-                          "h-12 pl-12 premium-input text-lg font-mono",
+                          "h-11 pl-11 premium-input text-base font-mono sm:h-12 sm:pl-12 sm:text-lg",
                           errors.goal ? "border-red-500" : "",
                         )}
                       />
-                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">
+                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 font-bold sm:left-4">
                         ₦
                       </span>
                     </div>
@@ -679,7 +685,7 @@ export default function CreateCauseForm() {
                   <div className="space-y-2">
                     <Label
                       htmlFor="currency"
-                      className="text-base font-semibold text-gray-700"
+                      className="text-sm font-semibold text-gray-700 sm:text-base"
                     >
                       Currency
                     </Label>
@@ -689,7 +695,7 @@ export default function CreateCauseForm() {
                         handleSelectChange("currency", value)
                       }
                     >
-                      <SelectTrigger className="h-12 premium-input font-bold">
+                      <SelectTrigger className="h-11 premium-input font-bold sm:h-12">
                         <SelectValue placeholder="NGN" />
                       </SelectTrigger>
                       <SelectContent>
@@ -709,8 +715,8 @@ export default function CreateCauseForm() {
 
       case 2:
         return (
-          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="flex justify-between items-end">
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 sm:space-y-8">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
               <div className="space-y-1">
                 <h3 className="text-xl font-bold text-gradient">
                   Tell Your Story
@@ -723,20 +729,20 @@ export default function CreateCauseForm() {
                 type="button"
                 onClick={addSection}
                 variant="outline"
-                className="rounded-full border-brand/20 text-brand hover:bg-brand/5"
+                className="h-11 w-full rounded-full border-brand/20 text-brand hover:bg-brand/5 sm:w-auto"
               >
                 Add Section
               </Button>
             </div>
 
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               {formData.sections.map((section, index) => (
                 <Card
                   key={index}
                   className="relative overflow-hidden border-brand/10 shadow-sm bg-white/50 backdrop-blur-sm"
                 >
-                  <div className="p-6 space-y-4">
-                    <div className="flex justify-between items-center bg-brand/5 -mx-6 -mt-6 p-4 border-b border-brand/10 mb-2">
+                  <div className="space-y-4 p-4 sm:p-6">
+                    <div className="-mx-4 -mt-4 mb-2 flex items-center justify-between border-b border-brand/10 bg-brand/5 p-4 sm:-mx-6 sm:-mt-6">
                       <span className="text-xs font-bold uppercase tracking-wider text-brand">
                         Section {index + 1}
                       </span>
@@ -752,7 +758,7 @@ export default function CreateCauseForm() {
                         </Button>
                       )}
                     </div>
-                    <div className="space-y-4 pt-2">
+                    <div className="space-y-4 pt-1 sm:pt-2">
                       <div className="space-y-2">
                         <Label
                           htmlFor={`section-heading-${index}`}
@@ -767,7 +773,7 @@ export default function CreateCauseForm() {
                           onChange={(e) =>
                             updateSection(index, "heading", e.target.value)
                           }
-                          className="premium-input border-brand/5"
+                          className="h-11 premium-input border-brand/5 sm:h-12"
                         />
                       </div>
                       <div className="space-y-2">
@@ -784,7 +790,7 @@ export default function CreateCauseForm() {
                           onChange={(e) =>
                             updateSection(index, "description", e.target.value)
                           }
-                          className="min-h-[150px] premium-input border-brand/5 resize-none"
+                          className="min-h-[140px] premium-input border-brand/5 resize-none sm:min-h-[150px]"
                         />
                       </div>
                     </div>
@@ -797,7 +803,7 @@ export default function CreateCauseForm() {
 
       case 3:
         return (
-          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 sm:space-y-8">
             <div className="space-y-2">
               <h3 className="text-xl font-bold text-gradient">
                 Set the Timeline
@@ -808,9 +814,9 @@ export default function CreateCauseForm() {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-2 md:gap-8">
               <div className="space-y-4">
-                <Label htmlFor="start-date" className="text-base font-semibold text-gray-700 block mb-2">
+                <Label htmlFor="start-date" className="mb-2 block text-sm font-semibold text-gray-700 sm:text-base">
                   Start Date
                 </Label>
                 <Popover>
@@ -819,12 +825,12 @@ export default function CreateCauseForm() {
                       id="start-date"
                       variant="outline"
                       className={cn(
-                        "w-full h-14 justify-start text-left font-normal premium-input rounded-2xl border-brand/10",
+                        "h-12 w-full justify-start rounded-2xl border-brand/10 text-left font-normal premium-input sm:h-14",
                         !formData.startDate && "text-muted-foreground",
                         errors.startDate && "border-red-500",
                       )}
                     >
-                      <CalendarIcon className="mr-3 h-5 w-5 text-brand" />
+                      <CalendarIcon className="mr-3 h-4 w-4 text-brand sm:h-5 sm:w-5" />
                       {formData.startDate ? (
                         format(formData.startDate, "PPP")
                       ) : (
@@ -850,7 +856,7 @@ export default function CreateCauseForm() {
               </div>
 
               <div className="space-y-4">
-                <Label htmlFor="end-date" className="text-base font-semibold text-gray-700 block mb-2">
+                <Label htmlFor="end-date" className="mb-2 block text-sm font-semibold text-gray-700 sm:text-base">
                   End Date
                 </Label>
                 <Popover>
@@ -859,12 +865,12 @@ export default function CreateCauseForm() {
                       id="end-date"
                       variant="outline"
                       className={cn(
-                        "w-full h-14 justify-start text-left font-normal premium-input rounded-2xl border-brand/10",
+                        "h-12 w-full justify-start rounded-2xl border-brand/10 text-left font-normal premium-input sm:h-14",
                         !formData.endDate && "text-muted-foreground",
                         errors.endDate && "border-red-500",
                       )}
                     >
-                      <CalendarIcon className="mr-3 h-5 w-5 text-brand" />
+                      <CalendarIcon className="mr-3 h-4 w-4 text-brand sm:h-5 sm:w-5" />
                       {formData.endDate ? (
                         format(formData.endDate, "PPP")
                       ) : (
@@ -896,11 +902,11 @@ export default function CreateCauseForm() {
             </div>
 
             {formData.startDate && formData.endDate && (
-              <div className="bg-brand/5 p-4 rounded-xl border border-brand/10 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-brand/10 flex items-center justify-center text-brand">
+              <div className="flex items-start gap-3 rounded-xl border border-brand/10 bg-brand/5 p-4">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand/10 text-brand">
                   <CalendarIcon className="w-5 h-5" />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <p className="text-sm font-semibold text-brand">
                     Duration:{" "}
                     {differenceInDays(formData.endDate, formData.startDate)}{" "}
@@ -918,7 +924,7 @@ export default function CreateCauseForm() {
 
       case 4:
         return (
-          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 sm:space-y-8">
             <div className="space-y-2">
               <h3 className="text-xl font-bold text-gradient">Visual Impact</h3>
               <p className="text-sm text-gray-500">
@@ -927,12 +933,12 @@ export default function CreateCauseForm() {
               </p>
             </div>
 
-            <div className="space-y-6">
+            <div className="space-y-5 sm:space-y-6">
               <div className="space-y-4">
-                <Label className="text-base font-semibold text-gray-700 block">
+                <Label className="block text-sm font-semibold text-gray-700 sm:text-base">
                   Cover Image
                 </Label>
-                <div className="glass-panel p-6 rounded-2xl border-brand/10 transition-all hover:border-brand/30">
+                <div className="glass-panel rounded-2xl border-brand/10 p-4 transition-all hover:border-brand/30 sm:p-6">
                   <ImageUpload
                     onUpload={(files) => handleImageUpload(files)}
                     maxFiles={1}
@@ -971,15 +977,15 @@ export default function CreateCauseForm() {
               </div>
 
               <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <Label className="text-base font-semibold text-gray-700 block">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <Label className="block text-sm font-semibold text-gray-700 sm:text-base">
                     Multimedia Gallery
                   </Label>
-                  <span className="text-xs text-brand font-medium bg-brand/5 px-2 py-1 rounded-full border border-brand/10">
+                  <span className="w-fit rounded-full border border-brand/10 bg-brand/5 px-2 py-1 text-xs font-medium text-brand">
                     Max 5 files
                   </span>
                 </div>
-                <div className="glass-panel p-6 rounded-2xl border-brand/10">
+                <div className="glass-panel rounded-2xl border-brand/10 p-4 sm:p-6">
                   <ImageUpload
                     onUpload={(files) => handleMultimediaUpload(files)}
                     maxFiles={5 - (formData.multimedia?.length || 0)}
@@ -1002,14 +1008,14 @@ export default function CreateCauseForm() {
               </div>
 
               <div className="space-y-4">
-                <Label className="text-base font-semibold text-gray-700 block">
+                <Label className="block text-sm font-semibold text-gray-700 sm:text-base">
                   Video Links (Optional)
                 </Label>
                 <div className="space-y-3">
                   {formData.videoLinks.map((link, index) => (
                     <div
                       key={index}
-                      className="flex gap-2 group animate-in slide-in-from-left-2"
+                      className="group flex flex-col gap-2 animate-in slide-in-from-left-2 sm:flex-row"
                     >
                       <Input
                         value={link}
@@ -1022,7 +1028,7 @@ export default function CreateCauseForm() {
                           }));
                         }}
                         placeholder="YouTube or Vimeo link"
-                        className="premium-input bg-white group-hover:border-brand/30"
+                        className="h-11 premium-input bg-white group-hover:border-brand/30 sm:h-12"
                       />
                       <Button
                         type="button"
@@ -1036,7 +1042,7 @@ export default function CreateCauseForm() {
                             videoLinks: newLinks,
                           }));
                         }}
-                        className="text-red-500 hover:bg-red-50 rounded-lg h-12"
+                        className="h-11 rounded-lg text-red-500 hover:bg-red-50 sm:h-12"
                       >
                         Remove
                       </Button>
@@ -1051,7 +1057,7 @@ export default function CreateCauseForm() {
                       }))
                     }
                     variant="outline"
-                    className="w-full border-dashed border-2 border-gray-200 text-gray-500 hover:border-brand/30 hover:text-brand h-12 rounded-xl transition-all"
+                    className="h-11 w-full rounded-xl border-2 border-dashed border-gray-200 text-gray-500 transition-all hover:border-brand/30 hover:text-brand sm:h-12"
                   >
                     + Add Video Link
                   </Button>
@@ -1063,9 +1069,9 @@ export default function CreateCauseForm() {
 
       case 5:
         return (
-          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="space-y-2 border-b border-gray-100 pb-6">
-              <h3 className="text-2xl font-bold text-gradient">
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 sm:space-y-8">
+            <div className="space-y-2 border-b border-gray-100 pb-5 sm:pb-6">
+              <h3 className="text-xl font-bold text-gradient sm:text-2xl">
                 Review & Launch
               </h3>
               <p className="text-gray-500">
@@ -1074,8 +1080,8 @@ export default function CreateCauseForm() {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <div className="lg:col-span-2 space-y-8">
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 lg:gap-8">
+              <div className="space-y-6 lg:col-span-2 lg:space-y-8">
                 {/* Visual Preview */}
                 <div className="glass-panel overflow-hidden rounded-3xl">
                   <MultimediaCarousel
@@ -1095,7 +1101,7 @@ export default function CreateCauseForm() {
                 </div>
 
                 {/* Content Review */}
-                <div className="space-y-6">
+                <div className="space-y-5 sm:space-y-6">
                   <div>
                     <h4 className="text-xl font-bold mb-2">{formData.title}</h4>
                     {(formData.summary || formData.location) && (
@@ -1143,7 +1149,7 @@ export default function CreateCauseForm() {
 
               {/* Sidebar Info */}
               <div className="space-y-6">
-                <div className="glass-panel p-6 rounded-3xl border-brand/10 space-y-6 sticky top-6">
+                <div className="glass-panel space-y-5 rounded-3xl border-brand/10 p-5 sm:p-6 lg:sticky lg:top-6">
                   <div className="space-y-1">
                     <p className="text-xs font-bold uppercase tracking-wider text-gray-400">
                       Target Goal
@@ -1203,7 +1209,7 @@ export default function CreateCauseForm() {
       <FormStepper steps={steps} currentStep={currentStep} />
 
       <form
-        className="space-y-8"
+        className="space-y-6 sm:space-y-8"
         autoComplete="off"
         onKeyDown={(e) => {
           if (
@@ -1217,7 +1223,7 @@ export default function CreateCauseForm() {
           }
         }}
       >
-        <div className="min-h-[400px]">
+        <div className="min-h-[320px] sm:min-h-[400px]">
           <AnimatePresence mode="wait">
             <motion.div
               key={currentStep}
@@ -1231,22 +1237,22 @@ export default function CreateCauseForm() {
           </AnimatePresence>
         </div>
 
-        <div className="flex justify-between items-center pt-8 border-t border-gray-100">
+        <div className="sticky bottom-0 z-10 -mx-4 flex flex-col gap-3 border-t border-gray-100 bg-white/95 px-4 pb-1 pt-4 backdrop-blur sm:static sm:mx-0 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:bg-transparent sm:px-0 sm:pb-0 sm:pt-8 sm:backdrop-blur-0">
           <Button
             type="button"
             variant="ghost"
             onClick={prevStep}
             disabled={currentStep === 1}
-            className="hover:bg-gray-50"
+            className="order-2 h-11 w-full hover:bg-gray-50 sm:order-1 sm:w-auto"
           >
             Back
           </Button>
-          <div className="flex gap-4">
+          <div className="order-1 flex w-full gap-3 sm:order-2 sm:w-auto sm:gap-4">
             {currentStep < 5 ? (
               <Button
                 type="button"
                 onClick={nextStep}
-                className="bg-brand text-white hover:bg-brand/90 px-8"
+                className="h-11 flex-1 bg-brand text-white hover:bg-brand/90 sm:h-10 sm:flex-none sm:px-8"
               >
                 Continue
               </Button>
@@ -1255,7 +1261,7 @@ export default function CreateCauseForm() {
                 type="button"
                 disabled={isLoading || submitting}
                 onClick={handleSubmit}
-                className="bg-brand text-white hover:bg-brand/90 px-8"
+                className="h-11 flex-1 bg-brand text-white hover:bg-brand/90 sm:h-10 sm:flex-none sm:px-8"
               >
                 {isLoading || submitting ? (
                   <>
