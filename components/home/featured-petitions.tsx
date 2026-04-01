@@ -10,7 +10,7 @@ export async function FeaturedPetitions() {
     (p) => (p.days_active ?? 0) > 0 && p.status !== ("expired" as any)
   );
 
-  const petitionsWithSigners = await Promise.all(
+  const petitionsWithSigners = (await Promise.all(
     featuredPetitions.map(async (petition) => {
       const signers = await listSignaturesForPetition(petition.id);
 
@@ -21,10 +21,13 @@ export async function FeaturedPetitions() {
         0
       );
 
-      const percentRaised = Math.min(
-        Math.round((totalAmount / petition.goal) * 100),
-        100
-      );
+      const percentRaised =
+        petition.goal > 0
+          ? Math.min(
+              Math.round((totalAmount / petition.goal) * 100),
+              100
+            )
+          : 0;
 
       return {
         ...petition,
@@ -34,7 +37,32 @@ export async function FeaturedPetitions() {
         percentRaised,
       };
     })
-  );
+  )).sort((a, b) => {
+    // ✅ Push 0% to bottom
+    if (a.percentRaised === 0 && b.percentRaised !== 0) return 1;
+    if (b.percentRaised === 0 && a.percentRaised !== 0) return -1;
+
+    // ✅ Higher percentage first
+    if (b.percentRaised !== a.percentRaised) {
+      return b.percentRaised - a.percentRaised;
+    }
+
+    // ✅ Then most signed
+    if (b.signerCount !== a.signerCount) {
+      return b.signerCount - a.signerCount;
+    }
+
+    // ✅ Then highest amount raised
+    if (b.totalAmount !== a.totalAmount) {
+      return b.totalAmount - a.totalAmount;
+    }
+
+    // ✅ Then newest
+    return (
+      new Date(b.created_at).getTime() -
+      new Date(a.created_at).getTime()
+    );
+  });
 
   if (!petitionsWithSigners || petitionsWithSigners.length === 0) {
     return null;
