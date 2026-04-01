@@ -1,9 +1,12 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createClient as createSupabaseAdmin } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
 import { KycVerification, KycStatus } from "@/types/kyc-types";
 import { logAdminActivity } from "@/actions/database-actions";
+import { isAdminOrManager } from "./role-actions";
+import { getCurrentUser } from "./auth-actions";
 import {
   sendKycSubmittedEmail,
   sendKycApprovedEmail,
@@ -119,12 +122,13 @@ export async function uploadKycDocument(
         const baseUrl =
           process.env.NEXT_PUBLIC_APP_URL || "https://www.refreeg.com";
         const kycReviewUrl = `${baseUrl}/dashboard/admin/users/kyc/${userId}`;
-        await sendKycSubmissionAdminNotification(
+        // Send notification in background - do not await
+        sendKycSubmissionAdminNotification(
           profile?.email || "",
           personalData.fullName,
           userId,
           kycReviewUrl,
-        );
+        ).catch((err) => console.error("Background notification error:", err));
       } catch (emailError) {
         console.error("Error sending KYC submission email:", emailError);
       }
@@ -207,12 +211,13 @@ export async function uploadKycDocument(
         const baseUrl =
           process.env.NEXT_PUBLIC_APP_URL || "https://www.refreeg.com";
         const kycReviewUrl = `${baseUrl}/dashboard/admin/users/kyc/${userId}`;
-        await sendKycSubmissionAdminNotification(
+        // Send notification in background - do not await
+        sendKycSubmissionAdminNotification(
           profile?.email || "",
           personalData.fullName,
           userId,
           kycReviewUrl,
-        );
+        ).catch((err) => console.error("Background notification error:", err));
       } catch (emailError) {
         console.error("Error sending KYC submission email:", emailError);
       }
@@ -273,14 +278,36 @@ export async function updateVerificationStatus(
   notes?: string,
 ): Promise<{ error: string | null }> {
   try {
-    const supabase = await createClient();
+    const user = await getCurrentUser();
+    if (!user) return { error: "Not authenticated" };
+
+    const isAuthorized = await isAdminOrManager(user.id);
+    if (!isAuthorized) return { error: "Unauthorized" };
+
+    if (
+      !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+      !process.env.SUPABASE_SERVICE_ROLE_KEY
+    ) {
+      return { error: "Server configuration error: Missing Supabase keys" };
+    }
+
+    const supabaseAdmin = createSupabaseAdmin(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY,
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+        },
+      },
+    );
     console.log(
       "[KYC] Updating status for verificationId:",
       verificationId,
       "to status:",
       status,
     );
-    const { error: updateError } = await supabase
+    const { error: updateError } = await supabaseAdmin
       .from("kyc_verifications")
       .update({
         status: status,
@@ -296,10 +323,6 @@ export async function updateVerificationStatus(
       return { error: updateError.message || JSON.stringify(updateError) };
     }
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
     if (user) {
       if (status === "approved") {
         await logAdminActivity("approve-kyc", user.id);
@@ -308,7 +331,7 @@ export async function updateVerificationStatus(
       }
     }
 
-    const { data: verification, error: fetchError } = await supabase
+    const { data: verification, error: fetchError } = await supabaseAdmin
       .from("kyc_verifications")
       .select("user_id, full_name")
       .eq("id", verificationId)
@@ -324,7 +347,7 @@ export async function updateVerificationStatus(
 
     if (verification) {
       try {
-        const { data: profile } = await supabase
+        const { data: profile } = await supabaseAdmin
           .from("profiles")
           .select("email")
           .eq("id", verification.user_id)
@@ -350,7 +373,7 @@ export async function updateVerificationStatus(
       }
 
       if (status === "approved") {
-        const { error: profileError } = await supabase
+        const { error: profileError } = await supabaseAdmin
           .from("profiles")
           .update({ is_verified: true })
           .eq("id", verification.user_id);
@@ -365,7 +388,7 @@ export async function updateVerificationStatus(
           };
         }
       } else if (status === "rejected") {
-        const { error: profileError } = await supabase
+        const { error: profileError } = await supabaseAdmin
           .from("profiles")
           .update({ is_verified: false })
           .eq("id", verification.user_id);

@@ -13,7 +13,7 @@ export default async function CreateCausePage() {
   }
 
   return (
-    <div className="md:container py-10">
+    <div className="">
       <CreatePetitionForm />
     </div>
   );

@@ -28,7 +28,9 @@ export async function DashboardCauses() {
             <Plus className="h-8 w-8 text-muted-foreground" />
           </div>
           <h4 className="text-lg font-medium mb-2">No causes yet</h4>
-          <p className="text-muted-foreground mb-4">Start making a difference by creating your first cause</p>
+          <p className="text-muted-foreground mb-4">
+            Start making a difference by creating your first cause
+          </p>
           <Link href="/dashboard/causes/create">
             <Button>
               <Plus className="mr-2 h-4 w-4" />
@@ -44,11 +46,17 @@ export async function DashboardCauses() {
                 <div className="flex justify-between items-start">
                   <div>
                     <CardTitle className="text-lg">{cause.title}</CardTitle>
-                    <CardDescription className="line-clamp-2">{cause.description}</CardDescription>
+                    <CardDescription className="line-clamp-2">
+                      {cause.description}
+                    </CardDescription>
                   </div>
                   <Badge
                     variant={
-                      cause.status === "approved" ? "default" : cause.status === "pending" ? "secondary" : "destructive"
+                      cause.status === "approved"
+                        ? "default"
+                        : cause.status === "pending"
+                          ? "secondary"
+                          : "destructive"
                     }
                   >
                     {cause.status}
@@ -58,8 +66,12 @@ export async function DashboardCauses() {
               <CardContent className="pb-2">
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className="font-medium">₦{cause.raised.toLocaleString()}</span>
-                    <span className="text-muted-foreground">of ₦{cause.goal.toLocaleString()}</span>
+                    <span className="font-medium">
+                      ₦{cause.raised.toLocaleString()}
+                    </span>
+                    <span className="text-muted-foreground">
+                      of ₦{cause.goal.toLocaleString()}
+                    </span>
                   </div>
                   <Progress value={(cause.raised / cause.goal) * 100} />
                 </div>
@@ -81,6 +93,5 @@ export async function DashboardCauses() {
         </div>
       )}
     </div>
-  )
+  );
 }
-

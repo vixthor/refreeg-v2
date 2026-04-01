@@ -7,21 +7,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Calendar } from "@/components/ui/calendar";
+import { Card } from "@/components/ui/card";
+import dynamic from "next/dynamic";
 import {
   Popover,
   PopoverContent,
@@ -31,16 +24,58 @@ import { Icons } from "@/components/icons";
 import { useAuth } from "@/hooks/use-auth";
 import { usePetition } from "@/hooks/use-petition";
 import { Progress } from "@/components/ui/progress";
-import { ImageUpload } from "@/components/ui/image-upload";
+import { Skeleton } from "@/components/ui/skeleton";
+
+const Calendar = dynamic(
+  () => import("@/components/ui/calendar").then((mod) => mod.Calendar),
+  {
+    loading: () => <Skeleton className="h-[300px] w-full" />,
+    ssr: false,
+  },
+);
+
+const ImageUpload = dynamic(
+  () => import("@/components/ui/image-upload").then((mod) => mod.ImageUpload),
+  {
+    loading: () => <Skeleton className="h-40 w-full" />,
+  },
+);
+
+const SelectedMediaCarousel = dynamic(
+  () =>
+    import("@/components/ui/premium/selected-media-carousel").then(
+      (mod) => mod.SelectedMediaCarousel,
+    ),
+  {
+    loading: () => <Skeleton className="h-[200px] w-full" />,
+    ssr: false,
+  },
+);
+
+const MultimediaCarousel = dynamic(
+  () => import("@/components/MultimediaCarousel"),
+  {
+    loading: () => <Skeleton className="h-64 w-full" />,
+  },
+);
 import { categories } from "@/lib/categories";
 import {
   sendPetitionUnderReviewEmail,
   sendIncompletePetitionDraftEmail,
 } from "@/services/mail";
-import { format, isBefore, differenceInDays, startOfDay } from "date-fns";
-import { CalendarIcon } from "lucide-react";
+import {
+  format,
+  isBefore,
+  differenceInDays,
+  startOfDay,
+  addDays,
+  isAfter,
+} from "date-fns";
+import { CalendarIcon, Video, X, FileVideo, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
-import MultimediaCarousel from "@/components/MultimediaCarousel";
+import { motion, AnimatePresence } from "framer-motion";
+import { PremiumFormContainer } from "@/components/ui/premium/premium-form-container";
+import { FormStepper } from "@/components/ui/premium/form-stepper";
 
 const currencies = [{ id: "SIGNATURES", name: "Signatures" }];
 const MAX_DURATION_DAYS = 180;
@@ -50,7 +85,6 @@ type FormData = {
   description: string;
   category: string;
   goal: string;
-  currency: string;
   coverImage: File | null;
   sections: { heading: string; description: string }[];
   startDate: Date | undefined;
@@ -75,7 +109,6 @@ type PetitionFormData = {
   description: string;
   category: string;
   goal: string;
-  currency: string;
   coverImage: File | null;
   sections: { heading: string; description: string }[];
   startDate: Date | undefined;
@@ -167,7 +200,6 @@ export default function CreatePetitionForm() {
     description: "",
     category: "",
     goal: "",
-    currency: "NGN",
     coverImage: null,
     sections: [{ heading: "", description: "" }],
     startDate: undefined,
@@ -305,7 +337,18 @@ export default function CreatePetitionForm() {
   };
 
   const handleMultimediaUpload = (files: File[]) => {
+    const MAX_FILES = 5;
     const MAX_TOTAL_SIZE = 100 * 1024 * 1024;
+
+    const currentFilesCount = formData.multimedia?.length || 0;
+    if (currentFilesCount + files.length > MAX_FILES) {
+      setErrors((prev) => ({
+        ...prev,
+        multimedia: `You can only upload a total of ${MAX_FILES} files`,
+      }));
+      return;
+    }
+
     const currentSize =
       formData.multimedia && formData.multimedia.length > 0
         ? formData.multimedia.reduce((acc, file) => acc + file.size, 0)
@@ -409,7 +452,6 @@ export default function CreatePetitionForm() {
       description: formData.description,
       category: formData.category,
       goal: formData.goal,
-      currency: formData.currency,
       coverImage: formData.coverImage,
       sections: formData.sections,
       startDate: formData.startDate,
@@ -466,61 +508,100 @@ export default function CreatePetitionForm() {
     switch (currentStep) {
       case 1:
         return (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="title">Petition Title</Label>
-              <Input
-                id="title"
-                name="title"
-                placeholder="Enter a clear, specific title"
-                value={formData.title}
-                onChange={handleChange}
-                className={errors.title ? "border-red-500" : ""}
-              />
-              {errors.title && (
-                <p className="text-sm text-red-500">{errors.title}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="category">Category</Label>
-              <Select
-                value={formData.category}
-                onValueChange={(value) => handleSelectChange("category", value)}
-              >
-                <SelectTrigger
-                  className={errors.category ? "border-red-500" : ""}
-                >
-                  <SelectValue placeholder="Select a category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map((category) => (
-                    <SelectItem key={category.id} value={category.id}>
-                      {category.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {errors.category && (
-                <p className="text-sm text-red-500">{errors.category}</p>
-              )}
-            </div>
-
-            <div className="gap-4">
+          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="goal">Petition Goal</Label>
+                <Label
+                  htmlFor="title"
+                  className="text-base font-semibold text-gray-700"
+                >
+                  Petition Title
+                </Label>
                 <Input
-                  id="goal"
-                  name="goal"
-                  type="number"
-                  placeholder="Enter your petition goal"
-                  value={formData.goal}
+                  id="title"
+                  name="title"
+                  placeholder="e.g., Justice for Peace Valley"
+                  value={formData.title}
                   onChange={handleChange}
-                  className={errors.goal ? "border-red-500" : ""}
+                  className={cn(
+                    "h-12 text-lg premium-input",
+                    errors.title ? "border-red-500" : "",
+                  )}
                 />
-                {errors.goal && (
-                  <p className="text-sm text-red-500">{errors.goal}</p>
+                {errors.title && (
+                  <p className="text-sm text-red-500 font-medium">
+                    {errors.title}
+                  </p>
                 )}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="category"
+                    className="text-base font-semibold text-gray-700"
+                  >
+                    Category
+                  </Label>
+                  <Select
+                    value={formData.category}
+                    onValueChange={(value) =>
+                      handleSelectChange("category", value)
+                    }
+                  >
+                    <SelectTrigger
+                      className={cn(
+                        "h-12 premium-input",
+                        errors.category ? "border-red-500" : "",
+                      )}
+                    >
+                      <SelectValue placeholder="Select Category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories.map((category) => (
+                        <SelectItem key={category.id} value={category.id}>
+                          {category.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {errors.category && (
+                    <p className="text-sm text-red-500 font-medium">
+                      {errors.category}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="goal"
+                    className="text-base font-semibold text-gray-700"
+                  >
+                    Signature Goal
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      id="goal"
+                      name="goal"
+                      type="number"
+                      placeholder="e.g., 1000"
+                      value={formData.goal}
+                      onChange={handleChange}
+                      className={cn(
+                        "h-12 pl-4 premium-input text-lg font-mono",
+                        errors.goal ? "border-red-500" : "",
+                      )}
+                    />
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-brand/40 uppercase tracking-tighter">
+                      Signatures
+                    </div>
+                  </div>
+                  {errors.goal && (
+                    <p className="text-sm text-red-500 font-medium">
+                      {errors.goal}
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -528,182 +609,169 @@ export default function CreatePetitionForm() {
 
       case 2:
         return (
-          <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <h3 className="text-lg font-medium">Additional Sections</h3>
-              <Button type="button" onClick={addSection} variant="outline">
+          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="flex justify-between items-end">
+              <div className="space-y-1">
+                <h3 className="text-xl font-bold text-gradient">
+                  Petition Story
+                </h3>
+                <p className="text-sm text-gray-500">
+                  Break down your petition into clear sections for better
+                  readability.
+                </p>
+              </div>
+              <Button
+                type="button"
+                onClick={addSection}
+                variant="outline"
+                className="rounded-full border-brand/20 text-brand hover:bg-brand/5"
+              >
                 Add Section
               </Button>
             </div>
-            {formData.sections.map((section, index) => (
-              <Card key={index} className="p-4">
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <h4 className="text-sm font-medium">Section {index + 1}</h4>
-                    {index > 0 && (
-                      <Button
-                        type="button"
-                        onClick={() => removeSection(index)}
-                        variant="ghost"
-                        size="sm"
-                      >
-                        Remove
-                      </Button>
-                    )}
+
+            <div className="space-y-6">
+              {formData.sections.map((section, index) => (
+                <Card
+                  key={index}
+                  className="relative overflow-hidden border-brand/10 shadow-sm bg-white/50 backdrop-blur-sm"
+                >
+                  <div className="p-6 space-y-4">
+                    <div className="flex justify-between items-center bg-brand/5 -mx-6 -mt-6 p-4 border-b border-brand/10 mb-2">
+                      <span className="text-xs font-bold uppercase tracking-wider text-brand">
+                        Section {index + 1}
+                      </span>
+                      {index > 0 && (
+                        <Button
+                          type="button"
+                          onClick={() => removeSection(index)}
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 text-red-500 hover:text-red-600 hover:bg-red-50 rounded-full"
+                        >
+                          Delete
+                        </Button>
+                      )}
+                    </div>
+                    <div className="space-y-4 pt-2">
+                      <div className="space-y-2">
+                        <Label
+                          htmlFor={`section-heading-${index}`}
+                          className="font-semibold text-gray-600"
+                        >
+                          Heading
+                        </Label>
+                        <Input
+                          id={`section-heading-${index}`}
+                          placeholder="e.g., The Current Situation"
+                          value={section.heading}
+                          onChange={(e) =>
+                            updateSection(index, "heading", e.target.value)
+                          }
+                          className="premium-input border-brand/5"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label
+                          htmlFor={`section-description-${index}`}
+                          className="font-semibold text-gray-600"
+                        >
+                          Content
+                        </Label>
+                        <Textarea
+                          id={`section-description-${index}`}
+                          placeholder="Explain this specific point in detail..."
+                          value={section.description}
+                          onChange={(e) =>
+                            updateSection(index, "description", e.target.value)
+                          }
+                          className="min-h-[150px] premium-input border-brand/5 resize-none"
+                        />
+                      </div>
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor={`section-heading-${index}`}>
-                      Sub-heading
-                    </Label>
-                    <Input
-                      id={`section-heading-${index}`}
-                      value={section.heading}
-                      onChange={(e) =>
-                        updateSection(index, "heading", e.target.value)
-                      }
-                      placeholder="Enter sub-heading"
-                      className={
-                        errors.sections && errors.sections[index]?.heading
-                          ? "border-red-500"
-                          : ""
-                      }
-                    />
-                    {errors.sections && errors.sections[index]?.heading && (
-                      <p className="text-sm text-red-500">
-                        {errors.sections[index]?.heading}
-                      </p>
-                    )}
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor={`section-description-${index}`}>
-                      Sub-description
-                    </Label>
-                    <Textarea
-                      id={`section-description-${index}`}
-                      value={section.description}
-                      onChange={(e) =>
-                        updateSection(index, "description", e.target.value)
-                      }
-                      placeholder="Enter sub-description"
-                      className={
-                        errors.sections && errors.sections[index]?.description
-                          ? "border-red-500"
-                          : ""
-                      }
-                    />
-                    {errors.sections && errors.sections[index]?.description && (
-                      <p className="text-sm text-red-500">
-                        {errors.sections[index]?.description}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </Card>
-            ))}
+                </Card>
+              ))}
+            </div>
           </div>
         );
 
       case 3:
         return (
-          <div className="space-y-6">
+          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="space-y-2">
-              <h3 className="text-lg font-medium">Petition Duration</h3>
-              <p className="text-sm text-muted-foreground">
-                Select when your petition should start and end. Maximum duration
-                is <strong>{MAX_DURATION_DAYS} days</strong>.
+              <h3 className="text-xl font-bold text-gradient">
+                Petition Timeline
+              </h3>
+              <p className="text-sm text-gray-500">
+                How long will you be collecting signatures? Max duration is 180
+                days.
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label>Start Date</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !formData.startDate && "text-muted-foreground",
-                        errors.startDate && "border-red-500",
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {formData.startDate
-                        ? format(formData.startDate, "PPP")
-                        : "Pick a start date"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={formData.startDate}
-                      onSelect={(date) => handleDateChange(date, "startDate")}
-                      disabled={(date) =>
-                        isBefore(date, startOfDay(new Date()))
-                      }
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="space-y-4">
+                <Label className="text-base font-semibold text-gray-700 block mb-2">
+                  Start Date
+                </Label>
+                <div className="glass-panel p-4 rounded-2xl border-brand/5">
+                  <Calendar
+                    mode="single"
+                    selected={formData.startDate}
+                    onSelect={(date) => handleDateChange(date, "startDate")}
+                    disabled={(date) => isBefore(date, startOfDay(new Date()))}
+                    initialFocus
+                  />
+                </div>
                 {errors.startDate && (
-                  <p className="text-sm text-red-500">{errors.startDate}</p>
+                  <p className="text-sm text-red-500 font-medium">
+                    {errors.startDate}
+                  </p>
                 )}
               </div>
 
-              <div className="space-y-2">
-                <Label>End Date</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !formData.endDate && "text-muted-foreground",
-                        errors.endDate && "border-red-500",
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {formData.endDate
-                        ? format(formData.endDate, "PPP")
-                        : "Pick an end date"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={formData.endDate}
-                      onSelect={(date) => handleDateChange(date, "endDate")}
-                      disabled={(date) => {
-                        const isPast = isBefore(date, startOfDay(new Date()));
-                        const isBeforeStart = formData.startDate
-                          ? isBefore(date, formData.startDate)
-                          : false;
-                        const isOverMaxDays = formData.startDate
-                          ? differenceInDays(date, formData.startDate) >
-                            MAX_DURATION_DAYS
-                          : false;
-                        return isPast || isBeforeStart || isOverMaxDays;
-                      }}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
+              <div className="space-y-4">
+                <Label className="text-base font-semibold text-gray-700 block mb-2">
+                  End Date
+                </Label>
+                <div className="glass-panel p-4 rounded-2xl border-brand/5">
+                  <Calendar
+                    mode="single"
+                    selected={formData.endDate}
+                    onSelect={(date) => handleDateChange(date, "endDate")}
+                    disabled={(date) => {
+                      const today = startOfDay(new Date());
+                      const start = formData.startDate || today;
+                      const maxEnd = addDays(start, MAX_DURATION_DAYS);
+                      return isBefore(date, start) || isAfter(date, maxEnd);
+                    }}
+                    initialFocus
+                  />
+                </div>
                 {errors.endDate && (
-                  <p className="text-sm text-red-500">{errors.endDate}</p>
+                  <p className="text-sm text-red-500 font-medium">
+                    {errors.endDate}
+                  </p>
                 )}
               </div>
             </div>
 
             {formData.startDate && formData.endDate && (
-              <div className="p-4 bg-muted rounded-lg">
-                <p className="text-sm">
-                  <span className="font-medium">Duration:</span>{" "}
-                  {differenceInDays(formData.endDate, formData.startDate)} days
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {format(formData.startDate, "PPP")} -{" "}
-                  {format(formData.endDate, "PPP")}
-                </p>
+              <div className="bg-brand/5 p-4 rounded-xl border border-brand/10 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-brand/10 flex items-center justify-center text-brand">
+                  <CalendarIcon className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-brand">
+                    Campaign Duration:{" "}
+                    {differenceInDays(formData.endDate, formData.startDate)}{" "}
+                    Days
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Running from {format(formData.startDate, "PPP")} to{" "}
+                    {format(formData.endDate, "PPP")}
+                  </p>
+                </div>
               </div>
             )}
           </div>
@@ -711,190 +779,142 @@ export default function CreatePetitionForm() {
 
       case 4:
         return (
-          <div className="space-y-4">
+          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="space-y-2">
-              <Label>Cover Image</Label>
-              <ImageUpload
-                onUpload={(files) => handleImageUpload(files)}
-                maxFiles={1}
-                accept="image/*"
-              />
-              {errors.coverImage && (
-                <p className="text-sm text-red-500">{errors.coverImage}</p>
-              )}
-              {formData.coverImage && (
-                <div className="mt-2">
-                  <img
-                    src={URL.createObjectURL(formData.coverImage)}
-                    alt="Cover preview"
-                    className="h-32 w-full object-cover rounded-md"
-                  />
-                </div>
-              )}
+              <h3 className="text-xl font-bold text-gradient">Visual Impact</h3>
+              <p className="text-sm text-gray-500">
+                Visuals help people connect with your cause. High-quality media
+                is key.
+              </p>
             </div>
 
-            <div className="mt-8 space-y-4">
-              <div className="space-y-2">
-                <Label>Additional Multimedia</Label>
-                <p className="text-sm text-muted-foreground">
-                  Enhance your petition with images and videos. Total size must
-                  not exceed 100MB.
-                </p>
-                <ImageUpload
-                  onUpload={(files) => handleMultimediaUpload(files)}
-                  maxFiles={10}
-                  accept="image/*,video/*"
-                />
-                {errors.multimedia && (
-                  <p className="text-sm text-red-500">{errors.multimedia}</p>
-                )}
-              </div>
-
-              {formData.multimedia &&
-                Array.isArray(formData.multimedia) &&
-                formData.multimedia.length > 0 && (
-                  <div className="space-y-4">
-                    <h4 className="text-sm font-medium">
-                      Uploaded Files ({formData.multimedia.length})
-                    </h4>
-                    <p className="text-xs text-muted-foreground">
-                      Total Size:{" "}
-                      {(
-                        (formData.multimedia && formData.multimedia.length > 0
-                          ? formData.multimedia.reduce(
-                              (acc, file) => acc + file.size,
-                              0,
-                            )
-                          : 0) /
-                        (1024 * 1024)
-                      ).toFixed(2)}
-                      MB of 100MB
-                    </p>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                      {formData.multimedia.map((file, index) => (
-                        <div key={index} className="relative group">
-                          {file.type.startsWith("image/") ? (
-                            <img
-                              src={URL.createObjectURL(file)}
-                              alt={`Multimedia ${index + 1}`}
-                              className="h-32 w-full object-cover rounded-md"
-                            />
-                          ) : (
-                            <div className="h-32 w-full bg-muted rounded-md flex items-center justify-center">
-                              <div className="text-center">
-                                <svg
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  className="h-8 w-8 mx-auto mb-2"
-                                  fill="none"
-                                  viewBox="0 0 24 24"
-                                  stroke="currentColor"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
-                                  />
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                                  />
-                                </svg>
-                                <p className="text-xs truncate max-w-[90%] mx-auto">
-                                  {file.name}
-                                </p>
-                                <p className="text-xs text-muted-foreground">
-                                  {(file.size / (1024 * 1024)).toFixed(2)}MB
-                                </p>
-                              </div>
-                            </div>
-                          )}
-                          <Button
-                            type="button"
-                            variant="destructive"
-                            size="sm"
-                            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={() => removeMultimedia(index)}
-                          >
-                            Remove
-                          </Button>
-                        </div>
-                      ))}
+            <div className="space-y-6">
+              <div className="space-y-4">
+                <Label className="text-base font-semibold text-gray-700 block">
+                  Cover Image
+                </Label>
+                <div className="glass-panel p-6 rounded-2xl border-brand/10 transition-all hover:border-brand/30">
+                  <ImageUpload onUpload={handleImageUpload} maxFiles={1} />
+                  {formData.coverImage && (
+                    <div className="mt-4 relative group aspect-video rounded-xl overflow-hidden shadow-sm border border-brand/10">
+                      <img
+                        src={URL.createObjectURL(formData.coverImage)}
+                        alt="Cover preview"
+                        className="object-cover w-full h-full transition-transform duration-300 group-hover:scale-105"
+                      />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="sm"
+                          onClick={() =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              coverImage: null,
+                            }))
+                          }
+                          className="rounded-full h-10 w-10 p-0"
+                        >
+                          <X className="h-5 w-5" />
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                )}
-            </div>
-
-            <div className="mt-8 space-y-2">
-              <Label>Video Links (YouTube, TikTok, etc.)</Label>
-              <div className="flex gap-2">
-                <Input
-                  type="url"
-                  placeholder="Paste video link and press Add"
-                  value={videoLinkInput}
-                  onChange={(e) => setVideoLinkInput(e.target.value)}
-                  className="flex-1"
-                />
-                <Button
-                  type="button"
-                  onClick={() => {
-                    try {
-                      const url = new URL(videoLinkInput);
-                      if (!/^https?:\/\//.test(videoLinkInput)) {
-                        setVideoLinkError("Enter a valid URL");
-                        return;
-                      }
-                      setFormData((prev) => ({
-                        ...prev,
-                        videoLinks: [...prev.videoLinks, videoLinkInput],
-                      }));
-                      setVideoLinkInput("");
-                      setVideoLinkError(null);
-                    } catch {
-                      setVideoLinkError("Enter a valid URL");
-                    }
-                  }}
-                  disabled={!videoLinkInput}
-                >
-                  Add
-                </Button>
+                  )}
+                  {errors.coverImage && (
+                    <p className="mt-2 text-sm text-red-500 font-medium">
+                      {errors.coverImage}
+                    </p>
+                  )}
+                </div>
               </div>
-              {videoLinkError && (
-                <p className="text-sm text-red-500">{videoLinkError}</p>
-              )}
-              {formData.videoLinks.length > 0 && (
-                <ul className="mt-2 space-y-1">
-                  {formData.videoLinks.map((link, idx) => (
-                    <li key={idx} className="flex items-center gap-2">
-                      <a
-                        href={link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 underline truncate max-w-xs"
-                      >
-                        {link}
-                      </a>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="ghost"
-                        onClick={() =>
+
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <Label className="text-base font-semibold text-gray-700 block">
+                    Multimedia Support
+                  </Label>
+                  <span className="text-xs text-brand font-medium bg-brand/5 px-2 py-1 rounded-full border border-brand/10">
+                    Max 5 files
+                  </span>
+                </div>
+                <div className="glass-panel p-6 rounded-2xl border-brand/10">
+                  <ImageUpload
+                    onUpload={(files) => handleMultimediaUpload(files)}
+                    maxFiles={5 - (formData.multimedia?.length || 0)}
+                    description="Upload up to 5 files"
+                  />
+                  {errors.multimedia && (
+                    <p className="mt-2 text-sm text-red-500 font-medium">
+                      {errors.multimedia}
+                    </p>
+                  )}
+                  {formData.multimedia && formData.multimedia.length > 0 && (
+                    <div className="mt-6">
+                      <SelectedMediaCarousel
+                        files={formData.multimedia}
+                        onRemove={removeMultimedia}
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <Label className="text-base font-semibold text-gray-700 block">
+                  Support Links (YouTube, TikTok, etc.)
+                </Label>
+                <div className="space-y-3">
+                  {formData.videoLinks.map((link, index) => (
+                    <div
+                      key={index}
+                      className="flex gap-2 group animate-in slide-in-from-left-2"
+                    >
+                      <Input
+                        value={link}
+                        onChange={(e) => {
+                          const newLinks = [...formData.videoLinks];
+                          newLinks[index] = e.target.value;
                           setFormData((prev) => ({
                             ...prev,
-                            videoLinks: prev.videoLinks.filter(
-                              (_, i) => i !== idx,
-                            ),
-                          }))
-                        }
+                            videoLinks: newLinks,
+                          }));
+                        }}
+                        placeholder="Paste video link"
+                        className="premium-input bg-white group-hover:border-brand/30"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={() => {
+                          const newLinks = formData.videoLinks.filter(
+                            (_, i) => i !== index,
+                          );
+                          setFormData((prev) => ({
+                            ...prev,
+                            videoLinks: newLinks,
+                          }));
+                        }}
+                        className="text-red-500 hover:bg-red-50 rounded-lg h-12"
                       >
                         Remove
                       </Button>
-                    </li>
+                    </div>
                   ))}
-                </ul>
-              )}
+                  <Button
+                    type="button"
+                    onClick={() =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        videoLinks: [...prev.videoLinks, ""],
+                      }))
+                    }
+                    variant="outline"
+                    className="w-full border-dashed border-2 border-gray-200 text-gray-500 hover:border-brand/30 hover:text-brand h-12 rounded-xl transition-all"
+                  >
+                    + Add Video Link
+                  </Button>
+                </div>
+              </div>
             </div>
           </div>
         );
@@ -922,7 +942,7 @@ export default function CreatePetitionForm() {
             <div className="space-y-2">
               <h4 className="font-medium">Signature Goal</h4>
               <p className="text-sm">
-                {formData.currency} {formData.goal}
+                {formData.goal} Signatures
               </p>
             </div>
 
@@ -962,48 +982,68 @@ export default function CreatePetitionForm() {
     }
   };
 
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Create a New Petition</CardTitle>
-        <CardDescription>
-          Fill out the form below to create a new petition. All petitions
-          require approval before going live.
-        </CardDescription>
-        <Progress value={(currentStep / 5) * 100} className="mt-4" />
-      </CardHeader>
-      <form onSubmit={handleSubmit} className="space-y-8" autoComplete="off">
-        <CardContent className="space-y-4">{renderStep()}</CardContent>
+  const steps = ["Basic Info", "Petition Story", "Timeline", "Media", "Review"];
 
-        <CardFooter className="flex justify-between">
+  return (
+    <PremiumFormContainer
+      title="Launch Your Movement"
+      description="Create a compelling petition that inspires people to take action."
+    >
+      <FormStepper steps={steps} currentStep={currentStep} />
+
+      <form className="space-y-8" onSubmit={handleSubmit}>
+        <div className="min-h-[400px]">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentStep}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              {renderStep()}
+            </motion.div>
+          </AnimatePresence>
+        </div>
+
+        <div className="flex justify-between items-center pt-8 border-t border-gray-100">
           <Button
             type="button"
-            variant="outline"
+            variant="ghost"
             onClick={prevStep}
             disabled={currentStep === 1}
+            className="hover:bg-gray-50"
           >
             Back
           </Button>
-          <div className="flex gap-2">
+          <div className="flex gap-4">
             {currentStep < 5 ? (
-              <Button type="button" onClick={nextStep}>
-                Next
+              <Button
+                type="button"
+                onClick={nextStep}
+                className="bg-brand text-white hover:bg-brand/90 px-8"
+              >
+                Continue
               </Button>
             ) : (
-              <Button type="submit" disabled={isLoading || submitting}>
+              <Button
+                type="submit"
+                disabled={isLoading || submitting}
+                className="bg-brand text-white hover:bg-brand/90 px-8"
+              >
                 {isLoading || submitting ? (
                   <>
                     <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
-                    Submitting...
+                    Launching...
                   </>
                 ) : (
-                  "Submit Petition"
+                  "Launch Petition"
                 )}
               </Button>
             )}
           </div>
-        </CardFooter>
+        </div>
       </form>
-    </Card>
+    </PremiumFormContainer>
   );
 }

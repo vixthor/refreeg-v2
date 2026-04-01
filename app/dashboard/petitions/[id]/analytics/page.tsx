@@ -2,8 +2,27 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { formatCurrency } from "@/lib/utils";
-import { SignatureTrends } from "@/components/charts/signature-trends";
-import { PetitionEngagementMetrics } from "@/components/charts/engagement-metrics";
+import dynamic from "next/dynamic";
+import { Skeleton } from "@/components/ui/skeleton";
+
+const SignatureTrends = dynamic(
+  () =>
+    import("@/components/charts/signature-trends").then(
+      (mod) => mod.SignatureTrends,
+    ),
+  {
+    loading: () => <Skeleton className="h-[300px] w-full" />,
+  },
+);
+const PetitionEngagementMetrics = dynamic(
+  () =>
+    import("@/components/charts/engagement-metrics").then(
+      (mod) => mod.PetitionEngagementMetrics,
+    ),
+  {
+    loading: () => <Skeleton className="h-[200px] w-full" />,
+  },
+);
 import { getPetitionAnalytics } from "@/actions/dashboard-actions";
 
 export default async function AnalyticsPage({
