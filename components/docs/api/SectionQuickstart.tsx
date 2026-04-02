@@ -63,18 +63,18 @@ export default function SectionQuickstart() {
                 </div>
                 <pre className="text-blue-200 font-mono text-[14px] leading-relaxed overflow-x-auto py-2 scrollbar-hide">
                   <code className="block w-full">
-{`curl -X POST https://refreeg.org/api/bot/campaigns \\
-  -H "Authorization: Bearer YOUR_SECRET_KEY" \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "title": "A Programmatic Fundraiser",
-    "description": "My first campaign created via API",
-    "goal_amount": 100000,
-    "payout_mode": "immediate",
-    "bank_account_number": "0000000000",
-    "bank_code": "058",
-    "bank_account_name": "Dev Test"
-  }'`}
+{`curl -X POST https://refreeg.com/api/bot/campaigns \\
+   -H "Authorization: Bearer YOUR_SECRET_KEY" \\
+   -H "Content-Type: application/json" \\
+   -d '{
+     "title": "A Programmatic Fundraiser",
+     "description": "My first campaign created via the RefreeG API to raise funds for community development.",
+     "goal_amount": 100000,
+     "payout_mode": "manual",
+     "bank_account_number": "0000000000",
+     "bank_code": "058",
+     "bank_account_name": "Dev Test"
+   }'`}
                   </code>
                 </pre>
               </div>

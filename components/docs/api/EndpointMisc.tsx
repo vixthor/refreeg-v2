@@ -29,25 +29,27 @@ export function SectionValidateAi() {
             { name: "description", type: "string", required: true, description: "Proposed description (min 20 chars)." },
             { name: "goal_amount", type: "number", required: true, description: "Target amount in NGN." },
             { name: "payout_mode", type: "string", required: true, description: "'manual' (on-demand) or 'automated' (at goal/deadline)." },
-            { name: "bank_name", type: "string", required: true, description: "Recipient bank name." },
-            { name: "account_number", type: "string", required: true, description: "10-digit NUBAN account number." },
-            { name: "account_name", type: "string", required: true, description: "Legal account name." },
+            { name: "bank_account_number", type: "string", required: false, description: "10-digit NUBAN. Required if bank_id is not provided." },
+            { name: "bank_code", type: "string", required: false, description: "3-digit bank code (e.g., '058'). Required if bank_id is not provided." },
+            { name: "bank_account_name", type: "string", required: false, description: "Legal account holder name. Required if bank_id is not provided." },
           ]}
           requestExample={`{
   "title": "Clean Water AI",
   "payout_mode": "manual",
   "goal_amount": 100000,
-  "description": "Providing clean water to remote areas.",
-  "bank_name": "Access Bank",
-  "account_number": "0123456789",
-  "account_name": "John Doe"
+  "description": "Providing clean water to remote areas through AI-driven funding.",
+  "bank_account_number": "0123456789",
+  "bank_code": "058",
+  "bank_account_name": "John Doe"
 }`}
           responseExample={`{
   "status": "error",
-  "errorCode": "VALIDATION_ERROR",
-  "details": {
-    "bank_account_number": { "_errors": ["Required"] },
-    "description": { "_errors": ["Must be at least 20 characters"] }
+  "error": {
+    "code": "validation_error",
+    "message": "Validation failed",
+    "details": {
+      "description": { "_errors": ["String must contain at least 20 character(s)"] }
+    }
   }
 }`}
         />

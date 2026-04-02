@@ -27,12 +27,20 @@ export function SectionErrorRef() {
             </thead>
             <tbody className="divide-y divide-slate-50">
               {[
-                { id: "VALIDATION_ERROR", code: "400", desc: "Request body failed schema verification (Zod)." },
-                { id: "UNAUTHORIZED", code: "401", desc: "API key is missing, invalid, or expired." },
-                { id: "PERMISSION_DENIED", code: "403", desc: "Access denied for the requested resource." },
-                { id: "NOT_FOUND", code: "404", desc: "The specified object (campaign, donation) doesn't exist." },
-                { id: "RATE_LIMIT_EXCEEDED", code: "429", desc: "API request quota reached for the current minute." },
-                { id: "INTERNAL_SERVER_ERROR", code: "500", desc: "An unexpected error occurred on our infrastructure." },
+                { id: "validation_error", code: "400", desc: "Request body failed schema verification (Zod). Check the 'details' field for specifics." },
+                { id: "bad_request", code: "400", desc: "General bad request — missing parameters, invalid JSON, or mode mismatch." },
+                { id: "campaign_not_active", code: "400", desc: "The targeted campaign is paused, cancelled, or completed." },
+                { id: "payment_setup_failed", code: "400", desc: "Bank account verification or sub-account creation failed." },
+                { id: "invalid_bank_account", code: "400", desc: "The provided bank account details could not be resolved." },
+                { id: "unauthorized", code: "401", desc: "API key is missing, invalid, or revoked." },
+                { id: "invalid_api_key", code: "401", desc: "The API key format is correct but the key does not exist." },
+                { id: "forbidden", code: "403", desc: "Access denied — you do not own this resource." },
+                { id: "not_found", code: "404", desc: "The specified resource (campaign, donation, webhook) doesn't exist." },
+                { id: "campaign_not_found", code: "404", desc: "The specified campaign ID does not exist." },
+                { id: "rate_limit_exceeded", code: "429", desc: "API request quota reached. Default: 60 requests per minute." },
+                { id: "payment_failed", code: "500", desc: "Payment gateway returned an unexpected error." },
+                { id: "database_error", code: "500", desc: "A database operation failed unexpectedly." },
+                { id: "internal_error", code: "500", desc: "An unexpected error occurred on our infrastructure." },
               ].map((err, i) => (
                 <tr key={i} className="group hover:bg-slate-50/50 transition-colors">
                   <td className="py-5">

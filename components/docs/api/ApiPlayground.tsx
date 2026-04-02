@@ -12,7 +12,7 @@ const ENDPOINTS = [
       title: "Help for Education",
       description: "Raising funds for a local school library project with high impact outcomes.",
       goal_amount: 500000,
-      payout_mode: "immediate",
+      payout_mode: "manual",
       bank_account_number: "0123456789",
       bank_code: "058",
       bank_account_name: "John Doe"
@@ -45,7 +45,7 @@ const ENDPOINTS = [
       title: "Suspicious Campaign",
       description: "A very clear and helpful campaign description for education purposes.",
       goal_amount: 1000,
-      payout_mode: "immediate",
+      payout_mode: "manual",
       bank_account_number: "0123456789",
       bank_code: "058",
       bank_account_name: "Verification Admin"
@@ -108,7 +108,7 @@ export default function ApiPlayground() {
         method: selectedEndpoint.method,
         headers: {
           "Content-Type": "application/json",
-          "X-RefreeG-Secret": apiKey,
+          "Authorization": `Bearer ${apiKey}`,
         },
         body: selectedEndpoint.method !== "GET" ? JSON.stringify(finalBody) : undefined,
       });

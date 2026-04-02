@@ -58,15 +58,15 @@ export default function SectionIntro() {
 
           <div className="space-y-4">
             <h3 className="font-bold text-slate-900">Rate Limiting</h3>
-            <p className="text-sm text-slate-500">We enforce limits to preserve quality of service. Current global defaults for production are:</p>
+            <p className="text-sm text-slate-500">We enforce limits to preserve quality of service. Current global defaults:</p>
             <ul className="space-y-3">
               <li className="flex items-center gap-3 text-sm text-slate-600">
                 <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                <span className="font-bold text-slate-900">100 Requests</span> / Minute (Write operations)
+                <span className="font-bold text-slate-900">60 Requests</span> / Minute (default for all routes)
               </li>
               <li className="flex items-center gap-3 text-sm text-slate-600">
-                <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                <span className="font-bold text-slate-900">500 Requests</span> / Minute (Read operations)
+                <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                <span className="font-bold text-slate-900">10 Requests</span> / Minute (write-heavy endpoints like Report Campaign)
               </li>
             </ul>
           </div>

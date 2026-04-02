@@ -50,14 +50,22 @@ export default function SectionWebhooks() {
 
             <div className="bg-slate-950 p-6 rounded-2xl border border-white/5">
               <div className="flex items-center gap-2 mb-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest">
-                <Terminal className="w-4 h-4" /> signature verification (pseudo-code)
+                <Terminal className="w-4 h-4" /> signature verification (node.js)
               </div>
               <pre className="text-blue-300 font-mono text-[13px] leading-relaxed scrollbar-hide py-2">
-{`const hmac = crypto.createHmac("sha256", webhook_secret);
-const digest = hmac.update(JSON.stringify(payload)).digest("hex");
+{`// The header format: X-RefreeG-Signature: t=1234567890,v1=abc...
+const sigHeader = req.headers["x-refreeg-signature"];
+const [tPart, vPart] = sigHeader.split(",");
+const timestamp = tPart.replace("t=", "");
+const signature = vPart.replace("v1=", "");
 
-if (signature === digest) {
-  // Request is authentic
+// Reconstruct the signed payload
+const body = JSON.stringify(req.body);
+const hmac = crypto.createHmac("sha256", webhook_secret);
+const expectedSig = hmac.update(\`\${timestamp}.\${body}\`).digest("hex");
+
+if (signature === expectedSig) {
+  // ✅ Request is authentic
 }`}
               </pre>
             </div>

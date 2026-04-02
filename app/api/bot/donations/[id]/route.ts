@@ -1,12 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { validateApiKey, rateLimit, handlePreflight } from "@/utils/api-bot/api-auth";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@supabase/supabase-js";
+import { Database } from "@/types/database-types";
 import { logApiRequest } from "@/utils/api-bot/request-logger";
 import { 
   successResponse, 
   errorResponse, 
   ApiErrorCode 
 } from "@/utils/api-bot/response-utils";
+
+const supabaseAdmin = createClient<Database>(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 export async function GET(
   req: NextRequest,
@@ -28,10 +34,8 @@ export async function GET(
       return auth.errorResponse;
     }
 
-    const supabase = await createClient();
-
     // Fetch donation and join with campaign to verify ownership
-    const { data: donation, error } = await supabase
+    const { data: donation, error } = await supabaseAdmin
       .from("api_donations")
       .select(`
         *,
@@ -56,6 +60,14 @@ export async function GET(
       return response;
     }
 
+    // Mode isolation: test keys should only see test donations (and vice-versa)
+    const donationMode = (donation as any).mode || "live";
+    if (donationMode !== auth.mode) {
+      const response = errorResponse("Donation not found", ApiErrorCode.NOT_FOUND, 404);
+      await logApiRequest({ request: req, statusCode: response.status, apiKeyId: auth.apiKeyId, userId: auth.userId, mode: auth.mode, errorCode: ApiErrorCode.NOT_FOUND, startedAt });
+      return response;
+    }
+
     // Return donation details
     const response = successResponse({
       id: donation.id,
@@ -67,6 +79,7 @@ export async function GET(
       is_anonymous: donation.is_anonymous,
       status: donation.status,
       reference: donation.paystack_reference,
+      mode: donationMode,
       created_at: donation.created_at,
       campaign_id: donation.api_campaign_id
     });
