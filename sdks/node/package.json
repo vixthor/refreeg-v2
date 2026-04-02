@@ -1,0 +1,21 @@
+{
+  "name": "@refreeg/sdk",
+  "version": "1.0.0",
+  "description": "Official Node.js SDK for the RefreeG API",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "keywords": [
+    "refreeg",
+    "donation",
+    "campaigns",
+    "api"
+  ],
+  "author": "RefreeG",
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
