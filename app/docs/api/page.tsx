@@ -25,21 +25,24 @@ import SectionAuth from "@/components/docs/api/SectionAuth";
 import SectionAiBlueprint from "@/components/docs/api/SectionAiBlueprint";
 import SectionQuickstart from "@/components/docs/api/SectionQuickstart";
 import SectionBestPractices from "@/components/docs/api/SectionBestPractices";
-import { 
-  SectionCreateCampaign, 
-  SectionUpdateCampaign, 
+import {
+  SectionCreateCampaign,
+  SectionUpdateCampaign,
   SectionListCampaigns,
   SectionRetrieveCampaign,
-  SectionBanks
+  SectionBanks,
 } from "@/components/docs/api/EndpointCampaigns";
 import { SectionDonations } from "@/components/docs/api/EndpointDonations";
-import { 
-  SectionValidateAi, 
-  SectionReportCampaign, 
-  SectionCategories 
+import {
+  SectionValidateAi,
+  SectionReportCampaign,
+  SectionCategories,
 } from "@/components/docs/api/EndpointMisc";
 import SectionWebhooks from "@/components/docs/api/SectionWebhooks";
-import { SectionErrorRef, SectionResources } from "@/components/docs/api/SectionResources";
+import {
+  SectionErrorRef,
+  SectionResources,
+} from "@/components/docs/api/SectionResources";
 
 export default function ApiDocsPage() {
   const [sidebarSelection, setSidebarSelection] = useState("Introduction");
@@ -48,26 +51,46 @@ export default function ApiDocsPage() {
 
   const renderContent = () => {
     switch (sidebarSelection) {
-      case "Introduction": return <SectionIntro />;
-      case "Authentication": return <SectionAuth />;
-      case "AI Integration Blueprint": return <SectionAiBlueprint />;
-      case "Quickstart Guide": return <SectionQuickstart />;
-      case "Best Practices": return <SectionBestPractices />;
-      case "Create Campaign": return <SectionCreateCampaign />;
-      case "Retrieve Campaign": return <SectionRetrieveCampaign />;
-      case "List Campaigns": return <SectionListCampaigns />;
-      case "Update Campaign": return <SectionUpdateCampaign />;
-      case "Manage Banks": return <SectionBanks />;
-      case "AI Blueprint Validation": return <SectionValidateAi />;
-      case "Initialize Donation": return <SectionDonations />;
-      case "Verify Donation": return <SectionDonations />; // Both in same component
-      case "List Categories": return <SectionCategories />;
-      case "Report Campaign": return <SectionReportCampaign />;
-      case "Webhooks & Events": return <SectionWebhooks />;
-      case "Error Reference": return <SectionErrorRef />;
-      case "SDKs & Libraries": return <SectionResources />;
-      case "API Playground": return <ApiPlayground />;
-      default: return <SectionIntro />;
+      case "Introduction":
+        return <SectionIntro />;
+      case "Authentication":
+        return <SectionAuth />;
+      case "AI Integration Blueprint":
+        return <SectionAiBlueprint />;
+      case "Quickstart Guide":
+        return <SectionQuickstart />;
+      case "Best Practices":
+        return <SectionBestPractices />;
+      case "Create Campaign":
+        return <SectionCreateCampaign />;
+      case "Retrieve Campaign":
+        return <SectionRetrieveCampaign />;
+      case "List Campaigns":
+        return <SectionListCampaigns />;
+      case "Update Campaign":
+        return <SectionUpdateCampaign />;
+      case "Manage Banks":
+        return <SectionBanks />;
+      case "AI Blueprint Validation":
+        return <SectionValidateAi />;
+      case "Initialize Donation":
+        return <SectionDonations />;
+      case "Verify Donation":
+        return <SectionDonations />; // Both in same component
+      case "List Categories":
+        return <SectionCategories />;
+      case "Report Campaign":
+        return <SectionReportCampaign />;
+      case "Webhooks & Events":
+        return <SectionWebhooks />;
+      case "Error Reference":
+        return <SectionErrorRef />;
+      case "SDKs & Libraries":
+        return <SectionResources />;
+      case "API Playground":
+        return <ApiPlayground />;
+      default:
+        return <SectionIntro />;
     }
   };
 
@@ -77,10 +100,7 @@ export default function ApiDocsPage() {
       <header className="sticky top-0 z-50 w-full border-b border-slate-100 bg-white/80 backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-[1500px] items-center justify-between px-4 md:px-6">
           <div className="flex items-center gap-4">
-            <Link
-              href="/docs/get-started"
-              className="flex items-center gap-2 group"
-            >
+            <Link href="/" className="flex items-center gap-2 group">
               <span className="font-bold text-[18px] tracking-tight text-slate-900">
                 RefreeG <span className="text-blue-600">Dev</span>
               </span>
@@ -134,7 +154,7 @@ export default function ApiDocsPage() {
 
       {/* Mobile Navigation Trigger */}
       <div className="md:hidden sticky top-[73px] z-40 w-full bg-white/95 backdrop-blur-sm border-b border-slate-100 px-4 py-3 flex items-center justify-between">
-        <button 
+        <button
           onClick={() => setMobileOpen(!mobileOpen)}
           className="flex items-center gap-2 text-slate-600 font-bold text-sm"
         >
@@ -142,41 +162,45 @@ export default function ApiDocsPage() {
           {sidebarSelection}
         </button>
         <div className="flex items-center gap-2">
-           <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-           <span className="text-[11px] font-bold text-slate-400 tracking-wider uppercase">API READY</span>
+          <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+          <span className="text-[11px] font-bold text-slate-400 tracking-wider uppercase">
+            API READY
+          </span>
         </div>
       </div>
 
       {/* Mobile Menu Overlay */}
       {mobileOpen && (
         <div className="fixed inset-0 z-[60] md:hidden">
-          <div 
-            className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" 
+          <div
+            className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
             onClick={() => setMobileOpen(false)}
           />
           <div className="absolute left-0 top-0 bottom-0 w-[280px] bg-white shadow-2xl overflow-y-auto animate-in slide-in-from-left duration-300">
             <div className="p-6 border-b border-slate-50 flex items-center justify-between">
-              <span className="font-extrabold text-blue-600 tracking-tight uppercase">API NAV</span>
+              <span className="font-extrabold text-blue-600 tracking-tight uppercase">
+                API NAV
+              </span>
               <button onClick={() => setMobileOpen(false)}>
                 <X className="w-5 h-5 text-slate-400" />
               </button>
             </div>
             <div className="p-2">
               <div className="px-4 py-6 border-b border-slate-50 mb-4">
-                 <div className="relative">
-                    <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input
-                      placeholder="Search..."
-                      className="w-full h-10 rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/10 transition-all font-medium text-slate-900"
-                    />
-                 </div>
+                <div className="relative">
+                  <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    placeholder="Search..."
+                    className="w-full h-10 rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/10 transition-all font-medium text-slate-900"
+                  />
+                </div>
               </div>
-              <ApiSidebar 
-                selected={sidebarSelection} 
+              <ApiSidebar
+                selected={sidebarSelection}
                 onSelect={(id) => {
                   setSidebarSelection(id);
                   setMobileOpen(false);
-                }} 
+                }}
               />
             </div>
           </div>
@@ -193,9 +217,7 @@ export default function ApiDocsPage() {
           </div>
         </div>
 
-        <main className="flex-1 min-w-0 pb-20 z-10">
-          {renderContent()}
-        </main>
+        <main className="flex-1 min-w-0 pb-20 z-10">{renderContent()}</main>
       </div>
     </div>
   );
