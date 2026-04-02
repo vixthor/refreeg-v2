@@ -134,7 +134,7 @@ export function DashboardNav() {
   }
 
   return (
-    <nav className="grid items-start gap-2 py-4">
+    <nav className="grid items-start gap-2 py-4 pb-10">
       {userNavItems.map((item, index) => (
         <Link key={index} href={item.href}>
           <Button
