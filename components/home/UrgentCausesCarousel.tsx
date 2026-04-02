@@ -24,7 +24,19 @@ import { DonateButton } from "@/components/donate-button";
 import { H4, P } from "../typograpy";
 import AnimatedCard from "./components/AnimatedCard";
 
-export default function UrgentCausesCarousel({ causes }) {
+type Cause = {
+  id: string;
+  title: string;
+  image?: string;
+  goal: number;
+  raised: number;
+  days_active?: number;
+  profiles?: {
+    full_name?: string;
+  };
+};
+
+export default function UrgentCausesCarousel({ causes }: { causes: Cause[] }) {
   const [api, setApi] = useState<any>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
