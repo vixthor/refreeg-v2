@@ -36,7 +36,7 @@ const SocialLink = ({
 
 export function Footer() {
   const pathname = usePathname();
-
+ const currentYear = new Date().getFullYear();
   const getPageTheme = () => {
     switch (pathname) {
       case "/non-profits":
@@ -165,7 +165,7 @@ export function Footer() {
 
         <div className="md:flex md:justify-center items-center w-full">
           <p className="text-[13px] text-center mb-4 md:mb-0">
-            Copyright © 2024{" "}
+            Copyright © {currentYear}{" "}
             <span className="font-bold underline">Eiza Innovations.</span> All
             Rights Reserved.
           </p>
