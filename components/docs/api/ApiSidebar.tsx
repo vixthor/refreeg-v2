@@ -49,7 +49,10 @@ export default function ApiSidebar({
         { id: "Create Campaign", label: "Create Campaign", icon: <Terminal className="w-4 h-4" /> },
         { id: "Retrieve Campaign", label: "Retrieve Campaign", icon: <Terminal className="w-4 h-4" /> },
         { id: "List Campaigns", label: "List Campaigns", icon: <Settings className="w-4 h-4" /> },
+        { id: "List Campaign Donations", label: "List Campaign Donations", icon: <Settings className="w-4 h-4" /> },
         { id: "Update Campaign", label: "Update Campaign", icon: <Settings className="w-4 h-4" /> },
+        { id: "Pause/Resume Campaign", label: "Pause/Resume Campaign", icon: <Settings className="w-4 h-4" /> },
+        { id: "Cancel Campaign", label: "Cancel Campaign", icon: <Settings className="w-4 h-4" /> },
         { id: "AI Blueprint Validation", label: "Validate (AI)", icon: <Zap className="w-4 h-4" /> },
         { id: "List Categories", label: "Categories", icon: <BookOpen className="w-4 h-4" /> },
         { id: "Report Campaign", label: "Report Fraud", icon: <AlertCircle className="w-4 h-4" /> },
@@ -66,12 +69,14 @@ export default function ApiSidebar({
       items: [
         { id: "Initialize Donation", label: "Initialize", icon: <Terminal className="w-4 h-4" /> },
         { id: "Verify Donation", label: "Verify Payment", icon: <ShieldCheck className="w-4 h-4" /> },
+        { id: "Retrieve Donation", label: "Retrieve Donation", icon: <Terminal className="w-4 h-4" /> },
       ],
     },
     {
       title: "Notifications",
       items: [
         { id: "Webhooks & Events", label: "Webhooks & Events", icon: <Settings className="w-4 h-4" /> },
+        { id: "Manage Webhooks", label: "Manage Webhooks", icon: <Terminal className="w-4 h-4" /> },
       ],
     },
     {
