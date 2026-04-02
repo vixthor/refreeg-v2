@@ -88,7 +88,9 @@ export function SectionDonations() {
     "currency": "NGN",
     "reference": "test_ref_a1b2c3d4e5f67890",
     "mode": "test",
-    "created_at": "2026-03-25T11:00:00Z"
+    "created_at": "2026-03-25T11:00:00Z",
+    "campaign": { "id": "uuid", "title": "..." },
+    "donor": { "name": "...", "email": "..." }
   }
 }`}
         />

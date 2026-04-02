@@ -127,7 +127,13 @@ export function SectionCreateCampaign() {
 }`}
         responseExample={`{
   "status": "success",
-  "data": { "id": "uuid...", "status": "active" }
+  "data": { 
+    "id": "uuid...", 
+    "status": "active",
+    "title": "Hospital Recovery Fund",
+    "goal_amount": 250000,
+    "payout_mode": "manual"
+  }
 }`}
       />
     </div>
@@ -178,7 +184,14 @@ export function SectionUpdateCampaign() {
         description="Updates campaign details. Supports title, description, bank details, and status updates."
         parameters={updateParameters}
         requestExample={`{ "status": "paused" }`}
-        responseExample={`{ "status": "success", "data": { "id": "uuid...", "status": "paused" } }`}
+        responseExample={`{ 
+  "status": "success", 
+  "data": { 
+    "id": "uuid...", 
+    "status": "paused",
+    "updated_at": "2026-04-02T12:00:00Z"
+  } 
+}`}
       />
     </div>
   );
@@ -203,7 +216,23 @@ export function SectionListCampaigns() {
           { name: "limit", type: "number", required: false, description: "Max results (10-100)." },
           { name: "offset", type: "number", required: false, description: "Pagination offset." },
         ]}
-        responseExample={`{ "status": "success", "data": [...], "meta": { "total": 12 } }`}
+        responseExample={`{ 
+  "status": "success", 
+  "data": [
+    {
+      "id": "uuid-1",
+      "title": "Climate Relief",
+      "status": "active",
+      "raised_amount": 120000,
+      "goal_amount": 500000
+    }
+  ], 
+  "meta": { 
+    "total": 1,
+    "limit": 10,
+    "offset": 0
+  } 
+}`}
       />
     </div>
   );
@@ -244,7 +273,17 @@ export function SectionBanks() {
         url="/api/bot/banks"
         description="Fetches all registered bank profiles for your account."
         parameters={[]}
-        responseExample={`{ "status": "success", "data": [{ "id": "ba_987...", "bank_account_name": "..." }] }`}
+        responseExample={`{ 
+  "status": "success", 
+  "data": [
+    { 
+      "id": "ba_987...", 
+      "bank_account_name": "Dev Account",
+      "bank_account_number": "0022334455",
+      "bank_code": "058"
+    }
+  ] 
+}`}
       />
     </div>
   );
@@ -294,7 +333,14 @@ export function SectionPauseResumeCampaign() {
         url="/api/bot/campaigns/[id]/pause"
         description="Transitions a campaign to paused state, halting new donations."
         parameters={[]}
-        responseExample={`{ "status": "success", "data": { "id": "uuid...", "status": "paused" } }`}
+        responseExample={`{ 
+  "status": "success", 
+  "data": { 
+    "id": "uuid...", 
+    "status": "paused",
+    "paused_at": "2026-04-02T12:00:00Z"
+  } 
+}`}
       />
 
       <ApiEndpointDoc
@@ -303,7 +349,14 @@ export function SectionPauseResumeCampaign() {
         url="/api/bot/campaigns/[id]/resume"
         description="Resumes a paused campaign, making it active again."
         parameters={[]}
-        responseExample={`{ "status": "success", "data": { "id": "uuid...", "status": "active" } }`}
+        responseExample={`{ 
+  "status": "success", 
+  "data": { 
+    "id": "uuid...", 
+    "status": "active",
+    "resumed_at": "2026-04-02T12:00:00Z"
+  } 
+}`}
       />
     </div>
   );
