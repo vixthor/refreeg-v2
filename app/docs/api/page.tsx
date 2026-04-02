@@ -31,8 +31,11 @@ import {
   SectionListCampaigns,
   SectionRetrieveCampaign,
   SectionBanks,
+  SectionListCampaignDonations,
+  SectionPauseResumeCampaign,
+  SectionCancelCampaign,
 } from "@/components/docs/api/EndpointCampaigns";
-import { SectionDonations } from "@/components/docs/api/EndpointDonations";
+import { SectionDonations, SectionRetrieveDonation } from "@/components/docs/api/EndpointDonations";
 import {
   SectionValidateAi,
   SectionReportCampaign,
@@ -67,8 +70,14 @@ export default function ApiDocsPage() {
         return <SectionRetrieveCampaign />;
       case "List Campaigns":
         return <SectionListCampaigns />;
+      case "List Campaign Donations":
+        return <SectionListCampaignDonations />;
       case "Update Campaign":
         return <SectionUpdateCampaign />;
+      case "Pause/Resume Campaign":
+        return <SectionPauseResumeCampaign />;
+      case "Cancel Campaign":
+        return <SectionCancelCampaign />;
       case "Manage Banks":
         return <SectionBanks />;
       case "AI Blueprint Validation":
@@ -77,11 +86,14 @@ export default function ApiDocsPage() {
         return <SectionDonations />;
       case "Verify Donation":
         return <SectionDonations />;
+      case "Retrieve Donation":
+        return <SectionRetrieveDonation />;
       case "List Categories":
         return <SectionCategories />;
       case "Report Campaign":
         return <SectionReportCampaign />;
       case "Webhooks & Events":
+      case "Manage Webhooks":
         return <SectionWebhooks />;
       case "Error Reference":
         return <SectionErrorRef />;

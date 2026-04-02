@@ -96,3 +96,33 @@ export function SectionDonations() {
     </div>
   );
 }
+
+export function SectionRetrieveDonation() {
+  return (
+    <div className="space-y-12 animate-in fade-in duration-500">
+      <header className="space-y-4">
+        <h1 className="text-3xl font-extrabold text-slate-900">Retrieve Donation</h1>
+        <p className="text-slate-500 text-lg">Retrieve detailed information about a single donation by its ID.</p>
+      </header>
+
+      <ApiEndpointDoc
+        title="Get Donation"
+        method="GET"
+        url="/api/bot/donations/[id]"
+        description="Returns a full donation object."
+        parameters={[]}
+        responseExample={`{
+  "status": "success",
+  "data": {
+    "id": "uuid...",
+    "reference": "ref_...",
+    "amount": 10000,
+    "donor_name": "Alex",
+    "status": "success",
+    "mode": "test"
+  }
+}`}
+      />
+    </div>
+  );
+}

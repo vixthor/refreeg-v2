@@ -37,6 +37,37 @@ export default function SectionWebhooks() {
 }`}
         />
 
+        <ApiEndpointDoc
+           title="List Webhooks"
+          method="GET"
+          url="/api/bot/webhooks"
+          description="Retrieves a list of all your registered webhook endpoints."
+          parameters={[]}
+          responseExample={`{ "status": "success", "data": [{ "id": "wh_456...", "url": "https://...", "events": ["donation.success"] }] }`}
+        />
+
+        <ApiEndpointDoc
+           title="Update Webhook"
+          method="PATCH"
+          url="/api/bot/webhooks/[id]"
+          description="Updates the URL or events of an existing webhook endpoint."
+          parameters={[
+            { name: "url", type: "string", required: false, description: "New endpoint URL." },
+            { name: "events", type: "array<string>", required: false, description: "Updated list of events." },
+          ]}
+          requestExample={`{ "events": ["donation.success", "campaign.completed"] }`}
+          responseExample={`{ "status": "success", "data": { "id": "wh_456...", "events": ["donation.success", "campaign.completed"] } }`}
+        />
+
+        <ApiEndpointDoc
+           title="Delete Webhook"
+          method="DELETE"
+          url="/api/bot/webhooks/[id]"
+          description="Permanently deletes a webhook endpoint."
+          parameters={[]}
+          responseExample={`{ "status": "success", "message": "Webhook deleted successfully." }`}
+        />
+
         <div className="space-y-8 pt-6">
           <div className="p-8 border-2 border-slate-900 rounded-3xl bg-slate-900 shadow-2xl space-y-6">
             <h3 className="text-xl font-bold text-white flex items-center gap-3">

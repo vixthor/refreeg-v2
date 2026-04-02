@@ -249,3 +249,82 @@ export function SectionBanks() {
     </div>
   );
 }
+
+export function SectionListCampaignDonations() {
+  return (
+    <div className="space-y-10 animate-in fade-in duration-500">
+      <header className="space-y-4">
+        <h1 className="text-3xl font-extrabold text-slate-900">List Campaign Donations</h1>
+        <p className="text-slate-500 text-lg">Retrieve all donations associated with a specific campaign.</p>
+      </header>
+
+      <ApiEndpointDoc
+        title="List Campaign Donations"
+        method="GET"
+        url="/api/bot/campaigns/[id]/donations"
+        description="Returns a list of successful donations for the campaign."
+        parameters={[]}
+        responseExample={`{
+  "status": "success",
+  "data": [
+    {
+      "id": "don_...",
+      "amount": 5000,
+      "status": "success",
+      "donor_name": "Anonymous"
+    }
+  ]
+}`}
+      />
+    </div>
+  );
+}
+
+export function SectionPauseResumeCampaign() {
+  return (
+    <div className="space-y-10 animate-in fade-in duration-500">
+      <header className="space-y-4">
+        <h1 className="text-3xl font-extrabold text-slate-900">Pause/Resume Campaign</h1>
+        <p className="text-slate-500 text-lg">Temporarily pause or resume accepting donations for a campaign.</p>
+      </header>
+
+      <ApiEndpointDoc
+        title="Pause Campaign"
+        method="POST"
+        url="/api/bot/campaigns/[id]/pause"
+        description="Transitions a campaign to paused state, halting new donations."
+        parameters={[]}
+        responseExample={`{ "status": "success", "data": { "id": "uuid...", "status": "paused" } }`}
+      />
+
+      <ApiEndpointDoc
+        title="Resume Campaign"
+        method="POST"
+        url="/api/bot/campaigns/[id]/resume"
+        description="Resumes a paused campaign, making it active again."
+        parameters={[]}
+        responseExample={`{ "status": "success", "data": { "id": "uuid...", "status": "active" } }`}
+      />
+    </div>
+  );
+}
+
+export function SectionCancelCampaign() {
+  return (
+    <div className="space-y-10 animate-in fade-in duration-500">
+      <header className="space-y-4">
+        <h1 className="text-3xl font-extrabold text-slate-900">Cancel Campaign</h1>
+        <p className="text-slate-500 text-lg">Permanently cancel a campaign, changing its status to cancelled.</p>
+      </header>
+
+      <ApiEndpointDoc
+        title="Cancel Campaign"
+        method="DELETE"
+        url="/api/bot/campaigns/[id]"
+        description="Cancels the campaign. This action cannot be undone."
+        parameters={[]}
+        responseExample={`{ "status": "success", "message": "Campaign deleted" }`}
+      />
+    </div>
+  );
+}
