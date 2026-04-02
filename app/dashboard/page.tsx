@@ -54,10 +54,11 @@ type ApiKeyRow = {
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ search?: string }> | { search?: string };
+  searchParams?: Promise<{ search?: string; mode?: string }> | { search?: string; mode?: string };
 }) {
-  const params = ((await searchParams) || {}) as { search?: string };
+  const params = ((await searchParams) || {}) as { search?: string; mode?: string };
   const search = params.search?.trim() || "";
+  const modeFilter = params.mode || "all";
 
   const user = await getCurrentUser();
   const supabase = await createClient();
@@ -139,22 +140,30 @@ export default async function DashboardPage({
       ...cause,
       apiName: key?.name || "Unknown API",
       apiPrefix: key?.key_prefix || "N/A",
-      apiMode: key?.mode || "unknown",
+      apiMode: cause.mode || key?.mode || "unknown",
       developerId: cause.developer_id || "N/A",
     };
   });
 
-  const filteredRows = search
-    ? apiCauseRows.filter((row) => {
-        const needle = search.toLowerCase();
-        return (
-          row.title.toLowerCase().includes(needle) ||
-          row.apiName.toLowerCase().includes(needle) ||
-          row.apiMode.toLowerCase().includes(needle) ||
-          row.developerId.toLowerCase().includes(needle)
-        );
-      })
-    : apiCauseRows;
+  const filteredRows = apiCauseRows.filter((row) => {
+    let matchesSearch = true;
+    let matchesMode = true;
+
+    if (search) {
+      const needle = search.toLowerCase();
+      matchesSearch =
+        row.title.toLowerCase().includes(needle) ||
+        row.apiName.toLowerCase().includes(needle) ||
+        row.apiMode.toLowerCase().includes(needle) ||
+        row.developerId.toLowerCase().includes(needle);
+    }
+
+    if (modeFilter !== "all") {
+      matchesMode = row.apiMode === modeFilter;
+    }
+
+    return matchesSearch && matchesMode;
+  });
 
   return (
     <div className="space-y-4 sm:space-y-6 px-4 sm:px-6 lg:px-8">
@@ -201,14 +210,27 @@ export default async function DashboardPage({
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <form className="relative w-full md:w-96" method="GET">
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  name="search"
-                  placeholder="Search API, developer ID, mode, or cause..."
-                  className="pl-8"
-                  defaultValue={search}
-                />
+              <form className="flex flex-col sm:flex-row gap-3 w-full" method="GET">
+                <div className="relative flex-1 md:max-w-md">
+                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    name="search"
+                    placeholder="Search API, developer ID, mode, or cause..."
+                    className="pl-8"
+                    defaultValue={search}
+                  />
+                </div>
+                <select 
+                  name="mode" 
+                  defaultValue={modeFilter}
+                  className="h-9 w-full sm:w-40 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  onChange={(e) => e.target.form?.submit()}
+                >
+                  <option value="all">All Modes</option>
+                  <option value="live">Live Campaigns</option>
+                  <option value="test">Test Campaigns</option>
+                </select>
+                <button type="submit" className="hidden">Submit</button>
               </form>
 
               {apiCausesUnavailable ? (
@@ -245,9 +267,15 @@ export default async function DashboardPage({
                             {row.developerId}
                           </TableCell>
                           <TableCell>
-                            <Badge variant="secondary" className="capitalize">
-                              {row.apiMode}
-                            </Badge>
+                            {row.apiMode === "test" ? (
+                              <Badge variant="outline" className="capitalize text-amber-600 border-amber-200 bg-amber-50 font-bold tracking-tight">
+                                Test
+                              </Badge>
+                            ) : (
+                              <Badge variant="secondary" className="capitalize">
+                                Live
+                              </Badge>
+                            )}
                           </TableCell>
                           <TableCell className="max-w-[260px] truncate">
                             {row.title}
