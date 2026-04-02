@@ -286,7 +286,9 @@ export function SectionResources() {
                     <code className="text-purple-400">import</code> <code className="text-slate-300">os</code><br />
                     <code className="text-purple-400">from</code> <code className="text-slate-300">refreeg_sdk</code> <code className="text-purple-400">import</code> <code className="text-amber-300">Refreeg</code><br /><br />
                     <code className="text-slate-500">{`# Initialize the client`}</code><br />
-                    <code className="text-slate-300">client = </code><code className="text-amber-300">Refreeg</code>(api_key=os.environ.get(<code className="text-green-300">"REFREEG_API_KEY"</code>))
+                    <code className="text-slate-300">client = </code><code className="text-amber-300">Refreeg</code>(api_key=os.environ.get(<code className="text-green-300">"REFREEG_API_KEY"</code>))<br /><br />
+                    <code className="text-slate-500">{`# Pro-tip: Use try/except for robust error handling`}</code><br />
+                    <code className="text-purple-400">from</code> <code className="text-slate-300">refreeg_sdk.exceptions</code> <code className="text-purple-400">import</code> <code className="text-slate-300">RefreegError</code>
                   </pre>
                 </div>
 
@@ -326,7 +328,8 @@ export function SectionResources() {
                     <code className="text-slate-500">{`# 1. Bank Configuration`}</code><br />
                     <code className="text-slate-300">bank = client.banks.register({`{`}</code><br />
                     <code className="text-green-300">&nbsp;&nbsp;&nbsp;&nbsp;"account_number"</code><code className="text-slate-300">: </code><code className="text-green-300">"0123456789"</code>,<br />
-                    <code className="text-green-300">&nbsp;&nbsp;&nbsp;&nbsp;"bank_code"</code><code className="text-slate-300">: </code><code className="text-green-300">"058"</code><br />
+                    <code className="text-green-300">&nbsp;&nbsp;&nbsp;&nbsp;"bank_code"</code><code className="text-slate-300">: </code><code className="text-green-300">"058"</code>,<br />
+                    <code className="text-green-300">&nbsp;&nbsp;&nbsp;&nbsp;"account_name"</code><code className="text-slate-300">: </code><code className="text-green-300">"John Doe"</code><br />
                     <code className="text-slate-300">{`}`}</code>)<br />
                     <code className="text-slate-300">my_banks = client.banks.list()</code><br /><br />
                     
@@ -334,11 +337,12 @@ export function SectionResources() {
                     <code className="text-slate-300">donation = client.donations.initialize({`{`}</code><br />
                     <code className="text-green-300">&nbsp;&nbsp;&nbsp;&nbsp;"campaign_id"</code><code className="text-slate-300">: </code><code className="text-green-300">"cmp_12345"</code>,<br />
                     <code className="text-green-300">&nbsp;&nbsp;&nbsp;&nbsp;"amount"</code><code className="text-slate-300">: </code><code className="text-orange-300">5000</code>,<br />
-                    <code className="text-green-300">&nbsp;&nbsp;&nbsp;&nbsp;"email"</code><code className="text-slate-300">: </code><code className="text-green-300">"donor@example.com"</code><br />
+                    <code className="text-green-300">&nbsp;&nbsp;&nbsp;&nbsp;"email"</code><code className="text-slate-300">: </code><code className="text-green-300">"donor@example.com"</code>,<br />
+                    <code className="text-green-300">&nbsp;&nbsp;&nbsp;&nbsp;"name"</code><code className="text-slate-300">: </code><code className="text-green-300">"Zion Tech"</code><br />
                     <code className="text-slate-300">{`}`}</code>)<br /><br />
-
+ 
                     <code className="text-slate-500">{`# 3. Verify / Get Donation status`}</code><br />
-                    <code className="text-slate-300">status = client.donations.verify(reference=<code className="text-green-300">"ref_9042b3"</code>)</code><br />
+                    <code className="text-slate-300">status = client.donations.verify(reference=donation[<code className="text-green-300">'reference'</code>])</code><br />
                     <code className="text-slate-300">single_donation = client.donations.get(donation[<code className="text-green-300">'id'</code>])</code>
                   </pre>
                 </div>

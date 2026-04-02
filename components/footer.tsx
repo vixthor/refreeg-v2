@@ -239,7 +239,7 @@ export function Footer() {
               </p>
             </div>
 
-            <div className="flex flex-col justify-between gap-4 rounded-[22px] bg-slate-950 px-5 py-5 text-white sm:px-6">
+            <div className="flex flex-col justify-between gap-4 rounded-[22px] bg-sky-800 px-5 py-5 text-white sm:px-6">
               <div>
                 <p className="text-sm uppercase tracking-[0.18em] text-slate-300">
                   Start today
