@@ -1,14 +1,13 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { getCachedUser } from "@/lib/supabase/cached-user";
 import { revalidatePath } from "next/cache";
 import { generateApiKey, hashApiKey } from "@/utils/api-bot/api-keys";
 
 export async function createApiKey(name: string, mode: "live" | "test") {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user } = await getCachedUser();
 
   if (!user) {
     throw new Error("Unauthorized");
@@ -53,9 +52,7 @@ export async function createApiKey(name: string, mode: "live" | "test") {
 
 export async function getApiKeys() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user } = await getCachedUser();
 
   if (!user) {
     throw new Error("Unauthorized");
@@ -77,9 +74,7 @@ export async function getApiKeys() {
 
 export async function revokeApiKey(id: string) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user } = await getCachedUser();
   if (!user) throw new Error("Unauthorized");
 
   const { error } = await supabase

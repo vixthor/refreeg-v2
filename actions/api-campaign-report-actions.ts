@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { getCachedUser } from "@/lib/supabase/cached-user";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
 import { dispatchWebhook } from "@/utils/api-bot/webhook-utils";
@@ -16,7 +17,7 @@ const supabaseAdmin = createAdminClient<Database>(
 /** ADMIN: Get all reports across the platform */
 export async function getApiCampaignReports() {
   const supabase = await createClient(); // Need session to check auth
-  const { data: { user } } = await supabase.auth.getUser();
+  const { user } = await getCachedUser();
 
   if (!user) {
     throw new Error("Unauthorized");
@@ -51,7 +52,7 @@ export async function getApiCampaignReports() {
 /** DEVELOPER: Get all reports for their own campaigns */
 export async function getDeveloperCampaignReports() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { user } = await getCachedUser();
 
   if (!user) {
     throw new Error("Unauthorized");
@@ -94,7 +95,7 @@ export async function getDeveloperCampaignReports() {
 /** ADMIN: Change status of a report (e.g. pending -> investigating -> resolved) */
 export async function updateReportStatus(reportId: string, newStatus: string) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { user } = await getCachedUser();
 
   if (!user) throw new Error("Unauthorized");
 
@@ -121,7 +122,7 @@ export async function updateReportStatus(reportId: string, newStatus: string) {
 /** ADMIN: Takedown a campaign (set status to cancelled) and resolve reports */
 export async function takedownApiCampaign(campaignId: string) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { user } = await getCachedUser();
 
   if (!user) throw new Error("Unauthorized");
 
