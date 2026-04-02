@@ -24,7 +24,20 @@ import { DonateButton } from "@/components/donate-button";
 import { H4, P } from "../typograpy";
 import AnimatedCard from "./components/AnimatedCard";
 
-export default function FeaturedPetitionsCarousel({ petitions }) {
+type Petition = {
+  id: string;
+  title: string;
+  image?: string;
+  percentRaised: number;
+  days_active?: number;
+  totalAmount: number;
+  goal?: number;
+  profiles?: {
+    full_name?: string;
+  };
+};
+
+export default function FeaturedPetitionsCarousel({ petitions }: { petitions: Petition[] }) {
   const [api, setApi] = useState<any>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -46,6 +59,7 @@ export default function FeaturedPetitionsCarousel({ petitions }) {
     startAutoplay();
     return () => stopAutoplay();
   }, [api]);
+  
 
   // ✅ Reusable card
   const renderCard = (petition: any) => (
