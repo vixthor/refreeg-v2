@@ -76,7 +76,7 @@ export default function ApiDocsPage() {
       case "Initialize Donation":
         return <SectionDonations />;
       case "Verify Donation":
-        return <SectionDonations />; // Both in same component
+        return <SectionDonations />;
       case "List Categories":
         return <SectionCategories />;
       case "Report Campaign":
