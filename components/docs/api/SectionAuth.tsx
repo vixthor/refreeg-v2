@@ -77,6 +77,33 @@ export default function SectionAuth() {
             </p>
           </div>
         </div>
+
+        <div className="p-8 border border-blue-100 rounded-3xl bg-blue-50/30 space-y-4">
+          <div className="flex items-center gap-3">
+            <ShieldCheck className="w-5 h-5 text-blue-600" />
+            <h3 className="font-bold text-slate-900">Mode Isolation Compliance</h3>
+          </div>
+          <p className="text-[14px] text-slate-600 leading-relaxed">
+            RefreeG enforces strict environment isolation. Your <strong>API Key mode must match the Campaign mode</strong> for all transaction-related requests.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+            <div className="bg-white p-4 rounded-xl border border-blue-100 space-y-2 shadow-sm order-2 sm:order-1">
+               <span className="text-[10px] font-extrabold uppercase tracking-widest text-red-500 bg-red-50 px-2 py-0.5 rounded-full inline-block mb-1">Invalid</span>
+               <div className="text-[12px] font-mono text-slate-500 line-through decoration-red-400 decoration-2">rg_test_sk_...</div>
+               <div className="text-xl font-bold text-slate-300">→</div>
+               <div className="text-[12px] font-mono text-green-700 bg-green-50 px-2 py-1 rounded inline-block font-bold">live_campaign_id</div>
+            </div>
+            <div className="bg-white p-4 rounded-xl border border-blue-100 space-y-2 shadow-sm order-1 sm:order-2">
+               <span className="text-[10px] font-extrabold uppercase tracking-widest text-green-600 bg-green-50 px-2 py-0.5 rounded-full inline-block mb-1">Valid</span>
+               <div className="text-[12px] font-mono text-slate-700 font-bold">rg_test_sk_...</div>
+               <div className="text-xl font-bold text-slate-400">→</div>
+               <div className="text-[12px] font-mono text-blue-700 bg-blue-50 px-2 py-1 rounded inline-block font-bold">test_campaign_id</div>
+            </div>
+          </div>
+          <p className="text-[13px] text-slate-500 italic">
+            Attempting to initiate a donation with a mismatched key will result in a <code className="bg-slate-100 px-1 rounded text-xs">400 Bad Request</code> with error code <code className="bg-slate-100 px-1 rounded text-xs">MODE_MISMATCH</code>.
+          </p>
+        </div>
       </section>
     </div>
   );
