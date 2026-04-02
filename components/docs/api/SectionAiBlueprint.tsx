@@ -35,11 +35,11 @@ export default function SectionAiBlueprint() {
 Strictly adhere to this schema:
 - title: 5-100 chars
 - description: 20-5000 chars (Markdown allowed)
-- goal_amount: Integer
-- payout_mode: "immediate" or "after_deadline"
-- bank_account_number: 10 digits
-- bank_code: 3 digits
-- bank_account_name: Legal name
+- goal_amount: Integer in NGN
+- payout_mode: "manual" or "automated"
+- bank_account_number: 10 digits (NUBAN)
+- bank_code: 3 digit bank code (e.g. "058")
+- bank_account_name: Legal account holder name
 
 ALWAYS validate the JSON structure against the /api/bot/campaigns/validate endpoint before final submission.`}
             </pre>

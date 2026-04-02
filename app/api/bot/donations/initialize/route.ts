@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { validateApiKey, rateLimit, handlePreflight } from "@/utils/api-bot/api-auth";
 import { InitiateDonationSchema } from "@/utils/api-bot/schemas";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@supabase/supabase-js";
+import { Database } from "@/types/database-types";
 import Paystack from "@/services/paystack";
 import { TransactionData } from "@/types";
 import { logApiRequest } from "@/utils/api-bot/request-logger";
@@ -10,6 +11,12 @@ import {
   errorResponse, 
   ApiErrorCode 
 } from "@/utils/api-bot/response-utils";
+import crypto from "crypto";
+
+const supabaseAdmin = createClient<Database>(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 export async function POST(req: NextRequest) {
   const startedAt = Date.now();
@@ -35,10 +42,9 @@ export async function POST(req: NextRequest) {
     }
     const data = parsed.data;
 
-    const supabase = await createClient();
-    const { data: campaign, error: campaignError } = await supabase
+    const { data: campaign, error: campaignError } = await supabaseAdmin
       .from("api_campaigns")
-      .select("id, sub_account_code, status, developer_id")
+      .select("id, sub_account_code, status, developer_id, mode, raised_amount")
       .eq("id", data.campaign_id)
       .single();
 
@@ -54,15 +60,86 @@ export async function POST(req: NextRequest) {
       return response;
     }
 
-    if (campaign.status !== "active") {
-      const response = errorResponse("Campaign is not active", ApiErrorCode.BAD_REQUEST, 400);
+    // Enforce mode isolation: test keys can only donate to test campaigns
+    if (campaign.mode !== auth.mode) {
+      const response = errorResponse(
+        `Mode mismatch: cannot use ${auth.mode} API key with a ${campaign.mode} campaign`, 
+        ApiErrorCode.BAD_REQUEST, 400
+      );
       await logApiRequest({ request: req, statusCode: response.status, apiKeyId: auth.apiKeyId, userId: auth.userId, mode: auth.mode, errorCode: ApiErrorCode.BAD_REQUEST, startedAt });
       return response;
     }
 
+    if (campaign.status !== "active") {
+      const response = errorResponse("Campaign is not active", ApiErrorCode.CAMPAIGN_NOT_ACTIVE, 400);
+      await logApiRequest({ request: req, statusCode: response.status, apiKeyId: auth.apiKeyId, userId: auth.userId, mode: auth.mode, errorCode: ApiErrorCode.CAMPAIGN_NOT_ACTIVE, startedAt });
+      return response;
+    }
+
+    // ── TEST MODE: Simulate donation without real payment ──
+    if (auth.mode === "test") {
+      const testReference = `test_ref_${crypto.randomUUID().replace(/-/g, "").slice(0, 16)}`;
+
+      // Record test donation directly
+      const { data: testDonation, error: testDonErr } = await supabaseAdmin
+        .from("api_donations")
+        .insert({
+          api_campaign_id: data.campaign_id,
+          amount: data.amount,
+          tip_amount: data.tip_amount || 0,
+          donor_name: data.name,
+          donor_email: data.email,
+          message: data.message || "",
+          is_anonymous: data.is_anonymous || false,
+          status: "success",
+          paystack_reference: testReference,
+          mode: "test",
+        })
+        .select()
+        .single();
+
+      if (testDonErr) {
+        const response = errorResponse("Failed to create test donation", ApiErrorCode.INTERNAL_ERROR, 500);
+        await logApiRequest({ request: req, statusCode: response.status, apiKeyId: auth.apiKeyId, userId: auth.userId, mode: auth.mode, errorCode: ApiErrorCode.INTERNAL_ERROR, startedAt });
+        return response;
+      }
+
+      // Update campaign raised_amount
+      const newRaised = Number(campaign.raised_amount || 0) + data.amount;
+      await supabaseAdmin
+        .from("api_campaigns")
+        .update({ raised_amount: newRaised })
+        .eq("id", data.campaign_id);
+
+      // Dispatch webhook for test donation
+      const { dispatchWebhook } = await import("@/utils/api-bot/webhook-utils");
+      dispatchWebhook(auth.userId!, "donation.success", {
+        id: testDonation.id,
+        campaign_id: data.campaign_id,
+        amount: data.amount,
+        tip_amount: data.tip_amount || 0,
+        donor_name: data.name,
+        status: "success",
+        reference: testReference,
+        mode: "test",
+      }).catch(console.error);
+
+      const response = successResponse({
+        reference: testReference,
+        checkout_url: null,
+        amount: data.amount,
+        mode: "test",
+        message: "Test donation processed instantly — no real payment was made.",
+        donation_id: testDonation.id,
+      }, 201);
+      await logApiRequest({ request: req, statusCode: response.status, apiKeyId: auth.apiKeyId, userId: auth.userId, mode: auth.mode, startedAt });
+      return response;
+    }
+
+    // ── LIVE MODE: Real Paystack transaction ──
     if (!campaign.sub_account_code) {
-      const response = errorResponse("Campaign has no sub-account for payouts", ApiErrorCode.BAD_REQUEST, 400);
-      await logApiRequest({ request: req, statusCode: response.status, apiKeyId: auth.apiKeyId, userId: auth.userId, mode: auth.mode, errorCode: ApiErrorCode.BAD_REQUEST, startedAt });
+      const response = errorResponse("Campaign has no sub-account for payouts", ApiErrorCode.PAYMENT_SETUP_FAILED, 400);
+      await logApiRequest({ request: req, statusCode: response.status, apiKeyId: auth.apiKeyId, userId: auth.userId, mode: auth.mode, errorCode: ApiErrorCode.PAYMENT_SETUP_FAILED, startedAt });
       return response;
     }
 

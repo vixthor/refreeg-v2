@@ -40,9 +40,15 @@ export default function SectionAuth() {
               <h3 className="font-bold text-slate-900">Sandbox Environment</h3>
             </div>
             <p className="text-[14px] text-slate-600 leading-relaxed">
-              Use keys starting with <code className="bg-slate-100 px-1.5 py-0.5 rounded text-orange-700 font-bold">rg_test_sk_</code> manually 
+              Use keys starting with <code className="bg-slate-100 px-1.5 py-0.5 rounded text-orange-700 font-bold">rg_test_sk_</code> to 
               test your integrations. Sandbox requests do not initiate real bank transfers.
             </p>
+            <ul className="text-[13px] text-slate-500 space-y-1.5 list-disc list-inside pt-1">
+              <li>Donations are <strong>simulated instantly</strong> — no real Paystack checkout</li>
+              <li>Webhooks fire with <code className="bg-slate-100 px-1 rounded text-xs">mode: &quot;test&quot;</code> in the payload</li>
+              <li>Test data is completely isolated from production</li>
+              <li>Campaign ownership and bank verification still apply</li>
+            </ul>
           </div>
           <div className="p-8 border border-slate-100 rounded-3xl bg-slate-50/30 space-y-4">
             <div className="flex items-center gap-3">
@@ -53,6 +59,11 @@ export default function SectionAuth() {
               Keys starting with <code className="bg-slate-100 px-1.5 py-0.5 rounded text-green-700 font-bold">rg_live_sk_</code> are 
               for production environments. Keep these keys extremely secure.
             </p>
+            <ul className="text-[13px] text-slate-500 space-y-1.5 list-disc list-inside pt-1">
+              <li>Donations go through <strong>real Paystack checkout</strong></li>
+              <li>Bank settlements are processed with actual funds</li>
+              <li>Cannot access test campaigns or donations (and vice-versa)</li>
+            </ul>
           </div>
         </div>
 
