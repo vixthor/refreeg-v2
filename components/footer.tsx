@@ -39,7 +39,7 @@ const resourceLinks: FooterLink[] = [
   { label: "Start a Cause", href: "/dashboard/causes/create" },
   { label: "Fees & Payouts", href: "/crowdfund/fees" },
   { label: "FAQ", href: "/#faq" },
-  ...legalLinks.map((link) => ({ label: link.label, href: link.route })),
+  { label: "API", href: "/docs/api" },
 ];
 
 const socialItems = [
@@ -200,21 +200,21 @@ export function Footer() {
       <div
         className={cn(
           "mx-auto max-w-7xl overflow-hidden rounded-[28px] border shadow-[0_20px_60px_-40px_rgba(15,23,42,0.35)]",
-          theme.shell
+          theme.shell,
         )}
       >
         <div className="grid gap-6 p-4 sm:p-6 lg:p-8">
           <div
             className={cn(
               "grid gap-6 rounded-[24px] border p-5 backdrop-blur sm:p-6 lg:grid-cols-[1.2fr_0.8fr]",
-              theme.panel
+              theme.panel,
             )}
           >
             <div className="max-w-2xl">
               <span
                 className={cn(
                   "inline-flex rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em]",
-                  theme.badge
+                  theme.badge,
                 )}
               >
                 Crowdfunding with clarity
@@ -223,7 +223,9 @@ export function Footer() {
               <div className="mt-4 flex items-center gap-3">
                 <Logo />
                 <div>
-                  <p className="text-lg font-semibold text-slate-950">RefreeG</p>
+                  <p className="text-lg font-semibold text-slate-950">
+                    RefreeG
+                  </p>
                   <p className="text-sm text-slate-500">
                     Transparent crowdfunding for causes that matter.
                   </p>
@@ -251,7 +253,7 @@ export function Footer() {
                 href="/dashboard/causes/create"
                 className={cn(
                   "inline-flex w-full items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-semibold transition-colors sm:w-fit",
-                  theme.accent
+                  theme.accent,
                 )}
               >
                 Start a cause
@@ -264,7 +266,7 @@ export function Footer() {
             <div
               className={cn(
                 "rounded-[24px] border p-5 backdrop-blur sm:p-6",
-                theme.panel
+                theme.panel,
               )}
             >
               <span className="inline-flex w-fit items-center rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
@@ -286,7 +288,7 @@ export function Footer() {
               <div
                 className={cn(
                   "rounded-[24px] border p-5 backdrop-blur sm:p-6",
-                  theme.panel
+                  theme.panel,
                 )}
               >
                 <span className="inline-flex w-fit items-center rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
@@ -306,7 +308,7 @@ export function Footer() {
               <div
                 className={cn(
                   "rounded-[24px] border p-5 backdrop-blur sm:p-6",
-                  theme.panel
+                  theme.panel,
                 )}
               >
                 <span className="inline-flex w-fit items-center rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
@@ -328,7 +330,7 @@ export function Footer() {
           <div
             className={cn(
               "rounded-[24px] border p-5 backdrop-blur sm:p-6",
-              theme.panel
+              theme.panel,
             )}
           >
             <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
@@ -365,12 +367,12 @@ export function Footer() {
                     rel="noopener noreferrer"
                     className="group inline-flex min-w-[140px] items-center gap-3 rounded-2xl border border-slate-200/70 bg-white/70 px-4 py-3.5 text-sm text-slate-600 transition-all hover:-translate-y-0.5 hover:border-slate-300 hover:text-slate-950 sm:min-w-fit"
                   >
-                    <span
-                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-500 transition-colors group-hover:bg-slate-900 group-hover:text-white"
-                    >
+                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-500 transition-colors group-hover:bg-slate-900 group-hover:text-white">
                       {item.icon}
                     </span>
-                    <span className="text-[15px] font-medium">{item.label}</span>
+                    <span className="text-[15px] font-medium">
+                      {item.label}
+                    </span>
                   </Link>
                 ))}
               </div>

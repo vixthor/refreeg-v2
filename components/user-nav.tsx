@@ -16,7 +16,13 @@ import { useAuth } from "@/hooks/use-auth";
 import { useAdmin } from "@/hooks/use-admin";
 import { getProfile } from "@/actions/profile-actions";
 import Link from "next/link";
-import { ShieldAlert, CheckCircle, Terminal, Flag } from "lucide-react";
+import {
+  ShieldAlert,
+  CheckCircle,
+  Terminal,
+  Flag,
+  FileText,
+} from "lucide-react";
 
 export function UserNav() {
   const { user, signOut } = useAuth();
@@ -120,8 +126,12 @@ export function UserNav() {
           <DropdownMenuGroup>
             <div className="">
               <DropdownMenuItem asChild>
-                <Link 
-                  href={profile?.username ? `/${profile.username}` : "/dashboard/settings/profile"} 
+                <Link
+                  href={
+                    profile?.username
+                      ? `/${profile.username}`
+                      : "/dashboard/settings/profile"
+                  }
                   className="cursor-pointer"
                 >
                   Profile
@@ -193,7 +203,10 @@ export function UserNav() {
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href="/dashboard/admin/api-reports" className="cursor-pointer">
+                  <Link
+                    href="/dashboard/admin/api-reports"
+                    className="cursor-pointer"
+                  >
                     API Reports
                   </Link>
                 </DropdownMenuItem>
@@ -210,11 +223,20 @@ export function UserNav() {
               <DropdownMenuGroup>
                 <DropdownMenuItem asChild>
                   <Link
-                    href="/dashboard/developer"
+                    href="/dashboard/developer/api-keys"
                     className="cursor-pointer flex items-center gap-2"
                   >
                     <Terminal className="h-3 w-3" />
                     Console
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link
+                    href="/docs/api"
+                    className="cursor-pointer flex items-center gap-2"
+                  >
+                    <FileText className="h-3 w-3" />
+                    Documentation
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
