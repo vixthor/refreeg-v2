@@ -35,7 +35,10 @@ import {
   SectionPauseResumeCampaign,
   SectionCancelCampaign,
 } from "@/components/docs/api/EndpointCampaigns";
-import { SectionDonations, SectionRetrieveDonation } from "@/components/docs/api/EndpointDonations";
+import {
+  SectionDonations,
+  SectionRetrieveDonation,
+} from "@/components/docs/api/EndpointDonations";
 import {
   SectionValidateAi,
   SectionReportCampaign,
@@ -154,18 +157,18 @@ export default function ApiDocsPage() {
               <Key className="w-4 h-4" />
               Get API Keys
             </Link>
-            <button
+            {/* <button
               onClick={() => setMobileOpen(true)}
               className="md:hidden p-2 text-slate-600 hover:bg-slate-50 rounded-lg transition-colors"
             >
               <Menu className="w-6 h-6" />
-            </button>
+            </button> */}
           </div>
         </div>
       </header>
 
       {/* Mobile Navigation Trigger */}
-      <div className="md:hidden sticky top-[73px] z-40 w-full bg-white/95 backdrop-blur-sm border-b border-slate-100 px-4 py-3 flex items-center justify-between">
+      <div className="md:hidden sticky top-[60px] z-40 w-full bg-white/95 backdrop-blur-sm border-b border-slate-100 px-4 py-3 flex items-center justify-between">
         <button
           onClick={() => setMobileOpen(!mobileOpen)}
           className="flex items-center gap-2 text-slate-600 font-bold text-sm"
@@ -191,7 +194,7 @@ export default function ApiDocsPage() {
           <div className="absolute left-0 top-0 bottom-0 w-[280px] bg-white shadow-2xl overflow-y-auto animate-in slide-in-from-left duration-300">
             <div className="p-6 border-b border-slate-50 flex items-center justify-between">
               <span className="font-extrabold text-blue-600 tracking-tight uppercase">
-                API NAV
+                API DOCS
               </span>
               <button onClick={() => setMobileOpen(false)}>
                 <X className="w-5 h-5 text-slate-400" />
