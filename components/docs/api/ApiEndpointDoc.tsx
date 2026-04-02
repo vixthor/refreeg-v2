@@ -17,6 +17,7 @@ interface ApiEndpointDocProps {
   parameters?: Parameter[];
   requestExample?: string;
   responseExample: string;
+  children?: React.ReactNode;
 }
 
 export default function ApiEndpointDoc({
@@ -27,6 +28,7 @@ export default function ApiEndpointDoc({
   parameters,
   requestExample,
   responseExample,
+  children,
 }: ApiEndpointDocProps) {
   const methodColor = {
     GET: "bg-green-100 text-green-700 border-green-200",
@@ -116,7 +118,11 @@ export default function ApiEndpointDoc({
           </pre>
         </div>
       </div>
+
+      {children && <div className="pt-4">{children}</div>}
+
       <hr className="border-t border-gray-100 my-10" />
     </div>
   );
 }
+

@@ -55,7 +55,111 @@ export default function ApiDocsPage() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
+  const sections = [
+    {
+      title: "Getting Started",
+      items: [
+        { id: "Introduction", label: "Introduction" },
+        { id: "Authentication", label: "Authentication" },
+        { id: "Quickstart Guide", label: "Quickstart Guide" },
+        { id: "AI Integration Blueprint", label: "AI Integration Blueprint" },
+        { id: "Best Practices", label: "Best Practices" },
+      ],
+    },
+    {
+      title: "Campaigns API",
+      items: [
+        { id: "Create Campaign", label: "Create Campaign" },
+        { id: "Retrieve Campaign", label: "Retrieve Campaign" },
+        { id: "List Campaigns", label: "List Campaigns" },
+        { id: "List Campaign Donations", label: "List Campaign Donations" },
+        { id: "Update Campaign", label: "Update Campaign" },
+        { id: "Pause/Resume Campaign", label: "Pause/Resume Campaign" },
+        { id: "Cancel Campaign", label: "Cancel Campaign" },
+        { id: "AI Blueprint Validation", label: "Validate (AI)" },
+        { id: "List Categories", label: "Categories" },
+        { id: "Report Campaign", label: "Report Fraud" },
+      ],
+    },
+    {
+      title: "Banks API",
+      items: [
+        { id: "Manage Banks", label: "Manage Banks" },
+      ],
+    },
+    {
+      title: "Donations API",
+      items: [
+        { id: "Initialize Donation", label: "Initialize" },
+        { id: "Verify Donation", label: "Verify Payment" },
+        { id: "Retrieve Donation", label: "Retrieve Donation" },
+      ],
+    },
+    {
+      title: "Notifications",
+      items: [
+        { id: "Webhooks & Events", label: "Webhooks & Events" },
+        { id: "Manage Webhooks", label: "Manage Webhooks" },
+      ],
+    },
+    {
+      title: "Resources",
+      items: [
+        { id: "API Playground", label: "Interactive Playground" },
+        { id: "SDKs & Libraries", label: "SDKs & Libraries" },
+        { id: "Error Reference", label: "Error Reference" },
+      ],
+    },
+  ];
+
+  const allItems = sections.flatMap(s => s.items);
+
+  const filteredItems = searchQuery 
+    ? allItems.filter(item => 
+        item.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.id.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : null;
+
   const renderContent = () => {
+    // If searching, show search results
+    if (searchQuery && filteredItems) {
+      if (filteredItems.length === 0) {
+        return (
+          <div className="flex flex-col items-center justify-center py-20 text-slate-400">
+            <Search className="w-12 h-12 mb-4 opacity-20" />
+            <p className="text-lg font-medium">No results found for "{searchQuery}"</p>
+          </div>
+        );
+      }
+      return (
+        <div className="space-y-8">
+          <header className="space-y-2">
+            <h1 className="text-2xl font-bold text-slate-900 font-mono italic uppercase tracking-tighter">Search Results</h1>
+            <p className="text-slate-500">Found {filteredItems.length} matches for "{searchQuery}"</p>
+          </header>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {filteredItems.map(item => (
+              <button
+                key={item.id}
+                onClick={() => {
+                  setSidebarSelection(item.id);
+                  setSearchQuery("");
+                }}
+                className="p-6 bg-slate-50 rounded-2xl border border-slate-100 hover:border-blue-500 hover:bg-blue-50 transition-all text-left flex items-center justify-between group"
+              >
+                <div>
+                  <h3 className="font-bold text-slate-900 mb-1">{item.label}</h3>
+                  <p className="text-xs text-slate-500 font-mono tracking-tighter uppercase">{item.id}</p>
+                </div>
+                <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-blue-500 transition-colors" />
+              </button>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
     switch (sidebarSelection) {
       case "Introduction":
         return <SectionIntro />;

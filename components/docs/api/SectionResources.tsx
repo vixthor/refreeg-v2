@@ -1,57 +1,97 @@
 "use client";
 
 import React, { useState } from "react";
-import { Info, ExternalLink, Terminal, ShieldCheck, BookOpen, Download } from "lucide-react";
+import { Info, ExternalLink, Terminal, ShieldCheck, BookOpen, Download, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import ApiEndpointDoc from "./ApiEndpointDoc";
 
 export function SectionErrorRef() {
+  const errors = [
+    { id: "bad_request", code: "400", desc: "Missing required fields or malformed JSON." },
+    { id: "unauthorized", code: "401", desc: "Missing or invalid Secret Key." },
+    { id: "forbidden", code: "403", desc: "Attempting to use a Test Key for a Live operation (or vice-versa)." },
+    { id: "not_found", code: "404", desc: "The specified resource doesn't exist." },
+    { id: "validation_error", code: "422", desc: "Semantic validation failed (e.g., description too short)." },
+    { id: "rate_limit_exceeded", code: "429", desc: "API request quota reached. Default 60 req/min." },
+    { id: "server_error", code: "500", desc: "Something went wrong on our end." },
+  ];
+
   return (
     <div className="space-y-12 animate-in fade-in duration-500">
-      <div className="space-y-10">
-        <header className="space-y-4">
-          <h1 className="text-3xl font-extrabold text-slate-900">Error Codes</h1>
-          <p className="text-slate-500 text-lg font-medium leading-relaxed">
-            Unambiguous response codes for every failure mode.
-          </p>
-        </header>
+      <header className="space-y-4">
+        <h1 className="text-3xl font-extrabold text-slate-900 italic uppercase tracking-tighter">Error Reference</h1>
+        <p className="text-slate-500 text-lg">Standard error codes and troubleshooting guide.</p>
+      </header>
 
-        <div className="p-8 border border-slate-100 rounded-3xl bg-white shadow-sm overflow-hidden overflow-x-auto">
-          <table className="w-full text-sm">
+      <div className="space-y-8">
+        <div className="overflow-x-auto bg-white rounded-3xl border border-slate-100 shadow-xl">
+          <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-slate-50 text-slate-400 font-bold tracking-wider uppercase text-[11px]">
-                <th className="text-left pb-4">Identifier</th>
-                <th className="text-left pb-4">HTTP Status</th>
-                <th className="text-left pb-4">Description</th>
+              <tr className="bg-slate-50/50">
+                <th className="p-4 text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100">Status</th>
+                <th className="p-4 text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100">ID / Code</th>
+                <th className="p-4 text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100">Description</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-50">
-              {[
-                { id: "validation_error", code: "400", desc: "Request body failed schema verification (Zod). Check the 'details' field for specifics." },
-                { id: "bad_request", code: "400", desc: "General bad request — missing parameters, invalid JSON, or mode mismatch." },
-                { id: "campaign_not_active", code: "400", desc: "The targeted campaign is paused, cancelled, or completed." },
-                { id: "payment_setup_failed", code: "400", desc: "Bank account verification or sub-account creation failed." },
-                { id: "invalid_bank_account", code: "400", desc: "The provided bank account details could not be resolved." },
-                { id: "unauthorized", code: "401", desc: "API key is missing, invalid, or revoked." },
-                { id: "invalid_api_key", code: "401", desc: "The API key format is correct but the key does not exist." },
-                { id: "forbidden", code: "403", desc: "Access denied — you do not own this resource." },
-                { id: "not_found", code: "404", desc: "The specified resource (campaign, donation, webhook) doesn't exist." },
-                { id: "campaign_not_found", code: "404", desc: "The specified campaign ID does not exist." },
-                { id: "rate_limit_exceeded", code: "429", desc: "API request quota reached. Default: 60 requests per minute." },
-                { id: "payment_failed", code: "500", desc: "Payment gateway returned an unexpected error." },
-                { id: "database_error", code: "500", desc: "A database operation failed unexpectedly." },
-                { id: "internal_error", code: "500", desc: "An unexpected error occurred on our infrastructure." },
-              ].map((err, i) => (
-                <tr key={i} className="group hover:bg-slate-50/50 transition-colors">
-                  <td className="py-5">
-                    <code className="text-blue-600 font-bold bg-blue-50 px-2 py-1 rounded text-[13px]">{err.id}</code>
-                  </td>
-                  <td className="py-5 font-bold text-slate-900">{err.code}</td>
-                  <td className="py-5 text-slate-500 leading-relaxed max-w-[300px]">{err.desc}</td>
+            <tbody className="text-sm">
+              {errors.map((err, i) => (
+                <tr key={i} className="hover:bg-slate-50/50 transition-colors">
+                  <td className="p-4 border-b border-slate-50 font-mono font-bold text-slate-900">{err.code}</td>
+                  <td className="p-4 border-b border-slate-50 font-mono text-blue-600">{err.id}</td>
+                  <td className="p-4 border-b border-slate-50 text-slate-500">{err.desc}</td>
                 </tr>
               ))}
             </tbody>
           </table>
+        </div>
+
+        {/* Validation Errors Deep Dive */}
+        <div className="space-y-6">
+          <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+            <AlertCircle className="w-5 h-5 text-red-500" />
+            Validation Errors (422)
+          </h3>
+          <p className="text-slate-500">
+            RefreeG uses Zod for robust schema validation. When a request fails validation, 
+            the <code className="text-blue-600 font-mono">details</code> object contains a map of 
+            field names to their specific errors.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="p-6 bg-[#0B1120] rounded-2xl border border-white/10 shadow-2xl overflow-hidden">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-2 h-2 rounded-full bg-red-400" />
+                <span className="text-xs font-mono text-slate-400 uppercase tracking-widest">Example Error Response</span>
+              </div>
+              <pre className="text-[13px] font-mono text-blue-300 leading-relaxed overflow-x-auto">
+{`{
+  "status": "error",
+  "error": {
+    "code": "validation_error",
+    "message": "Validation failed",
+    "details": {
+      "title": {
+        "_errors": ["Required"]
+      },
+      "description": {
+        "_errors": ["At least 20 chars"]
+      }
+    }
+  }
+}`}
+              </pre>
+            </div>
+
+            <div className="flex flex-col justify-center space-y-4">
+              <div className="p-5 bg-blue-50 rounded-2xl border border-blue-100">
+                <h4 className="font-bold text-blue-900 mb-2 font-mono italic tracking-tighter">Internal Structure</h4>
+                <p className="text-sm text-blue-700 leading-relaxed">
+                  The <code className="bg-white px-1.5 py-0.5 rounded border border-blue-200 font-mono">_errors</code> array 
+                  contains human-readable strings explaining why the field failed. This architecture is AI-optimized for easy self-correction loops.
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -118,10 +158,11 @@ export function SectionResources() {
                     <div className="w-3 h-3 rounded-full bg-red-500/20 flex items-center justify-center"><div className="w-1.5 h-1.5 rounded-full bg-red-500"></div></div>
                     <div className="w-3 h-3 rounded-full bg-amber-500/20 flex items-center justify-center"><div className="w-1.5 h-1.5 rounded-full bg-amber-500"></div></div>
                     <div className="w-3 h-3 rounded-full bg-green-500/20 flex items-center justify-center"><div className="w-1.5 h-1.5 rounded-full bg-green-500"></div></div>
-                    <span className="ml-2 text-xs font-medium text-slate-500 font-mono">Terminal / Installation</span>
+                    <span className="ml-2 text-xs font-medium text-slate-500 font-mono">Manual Integration (Local)</span>
                   </div>
                   <pre className="text-sm font-mono text-slate-300 overflow-x-auto pb-2">
-                    <code className="text-blue-400">npm install </code><code className="text-slate-300">@refreeg/sdk</code>
+                    <code className="text-slate-500">{`# 1. Copy the /sdks/node directory to your project libs folder`}</code><br />
+                    <code className="text-slate-500">{`# 2. Reference it in your imports`}</code>
                   </pre>
                 </div>
 
@@ -131,7 +172,7 @@ export function SectionResources() {
                     <span className="ml-2 text-xs font-medium text-slate-500 font-mono">index.ts - Initialization</span>
                   </div>
                   <pre className="text-sm font-mono text-slate-300 overflow-x-auto pb-4">
-                    <code className="text-purple-400">import</code> <code className="text-slate-300">{`{ Refreeg }`}</code> <code className="text-purple-400">from</code> <code className="text-green-300">"@refreeg/sdk"</code>;
+                    <code className="text-purple-400">import</code> <code className="text-slate-300">{`{ Refreeg }`}</code> <code className="text-purple-400">from</code> <code className="text-green-300">"./libs/refreeg-sdk"</code>;
                     <br /><br />
                     <code className="text-slate-500">{`// Initialize the client`}</code><br />
                     <code className="text-purple-400">const</code> <code className="text-slate-300">refreeg</code> = <code className="text-purple-400">new</code> <code className="text-amber-300">Refreeg</code>({`{`}<br />
@@ -228,10 +269,11 @@ export function SectionResources() {
                     <div className="w-3 h-3 rounded-full bg-red-500/20 flex items-center justify-center"><div className="w-1.5 h-1.5 rounded-full bg-red-500"></div></div>
                     <div className="w-3 h-3 rounded-full bg-amber-500/20 flex items-center justify-center"><div className="w-1.5 h-1.5 rounded-full bg-amber-500"></div></div>
                     <div className="w-3 h-3 rounded-full bg-green-500/20 flex items-center justify-center"><div className="w-1.5 h-1.5 rounded-full bg-green-500"></div></div>
-                    <span className="ml-2 text-xs font-medium text-slate-500 font-mono">Terminal / Installation</span>
+                    <span className="ml-2 text-xs font-medium text-slate-500 font-mono">Manual Integration (Local)</span>
                   </div>
                   <pre className="text-sm font-mono text-slate-300 overflow-x-auto pb-2">
-                    <code className="text-blue-400">pip install </code><code className="text-slate-300">refreeg-sdk</code>
+                    <code className="text-slate-500">{`# 1. Copy the /sdks/python directory to your project`}</code><br />
+                    <code className="text-slate-500">{`# 2. Ensure you have 'requests' installed: pip install requests`}</code>
                   </pre>
                 </div>
 
@@ -242,9 +284,7 @@ export function SectionResources() {
                   </div>
                   <pre className="text-sm font-mono text-slate-300 overflow-x-auto pb-4">
                     <code className="text-purple-400">import</code> <code className="text-slate-300">os</code><br />
-                    <code className="text-purple-400">from</code> <code className="text-slate-300">refreeg</code> <code className="text-purple-400">import</code> <code className="text-amber-300">Refreeg</code><br />
-                    <code className="text-purple-400">from</code> <code className="text-slate-300">refreeg.client</code> <code className="text-purple-400">import</code> <code className="text-amber-300">RefreegError</code>
-                    <br /><br />
+                    <code className="text-purple-400">from</code> <code className="text-slate-300">refreeg_sdk</code> <code className="text-purple-400">import</code> <code className="text-amber-300">Refreeg</code><br /><br />
                     <code className="text-slate-500">{`# Initialize the client`}</code><br />
                     <code className="text-slate-300">client = </code><code className="text-amber-300">Refreeg</code>(api_key=os.environ.get(<code className="text-green-300">"REFREEG_API_KEY"</code>))
                   </pre>

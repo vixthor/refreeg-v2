@@ -35,7 +35,63 @@ export default function SectionWebhooks() {
     "signing_secret": "whsec_789abc..."
   }
 }`}
-        />
+        >
+          <div className="mt-8 space-y-6">
+            <h4 className="text-sm font-bold uppercase tracking-wider text-gray-500">
+              Supported Events & Payloads
+            </h4>
+            
+            <div className="space-y-4">
+              <div className="p-5 border border-slate-100 rounded-2xl bg-white shadow-sm space-y-4">
+                <div className="flex items-center justify-between">
+                  <code className="text-blue-600 font-bold bg-blue-50 px-3 py-1 rounded-full text-[13px]">
+                    donation.success
+                  </code>
+                  <span className="text-slate-400 text-[12px] font-medium italic">Sent immediately after a successful payment</span>
+                </div>
+                <pre className="bg-slate-50 p-4 rounded-xl text-[12px] font-mono text-slate-700 border border-slate-100 overflow-x-auto">
+{`{
+  "event": "donation.success",
+  "created_at": "2024-03-20T12:00:00Z",
+  "payload": {
+    "id": "don_890abc",
+    "campaign_id": "camp_123xyz",
+    "amount": 5000,
+    "tip_amount": 200,
+    "donor_name": "John Doe",
+    "status": "success",
+    "reference": "ref_789...",
+    "mode": "live"
+  }
+}`}
+                </pre>
+              </div>
+
+              <div className="p-5 border border-slate-100 rounded-2xl bg-white shadow-sm space-y-4">
+                <div className="flex items-center justify-between">
+                  <code className="text-blue-600 font-bold bg-blue-50 px-3 py-1 rounded-full text-[13px]">
+                    campaign.created
+                  </code>
+                  <span className="text-slate-400 text-[12px] font-medium italic">Sent when a new campaign is initialized via API</span>
+                </div>
+                <pre className="bg-slate-50 p-4 rounded-xl text-[12px] font-mono text-slate-700 border border-slate-100 overflow-x-auto">
+{`{
+  "event": "campaign.created",
+  "created_at": "2024-03-20T12:00:00Z",
+  "payload": {
+    "id": "camp_123xyz",
+    "title": "Save the Forest",
+    "goal_amount": 500000,
+    "status": "active",
+    "mode": "live",
+    "created_at": "2024-03-20T12:00:00Z"
+  }
+}`}
+                </pre>
+              </div>
+            </div>
+          </div>
+        </ApiEndpointDoc>
 
         <ApiEndpointDoc
            title="List Webhooks"

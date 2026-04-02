@@ -52,6 +52,22 @@ const ENDPOINTS = [
     }
   },
   {
+    name: "Register Bank",
+    method: "POST",
+    path: "/api/bot/banks",
+    body: {
+      bank_account_number: "0123456789",
+      bank_code: "058",
+      bank_account_name: "John Doe"
+    }
+  },
+  {
+    name: "List Banks",
+    method: "GET",
+    path: "/api/bot/banks",
+    body: {}
+  },
+  {
     name: "Initialize Donation",
     method: "POST",
     path: "/api/bot/donations/initialize",
