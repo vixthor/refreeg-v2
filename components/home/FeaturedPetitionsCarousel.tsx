@@ -37,107 +37,127 @@ export default function FeaturedPetitionsCarousel({ petitions }) {
   };
 
   const stopAutoplay = () => {
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-    }
+    if (timerRef.current) clearInterval(timerRef.current);
   };
 
   useEffect(() => {
     if (!api) return;
 
     startAutoplay();
-
     return () => stopAutoplay();
   }, [api]);
 
-  return (
-    <Carousel
-      setApi={setApi}
-      opts={{ loop: true }}
-      className="w-full"
-      onMouseEnter={stopAutoplay}
-      onMouseLeave={startAutoplay}
+  // ✅ Reusable card
+  const renderCard = (petition: any) => (
+    <Link
+      href={`/petitions/${petition.id}`}
+      className="group block h-full"
     >
-      <CarouselContent className="mt-6 mb-6 md:mr-4 md:ml-4">
-        {petitions.map((petition) => (
-          <CarouselItem
-            key={petition.id}
-            className="md:pl-4 basis-[85%] sm:basis-[50%] md:basis-[33.33%]"
-          >
-            <Link
-              href={`/petitions/${petition.id}`}
-              className="group block h-full"
-            >
-              <AnimatedCard>
-                <Card className="overflow-hidden cursor-pointer transition h-[420px] flex flex-col border border-gray-300">
-                  
-                  <div className="aspect-video w-full overflow-hidden">
-                    <img
-                      src={petition.image || "/placeholder.svg"}
-                      alt={petition.title}
-                      loading="lazy"
-                      className="object-cover w-full h-full"
-                    />
-                  </div>
+      <AnimatedCard>
+        <Card className="overflow-hidden cursor-pointer transition h-[420px] flex flex-col border border-gray-300">
+          
+          <div className="aspect-video w-full overflow-hidden">
+            <img
+              src={petition.image || "/placeholder.svg"}
+              alt={petition.title}
+              loading="lazy"
+              className="object-cover w-full h-full"
+            />
+          </div>
 
-                  <CardHeader className="flex flex-col flex-1 p-4">
-                    <CardTitle>
-                      <H4 className="line-clamp-2">
-                        {petition.title}
-                      </H4>
+          <CardHeader className="flex flex-col flex-1 p-4">
+            <CardTitle>
+              <H4 className="line-clamp-2">
+                {petition.title}
+              </H4>
 
-                      <P className="font-extralight">
-                        {petition.profiles?.full_name || "Unknown"}
-                      </P>
-                    </CardTitle>
+              <P className="font-extralight">
+                {petition.profiles?.full_name || "Unknown"}
+              </P>
+            </CardTitle>
 
-                    <hr className="border-t-2 border-gray-400" />
+            <hr className="border-t-2 border-gray-400" />
 
-                    <div className="flex justify-between items-center pt-2 text-xs">
-                      <P>Sign Now</P>
+            <div className="flex justify-between items-center pt-2 text-xs">
+              <P>Sign Now</P>
 
-                      <P>
-                        {petition.percentRaised}% •{" "}
-                        {Number(petition.days_active || 0)} Days left
-                      </P>
-                    </div>
-                  </CardHeader>
+              <P>
+                {petition.percentRaised}% •{" "}
+                {Number(petition.days_active || 0)} Days left
+              </P>
+            </div>
+          </CardHeader>
 
-                  <div className="mt-auto w-full">
-                    <CardContent>
-                      <Progress
-                        value={petition.percentRaised}
-                        className="h-2 bg-muted"
-                      />
-                    </CardContent>
+          <div className="mt-auto w-full">
+            <CardContent>
+              <Progress
+                value={petition.percentRaised}
+                className="h-2 bg-muted"
+              />
+            </CardContent>
 
-                    <CardFooter>
-                      <div className="w-full flex justify-between">
-                        <span className="flex flex-col">
-                          <H4>
-                            {petition.totalAmount.toLocaleString()}
-                          </H4>
+            <CardFooter>
+              <div className="w-full flex justify-between">
+                <span className="flex flex-col">
+                  <H4>
+                    {petition.totalAmount.toLocaleString()}
+                  </H4>
 
-                          <P className="font-light">
-                            Signed of {petition.goal?.toLocaleString()}
-                          </P>
-                        </span>
+                  <P className="font-light">
+                    Signed of {petition.goal?.toLocaleString()}
+                  </P>
+                </span>
 
-                        <DonateButton type="petition" disableLink />
-                      </div>
-                    </CardFooter>
-                  </div>
-                </Card>
-              </AnimatedCard>
-            </Link>
-          </CarouselItem>
+                <DonateButton type="petition" disableLink />
+              </div>
+            </CardFooter>
+          </div>
+        </Card>
+      </AnimatedCard>
+    </Link>
+  );
+
+  return (
+    <>
+      {/* ✅ MOBILE: Vertical (only 3) */}
+      <div className="flex flex-col gap-4 md:hidden mt-6 mb-6">
+        {petitions.slice(0, 3).map((petition) => (
+          <div key={petition.id}>{renderCard(petition)}</div>
         ))}
-      </CarouselContent>
 
-      <div className="flex items-center justify-end gap-2 mb-4">
-        <CarouselPrevious className="static translate-x-0 translate-y-0" />
-        <CarouselNext className="static translate-x-0 translate-y-0" />
+        <Link href="/petitions" className="w-full">
+          <button className="w-full py-3 rounded-xl border border-gray-300 text-sm font-medium hover:bg-gray-100 transition">
+            See More
+          </button>
+        </Link>
       </div>
-    </Carousel>
+
+      {/* ✅ DESKTOP: Carousel */}
+      <div className="hidden md:block">
+        <Carousel
+          setApi={setApi}
+          opts={{ loop: true }}
+          className="w-full"
+          onMouseEnter={stopAutoplay}
+          onMouseLeave={startAutoplay}
+        >
+          <CarouselContent className="mt-6 mb-6 md:mr-4 md:ml-4">
+            {petitions.map((petition) => (
+              <CarouselItem
+                key={petition.id}
+                className="md:pl-4 md:basis-[33.33%]"
+              >
+                {renderCard(petition)}
+              </CarouselItem>
+            ))}
+          </CarouselContent>
+
+          <div className="flex items-center justify-end gap-2 mb-4">
+            <CarouselPrevious className="static" />
+            <CarouselNext className="static" />
+          </div>
+        </Carousel>
+      </div>
+    </>
   );
 }
