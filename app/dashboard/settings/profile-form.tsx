@@ -33,7 +33,8 @@ type AccountType =
   | "creator"
   | "non-profit"
   | "organization"
-  | "community";
+  | "community"
+  | "developer";
 
 const ACCOUNT_TYPE_OPTIONS: { value: AccountType; label: string }[] = [
   { value: "individual", label: "Individual" },
@@ -41,6 +42,7 @@ const ACCOUNT_TYPE_OPTIONS: { value: AccountType; label: string }[] = [
   { value: "non-profit", label: "Non-profit" },
   { value: "organization", label: "Organisation" },
   { value: "community", label: "Community" },
+  { value: "developer", label: "Developer" },
 ];
 
 interface ProfileFormProps {

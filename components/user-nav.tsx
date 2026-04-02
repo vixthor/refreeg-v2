@@ -16,7 +16,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useAdmin } from "@/hooks/use-admin";
 import { getProfile } from "@/actions/profile-actions";
 import Link from "next/link";
-import { ShieldAlert, CheckCircle } from "lucide-react";
+import { ShieldAlert, CheckCircle, Terminal, Flag } from "lucide-react";
 
 export function UserNav() {
   const { user, signOut } = useAuth();
@@ -194,6 +194,35 @@ export function UserNav() {
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link href="/dashboard/admin/api-reports" className="cursor-pointer">
+                    API Reports
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+              <DropdownMenuSeparator />
+            </>
+          )}
+
+          {profile?.account_type === "developer" && (
+            <>
+              <DropdownMenuLabel className="text-xs text-blue-600 font-normal">
+                Developer Tools
+              </DropdownMenuLabel>
+              <DropdownMenuGroup>
+                <DropdownMenuItem asChild>
+                  <Link
+                    href="/dashboard/developer"
+                    className="cursor-pointer flex items-center gap-2"
+                  >
+                    <Terminal className="h-3 w-3" />
+                    Console
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link
+                    href="/dashboard/developer/reports"
+                    className="cursor-pointer flex items-center gap-2"
+                  >
+                    <Flag className="h-3 w-3" />
                     API Reports
                   </Link>
                 </DropdownMenuItem>

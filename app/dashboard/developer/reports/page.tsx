@@ -7,7 +7,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Clock, ShieldAlert, BadgeInfo, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
-import DeveloperNav from "../DeveloperNav";
 
 export default function DeveloperApiReportsPage() {
   const [reports, setReports] = useState<any[]>([]);
@@ -44,7 +43,6 @@ export default function DeveloperApiReportsPage() {
         <p className="text-muted-foreground mt-1">Manage your API keys, webhooks, and view campaign reports.</p>
       </div>
 
-      <DeveloperNav />
 
       <div className="pt-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
