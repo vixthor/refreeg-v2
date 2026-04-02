@@ -6,6 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getUserRole } from "@/actions/role-actions";
 import { logAdminActivity } from "@/actions/database-actions";
 import { formatCurrency } from "@/lib/utils";
+import { getCachedUser } from "@/lib/supabase/cached-user";
 
 type AdminRole = "admin" | "manager";
 
@@ -88,11 +89,12 @@ export interface ApiUsageAnalytics {
   }>;
 }
 
-async function requireAdminAccess(): Promise<{ userId: string; role: AdminRole }> {
+async function requireAdminAccess(): Promise<{
+  userId: string;
+  role: AdminRole;
+}> {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user } = await getCachedUser();
 
   if (!user) {
     throw new Error("Unauthorized");
@@ -106,9 +108,15 @@ async function requireAdminAccess(): Promise<{ userId: string; role: AdminRole }
   return { userId: user.id, role };
 }
 
-function mapProfiles<T extends { developer_id?: string | null; user_id?: string | null }>(
+function mapProfiles<
+  T extends { developer_id?: string | null; user_id?: string | null },
+>(
   rows: T[],
-  profiles: Array<{ id: string; full_name: string | null; email?: string | null }>,
+  profiles: Array<{
+    id: string;
+    full_name: string | null;
+    email?: string | null;
+  }>,
 ) {
   const profileMap = new Map(
     profiles.map((profile) => [
@@ -126,7 +134,11 @@ function mapProfiles<T extends { developer_id?: string | null; user_id?: string 
       email: "Unknown email",
     };
 
-    return { ...row, developer_name: profile.name, developer_email: profile.email };
+    return {
+      ...row,
+      developer_name: profile.name,
+      developer_email: profile.email,
+    };
   });
 }
 
@@ -134,35 +146,46 @@ export async function getApiMonitoringSummary(): Promise<ApiMonitoringSummary> {
   await requireAdminAccess();
   const adminClient = createAdminClient();
 
-  const [keysRes, campaignsRes, reportsRes, donationsRes, requestLogsRes] = await Promise.all([
-    adminClient.from("api_keys").select("id, revoked_at, last_used_at", { count: "exact" }),
-    adminClient.from("api_campaigns").select("id, status", { count: "exact" }),
-    adminClient
-      .from("api_campaign_reports")
-      .select("id", { count: "exact", head: true })
-      .eq("status", "pending"),
-    adminClient.from("api_donations").select("amount, status"),
-    adminClient.from("api_request_logs").select("status_code"),
-  ]);
+  const [keysRes, campaignsRes, reportsRes, donationsRes, requestLogsRes] =
+    await Promise.all([
+      adminClient
+        .from("api_keys")
+        .select("id, revoked_at, last_used_at", { count: "exact" }),
+      adminClient
+        .from("api_campaigns")
+        .select("id, status", { count: "exact" }),
+      adminClient
+        .from("api_campaign_reports")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "pending"),
+      adminClient.from("api_donations").select("amount, status"),
+      adminClient.from("api_request_logs").select("status_code"),
+    ]);
 
   const activeKeys =
-    keysRes.data?.filter((key) => !key.revoked_at && !!key.last_used_at).length ?? 0;
+    keysRes.data?.filter((key) => !key.revoked_at && !!key.last_used_at)
+      .length ?? 0;
   const totalKeys = keysRes.count ?? keysRes.data?.length ?? 0;
   const totalCampaigns = campaignsRes.count ?? campaignsRes.data?.length ?? 0;
   const activeCampaigns =
-    campaignsRes.data?.filter((campaign) => campaign.status === "active").length ?? 0;
+    campaignsRes.data?.filter((campaign) => campaign.status === "active")
+      .length ?? 0;
   const pendingReports = reportsRes.count ?? 0;
   const successfulDonations =
-    donationsRes.data?.filter((donation) => donation.status === "success") ?? [];
+    donationsRes.data?.filter((donation) => donation.status === "success") ??
+    [];
   const donationVolume = successfulDonations.reduce(
     (sum, donation) => sum + Number(donation.amount ?? 0),
     0,
   );
   const totalRequestVolume = requestLogsRes.data?.length ?? 0;
   const totalErrors =
-    requestLogsRes.data?.filter((log) => Number(log.status_code) >= 400).length ?? 0;
+    requestLogsRes.data?.filter((log) => Number(log.status_code) >= 400)
+      .length ?? 0;
   const requestErrorRate =
-    totalRequestVolume > 0 ? Number(((totalErrors / totalRequestVolume) * 100).toFixed(1)) : 0;
+    totalRequestVolume > 0
+      ? Number(((totalErrors / totalRequestVolume) * 100).toFixed(1))
+      : 0;
 
   return {
     activeKeys,
@@ -183,34 +206,61 @@ export async function listAdminApiCampaigns(): Promise<AdminApiCampaignRow[]> {
 
   const { data: campaigns, error } = await adminClient
     .from("api_campaigns")
-    .select("id, title, status, mode, payout_mode, currency, goal_amount, raised_amount, developer_id, api_key_id, created_at, updated_at")
+    .select(
+      "id, title, status, mode, payout_mode, currency, goal_amount, raised_amount, developer_id, api_key_id, created_at, updated_at",
+    )
     .order("created_at", { ascending: false });
 
   if (error) {
     throw new Error(`Failed to fetch API campaigns: ${error.message}`);
   }
 
-  const developerIds = [...new Set((campaigns ?? []).map((campaign) => campaign.developer_id))];
+  const developerIds = [
+    ...new Set((campaigns ?? []).map((campaign) => campaign.developer_id)),
+  ];
   const apiKeyIds = [
-    ...new Set((campaigns ?? []).map((campaign) => campaign.api_key_id).filter(Boolean)),
+    ...new Set(
+      (campaigns ?? []).map((campaign) => campaign.api_key_id).filter(Boolean),
+    ),
   ] as string[];
 
-  const [{ data: profiles }, { data: apiKeys }, { data: reports }] = await Promise.all([
-    developerIds.length
-      ? adminClient.from("profiles").select("id, full_name, email").in("id", developerIds)
-      : Promise.resolve({ data: [] as Array<{ id: string; full_name: string | null; email?: string | null }> }),
-    apiKeyIds.length
-      ? adminClient.from("api_keys").select("id, name").in("id", apiKeyIds)
-      : Promise.resolve({ data: [] as Array<{ id: string; name: string }> }),
-    campaigns?.length
-      ? adminClient.from("api_campaign_reports").select("api_campaign_id, status").in("api_campaign_id", campaigns.map((campaign) => campaign.id))
-      : Promise.resolve({ data: [] as Array<{ api_campaign_id: string; status: string }> }),
-  ]);
+  const [{ data: profiles }, { data: apiKeys }, { data: reports }] =
+    await Promise.all([
+      developerIds.length
+        ? adminClient
+            .from("profiles")
+            .select("id, full_name, email")
+            .in("id", developerIds)
+        : Promise.resolve({
+            data: [] as Array<{
+              id: string;
+              full_name: string | null;
+              email?: string | null;
+            }>,
+          }),
+      apiKeyIds.length
+        ? adminClient.from("api_keys").select("id, name").in("id", apiKeyIds)
+        : Promise.resolve({ data: [] as Array<{ id: string; name: string }> }),
+      campaigns?.length
+        ? adminClient
+            .from("api_campaign_reports")
+            .select("api_campaign_id, status")
+            .in(
+              "api_campaign_id",
+              campaigns.map((campaign) => campaign.id),
+            )
+        : Promise.resolve({
+            data: [] as Array<{ api_campaign_id: string; status: string }>,
+          }),
+    ]);
 
   const keyMap = new Map((apiKeys ?? []).map((key) => [key.id, key.name]));
   const reportCountMap = new Map<string, number>();
   (reports ?? []).forEach((report) => {
-    reportCountMap.set(report.api_campaign_id, (reportCountMap.get(report.api_campaign_id) ?? 0) + 1);
+    reportCountMap.set(
+      report.api_campaign_id,
+      (reportCountMap.get(report.api_campaign_id) ?? 0) + 1,
+    );
   });
 
   const campaignsWithProfiles = mapProfiles(campaigns ?? [], profiles ?? []);
@@ -227,7 +277,9 @@ export async function listAdminApiCampaigns(): Promise<AdminApiCampaignRow[]> {
     developerId: campaign.developer_id,
     developerName: campaign.developer_name,
     developerEmail: campaign.developer_email,
-    apiKeyName: campaign.api_key_id ? keyMap.get(campaign.api_key_id) ?? null : null,
+    apiKeyName: campaign.api_key_id
+      ? (keyMap.get(campaign.api_key_id) ?? null)
+      : null,
     createdAt: campaign.created_at,
     updatedAt: campaign.updated_at,
     reportsCount: reportCountMap.get(campaign.id) ?? 0,
@@ -240,27 +292,46 @@ export async function listAdminApiDonations(): Promise<AdminApiDonationRow[]> {
 
   const { data: donations, error } = await adminClient
     .from("api_donations")
-    .select("id, api_campaign_id, amount, tip_amount, donor_name, donor_email, status, created_at, paystack_reference")
+    .select(
+      "id, api_campaign_id, amount, tip_amount, donor_name, donor_email, status, created_at, paystack_reference",
+    )
     .order("created_at", { ascending: false });
 
   if (error) {
     throw new Error(`Failed to fetch API donations: ${error.message}`);
   }
 
-  const campaignIds = [...new Set((donations ?? []).map((donation) => donation.api_campaign_id))];
+  const campaignIds = [
+    ...new Set((donations ?? []).map((donation) => donation.api_campaign_id)),
+  ];
   const { data: campaigns } = campaignIds.length
     ? await adminClient
         .from("api_campaigns")
         .select("id, title, developer_id")
         .in("id", campaignIds)
-    : { data: [] as Array<{ id: string; title: string; developer_id: string }> };
+    : {
+        data: [] as Array<{ id: string; title: string; developer_id: string }>,
+      };
 
-  const developerIds = [...new Set((campaigns ?? []).map((campaign) => campaign.developer_id))];
+  const developerIds = [
+    ...new Set((campaigns ?? []).map((campaign) => campaign.developer_id)),
+  ];
   const { data: profiles } = developerIds.length
-    ? await adminClient.from("profiles").select("id, full_name, email").in("id", developerIds)
-    : { data: [] as Array<{ id: string; full_name: string | null; email?: string | null }> };
+    ? await adminClient
+        .from("profiles")
+        .select("id, full_name, email")
+        .in("id", developerIds)
+    : {
+        data: [] as Array<{
+          id: string;
+          full_name: string | null;
+          email?: string | null;
+        }>,
+      };
 
-  const campaignMap = new Map((campaigns ?? []).map((campaign) => [campaign.id, campaign]));
+  const campaignMap = new Map(
+    (campaigns ?? []).map((campaign) => [campaign.id, campaign]),
+  );
   const profileMap = new Map(
     (profiles ?? []).map((profile) => [
       profile.id,
@@ -273,7 +344,9 @@ export async function listAdminApiDonations(): Promise<AdminApiDonationRow[]> {
 
   return (donations ?? []).map((donation) => {
     const campaign = campaignMap.get(donation.api_campaign_id);
-    const profile = campaign ? profileMap.get(campaign.developer_id) : undefined;
+    const profile = campaign
+      ? profileMap.get(campaign.developer_id)
+      : undefined;
 
     return {
       id: donation.id,
@@ -300,32 +373,57 @@ export async function listCampaignReports(): Promise<CampaignReportRow[]> {
 
   const { data: reports, error } = await adminClient
     .from("api_campaign_reports")
-    .select("id, api_campaign_id, developer_id, api_key_id, reason, message, status, created_at, resolved_at, resolution_notes")
+    .select(
+      "id, api_campaign_id, developer_id, api_key_id, reason, message, status, created_at, resolved_at, resolution_notes",
+    )
     .order("created_at", { ascending: false });
 
   if (error) {
     throw new Error(`Failed to fetch campaign reports: ${error.message}`);
   }
 
-  const campaignIds = [...new Set((reports ?? []).map((report) => report.api_campaign_id))];
-  const developerIds = [...new Set((reports ?? []).map((report) => report.developer_id))];
+  const campaignIds = [
+    ...new Set((reports ?? []).map((report) => report.api_campaign_id)),
+  ];
+  const developerIds = [
+    ...new Set((reports ?? []).map((report) => report.developer_id)),
+  ];
   const apiKeyIds = [
-    ...new Set((reports ?? []).map((report) => report.api_key_id).filter(Boolean)),
+    ...new Set(
+      (reports ?? []).map((report) => report.api_key_id).filter(Boolean),
+    ),
   ] as string[];
 
-  const [{ data: campaigns }, { data: profiles }, { data: apiKeys }] = await Promise.all([
-    campaignIds.length
-      ? adminClient.from("api_campaigns").select("id, title, status").in("id", campaignIds)
-      : Promise.resolve({ data: [] as Array<{ id: string; title: string; status: string }> }),
-    developerIds.length
-      ? adminClient.from("profiles").select("id, full_name, email").in("id", developerIds)
-      : Promise.resolve({ data: [] as Array<{ id: string; full_name: string | null; email?: string | null }> }),
-    apiKeyIds.length
-      ? adminClient.from("api_keys").select("id, name").in("id", apiKeyIds)
-      : Promise.resolve({ data: [] as Array<{ id: string; name: string }> }),
-  ]);
+  const [{ data: campaigns }, { data: profiles }, { data: apiKeys }] =
+    await Promise.all([
+      campaignIds.length
+        ? adminClient
+            .from("api_campaigns")
+            .select("id, title, status")
+            .in("id", campaignIds)
+        : Promise.resolve({
+            data: [] as Array<{ id: string; title: string; status: string }>,
+          }),
+      developerIds.length
+        ? adminClient
+            .from("profiles")
+            .select("id, full_name, email")
+            .in("id", developerIds)
+        : Promise.resolve({
+            data: [] as Array<{
+              id: string;
+              full_name: string | null;
+              email?: string | null;
+            }>,
+          }),
+      apiKeyIds.length
+        ? adminClient.from("api_keys").select("id, name").in("id", apiKeyIds)
+        : Promise.resolve({ data: [] as Array<{ id: string; name: string }> }),
+    ]);
 
-  const campaignMap = new Map((campaigns ?? []).map((campaign) => [campaign.id, campaign]));
+  const campaignMap = new Map(
+    (campaigns ?? []).map((campaign) => [campaign.id, campaign]),
+  );
   const profileMap = new Map(
     (profiles ?? []).map((profile) => [
       profile.id,
@@ -335,20 +433,28 @@ export async function listCampaignReports(): Promise<CampaignReportRow[]> {
       },
     ]),
   );
-  const apiKeyMap = new Map((apiKeys ?? []).map((apiKey) => [apiKey.id, apiKey.name]));
+  const apiKeyMap = new Map(
+    (apiKeys ?? []).map((apiKey) => [apiKey.id, apiKey.name]),
+  );
 
   return (reports ?? []).map((report) => ({
     id: report.id,
     campaignId: report.api_campaign_id,
-    campaignTitle: campaignMap.get(report.api_campaign_id)?.title ?? "Unknown campaign",
-    campaignStatus: campaignMap.get(report.api_campaign_id)?.status ?? "unknown",
+    campaignTitle:
+      campaignMap.get(report.api_campaign_id)?.title ?? "Unknown campaign",
+    campaignStatus:
+      campaignMap.get(report.api_campaign_id)?.status ?? "unknown",
     developerId: report.developer_id,
-    developerName: profileMap.get(report.developer_id)?.name ?? "Unknown developer",
-    developerEmail: profileMap.get(report.developer_id)?.email ?? "Unknown email",
+    developerName:
+      profileMap.get(report.developer_id)?.name ?? "Unknown developer",
+    developerEmail:
+      profileMap.get(report.developer_id)?.email ?? "Unknown email",
     reportReason: report.reason,
     reportMessage: report.message,
     reportStatus: report.status,
-    apiKeyName: report.api_key_id ? apiKeyMap.get(report.api_key_id) ?? null : null,
+    apiKeyName: report.api_key_id
+      ? (apiKeyMap.get(report.api_key_id) ?? null)
+      : null,
     createdAt: report.created_at,
     resolvedAt: report.resolved_at,
     resolutionNotes: report.resolution_notes,
@@ -369,12 +475,19 @@ export async function getApiUsageAnalytics(): Promise<ApiUsageAnalytics> {
     throw new Error(`Failed to fetch API request logs: ${error.message}`);
   }
 
-  const apiKeyIds = [...new Set((logs ?? []).map((log) => log.api_key_id).filter(Boolean))] as string[];
+  const apiKeyIds = [
+    ...new Set((logs ?? []).map((log) => log.api_key_id).filter(Boolean)),
+  ] as string[];
   const { data: apiKeys } = apiKeyIds.length
-    ? await adminClient.from("api_keys").select("id, key_prefix").in("id", apiKeyIds)
+    ? await adminClient
+        .from("api_keys")
+        .select("id, key_prefix")
+        .in("id", apiKeyIds)
     : { data: [] as Array<{ id: string; key_prefix: string }> };
 
-  const keyMap = new Map((apiKeys ?? []).map((apiKey) => [apiKey.id, apiKey.key_prefix]));
+  const keyMap = new Map(
+    (apiKeys ?? []).map((apiKey) => [apiKey.id, apiKey.key_prefix]),
+  );
   const endpointCounts = new Map<string, { count: number; errors: number }>();
   let errors = 0;
 
@@ -397,13 +510,21 @@ export async function getApiUsageAnalytics(): Promise<ApiUsageAnalytics> {
     .map(([endpoint, stats]) => ({
       endpoint,
       count: stats.count,
-      errorRate: stats.count > 0 ? Number(((stats.errors / stats.count) * 100).toFixed(1)) : 0,
+      errorRate:
+        stats.count > 0
+          ? Number(((stats.errors / stats.count) * 100).toFixed(1))
+          : 0,
     }));
 
   return {
     requestVolume: logs?.length ?? 0,
-    activeKeys: new Set((logs ?? []).map((log) => log.api_key_id).filter(Boolean)).size,
-    errorRate: (logs?.length ?? 0) > 0 ? Number(((errors / (logs?.length ?? 0)) * 100).toFixed(1)) : 0,
+    activeKeys: new Set(
+      (logs ?? []).map((log) => log.api_key_id).filter(Boolean),
+    ).size,
+    errorRate:
+      (logs?.length ?? 0) > 0
+        ? Number(((errors / (logs?.length ?? 0)) * 100).toFixed(1))
+        : 0,
     topEndpoints,
     recentErrors: (logs ?? [])
       .filter((log) => Number(log.status_code) >= 400)
@@ -414,7 +535,9 @@ export async function getApiUsageAnalytics(): Promise<ApiUsageAnalytics> {
         statusCode: Number(log.status_code),
         errorCode: log.error_code,
         createdAt: log.created_at,
-        apiKeyPrefix: log.api_key_id ? keyMap.get(log.api_key_id) ?? null : null,
+        apiKeyPrefix: log.api_key_id
+          ? (keyMap.get(log.api_key_id) ?? null)
+          : null,
       })),
   };
 }
@@ -425,7 +548,9 @@ export async function takeDownApiCampaign(formData: FormData) {
 
   const campaignId = String(formData.get("campaignId") ?? "");
   const reportId = String(formData.get("reportId") ?? "");
-  const notes = String(formData.get("notes") ?? "Taken down from admin dashboard");
+  const notes = String(
+    formData.get("notes") ?? "Taken down from admin dashboard",
+  );
 
   if (!campaignId) {
     throw new Error("Campaign ID is required");
