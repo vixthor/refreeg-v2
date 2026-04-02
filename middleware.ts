@@ -24,9 +24,10 @@ export async function middleware(request: NextRequest) {
   // updateSession already calls getUser() internally.
   const response = await updateSession(request);
 
+
+  const supabase = await createClient();
   let user: any = null;
   try {
-    const supabase = await createClient();
     const result = await supabase.auth.getUser();
     user = result?.data?.user ?? null;
   } catch (err) {
