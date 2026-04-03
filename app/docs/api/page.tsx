@@ -83,9 +83,7 @@ export default function ApiDocsPage() {
     },
     {
       title: "Banks API",
-      items: [
-        { id: "Manage Banks", label: "Manage Banks" },
-      ],
+      items: [{ id: "Manage Banks", label: "Manage Banks" }],
     },
     {
       title: "Donations API",
@@ -112,12 +110,13 @@ export default function ApiDocsPage() {
     },
   ];
 
-  const allItems = sections.flatMap(s => s.items);
+  const allItems = sections.flatMap((s) => s.items);
 
-  const filteredItems = searchQuery 
-    ? allItems.filter(item => 
-        item.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.id.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredItems = searchQuery
+    ? allItems.filter(
+        (item) =>
+          item.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          item.id.toLowerCase().includes(searchQuery.toLowerCase()),
       )
     : null;
 
@@ -128,18 +127,24 @@ export default function ApiDocsPage() {
         return (
           <div className="flex flex-col items-center justify-center py-20 text-slate-400">
             <Search className="w-12 h-12 mb-4 opacity-20" />
-            <p className="text-lg font-medium">No results found for "{searchQuery}"</p>
+            <p className="text-lg font-medium">
+              No results found for "{searchQuery}"
+            </p>
           </div>
         );
       }
       return (
         <div className="space-y-8">
           <header className="space-y-2">
-            <h1 className="text-2xl font-bold text-slate-900 font-mono italic uppercase tracking-tighter">Search Results</h1>
-            <p className="text-slate-500">Found {filteredItems.length} matches for "{searchQuery}"</p>
+            <h1 className="text-2xl font-bold text-slate-900 font-mono italic uppercase tracking-tighter">
+              Search Results
+            </h1>
+            <p className="text-slate-500">
+              Found {filteredItems.length} matches for "{searchQuery}"
+            </p>
           </header>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {filteredItems.map(item => (
+            {filteredItems.map((item) => (
               <button
                 key={item.id}
                 onClick={() => {
@@ -149,8 +154,12 @@ export default function ApiDocsPage() {
                 className="p-6 bg-slate-50 rounded-2xl border border-slate-100 hover:border-blue-500 hover:bg-blue-50 transition-all text-left flex items-center justify-between group"
               >
                 <div>
-                  <h3 className="font-bold text-slate-900 mb-1">{item.label}</h3>
-                  <p className="text-xs text-slate-500 font-mono tracking-tighter uppercase">{item.id}</p>
+                  <h3 className="font-bold text-slate-900 mb-1">
+                    {item.label}
+                  </h3>
+                  <p className="text-xs text-slate-500 font-mono tracking-tighter uppercase">
+                    {item.id}
+                  </p>
                 </div>
                 <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-blue-500 transition-colors" />
               </button>
@@ -222,6 +231,7 @@ export default function ApiDocsPage() {
             <Link href="/" className="flex items-center gap-2 group">
               <span className="font-bold text-[18px] tracking-tight text-slate-900">
                 RefreeG <span className="text-blue-600">Dev</span>
+                <span className="text-blue-600">Beta</span>
               </span>
             </Link>
             <div className="hidden md:flex items-center gap-2 text-slate-300 mx-2">
