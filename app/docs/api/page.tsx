@@ -226,6 +226,11 @@ export default function ApiDocsPage() {
     <div className="w-full bg-white min-h-screen text-slate-900 selection:bg-blue-100 italic-none">
       {/* Top Navigation Bar */}
       <header className="sticky top-0 z-50 w-full border-b border-slate-100 bg-white/80 backdrop-blur-md">
+        {/* Autofill Trap - Prevents browser from filling search bars with user emails */}
+        <div style={{ position: "absolute", opacity: 0, height: 0, width: 0, overflow: "hidden" }} aria-hidden="true">
+          <input type="text" name="fake_user_name_trap" tabIndex={-1} autoComplete="username" />
+          <input type="password" name="fake_password_trap" tabIndex={-1} autoComplete="current-password" />
+        </div>
         <div className="mx-auto flex h-16 max-w-[1500px] items-center justify-between px-4 md:px-6">
           <div className="flex items-center gap-4">
             <Link href="/" className="flex items-center gap-2 group">
@@ -252,7 +257,9 @@ export default function ApiDocsPage() {
               <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 type="text"
+                name="doc_search_desktop"
                 autoComplete="off"
+                data-lpignore="true" // LastPass ignore
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search API documentation…"
@@ -322,7 +329,9 @@ export default function ApiDocsPage() {
                   <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                   <input
                     type="text"
+                    name="doc_search_mobile"
                     autoComplete="off"
+                    data-lpignore="true"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search..."
