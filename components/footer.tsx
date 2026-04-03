@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import React from "react";
 import {
-  ArrowRight,
   Linkedin,
   Mail,
   MapPin,
@@ -92,35 +91,30 @@ const routeThemes = {
       "border-slate-200 bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.12),_transparent_30%),linear-gradient(180deg,#f8fbff_0%,#eef4fb_100%)]",
     panel: "border-white/80 bg-white/80",
     badge: "border-blue-200 bg-blue-50 text-secondary",
-    accent: "bg-secondary hover:bg-secondary/90",
   },
   "/businesses": {
     shell:
       "border-emerald-200 bg-[radial-gradient(circle_at_top_left,_rgba(16,185,129,0.15),_transparent_30%),linear-gradient(180deg,#f3fbf7_0%,#e8f6ef_100%)]",
     panel: "border-white/80 bg-white/82",
     badge: "border-emerald-200 bg-emerald-50 text-emerald-900",
-    accent: "bg-emerald-800 hover:bg-emerald-900",
   },
   "/non-profits": {
     shell:
       "border-violet-200 bg-[radial-gradient(circle_at_top_left,_rgba(139,92,246,0.15),_transparent_30%),linear-gradient(180deg,#fbf7ff_0%,#f4ecff_100%)]",
     panel: "border-white/80 bg-white/82",
     badge: "border-violet-200 bg-violet-50 text-violet-900",
-    accent: "bg-violet-700 hover:bg-violet-800",
   },
   "/healthcare": {
     shell:
       "border-rose-200 bg-[radial-gradient(circle_at_top_left,_rgba(225,29,72,0.14),_transparent_30%),linear-gradient(180deg,#fff8f8_0%,#fff1f3_100%)]",
     panel: "border-white/80 bg-white/82",
     badge: "border-rose-200 bg-rose-50 text-rose-900",
-    accent: "bg-rose-800 hover:bg-rose-900",
   },
   "/disaster-relief": {
     shell:
       "border-slate-700 bg-[radial-gradient(circle_at_top_left,_rgba(148,163,184,0.16),_transparent_30%),linear-gradient(180deg,#0f172a_0%,#111827_100%)]",
     panel: "border-white/10 bg-white/5",
     badge: "border-white/10 bg-white/10 text-slate-100",
-    accent: "bg-white text-slate-900 hover:bg-slate-100",
   },
 } as const;
 
@@ -206,23 +200,23 @@ export function Footer() {
         <div className="grid gap-6 p-4 sm:p-6 lg:p-8">
           <div
             className={cn(
-              "grid gap-6 rounded-[24px] border p-5 backdrop-blur sm:p-6 lg:grid-cols-[1.2fr_0.8fr]",
+              "rounded-[24px] border p-5 backdrop-blur sm:p-6",
               theme.panel,
             )}
           >
-            <div className="max-w-2xl">
+            <div className="max-w-3xl lg:mx-auto lg:flex lg:flex-col lg:items-center">
               <span
                 className={cn(
-                  "inline-flex rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em]",
+                  "inline-flex rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] lg:mx-auto",
                   theme.badge,
                 )}
               >
                 Crowdfunding with clarity
               </span>
 
-              <div className="mt-4 flex items-center gap-3">
+              <div className="mt-4 flex items-center gap-3 lg:justify-center">
                 <Logo />
-                <div>
+                <div className="text-left">
                   <p className="text-lg font-semibold text-slate-950">
                     RefreeG
                   </p>
@@ -232,33 +226,11 @@ export function Footer() {
                 </div>
               </div>
 
-              <p className="mt-5 max-w-xl text-sm leading-7 text-slate-600 sm:text-base">
+              <p className="mt-5 max-w-2xl text-sm leading-7 text-slate-600 sm:text-base lg:text-center">
                 Launch causes, receive support, and keep donors informed with a
                 platform built for trust, faster giving, and real community
                 impact.
               </p>
-            </div>
-
-            <div className="flex flex-col justify-between gap-4 rounded-[22px] bg-sky-800 px-5 py-5 text-white sm:px-6">
-              <div>
-                <p className="text-sm uppercase tracking-[0.18em] text-slate-300">
-                  Start today
-                </p>
-                <h2 className="mt-3 text-2xl font-semibold leading-tight">
-                  Launch a cause people can trust from the start.
-                </h2>
-              </div>
-
-              <Link
-                href="/dashboard/causes/create"
-                className={cn(
-                  "inline-flex w-full items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-semibold transition-colors sm:w-fit",
-                  theme.accent,
-                )}
-              >
-                Start a cause
-                <ArrowRight className="h-4 w-4" />
-              </Link>
             </div>
           </div>
 
