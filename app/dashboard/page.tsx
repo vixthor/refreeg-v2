@@ -8,7 +8,6 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DashboardCauses } from "@/components/dashboard-causes";
 import { DashboardStats } from "@/components/dashboard-stats";
-import { getCurrentUser } from "@/actions/auth-actions";
 import { DashboardPetitions } from "@/components/dashboard-petitions";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +22,14 @@ import {
 import { Search, Satellite } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createSupabaseAdmin } from "@supabase/supabase-js";
+import { getCachedUser } from "@/lib/supabase/cached-user";
+import { redirect } from "next/navigation";
+import { 
+  getDashboardStats, 
+  getPetitionDashboardStats, 
+  getUserCausesWithStats, 
+  getUserPetitionsWithStats 
+} from "@/actions/dashboard-actions";
 
 import { Metadata } from "next";
 
@@ -60,82 +67,101 @@ export default async function DashboardPage({
   const search = params.search?.trim() || "";
   const modeFilter = params.mode || "all";
 
-  const user = await getCurrentUser();
+  // Use getCachedUser for deduplicated auth
+  const { user, error: authError } = await getCachedUser();
   const supabase = await createClient();
 
-  let apiCauses: ApiCauseRow[] = [];
-  let apiKeys: ApiKeyRow[] = [];
-  let apiCausesUnavailable = false;
-  let apiCausesError = "";
-
-  try {
-    const canUseServiceRole =
-      !!process.env.NEXT_PUBLIC_SUPABASE_URL &&
-      !!process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-    const dbClient = canUseServiceRole
-      ? createSupabaseAdmin(
-          process.env.NEXT_PUBLIC_SUPABASE_URL!,
-          process.env.SUPABASE_SERVICE_ROLE_KEY!,
-          {
-            auth: {
-              autoRefreshToken: false,
-              persistSession: false,
-            },
-          },
-        )
-      : (supabase as any);
-
-    const { data: causeData, error: causeError } = await (dbClient as any)
-      .from("api_campaigns")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(50);
-
-    if (causeError) {
-      apiCausesUnavailable = true;
-      apiCausesError = causeError.message || "Unable to fetch api_campaigns";
-    } else {
-      apiCauses = ((causeData || []) as any[]).map((row) => ({
-        id: row.id,
-        developer_id: row.developer_id,
-        title: row.title || row.name || "Untitled cause",
-        status: row.status || "unknown",
-        created_at: row.created_at,
-        api_key_id: row.api_key_id ?? null,
-        mode: row.mode,
-        goal_amount: row.goal_amount,
-        raised_amount: row.raised_amount,
-      }));
-
-      const apiKeyIds = [
-        ...new Set(
-          apiCauses
-            .map((cause) => cause.api_key_id)
-            .filter((id): id is string => Boolean(id)),
-        ),
-      ];
-
-      if (apiKeyIds.length > 0) {
-        const { data: keyData, error: keyError } = await (dbClient as any)
-          .from("api_keys")
-          .select("id, name, key_prefix, mode")
-          .in("id", apiKeyIds);
-
-        if (!keyError) {
-          apiKeys = (keyData || []) as ApiKeyRow[];
-        }
-      }
-    }
-  } catch (error) {
-    apiCausesUnavailable = true;
-    apiCausesError = error instanceof Error ? error.message : "Unexpected error";
+  if (!user || authError) {
+    redirect("/auth/signin");
   }
 
-  const keyMap = new Map(apiKeys.map((key) => [key.id, key]));
+  // Parallelize all independent server data fetching
+  const [
+    stats,
+    petitionStats,
+    userCauses,
+    userPetitions,
+    apiCampaignsResult
+  ] = await Promise.all([
+    getDashboardStats(user.id),
+    getPetitionDashboardStats(user.id),
+    getUserCausesWithStats(user.id),
+    getUserPetitionsWithStats(user.id),
+    (async () => {
+      try {
+        const canUseServiceRole =
+          !!process.env.NEXT_PUBLIC_SUPABASE_URL &&
+          !!process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-  const apiCauseRows = apiCauses.map((cause) => {
-    const key = cause.api_key_id ? keyMap.get(cause.api_key_id) : null;
+        const dbClient = canUseServiceRole
+          ? createSupabaseAdmin(
+              process.env.NEXT_PUBLIC_SUPABASE_URL!,
+              process.env.SUPABASE_SERVICE_ROLE_KEY!,
+              {
+                auth: {
+                  autoRefreshToken: false,
+                  persistSession: false,
+                },
+              },
+            )
+          : (supabase as any);
+
+        const { data: causeData, error: causeError } = await (dbClient as any)
+          .from("api_campaigns")
+          .select("*")
+          .order("created_at", { ascending: false })
+          .limit(50);
+
+        if (causeError) return { error: causeError.message };
+        
+        const apiCauses = ((causeData || []) as any[]).map((row) => ({
+          id: row.id,
+          developer_id: row.developer_id,
+          title: row.title || row.name || "Untitled cause",
+          status: row.status || "unknown",
+          created_at: row.created_at,
+          api_key_id: row.api_key_id ?? null,
+          mode: row.mode,
+          goal_amount: row.goal_amount,
+          raised_amount: row.raised_amount,
+        }));
+
+        const apiKeyIds = [
+          ...new Set(
+            apiCauses
+              .map((cause) => cause.api_key_id)
+              .filter((id): id is string => Boolean(id)),
+          ),
+        ];
+
+        let apiKeys: ApiKeyRow[] = [];
+        if (apiKeyIds.length > 0) {
+          const { data: keyData, error: keyError } = await (dbClient as any)
+            .from("api_keys")
+            .select("id, name, key_prefix, mode")
+            .in("id", apiKeyIds);
+
+          if (!keyError) {
+            apiKeys = (keyData || []) as ApiKeyRow[];
+          }
+        }
+
+        return { apiCauses, apiKeys };
+      } catch (err) {
+        return { error: err instanceof Error ? err.message : "Unexpected error" };
+      }
+    })()
+  ]);
+
+  const apiCauses = 'apiCauses' in apiCampaignsResult ? (apiCampaignsResult as any).apiCauses : [];
+  const apiKeys = 'apiKeys' in apiCampaignsResult ? (apiCampaignsResult as any).apiKeys : [];
+  const apiCausesUnavailable = 'error' in apiCampaignsResult;
+  const apiCausesError = 'error' in apiCampaignsResult ? (apiCampaignsResult as any).error : "";
+
+  const keyMap = new Map(apiKeys.map((key: any) => [key.id, key]));
+
+  const apiCauseRows = apiCauses.map((cause: any) => {
+    const key = cause.api_key_id ? keyMap.get(cause.api_key_id) as ApiKeyRow | undefined : null;
     return {
       ...cause,
       apiName: key?.name || "Unknown API",
@@ -145,7 +171,8 @@ export default async function DashboardPage({
     };
   });
 
-  const filteredRows = apiCauseRows.filter((row) => {
+
+  const filteredRows = apiCauseRows.filter((row: any) => {
     let matchesSearch = true;
     let matchesMode = true;
 
@@ -187,11 +214,17 @@ export default async function DashboardPage({
           </TabsTrigger>
         </TabsList>
         <TabsContent value="overview" className="space-y-4">
-          <DashboardStats userId={user?.id} type="all" />
-          <DashboardCauses />
-          <DashboardPetitions />
+          <DashboardStats 
+            userId={user.id} 
+            type="all" 
+            initialStats={stats} 
+            initialPetitionStats={petitionStats} 
+          />
+          <DashboardCauses initialCauses={userCauses} />
+          <DashboardPetitions initialPetitions={userPetitions} />
         </TabsContent>
         <TabsContent value="analytics" className="space-y-4">
+
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between gap-3">
@@ -260,7 +293,7 @@ export default async function DashboardPage({
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredRows.map((row) => (
+                      {filteredRows.map((row: any) => (
                         <TableRow key={row.id}>
                           <TableCell className="font-medium">{row.apiName}</TableCell>
                           <TableCell className="text-xs text-muted-foreground">

@@ -1,6 +1,6 @@
 import type React from "react";
 import { redirect } from "next/navigation";
-import { getCurrentUser } from "@/actions/auth-actions";
+import { getCachedUser } from "@/lib/supabase/cached-user";
 import { hasCompletedOnboarding } from "@/actions/profile-actions";
 import ClientLayoutWrapper from "@/components/ClientLayoutWrapper";
 
@@ -9,9 +9,9 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const user = await getCurrentUser();
+  const { user, error: authError } = await getCachedUser();
 
-  if (!user) {
+  if (!user || authError) {
     redirect("/auth/signin");
   }
 
