@@ -69,25 +69,23 @@ type ApiKeyRow = {
   mode: "live" | "test";
 };
 
+import { getCachedUser } from "@/lib/supabase/cached-user";
+
 export default async function AdminAnalyticsPage({
   searchParams,
 }: {
-  searchParams: { search?: string };
+  searchParams: Promise<{ search?: string }> | { search?: string };
 }) {
   const params = await searchParams;
   const search = params?.search?.trim() || "";
 
-  const supabase = await createClient();
+  const { user, error: authError } = await getCachedUser();
 
-  const {
-    data: { user: currentUser },
-  } = await supabase.auth.getUser();
-
-  if (!currentUser) {
+  if (!user || authError) {
     redirect("/auth/signin");
   }
 
-  const role = await getUserRole(currentUser.id);
+  const role = await getUserRole(user.id);
 
   if (!role || (role !== "admin" && role !== "manager")) {
     return (
@@ -102,53 +100,55 @@ export default async function AdminAnalyticsPage({
     );
   }
 
-  // This table is part of the API integration rollout and may not exist in all environments.
-  // We handle missing-table errors gracefully and still render the page.
-  let apiCauses: ApiCauseRow[] = [];
-  let apiKeys: ApiKeyRow[] = [];
-  let apiCausesUnavailable = false;
+  const supabase = await createClient();
 
-  try {
-    const query = (supabase as any)
-      .from("api_campaigns")
-      .select("id, title, status, created_at, api_key_id")
-      .order("created_at", { ascending: false })
-      .limit(50);
+  // Parallel fetching for performance
+  const [apiCampaignsResult] = await Promise.all([
+    (async () => {
+      try {
+        const { data: apiCauses, error: causeError } = await (supabase as any)
+          .from("api_campaigns")
+          .select("id, title, status, created_at, api_key_id")
+          .order("created_at", { ascending: false })
+          .limit(50);
 
-    const { data, error } = await query;
+        if (causeError) return { error: causeError.message };
 
-    if (error) {
-      apiCausesUnavailable = true;
-    } else {
-      apiCauses = (data || []) as ApiCauseRow[];
+        const apiKeyIds = [
+          ...new Set(
+            (apiCauses || [])
+              .map((cause: any) => cause.api_key_id)
+              .filter((id: any): id is string => Boolean(id)),
+          ),
+        ];
 
-      const apiKeyIds = [
-        ...new Set(
-          (apiCauses || [])
-            .map((cause) => cause.api_key_id)
-            .filter((id): id is string => Boolean(id)),
-        ),
-      ];
+        let apiKeys: ApiKeyRow[] = [];
+        if (apiKeyIds.length > 0) {
+          const { data: keysData, error: keysError } = await (supabase as any)
+            .from("api_keys")
+            .select("id, name, key_prefix, mode")
+            .in("id", apiKeyIds);
 
-      if (apiKeyIds.length > 0) {
-        const { data: keysData, error: keysError } = await (supabase as any)
-          .from("api_keys")
-          .select("id, name, key_prefix, mode")
-          .in("id", apiKeyIds);
-
-        if (!keysError) {
-          apiKeys = (keysData || []) as ApiKeyRow[];
+          if (!keysError) {
+            apiKeys = (keysData || []) as ApiKeyRow[];
+          }
         }
+
+        return { apiCauses: (apiCauses || []), apiKeys };
+      } catch (err: any) {
+        return { error: err.message || "Failed to fetch API data" };
       }
-    }
-  } catch {
-    apiCausesUnavailable = true;
-  }
+    })()
+  ]);
 
-  const keyMap = new Map(apiKeys.map((key) => [key.id, key]));
+  const apiCauses = 'apiCauses' in apiCampaignsResult ? (apiCampaignsResult as any).apiCauses : [];
+  const apiKeys = 'apiKeys' in apiCampaignsResult ? (apiCampaignsResult as any).apiKeys : [];
+  const apiCausesUnavailable = 'error' in apiCampaignsResult;
 
-  const apiCauseRows = apiCauses.map((cause) => {
-    const key = cause.api_key_id ? keyMap.get(cause.api_key_id) : null;
+  const keyMap = new Map(apiKeys.map((key: any) => [key.id, key]));
+
+  const apiCauseRows = apiCauses.map((cause: any) => {
+    const key = cause.api_key_id ? keyMap.get(cause.api_key_id) as ApiKeyRow | undefined : null;
     return {
       ...cause,
       apiName: key?.name || "Unknown API",
@@ -158,7 +158,7 @@ export default async function AdminAnalyticsPage({
   });
 
   const filteredRows = search
-    ? apiCauseRows.filter((row) => {
+    ? apiCauseRows.filter((row: any) => {
         const needle = search.toLowerCase();
         return (
           row.title.toLowerCase().includes(needle) ||
@@ -170,9 +170,9 @@ export default async function AdminAnalyticsPage({
     : apiCauseRows;
 
   const totalCauses = apiCauseRows.length;
-  const uniqueApis = new Set(apiCauseRows.map((row) => row.apiPrefix)).size;
-  const liveCauses = apiCauseRows.filter((row) => row.apiMode === "live").length;
-  const testCauses = apiCauseRows.filter((row) => row.apiMode === "test").length;
+  const uniqueApis = new Set(apiCauseRows.map((row: any) => row.apiPrefix)).size;
+  const liveCauses = apiCauseRows.filter((row: any) => row.apiMode === "live").length;
+  const testCauses = apiCauseRows.filter((row: any) => row.apiMode === "test").length;
 
   return (
     <div className="space-y-6">
@@ -298,7 +298,7 @@ export default async function AdminAnalyticsPage({
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredRows.map((row) => (
+                    {filteredRows.map((row: any) => (
                       <TableRow key={row.id}>
                         <TableCell className="font-medium">
                           <div className="flex items-center gap-2">

@@ -46,25 +46,27 @@ import { getUserRole, listUsersWithRoles } from "@/actions/role-actions";
 import Link from "next/link";
 import { ExportCSVButton } from "./components/export-csv-button";
 
+import { getCachedUser } from "@/lib/supabase/cached-user";
+
 export default async function AdminUsersPage({
   searchParams,
 }: {
-  searchParams: { search?: string };
+  searchParams: Promise<{ search?: string }> | { search?: string };
 }) {
-  const supabase = await createClient();
   const params = await searchParams;
 
-  const {
-    data: { user: currentuser },
-  } = await supabase.auth.getUser();
+  const [ { user, error: authError }, users ] = await Promise.all([
+    getCachedUser(),
+    listUsersWithRoles()
+  ]);
 
-  if (!currentuser) {
+  if (!user || authError) {
     redirect("/signin");
   }
 
-  const user = await getUserRole(currentuser.id);
+  const userRole = await getUserRole(user.id);
 
-  if (!user || (user !== "admin" && user !== "manager")) {
+  if (!userRole || (userRole !== "admin" && userRole !== "manager")) {
     return (
       <Card>
         <CardHeader>
@@ -76,8 +78,6 @@ export default async function AdminUsersPage({
       </Card>
     );
   }
-
-  const users = await listUsersWithRoles();
 
   const filteredUsers = params.search
     ? users.filter(
@@ -226,7 +226,7 @@ export default async function AdminUsersPage({
                         </a>
                       </TableCell>
                       <TableCell className="text-right">
-                        <UserActions user={userItem} currentUserRole={user} />
+                        <UserActions user={userItem} currentUserRole={userRole} />
                       </TableCell>
                     </TableRow>
                   ))
