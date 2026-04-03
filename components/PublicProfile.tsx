@@ -17,6 +17,7 @@ import { DonationCard, EmptyState } from "./ProfileCards";
 import { ExpandableCard } from "./ExpandableCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQueryState } from "nuqs";
+import { HandHeart, ShieldAlert } from "lucide-react";
 
 type ProfileProps = {
   profile: any;
@@ -150,10 +151,10 @@ export default function PublicProfile({
           </Button>
         </div>
         {/* RefreeG brand tag */}
-        <div className="absolute top-4 right-4 md:right-8 flex items-center gap-1.5 text-white/60 text-xs font-semibold tracking-widest uppercase">
+        <Link href="https://t.me/+d67UCIer8c01ODhk" className="absolute top-4 right-4 md:right-8 flex items-center gap-1.5 text-white/60 text-xs font-semibold tracking-widest uppercase">
           <Users className="h-3.5 w-3.5" />
           <span>RefreeG Community</span>
-        </div>
+        </Link >
       </div>
 
       <div className="max-w-5xl mx-auto px-4 pb-16">
@@ -231,6 +232,19 @@ export default function PublicProfile({
                 </Link>
               </div>
             )}
+            <Link href="/causes" className="shrink-0 mt-2 md:mt-0">
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-gray-500 hover:text-gray-700 border-gray-300 hover:bg-gray-100 gap-x-1"
+                onClick={() => {
+                  navigator.clipboard.writeText(window.location.href);
+                }}
+              >
+                <HandHeart className="h-4 w-4 text-grey-500" />
+                Pledge
+              </Button>
+            </Link>
           </div>
         </div>
 
