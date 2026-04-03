@@ -254,17 +254,22 @@ export default function ApiDocsPage() {
 
           <div className="flex items-center gap-3">
             <div className="relative hidden lg:block mr-4">
-              <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                type="text"
-                name="doc_search_desktop"
-                autoComplete="off"
-                data-lpignore="true" // LastPass ignore
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search API documentation…"
-                className="h-9 w-64 rounded-full border border-slate-200 bg-slate-50 pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all font-medium text-slate-900"
-              />
+              <form autoComplete="off" onSubmit={(e) => e.preventDefault()} className="relative">
+                <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="search"
+                  name="dg_doc_search_v2"
+                  id="dg_doc_search_v2"
+                  autoComplete="new-password"
+                  data-lpignore="true" 
+                  readOnly
+                  onFocus={(e) => e.target.removeAttribute('readOnly')}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search API documentation…"
+                  className="h-9 w-64 rounded-full border border-slate-200 bg-slate-50 pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all font-medium text-slate-900"
+                />
+              </form>
             </div>
             <Link
               href="/dashboard/developer"
@@ -326,17 +331,22 @@ export default function ApiDocsPage() {
             <div className="p-2">
               <div className="px-4 py-6 border-b border-slate-50 mb-4">
                 <div className="relative">
-                  <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                  <input
-                    type="text"
-                    name="doc_search_mobile"
-                    autoComplete="off"
-                    data-lpignore="true"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search..."
-                    className="w-full h-10 rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/10 transition-all font-medium text-slate-900"
-                  />
+                  <form autoComplete="off" onSubmit={(e) => e.preventDefault()} className="relative">
+                    <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="search"
+                      name="dg_doc_search_mobile_v2"
+                      id="dg_doc_search_mobile_v2"
+                      autoComplete="new-password"
+                      data-lpignore="true"
+                      readOnly
+                      onFocus={(e) => e.target.removeAttribute('readOnly')}
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Search..."
+                      className="w-full h-10 rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/10 transition-all font-medium text-slate-900"
+                    />
+                  </form>
                 </div>
               </div>
               <ApiSidebar
