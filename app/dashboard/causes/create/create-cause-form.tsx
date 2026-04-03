@@ -340,11 +340,12 @@ export default function CreateCauseForm() {
     }
   };
 
-  const handleImageUpload = (files: File[]) => {
-    const MAX_FILE_SIZE = 100 * 1024 * 1024;
+  const handleImageUpload = async (files: File[]) => {
     const file = files[0];
+    if (!file) return;
 
-    if (file && file.size > MAX_FILE_SIZE) {
+    const MAX_FILE_SIZE = 100 * 1024 * 1024;
+    if (file.size > MAX_FILE_SIZE) {
       setErrors((prev) => ({
         ...prev,
         coverImage: "Cover image must be less than 100MB",
@@ -352,13 +353,26 @@ export default function CreateCauseForm() {
       return;
     }
 
-    setFormData((prev) => ({ ...prev, coverImage: file }));
-    if (errors.coverImage) {
-      setErrors((prev) => ({ ...prev, coverImage: undefined }));
+    try {
+      // Compress if it's an image
+      let fileToUpload = file;
+      if (file.type.startsWith("image/")) {
+        const { compressImage } = await import("@/utils/image-compression");
+        fileToUpload = await compressImage(file, 1200, 0.7);
+      }
+
+      setFormData((prev) => ({ ...prev, coverImage: fileToUpload }));
+      if (errors.coverImage) {
+        setErrors((prev) => ({ ...prev, coverImage: undefined }));
+      }
+    } catch (error) {
+      console.error("Compression error:", error);
+      // Fallback to original
+      setFormData((prev) => ({ ...prev, coverImage: file }));
     }
   };
 
-  const handleMultimediaUpload = (files: File[]) => {
+  const handleMultimediaUpload = async (files: File[]) => {
     const MAX_FILES = 5;
     const MAX_TOTAL_SIZE = 100 * 1024 * 1024;
 
@@ -371,29 +385,51 @@ export default function CreateCauseForm() {
       return;
     }
 
-    const currentSize =
-      formData.multimedia && formData.multimedia.length > 0
-        ? formData.multimedia.reduce((acc, file) => acc + file.size, 0)
-        : 0;
-    const newFilesSize = files.reduce((acc, file) => acc + file.size, 0);
+    try {
+      const { compressImage } = await import("@/utils/image-compression");
+      
+      const processedFiles = await Promise.all(
+        files.map(async (file) => {
+          if (file.type.startsWith("image/")) {
+            return await compressImage(file, 1000, 0.7);
+          }
+          return file;
+        })
+      );
 
-    if (currentSize + newFilesSize > MAX_TOTAL_SIZE) {
-      setErrors((prev) => ({
+      const currentSize =
+        formData.multimedia && formData.multimedia.length > 0
+          ? formData.multimedia.reduce((acc, file) => acc + file.size, 0)
+          : 0;
+      const newFilesSize = processedFiles.reduce((acc, file) => acc + file.size, 0);
+
+      if (currentSize + newFilesSize > MAX_TOTAL_SIZE) {
+        setErrors((prev) => ({
+          ...prev,
+          multimedia: "Total multimedia size must be less than 100MB",
+        }));
+        return;
+      }
+
+      setFormData((prev) => ({
         ...prev,
-        multimedia: "Total multimedia size must be less than 100MB",
+        multimedia: Array.isArray(prev.multimedia)
+          ? [...prev.multimedia, ...processedFiles]
+          : [...processedFiles],
       }));
-      return;
-    }
 
-    setFormData((prev) => ({
-      ...prev,
-      multimedia: Array.isArray(prev.multimedia)
-        ? [...prev.multimedia, ...files]
-        : [...files],
-    }));
-
-    if (errors.multimedia) {
-      setErrors((prev) => ({ ...prev, multimedia: undefined }));
+      if (errors.multimedia) {
+        setErrors((prev) => ({ ...prev, multimedia: undefined }));
+      }
+    } catch (error) {
+      console.error("Multimedia compression error:", error);
+      // Fallback to original files
+      setFormData((prev) => ({
+        ...prev,
+        multimedia: Array.isArray(prev.multimedia)
+          ? [...prev.multimedia, ...files]
+          : [...files],
+      }));
     }
   };
 
