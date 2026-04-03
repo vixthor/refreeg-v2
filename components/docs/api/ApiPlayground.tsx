@@ -157,11 +157,13 @@ export default function ApiPlayground() {
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">API KEY</label>
             <input 
-              type="password"
+              type="text"
+              name="rg_api_key_test"
               autoComplete="off"
               placeholder="rg_test_sk_..."
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
+              style={{ WebkitTextSecurity: "disc" } as any}
               className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-blue-400 font-mono text-sm transition-all"
             />
           </div>
