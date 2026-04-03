@@ -1,0 +1,57 @@
+import AdminLogs from "@/components/admin/AdminLogs";
+import { listAdminLogs } from "@/actions/database-actions";
+import { createClient } from "@/lib/supabase/server";
+import { getUserRole } from "@/actions/role-actions";
+import { redirect } from "next/navigation";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+
+async function page() {
+  const supabase = await createClient();
+  const {
+    data: { user: authUser },
+  } = await supabase.auth.getUser();
+
+  if (!authUser) {
+    redirect("/signin");
+  }
+
+  const role = await getUserRole(authUser.id);
+  if (role !== "admin" && role !== "manager") {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Access Denied</CardTitle>
+          <CardDescription>
+            You do not have permission to access this page.
+          </CardDescription>
+        </CardHeader>
+      </Card>
+    );
+  }
+
+  try {
+    const logs = await listAdminLogs();
+    return (
+      <div>
+        <AdminLogs logs={logs} />
+      </div>
+    );
+  } catch (error) {
+    console.error("Error in Admin Logs page:", error);
+    return (
+      <div className="p-4 text-center text-red-500">
+        <p>Failed to load admin logs.</p>
+        <p className="text-sm text-gray-500 mt-2">
+          {(error as Error).message || "Unknown error"}
+        </p>
+      </div>
+    );
+  }
+}
+
+export default page;
