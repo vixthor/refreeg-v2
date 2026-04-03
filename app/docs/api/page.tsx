@@ -251,6 +251,8 @@ export default function ApiDocsPage() {
             <div className="relative hidden lg:block mr-4">
               <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
+                type="text"
+                autoComplete="off"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search API documentation…"
@@ -319,6 +321,10 @@ export default function ApiDocsPage() {
                 <div className="relative">
                   <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                   <input
+                    type="text"
+                    autoComplete="off"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search..."
                     className="w-full h-10 rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/10 transition-all font-medium text-slate-900"
                   />

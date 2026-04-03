@@ -55,16 +55,20 @@ export default async function AdminUsersPage({
 }) {
   const params = await searchParams;
 
-  const [ { user, error: authError }, users ] = await Promise.all([
+  const [ authResult, users, userRole ] = await Promise.all([
     getCachedUser(),
-    listUsersWithRoles()
+    listUsersWithRoles(),
+    (async () => {
+      const { user } = await getCachedUser();
+      return user ? getUserRole(user.id) : null;
+    })()
   ]);
 
-  if (!user || authError) {
-    redirect("/signin");
-  }
+  const { user, error: authError } = authResult;
 
-  const userRole = await getUserRole(user.id);
+  if (!user || authError) {
+    redirect("/auth/signin");
+  }
 
   if (!userRole || (userRole !== "admin" && userRole !== "manager")) {
     return (

@@ -68,28 +68,34 @@ export default async function DashboardPage({
   const search = params.search?.trim() || "";
   const modeFilter = params.mode || "all";
 
-  // Use getCachedUser for deduplicated auth
-  const { user, error: authError } = await getCachedUser();
-  const supabase = await createClient();
-
-  if (!user || authError) {
-    redirect("/auth/signin");
-  }
-
-  // Parallelize all independent server data fetching
   const [
+    authResult,
     stats,
     petitionStats,
     userCauses,
     userPetitions,
     apiCampaignsResult
   ] = await Promise.all([
-    getDashboardStats(user.id),
-    getPetitionDashboardStats(user.id),
-    getUserCausesWithStats(user.id),
-    getUserPetitionsWithStats(user.id),
+    getCachedUser(),
+    (async () => { 
+      const { user } = await getCachedUser(); 
+      return user ? getDashboardStats(user.id) : null; 
+    })(),
+    (async () => {
+      const { user } = await getCachedUser();
+      return user ? getPetitionDashboardStats(user.id) : null;
+    })(),
+    (async () => {
+      const { user } = await getCachedUser();
+      return user ? getUserCausesWithStats(user.id) : [];
+    })(),
+    (async () => {
+      const { user } = await getCachedUser();
+      return user ? getUserPetitionsWithStats(user.id) : [];
+    })(),
     (async () => {
       try {
+        const supabase = await createClient();
         const canUseServiceRole =
           !!process.env.NEXT_PUBLIC_SUPABASE_URL &&
           !!process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -153,6 +159,12 @@ export default async function DashboardPage({
       }
     })()
   ]);
+
+  const { user, error: authError } = authResult;
+
+  if (!user || authError) {
+    redirect("/auth/signin");
+  }
 
   const apiCauses = 'apiCauses' in apiCampaignsResult ? (apiCampaignsResult as any).apiCauses : [];
   const apiKeys = 'apiKeys' in apiCampaignsResult ? (apiCampaignsResult as any).apiKeys : [];

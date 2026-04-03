@@ -158,6 +158,7 @@ export default function ApiPlayground() {
             <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">API KEY</label>
             <input 
               type="password"
+              autoComplete="off"
               placeholder="rg_test_sk_..."
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
