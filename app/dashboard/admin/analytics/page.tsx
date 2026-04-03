@@ -79,33 +79,13 @@ export default async function AdminAnalyticsPage({
   const params = await searchParams;
   const search = params?.search?.trim() || "";
 
-  const { user, error: authError } = await getCachedUser();
 
-  if (!user || authError) {
-    redirect("/auth/signin");
-  }
 
-  const role = await getUserRole(user.id);
-
-  if (!role || (role !== "admin" && role !== "manager")) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Access Denied</CardTitle>
-          <CardDescription>
-            You do not have permission to access this page.
-          </CardDescription>
-        </CardHeader>
-      </Card>
-    );
-  }
-
-  const supabase = await createClient();
-
-  // Parallel fetching for performance
-  const [apiCampaignsResult] = await Promise.all([
+  const [authResult, apiCampaignsResult] = await Promise.all([
+    getCachedUser(),
     (async () => {
       try {
+        const supabase = await createClient();
         const { data: apiCauses, error: causeError } = await (supabase as any)
           .from("api_campaigns")
           .select("id, title, status, created_at, api_key_id")
@@ -140,6 +120,27 @@ export default async function AdminAnalyticsPage({
       }
     })()
   ]);
+
+  const { user, error: authError } = authResult;
+
+  if (!user || authError) {
+    redirect("/auth/signin");
+  }
+
+  const role = await getUserRole(user.id);
+
+  if (!role || (role !== "admin" && role !== "manager")) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Access Denied</CardTitle>
+          <CardDescription>
+            You do not have permission to access this page.
+          </CardDescription>
+        </CardHeader>
+      </Card>
+    );
+  }
 
   const apiCauses = 'apiCauses' in apiCampaignsResult ? (apiCampaignsResult as any).apiCauses : [];
   const apiKeys = 'apiKeys' in apiCampaignsResult ? (apiCampaignsResult as any).apiKeys : [];

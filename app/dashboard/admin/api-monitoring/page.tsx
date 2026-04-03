@@ -1,8 +1,6 @@
-import Link from "next/link";
-import { AlertTriangle, Activity, BarChart3, Coins, FolderKanban, KeyRound } from "lucide-react";
-import { getApiMonitoringSummary } from "@/actions/api-monitoring-actions";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { getCachedUser } from "@/lib/supabase/cached-user";
+import { getUserRole } from "@/actions/role-actions";
+import { redirect } from "next/navigation";
 
 const links = [
   {
@@ -31,8 +29,38 @@ const links = [
   },
 ];
 
+import Link from "next/link";
+import { AlertTriangle, Activity, BarChart3, Coins, FolderKanban, KeyRound } from "lucide-react";
+import { getApiMonitoringSummary } from "@/actions/api-monitoring-actions";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+
 export default async function ApiMonitoringPage() {
-  const summary = await getApiMonitoringSummary();
+  const [authResult, summary] = await Promise.all([
+    getCachedUser(),
+    getApiMonitoringSummary()
+  ]);
+
+  const { user, error: authError } = authResult;
+
+  if (!user || authError) {
+    redirect("/auth/signin");
+  }
+
+  const role = await getUserRole(user.id);
+
+  if (!role || (role !== "admin" && role !== "manager")) {
+     return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Access Denied</CardTitle>
+          <CardDescription>
+            You do not have permission to access this page.
+          </CardDescription>
+        </CardHeader>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-6">

@@ -9,16 +9,20 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, error: authError } = await getCachedUser();
+  const [authResult, completedOnboarding] = await Promise.all([
+    getCachedUser(),
+    (async () => {
+      const { user } = await getCachedUser();
+      return user ? hasCompletedOnboarding(user.id) : true; // default true if not yet authenticated
+    })()
+  ]);
+
+  const { user, error: authError } = authResult;
 
   if (!user || authError) {
     redirect("/auth/signin");
   }
 
-  // Onboarding gate — moved here from middleware to avoid DB queries
-  // on every single request. Layouts are cached per-render and only
-  // run when the route segment changes.
-  const completedOnboarding = await hasCompletedOnboarding(user.id);
   if (!completedOnboarding) {
     redirect("/onboarding");
   }
