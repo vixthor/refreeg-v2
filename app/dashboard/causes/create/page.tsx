@@ -21,7 +21,7 @@ export default async function CreateCausePage() {
 
   return (
     <div className="">
-      <div className="md:mx-auto">
+      <div className="">
         {!hasBankInfo ? (
           <Alert variant="destructive" className="mb-6">
             <AlertCircle className="h-4 w-4" />

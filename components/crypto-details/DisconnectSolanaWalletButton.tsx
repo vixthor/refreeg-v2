@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
+import { useAuthContext } from "@/components/auth-provider";
 
 interface DisconnectSolanaWalletButtonProps {
   walletAddress: string;
@@ -17,15 +18,13 @@ export function DisconnectSolanaWalletButton({
 }: DisconnectSolanaWalletButtonProps) {
   const [isDisconnecting, setIsDisconnecting] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuthContext();
 
   const disconnectWallet = async () => {
     setIsDisconnecting(true);
 
     try {
       const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
 
       if (!user) {
         throw new Error("You must be logged in");

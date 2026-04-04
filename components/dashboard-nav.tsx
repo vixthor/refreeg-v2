@@ -16,9 +16,13 @@ import {
   ClipboardCheckIcon,
   Wallet,
   Share2,
+  Flag,
+  Activity,
+  Terminal,
 } from "lucide-react";
 import { useAdmin } from "@/hooks/use-admin";
 import { useAuth } from "@/hooks/use-auth";
+import { useProfile } from "@/hooks/use-profile";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const userNavItems = [
@@ -81,16 +85,42 @@ const adminNavItems = [
     icon: BarChart3,
   },
   {
+    title: "API Monitoring",
+    href: "/dashboard/admin/api-monitoring",
+    icon: Activity,
+  },
+  {
     title: "Logs",
     href: "/dashboard/admin/logs",
     icon: ClipboardCheckIcon,
+  },
+  {
+    title: "API Reports",
+    href: "/dashboard/admin/api-reports",
+    icon: Flag,
+  },
+];
+
+const developerNavItems = [
+  {
+    title: "Developer Tools",
+    href: "/dashboard/developer",
+    icon: Terminal,
+  },
+  {
+    title: "API Reports",
+    href: "/dashboard/developer/reports",
+    icon: Flag,
   },
 ];
 
 export function DashboardNav() {
   const pathname = usePathname();
   const { user } = useAuth();
-  const { isAdminOrManager, isLoading } = useAdmin(user?.id);
+  const { isAdminOrManager, isLoading: adminLoading } = useAdmin(user?.id);
+  const { profile, isLoading: profileLoading } = useProfile(user?.id);
+
+  const isLoading = adminLoading || profileLoading;
 
   const [mounted, setMounted] = useState(false);
 
@@ -104,7 +134,7 @@ export function DashboardNav() {
   }
 
   return (
-    <nav className="grid items-start gap-2 py-4">
+    <nav className="grid items-start gap-2 py-4 pb-10">
       {userNavItems.map((item, index) => (
         <Link key={index} href={item.href}>
           <Button
@@ -164,6 +194,35 @@ export function DashboardNav() {
           </div>
         </>
       ) : null}
+
+      {mounted && profile?.account_type === "developer" && (
+        <div className="my-2 grid items-start gap-2 border-t pt-4">
+          <div className="mb-2 px-2 text-xs font-semibold tracking-tight flex items-center text-blue-600">
+            <Terminal className="mr-1 h-3 w-3" />
+            Developer
+          </div>
+          {developerNavItems.map((item, index) => (
+            <Link key={index} href={item.href}>
+              <Button
+                variant={
+                  pathname === item.href || pathname.startsWith(`${item.href}/`)
+                    ? "secondary"
+                    : "ghost"
+                }
+                className={cn(
+                  "w-full justify-start",
+                  pathname === item.href || pathname.startsWith(`${item.href}/`)
+                    ? "bg-secondary hover:bg-secondary text-blue-700"
+                    : "",
+                )}
+              >
+                <item.icon className="mr-2 h-4 w-4" />
+                {item.title}
+              </Button>
+            </Link>
+          ))}
+        </div>
+      )}
     </nav>
   );
 }

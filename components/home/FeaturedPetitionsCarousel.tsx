@@ -37,7 +37,12 @@ type Petition = {
   };
 };
 
-export default function FeaturedPetitionsCarousel({ petitions }: { petitions: Petition[] }) {
+export default function FeaturedPetitionsCarousel({
+  petitions,
+}: {
+  petitions: Petition[];
+}) {
+
   const [api, setApi] = useState<any>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 

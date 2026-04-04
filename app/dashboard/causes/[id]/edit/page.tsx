@@ -9,22 +9,26 @@ const EditCauseForm = dynamic(() => import("./edit-cause-form"), {
   loading: () => <Skeleton className="h-[600px] w-full" />,
 });
 
+import { getCachedUser } from "@/lib/supabase/cached-user";
+
 export default async function EditCausePage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }> | { id: string };
 }) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const myParams = await params;
+  
+  const [{ user, error: authError }, cause] = await Promise.all([
+    getCachedUser(),
+    getCause(myParams.id)
+  ]);
 
-  if (!user) {
+  if (!user || authError) {
     redirect("/auth/signin");
   }
-  const myParams = await params;
+
+  // Dependent fetch
   const hasBankInfo = await hasBankDetails(user.id);
-  const cause = await getCause(myParams.id);
 
   if (!cause) {
     redirect("/dashboard/causes");

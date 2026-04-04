@@ -8,21 +8,23 @@ const EditPetitionForm = dynamic(() => import("./edit-petition-form"), {
   loading: () => <Skeleton className="h-[600px] w-full" />,
 });
 
+import { getCachedUser } from "@/lib/supabase/cached-user";
+
 export default async function EditPetitionPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }> | { id: string };
 }) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const myParams = await params;
+  
+  const [ { user, error: authError }, petition ] = await Promise.all([
+    getCachedUser(),
+    getPetition(myParams.id)
+  ]);
 
-  if (!user) {
+  if (!user || authError) {
     redirect("/auth/signin");
   }
-  const myParams = await params;
-  const petition = await getPetition(myParams.id);
 
   if (!petition) {
     redirect("/dashboard/petitions");

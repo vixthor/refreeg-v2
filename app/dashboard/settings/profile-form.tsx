@@ -27,13 +27,15 @@ import { SocialMedia } from "@/components/social-media";
 import type { ProfileFormData } from "@/types";
 import { useProfile } from "@/hooks/use-profile";
 import Link from "next/link";
+import { compressImage } from "@/utils/image-compression";
 
 type AccountType =
   | "individual"
   | "creator"
   | "non-profit"
   | "organization"
-  | "community";
+  | "community"
+  | "developer";
 
 const ACCOUNT_TYPE_OPTIONS: { value: AccountType; label: string }[] = [
   { value: "individual", label: "Individual" },
@@ -41,6 +43,7 @@ const ACCOUNT_TYPE_OPTIONS: { value: AccountType; label: string }[] = [
   { value: "non-profit", label: "Non-profit" },
   { value: "organization", label: "Organisation" },
   { value: "community", label: "Community" },
+  { value: "developer", label: "Developer" },
 ];
 
 interface ProfileFormProps {
@@ -160,7 +163,15 @@ export function ProfileForm({ profile, user }: ProfileFormProps) {
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) await updateProfilePhoto(file);
+    if (file) {
+      try {
+        const compressedFile = await compressImage(file, 800, 0.7);
+        await updateProfilePhoto(compressedFile);
+      } catch (error) {
+        console.error("Compression failed, uploading original:", error);
+        await updateProfilePhoto(file);
+      }
+    }
   };
 
   const getInitials = () => {

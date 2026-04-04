@@ -8,17 +8,23 @@ import {
 export async function DashboardStats({
   type = "all",
   userId,
+  initialStats,
+  initialPetitionStats,
 }: {
   type?: "cause" | "petition" | "all";
   userId?: string;
+  initialStats?: any;
+  initialPetitionStats?: any;
 }) {
   if (!userId) return null;
-  let stats = null;
-  if (type === "cause" || type === "all") {
+  
+  let stats = initialStats;
+  if (!stats && (type === "cause" || type === "all")) {
     stats = await getDashboardStats(userId);
   }
-  let petitionStats = null;
-  if (type === "petition" || type === "all") {
+  
+  let petitionStats = initialPetitionStats;
+  if (!petitionStats && (type === "petition" || type === "all")) {
     petitionStats = await getPetitionDashboardStats(userId);
   }
   return (
