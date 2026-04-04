@@ -6,20 +6,20 @@ import { useOutsideClick } from "@/hooks/use-outside-click";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { HoverEffect } from "@/components/ui/card-hover-effect";
+import { useRouter } from "next/navigation";
 
-// 1. Update interfaces to be generic for both causes and petitions
+// TYPES
 interface ExpandableCardItem {
   id: string;
   title: string;
-  description: string;
+  description?: string | null;
   image?: string | null;
   goal: number;
-  raised?: number; // for causes
-  signatures?: number; // for petitions
+  raised?: number;
+  signatures?: number;
   category: string;
   sections?: { heading?: string; description?: string }[];
+  action?: string | null;
 }
 
 interface ExpandableCardProps {
@@ -28,31 +28,46 @@ interface ExpandableCardProps {
 }
 
 export function ExpandableCard({ items, type }: ExpandableCardProps) {
-  const [active, setActive] = useState<ExpandableCardItem | boolean | null>(
-    null,
-  );
+  const [active, setActive] = useState<ExpandableCardItem | null>(null);
   const id = useId();
   const ref = useRef<HTMLDivElement>(null);
-  const pathname = usePathname();
+  const router = useRouter();
+
+  // CTA TEXT
+  const getCTA = (item: ExpandableCardItem) => {
+    if (type === "petition") return "Sign Now";
+    if (item.action === "pledge") return "Make a Pledge";
+    if (item.action === "donate") return "Donate Now";
+    return "View Cause";
+  };
+
+  // NAVIGATION LOGIC
+  const handleNavigation = (item: ExpandableCardItem) => {
+    if (item.action === "pledge") {
+      router.push(`/causes/${item.id}/pledge`);
+    } else if (item.action === "donate") {
+      router.push(`/causes/${item.id}`);
+    } else if (type === "petition") {
+      router.push(`/petitions/${item.id}/sign`);
+    } else {
+      setActive(item);
+    }
+  };
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") setActive(false);
+      if (event.key === "Escape") setActive(null);
     }
-    if (active && typeof active === "object") {
+
+    if (active) {
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "auto";
     }
+
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [active]);
-
-  useEffect(() => {
-    return () => {
-      document.body.style.overflow = "auto";
-    };
-  }, []);
 
   useOutsideClick(ref, () => setActive(null));
 
@@ -60,7 +75,7 @@ export function ExpandableCard({ items, type }: ExpandableCardProps) {
     <>
       {/* Overlay */}
       <AnimatePresence>
-        {active && typeof active === "object" && (
+        {active && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -72,65 +87,50 @@ export function ExpandableCard({ items, type }: ExpandableCardProps) {
 
       {/* Expanded Card */}
       <AnimatePresence>
-        {active && typeof active === "object" ? (
+        {active && (
           <div className="fixed inset-0 grid place-items-center z-[100]">
             <motion.button
-              key={`button-${active.id}-${id}`}
-              className="flex absolute top-2 right-2 lg:hidden items-center justify-center bg-white rounded-full h-6 w-6 shadow-md"
+              className="absolute top-2 right-2 bg-white rounded-full h-6 w-6 shadow-md"
               onClick={() => setActive(null)}
             >
               <CloseIcon />
             </motion.button>
+
             <motion.div
               layoutId={`card-${active.id}-${id}`}
               ref={ref}
               className="w-full max-w-[500px] h-full md:h-fit md:max-h-[90%] flex flex-col bg-white sm:rounded-3xl overflow-hidden shadow-2xl"
             >
-              <motion.div layoutId={`image-${active.id}-${id}`}>
-                <img
-                  src={active.image || "/placeholder-cause.jpg"}
-                  alt={active.title}
-                  className="w-full h-80 object-cover object-top"
-                />
-              </motion.div>
+              <img
+                src={active.image || "/placeholder-cause.jpg"}
+                alt={active.title}
+                className="w-full h-80 object-cover"
+              />
 
-              {/* 🔽 scrollable body with gradient mask */}
               <div className="relative flex-1 overflow-y-auto p-4 space-y-4">
-                <motion.h3
-                  layoutId={`title-${active.id}-${id}`}
-                  className="font-bold text-neutral-800"
-                >
-                  {active.title}
-                </motion.h3>
-                {/* ✅ Show FULL description here */}
+                <h3 className="font-bold">{active.title}</h3>
+
                 {active.description && (
-                  <motion.p className="text-neutral-600 whitespace-pre-line">
+                  <p className="text-neutral-600 whitespace-pre-line">
                     {active.description}
-                  </motion.p>
-                )}
-                {/* Show all sections if present */}
-                {active.sections && active.sections.length > 0 && (
-                  <div className="space-y-4">
-                    {active.sections.map((section, idx) => (
-                      <div key={idx}>
-                        {section.heading && (
-                          <h4 className="font-semibold text-neutral-800 mb-1">
-                            {section.heading}
-                          </h4>
-                        )}
-                        {section.description && (
-                          <p className="text-neutral-600 whitespace-pre-line">
-                            {section.description}
-                          </p>
-                        )}
-                      </div>
-                    ))}
-                  </div>
+                  </p>
                 )}
 
+                {active.sections?.map((section, idx) => (
+                  <div key={idx}>
+                    {section.heading && (
+                      <h4 className="font-semibold">{section.heading}</h4>
+                    )}
+                    {section.description && (
+                      <p className="text-neutral-600">{section.description}</p>
+                    )}
+                  </div>
+                ))}
+
+                {/* Progress */}
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className="font-medium">
+                    <span>
                       {type === "cause"
                         ? `₦${(active.raised ?? 0).toLocaleString()}`
                         : `${active.signatures ?? 0} signatures`}
@@ -138,9 +138,10 @@ export function ExpandableCard({ items, type }: ExpandableCardProps) {
                     <span className="text-muted-foreground">
                       {type === "cause"
                         ? `of ₦${active.goal.toLocaleString()}`
-                        : `of ${active.goal.toLocaleString()}`}
+                        : `of ${active.goal}`}
                     </span>
                   </div>
+
                   <Progress
                     value={
                       type === "cause"
@@ -150,146 +151,101 @@ export function ExpandableCard({ items, type }: ExpandableCardProps) {
                   />
                 </div>
 
-                {/* ✅ Gradient mask effect */}
-                <div className="absolute bottom-14 left-0 right-0 h-16 bg-gradient-to-t from-white to-transparent pointer-events-none" />
-
-                {/* Sticky CTA */}
-                <div className="sticky bottom-0 left-0 right-0 bg-white/90 backdrop-blur-sm pt-4">
-                  <Link
-                    href={`/${type === "cause" ? "causes" : "petitions"}/${
-                      active.id
-                    }`}
+                {/* CTA */}
+                <div className="sticky bottom-0 bg-white pt-4">
+                  <Button
+                    onClick={() => handleNavigation(active)}
+                    className="w-full"
                   >
-                    <Button className="w-full shadow-md">
-                      {type === "cause" ? "Donate Now" : "Sign Now"}
-                    </Button>
-                  </Link>
+                    {getCTA(active)}
+                  </Button>
                 </div>
               </div>
             </motion.div>
           </div>
-        ) : null}
+        )}
       </AnimatePresence>
 
-      {/* Collapsed Cards */}
+      {/* Cards */}
       <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {items.map((item) => {
-          return (
-            <motion.div
-              layoutId={`card-${item.id}-${id}`}
-              key={item.id}
-              onClick={() => setActive(item)}
-              className="cursor-pointer rounded-xl shadow-md hover:shadow-lg transition-shadow bg-white flex flex-col sm:h-[400px]"
-              whileHover={{
-                scale: 1.03,
-                rotateX: -5,
-                rotateY: 5,
-              }}
-              transition={{ type: "spring", stiffness: 300, damping: 20 }}
-            >
-              {/* 📱 Mobile: list with image left + text right */}
-              <div className="flex sm:hidden p-4 gap-4 items-center">
-                <div className="flex-shrink-0">
-                  <img
-                    src={item.image || "/placeholder-cause.jpg"}
-                    alt={item.title}
-                    className="h-20 w-20 rounded-lg object-cover object-top"
-                  />
-                </div>
+        {items.map((item) => (
+          <motion.div
+            key={item.id}
+            layoutId={`card-${item.id}-${id}`}
+            onClick={() => handleNavigation(item)}
+            className="cursor-pointer rounded-xl shadow-md bg-white flex flex-col hover:shadow-lg"
+          >
+            {/* Mobile */}
+            <div className="flex sm:hidden p-4 gap-4">
+              <img
+                src={item.image || "/placeholder-cause.jpg"}
+                className="h-20 w-20 rounded-lg object-cover"
+              />
 
-                <div className="flex-1 flex flex-col gap-2">
-                  <h3 className="font-medium text-neutral-800 line-clamp-1">
-                    {item.title}
-                  </h3>
-                  <div className="space-y-2 mt-auto">
-                    <div className="flex justify-between text-sm">
-                      <span className="font-medium">
-                        {type === "cause"
-                          ? `₦${(item.raised ?? 0).toLocaleString()}`
-                          : `${item.signatures ?? 0} signatures`}
-                      </span>
-                      <span className="text-muted-foreground">
-                        {type === "cause"
-                          ? `of ₦${item.goal.toLocaleString()}`
-                          : `of ${item.goal.toLocaleString()}`}
-                      </span>
-                    </div>
-                    <Progress
-                      value={
-                        type === "cause"
-                          ? ((item.raised ?? 0) / item.goal) * 100
-                          : ((item.signatures ?? 0) / item.goal) * 100
-                      }
-                    />
-                  </div>
-                  <Button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setActive(item);
-                    }}
-                    className="mt-1 h-8 px-3 text-xs"
-                  >
-                    {type === "cause" ? "Donate Now" : "Sign Now"}
-                  </Button>
-                </div>
-              </div>
+              <div className="flex-1 flex flex-col gap-2">
+                <h3 className="line-clamp-1">{item.title}</h3>
 
-              {/* 💻 Tablet & Desktop: grid style */}
-              <div className="hidden sm:flex flex-col p-4 gap-4 h-full">
-                <img
-                  src={item.image || "/placeholder-cause.jpg"}
-                  alt={item.title}
-                  className="h-48 w-full rounded-lg object-cover object-top"
+                <Progress
+                  value={
+                    type === "cause"
+                      ? ((item.raised ?? 0) / item.goal) * 100
+                      : ((item.signatures ?? 0) / item.goal) * 100
+                  }
                 />
-                <div className="mt-2 text-center">
-                  <h3 className="font-medium text-neutral-800">{item.title}</h3>
-                </div>
-                <div className="space-y-2 mt-auto">
-                  <div className="flex justify-between text-sm">
-                    <span className="font-medium">
-                      {type === "cause"
-                        ? `₦${(item.raised ?? 0).toLocaleString()}`
-                        : `${item.signatures ?? 0} signatures`}
-                    </span>
-                    <span className="text-muted-foreground">
-                      {type === "cause"
-                        ? `of ₦${item.goal.toLocaleString()}`
-                        : `of ${item.goal.toLocaleString()}`}
-                    </span>
-                  </div>
-                  <Progress
-                    value={
-                      type === "cause"
-                        ? ((item.raised ?? 0) / item.goal) * 100
-                        : ((item.signatures ?? 0) / item.goal) * 100
-                    }
-                  />
-                </div>
-                <Button className="w-full shadow-sm">
-                  {type === "cause" ? "Donate Now" : "Sign Now"}
+
+                <Button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleNavigation(item);
+                  }}
+                  className="h-8 text-xs"
+                >
+                  {getCTA(item)}
                 </Button>
               </div>
-            </motion.div>
-          );
-        })}
+            </div>
+
+            {/* Desktop */}
+            <div className="hidden sm:flex flex-col p-4 gap-4">
+              <img
+                src={item.image || "/placeholder-cause.jpg"}
+                className="h-48 w-full rounded-lg object-cover"
+              />
+
+              <h3 className="text-center">{item.title}</h3>
+
+              <Progress
+                value={
+                  type === "cause"
+                    ? ((item.raised ?? 0) / item.goal) * 100
+                    : ((item.signatures ?? 0) / item.goal) * 100
+                }
+              />
+
+              <Button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleNavigation(item);
+                }}
+              >
+                {getCTA(item)}
+              </Button>
+            </div>
+          </motion.div>
+        ))}
       </ul>
     </>
   );
 }
 
 const CloseIcon = () => (
-  <motion.svg
+  <svg
     xmlns="http://www.w3.org/2000/svg"
-    width="24"
-    height="24"
+    className="h-4 w-4"
     fill="none"
     stroke="currentColor"
     strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className="h-4 w-4 text-black"
   >
-    <path d="M18 6L6 18" />
-    <path d="M6 6l12 12" />
-  </motion.svg>
+    <path d="M6 6l12 12M6 18L18 6" />
+  </svg>
 );
