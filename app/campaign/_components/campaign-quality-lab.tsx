@@ -220,10 +220,14 @@ function StatItem({
 function HeaderMeta({
   status,
   formattedDate,
+  trustScore,
 }: {
   status: string;
   formattedDate: string;
+  trustScore?: string;
 }) {
+  const resolvedTrustScore = trustScore || "B+";
+
   return (
     <motion.div className="space-y-2" variants={fadeUp}>
       <div className="flex flex-wrap items-center gap-2 text-xs text-[#64748B] sm:hidden">
@@ -233,7 +237,7 @@ function HeaderMeta({
         </span>
         <span className="inline-flex items-center gap-2 rounded-full border border-[#E5E7EB] bg-white px-3 py-1 text-xs font-semibold text-[#0F172A]">
           <BadgeCheck className="h-4 w-4 text-[#2563EB]" />
-          Trust A-
+          Trust {resolvedTrustScore}
         </span>
         <span className="inline-flex items-center gap-2 rounded-full border border-[#E5E7EB] bg-white px-3 py-1 text-xs font-semibold text-[#0F172A]">
           <CalendarClock className="h-4 w-4 text-[#64748B]" />
@@ -252,7 +256,7 @@ function HeaderMeta({
             Trust
           </span>
           <span className="rounded-full bg-[#2563EB] px-2.5 py-0.5 text-xs font-semibold text-white">
-            A-
+            {resolvedTrustScore}
           </span>
         </div>
         <div className="inline-flex items-center gap-2 rounded-full border border-[#E5E7EB] bg-white px-4 py-2 font-medium text-[#0F172A] shadow-sm">
@@ -1216,21 +1220,25 @@ export default function CampaignQualityLab({
 
   return (
     <div
-      className="min-h-screen bg-[#F6F8FB] pt-10 text-[#0F172A] sm:pt-14"
+      className="min-h-screen bg-[#F6F8FB] pt-0 text-[#0F172A]"
       style={{
         backgroundImage:
           "radial-gradient(circle at 50% 20%, rgba(37,99,235,0.08), transparent 60%)",
       }}
     >
       <div className="border-b border-[#E5E7EB] bg-white">
-        <div className="container px-4 py-4 sm:py-6">
+        <div className="container px-4 pb-4 pt-0 sm:pb-6 sm:pt-0">
           <motion.div
             className="flex flex-col gap-5 sm:gap-6"
             variants={stagger}
             initial="hidden"
             animate="show"
           >
-            <HeaderMeta status={cause.status} formattedDate={formattedDate} />
+            <HeaderMeta
+              status={cause.status}
+              formattedDate={formattedDate}
+              trustScore={cause.trust_score?.impact}
+            />
 
             <motion.div className="grid gap-6" variants={stagger}>
               <HeroSummary cause={cause} donorsCount={donors.length} />
