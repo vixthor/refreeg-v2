@@ -31,6 +31,8 @@ export async function FeaturedPetitions() {
 
       return {
         ...petition,
+        image: petition.image ?? undefined,
+        days_active: petition.days_active ?? undefined, // ✅ FIX
         signers,
         signerCount,
         totalAmount,

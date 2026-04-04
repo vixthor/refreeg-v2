@@ -22,7 +22,7 @@ export const metadata: Metadata = {
 
 export default function Home() {
   return (
-    <div className="flex flex-col min-h-screen mt-16 ">
+    <div className="flex flex-col min-h-screen mt-12 md:mt-16 ">
       <Hero />
       <AIAgentBot />
 
