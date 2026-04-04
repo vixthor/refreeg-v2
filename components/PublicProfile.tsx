@@ -17,7 +17,7 @@ import { DonationCard, EmptyState } from "./ProfileCards";
 import { ExpandableCard } from "./ExpandableCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQueryState } from "nuqs";
-import { HandHeart, ShieldAlert } from "lucide-react";
+import { HandHeart, ShieldAlert, FilePenLine } from "lucide-react";
 
 type ProfileProps = {
   profile: any;
@@ -220,31 +220,38 @@ export default function PublicProfile({
 
             {/* CTA for non-owners */}
             {!isOwner && (
-              <div className="shrink-0 mt-2 md:mt-0">
-                <Link href="/causes">
-                  <Button
-                    size="sm"
-                    className="bg-[#003366] hover:bg-[#004080] text-white text-xs font-semibold px-4"
-                  >
-                    <Heart className="h-3.5 w-3.5 mr-1.5" />
-                    Support a Cause
+              <div className="flex gap-2 flex-wrap shrink-0 mt-2 md:mt-0">
+                
+                <Link href={`/causes?userId=${userId}&action=pledge`}>
+                  <Button size="sm" className="bg-[#003366] text-white text-xs font-semibold px-4">
+                    <HandHeart className="h-4 w-4 mr-1" />
+                    Pledge
                   </Button>
                 </Link>
+
+                <Link href={`/causes?userId=${userId}&action=donate`}>
+                  <Button variant="outline" size="sm" className="text-gray-500 border-gray-300 gap-x-1">
+                    <HandCoins className="h-4 w-4" />
+                    Donate
+                  </Button>
+                </Link>
+
+                <Link href={`/petitions?userId=${userId}`}  className="hidden">
+                  <Button variant="outline" size="sm" className="text-gray-500 border-gray-300 gap-x-1">
+                    <FilePenLine className="h-4 w-4" />
+                    Sign Petition
+                  </Button>
+                </Link>
+
+                <Link href="/subscribe">
+                  <Button variant="outline" size="sm" className="text-gray-500 border-gray-300 gap-x-1" disabled>
+                    <FilePenLine className="h-4 w-4" />
+                    Subscribe
+                  </Button>
+                </Link>
+
               </div>
             )}
-            <Link href="/causes" className="shrink-0 mt-2 md:mt-0">
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-gray-500 hover:text-gray-700 border-gray-300 hover:bg-gray-100 gap-x-1"
-                onClick={() => {
-                  navigator.clipboard.writeText(window.location.href);
-                }}
-              >
-                <HandHeart className="h-4 w-4 text-grey-500" />
-                Pledge
-              </Button>
-            </Link>
           </div>
         </div>
 
