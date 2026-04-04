@@ -3,6 +3,17 @@ import { listCauses } from "@/actions";
 import AnimatedHeader from "@/components/home/components/AnimatedHeader";
 import UrgentCausesCarousel from "./UrgentCausesCarousel";
 
+// ✅ Optional: helper to normalize backend data
+function normalizeCause(cause: any) {
+  return {
+    ...cause,
+    image: cause.image ?? undefined,
+    days_active: cause.days_active ?? undefined,
+    goal: cause.goal ?? 0,
+    raised: cause.raised ?? 0,
+  };
+}
+
 export async function TrendingCauses() {
   const allCauses = await listCauses();
 
@@ -24,15 +35,19 @@ export async function TrendingCauses() {
     (cause) => !urgentCauses.includes(cause)
   );
 
-  const combinedCauses = [...urgentCauses, ...normalCauses].sort((a, b) => {
-  const percentA = a.goal > 0 ? a.raised / a.goal : 0;
-  const percentB = b.goal > 0 ? b.raised / b.goal : 0;
+  const combinedCauses = [...urgentCauses, ...normalCauses]
+    .map(normalizeCause) // ✅ FIX: normalize all causes
+    .sort((a, b) => {
+      const percentA = a.goal > 0 ? a.raised / a.goal : 0;
+      const percentB = b.goal > 0 ? b.raised / b.goal : 0;
 
-  if (percentA === 0 && percentB !== 0) return 1;
-  if (percentB === 0 && percentA !== 0) return -1;
+      // ✅ Push 0% to bottom
+      if (percentA === 0 && percentB !== 0) return 1;
+      if (percentB === 0 && percentA !== 0) return -1;
 
-  return (b.raised || 0) - (a.raised || 0);
-});
+      // ✅ Sort by amount raised
+      return (b.raised || 0) - (a.raised || 0);
+    });
 
   if (combinedCauses.length === 0) {
     return null;
@@ -47,7 +62,8 @@ export async function TrendingCauses() {
           </H2>
 
           <P className="text-lg text-gray-500">
-            Discover the most impactful causes gaining momentum right now. Support, share, and make a difference!
+            Discover the most impactful causes gaining momentum right now.
+            Support, share, and make a difference!
           </P>
         </AnimatedHeader>
       </div>
