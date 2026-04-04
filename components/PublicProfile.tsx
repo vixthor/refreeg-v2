@@ -253,6 +253,11 @@ export default function PublicProfile({
               </div>
             )}
           </div>
+          <div className="mt-4 flex justify-end">
+            <div className="text-sm text-gray-500 text-right">
+              Social media links go here in the future!
+            </div>
+          </div>
         </div>
 
         {/* Impact metrics */}
