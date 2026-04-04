@@ -7,9 +7,17 @@ import { Plus } from "lucide-react"
 import { getCurrentUser } from "@/actions"
 import { getUserCausesWithStats } from "@/actions/dashboard-actions"
 
-export async function DashboardCauses() {
-  const user = await getCurrentUser()
-  const userCauses = await getUserCausesWithStats(user?.id ?? '')
+export async function DashboardCauses({
+  initialCauses,
+}: {
+  initialCauses?: any[];
+}) {
+  let userCauses = initialCauses;
+
+  if (!userCauses) {
+    const user = await getCurrentUser();
+    userCauses = await getUserCausesWithStats(user?.id ?? "");
+  }
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">

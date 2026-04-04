@@ -4,8 +4,6 @@ import { cookies } from 'next/headers'
 export async function createClient() {
   const cookieStore = await cookies()
 
-  // Create a server's supabase client with newly configured cookie,
-  // which could be used to maintain user's session
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -17,27 +15,19 @@ export async function createClient() {
         autoRefreshToken: false,
       },
       cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value
+        getAll() {
+          return cookieStore.getAll()
         },
-        set(name: string, value: string, options: CookieOptions) {
+        setAll(cookiesToSet) {
           try {
-            cookieStore.set({ name, value, ...options })
-          } catch (error) {
-            // swallow cookie errors on the server
-          }
-        },
-        remove(name: string, options: CookieOptions) {
-          try {
-            // Use the RequestCookies.delete API to properly remove cookies
-            // instead of setting an empty value which can propagate an
-            // empty string into downstream DB queries (invalid uuid: "").
-            // `delete` accepts the same options shape as `set`.
-            // @ts-ignore - some versions expose `delete` as `delete`.
-            // Use runtime method to avoid TypeScript complaints.
-            ;(cookieStore as any).delete(name, options)
-          } catch (error) {
-            // swallow cookie errors on the server
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            )
+          } catch {
+            // The `setAll` method is called from a Server Component where
+            // cookies cannot be set. This is expected when the middleware
+            // has already refreshed the session — the cookies will have
+            // been set there instead.
           }
         },
       },

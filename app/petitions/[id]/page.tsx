@@ -9,7 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import { SignatureForm } from "@/components/signature-form";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getPetition } from "@/actions/petition-actions";
-import { getCurrentUser } from "@/actions/auth-actions";
+import { getCachedUser } from "@/lib/supabase/cached-user";
 import { getProfile, getProfileByUsername } from "@/actions/profile-actions";
 import {
   listSignaturesForPetition,
@@ -32,6 +32,7 @@ import MultimediaCarousel from "@/components/MultimediaCarousel";
 import { SignersList } from "@/components/signers-list";
 import { CommentsSection } from "@/components/comments/comment-section";
 import { Signature } from "@/types";
+import { Metadata } from "next";
 
 // Mock data for a petition
 const mockPetition = {
@@ -90,8 +91,6 @@ const mockSigners = [
   },
 ];
 
-import { Metadata } from "next";
-
 export async function generateMetadata({
   params,
 }: {
@@ -124,22 +123,42 @@ export default async function PetitionDetailPage({
 }) {
   const { id } = await params;
 
-  const petition = await getPetition(id);
+  // Primary parallel fetch
+  const [petition, initialSigners, { user }] = await Promise.all([
+    getPetition(id),
+    listSignaturesForPetition(id),
+    getCachedUser(),
+  ]);
+
   if (!petition) {
     notFound();
   }
 
-  const signers = await listSignaturesForPetition(petition.id);
-  const amount = signers.reduce((total, s) => total + (s.amount || 0), 0);
+  // Secondary parallel fetches
+  const [commentsResult, myProfile, hasSigned, creatorProfile] =
+    await Promise.all([
+      // Dynamic import and call for comments to keep initial bundle smaller if needed,
+      // though in server component it just affects server execution time.
+      (async () => {
+        try {
+          const { listPetitionComments } =
+            await import("@/actions/petition-comment-actions");
+          return await listPetitionComments(petition.id);
+        } catch (e) {
+          return [];
+        }
+      })(),
+      user ? getProfile(user.id) : Promise.resolve(undefined),
+      user ? checkUserSignature(petition.id, user.id) : Promise.resolve(false),
+      getProfile(petition.user_id),
+    ]);
 
-  let comments: any[] = [];
-  try {
-    const { listPetitionComments } =
-      await import("@/actions/petition-comment-actions");
-    comments = await listPetitionComments(petition.id);
-  } catch (e) {
-    comments = [];
-  }
+  const signers = initialSigners;
+  const amount = signers.reduce(
+    (total: number, s: any) => total + (s.amount || 0),
+    0,
+  );
+  const comments = commentsResult;
 
   // Map signer messages to comment shape and merge with petition comments
   const signerMessages = (signers || [])
@@ -183,27 +202,15 @@ export default async function PetitionDetailPage({
     100,
   );
 
-  const user = await getCurrentUser();
-  const myprofile = user ? await getProfile(user.id) : undefined;
   const profile = {
-    email: myprofile?.email || "",
-    name: myprofile?.full_name || "",
-    id: myprofile?.id || "",
-    subaccount: myprofile?.sub_account_code || "",
+    email: myProfile?.email || "",
+    name: myProfile?.full_name || "",
+    id: myProfile?.id || "",
+    subaccount: myProfile?.sub_account_code || "",
   };
 
-  // Check if current user has already signed this petition
-  let hasSigned = false;
-  if (user) {
-    hasSigned = await checkUserSignature(petition.id, user.id);
-  }
-
   const baseUrl = getBaseURL();
-  // Check if creator has a wallet
-  const creatorProfile = await getProfile(petition.user_id);
   const hasCreatorWallet = !!creatorProfile?.solana_wallet;
-
-  // Get creator's username for the profile URL
   const creatorUsername = creatorProfile?.username;
 
   // Parse social media links from JSON string
