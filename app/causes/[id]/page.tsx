@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { getCause } from "@/actions/cause-actions";
-import { getCurrentUser } from "@/actions/auth-actions";
+import { getCachedUser } from "@/lib/supabase/cached-user";
 import { getProfile } from "@/actions/profile-actions";
 import { listDonationsForCause } from "@/actions/donation-actions";
 import { listCommentsForCause } from "@/actions/comment-actions";
@@ -39,16 +39,24 @@ export default async function CauseDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const cause = await getCause(id);
+
+  // Fetch initial independent data in parallel
+  const [cause, donors, comments, { user }] = await Promise.all([
+    getCause(id),
+    listDonationsForCause(id),
+    listCommentsForCause(id),
+    getCachedUser()
+  ]);
+
   if (!cause) {
     notFound();
   }
 
-  const donors = await listDonationsForCause(cause.id);
-  const comments = await listCommentsForCause(cause.id);
-  const user = await getCurrentUser();
-  const myprofile = user ? await getProfile(user.id) : undefined;
-  const creatorProfile = await getProfile(cause.user_id);
+  // Fetch profiles in parallel based on cause and user availability
+  const [myprofile, creatorProfile] = await Promise.all([
+    user ? getProfile(user.id) : Promise.resolve(undefined),
+    getProfile(cause.user_id)
+  ]);
 
   const profile = {
     email: myprofile?.email || "",

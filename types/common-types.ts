@@ -25,6 +25,7 @@ export interface ProfileFormData {
     | "non-profit"
     | "organization"
     | "community"
+    | "developer"
     | null;
   twitter_url?: string | null;
   facebook_url?: string | null;
@@ -69,6 +70,7 @@ export interface TransactionData extends Pick<
   message: string;
   isAnonymous: boolean;
   plan?: string;
+  callbackUrl?: string;
   subaccounts: {
     subaccount: string;
     share: number;
