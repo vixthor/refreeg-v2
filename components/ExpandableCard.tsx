@@ -46,11 +46,10 @@ export function ExpandableCard({ items, type }: ExpandableCardProps) {
     if (item.action === "pledge") {
       router.push(`/causes/${item.id}/pledge`);
     } else if (item.action === "donate") {
-      router.push(`/causes/${item.id}`); // Donate now
+      router.push(`/causes/${item.id}`);
     } else if (type === "petition") {
       router.push(`/petitions/${item.id}/sign`);
     } else {
-      // Default action - also Donate Now (not setActive)
       router.push(`/causes/${item.id}`);
     }
   };
