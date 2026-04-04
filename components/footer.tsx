@@ -120,13 +120,13 @@ const routeThemes = {
 
 function FooterLinkItem({ href, label }: FooterLink) {
   const className =
-    "group inline-flex w-full items-center justify-between gap-3 rounded-2xl border border-transparent bg-white/55 px-3 py-2.5 text-sm text-slate-600 transition-all hover:-translate-y-0.5 hover:border-slate-200 hover:bg-white hover:text-slate-950 active:scale-[0.99]";
+    "group inline-flex w-full items-center justify-between gap-3 rounded-2xl border border-transparent bg-white/55 px-3 py-2.5 text-sm text-slate-600 transition-all hover:-translate-y-0.5 hover:border-blue-200 hover:bg-white hover:text-blue-700 active:scale-[0.99]";
 
   if (href.startsWith("/")) {
     return (
       <Link href={href} className={className}>
         <span>{label}</span>
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-400 transition-all group-hover:bg-slate-900 group-hover:text-white">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-400 transition-all group-hover:bg-blue-50 group-hover:text-blue-700">
           <MoveRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
         </span>
       </Link>
@@ -136,7 +136,7 @@ function FooterLinkItem({ href, label }: FooterLink) {
   return (
     <a href={href} className={className}>
       <span>{label}</span>
-      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-400 transition-all group-hover:bg-slate-900 group-hover:text-white">
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-400 transition-all group-hover:bg-blue-50 group-hover:text-blue-700">
         <MoveRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
       </span>
     </a>
@@ -205,16 +205,7 @@ export function Footer() {
             )}
           >
             <div className="max-w-3xl lg:mx-auto lg:flex lg:flex-col lg:items-center">
-              <span
-                className={cn(
-                  "inline-flex rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] lg:mx-auto",
-                  theme.badge,
-                )}
-              >
-                Crowdfunding with clarity
-              </span>
-
-              <div className="mt-4 flex items-center gap-3 lg:justify-center">
+              <div className="flex items-center gap-3 lg:justify-center">
                 <Logo />
                 <div className="text-left">
                   <p className="text-lg font-semibold text-slate-950">
