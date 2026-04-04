@@ -14,24 +14,30 @@ import { Plus } from "lucide-react";
 import { getCurrentUser } from "@/actions";
 import { getUserPetitionsWithStats } from "@/actions/dashboard-actions";
 
-export async function DashboardPetitions() {
-  const user = await getCurrentUser();
-  if (!user) {
-    return (
-      <div className="text-center py-10 border rounded-lg bg-muted/20">
-        <h3 className="text-lg font-medium mb-2">Please sign in</h3>
-        <p className="text-muted-foreground mb-4">
-          You need to log in to see your petitions.
-        </p>
-        <Link href="/auth/login">
-          <Button>Sign In</Button>
-        </Link>
-      </div>
-    );
-  }
+export async function DashboardPetitions({
+  initialPetitions,
+}: {
+  initialPetitions?: any[];
+}) {
+  let petitionsWithSigners = initialPetitions;
 
-  // Single batch query — no N+1 per petition
-  const petitionsWithSigners = await getUserPetitionsWithStats(user.id);
+  if (!petitionsWithSigners) {
+    const user = await getCurrentUser();
+    if (!user) {
+      return (
+        <div className="text-center py-10 border rounded-lg bg-muted/20">
+          <h3 className="text-lg font-medium mb-2">Please sign in</h3>
+          <p className="text-muted-foreground mb-4">
+            You need to log in to see your petitions.
+          </p>
+          <Link href="/auth/login">
+            <Button>Sign In</Button>
+          </Link>
+        </div>
+      );
+    }
+    petitionsWithSigners = await getUserPetitionsWithStats(user.id);
+  }
 
   return (
     <div className="space-y-4">
