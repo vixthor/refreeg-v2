@@ -38,7 +38,7 @@ export function ExpandableCard({ items, type }: ExpandableCardProps) {
     if (type === "petition") return "Sign Now";
     if (item.action === "pledge") return "Make a Pledge";
     if (item.action === "donate") return "Donate Now";
-    return "View Cause";
+    return "Donate Now";
   };
 
   // NAVIGATION LOGIC
@@ -46,11 +46,12 @@ export function ExpandableCard({ items, type }: ExpandableCardProps) {
     if (item.action === "pledge") {
       router.push(`/causes/${item.id}/pledge`);
     } else if (item.action === "donate") {
-      router.push(`/causes/${item.id}`);
+      router.push(`/causes/${item.id}`); // Donate now
     } else if (type === "petition") {
       router.push(`/petitions/${item.id}/sign`);
     } else {
-      setActive(item);
+      // Default action - also Donate Now (not setActive)
+      router.push(`/causes/${item.id}`);
     }
   };
 
