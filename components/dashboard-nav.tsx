@@ -1,12 +1,12 @@
 "use client";
 
+import type React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import {
-  BarChart3,
+  ArrowUpRight,
   FileText,
   Home,
   Settings,
@@ -19,6 +19,7 @@ import {
   Flag,
   Activity,
   Terminal,
+  Sparkles,
 } from "lucide-react";
 import { useAdmin } from "@/hooks/use-admin";
 import { useAuth } from "@/hooks/use-auth";
@@ -82,7 +83,7 @@ const adminNavItems = [
   {
     title: "Analytics",
     href: "/dashboard/admin/analytics",
-    icon: BarChart3,
+    icon: Activity,
   },
   {
     title: "API Monitoring",
@@ -114,6 +115,87 @@ const developerNavItems = [
   },
 ];
 
+const isNavItemActive = (pathname: string, href: string) => {
+  if (href === "/dashboard") {
+    return pathname === href;
+  }
+
+  return pathname === href || pathname.startsWith(`${href}/`);
+};
+
+function NavItem({
+  href,
+  title,
+  icon: Icon,
+  active,
+}: {
+  href: string;
+  title: string;
+  icon: React.ComponentType<{ className?: string }>;
+  active: boolean;
+}) {
+  return (
+    <Link
+      href={href}
+      className={cn(
+        "group flex items-center justify-between rounded-2xl border px-3 py-3 text-sm transition-all",
+        active
+          ? "border-blue-200 bg-[linear-gradient(135deg,rgba(37,99,235,0.14),rgba(255,255,255,0.96))] text-slate-950 shadow-[0_12px_30px_-18px_rgba(37,99,235,0.9)]"
+          : "border-transparent text-slate-600 hover:border-slate-200 hover:bg-white hover:text-slate-950",
+      )}
+    >
+      <span className="flex items-center gap-3">
+        <span
+          className={cn(
+            "flex h-10 w-10 items-center justify-center rounded-2xl transition-colors",
+            active
+              ? "bg-blue-600 text-white"
+              : "bg-slate-100 text-slate-500 group-hover:bg-blue-50 group-hover:text-blue-600",
+          )}
+        >
+          <Icon className="h-4 w-4" />
+        </span>
+        <span className="font-medium">{title}</span>
+      </span>
+      <ArrowUpRight
+        className={cn(
+          "h-4 w-4 transition-all",
+          active
+            ? "translate-x-0 text-blue-600"
+            : "text-slate-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-blue-500",
+        )}
+      />
+    </Link>
+  );
+}
+
+function NavSection({
+  title,
+  icon: Icon,
+  children,
+  accentClassName = "text-slate-500",
+}: {
+  title: string;
+  icon: React.ComponentType<{ className?: string }>;
+  children: React.ReactNode;
+  accentClassName?: string;
+}) {
+  return (
+    <section className="space-y-3">
+      <div
+        className={cn(
+          "flex items-center gap-2 px-1 text-[11px] font-semibold uppercase tracking-[0.22em]",
+          accentClassName,
+        )}
+      >
+        <Icon className="h-3.5 w-3.5" />
+        <span>{title}</span>
+      </div>
+      <div className="space-y-2">{children}</div>
+    </section>
+  );
+}
+
 export function DashboardNav() {
   const pathname = usePathname();
   const { user } = useAuth();
@@ -134,95 +216,88 @@ export function DashboardNav() {
   }
 
   return (
-    <nav className="grid items-start gap-2 py-4 pb-10">
-      {userNavItems.map((item, index) => (
-        <Link key={index} href={item.href}>
-          <Button
-            variant={
-              pathname === item.href || pathname.startsWith(`${item.href}/`)
-                ? "secondary"
-                : "ghost"
-            }
-            className={cn(
-              "w-full justify-start",
-              pathname === item.href || pathname.startsWith(`${item.href}/`)
-                ? "bg-secondary hover:bg-secondary"
-                : "",
-            )}
-          >
-            <item.icon className="mr-2 h-4 w-4" />
-            {item.title}
-          </Button>
-        </Link>
-      ))}
-
-      {mounted && isLoading ? (
-        <div className="my-2">
-          {adminNavItems.map((_, index) => (
-            <Skeleton key={index} className="h-10 w-full mb-2" />
-          ))}
+    <nav className="space-y-6">
+      <div className="rounded-[28px] border border-slate-200/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(241,245,249,0.98))] p-4 shadow-[0_20px_60px_-42px_rgba(15,23,42,0.45)]">
+        <div className="rounded-3xl bg-[radial-gradient(circle_at_top_left,rgba(37,99,235,0.18),transparent_55%),linear-gradient(180deg,#0f172a_0%,#172554_100%)] p-4 text-white">
+          <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-blue-100/90">
+            <Sparkles className="h-3.5 w-3.5" />
+            Workspace
+          </div>
+          <p className="mt-3 text-lg font-semibold leading-tight">
+            Your RefreeG control room
+          </p>
+          <p className="mt-2 text-sm leading-6 text-slate-200">
+            Manage causes, petitions, donations, and account settings from one
+            place.
+          </p>
         </div>
-      ) : mounted && isAdminOrManager ? (
-        <>
-          <div className="my-2 grid items-start gap-2">
-            <div className="mb-2 px-2 text-xs font-semibold tracking-tight flex items-center">
-              <Shield className="mr-1 h-3 w-3" />
-              Admin
+
+        <div className="mt-4 space-y-6">
+          <NavSection title="Main" icon={Home}>
+            {userNavItems.map((item) => {
+              const active = isNavItemActive(pathname, item.href);
+              return (
+                <NavItem
+                  key={item.href}
+                  href={item.href}
+                  title={item.title}
+                  icon={item.icon}
+                  active={active}
+                />
+              );
+            })}
+          </NavSection>
+
+          {mounted && isLoading ? (
+            <div className="space-y-3">
+              <div className="px-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
+                Role Access
+              </div>
+              {adminNavItems.map((item) => (
+                <Skeleton key={item.href} className="h-[62px] w-full rounded-2xl" />
+              ))}
             </div>
-            {adminNavItems.map((item, index) => (
-              <Link key={index} href={item.href}>
-                <Button
-                  variant={
-                    pathname === item.href ||
-                    pathname.startsWith(`${item.href}/`)
-                      ? "secondary"
-                      : "ghost"
-                  }
-                  className={cn(
-                    "w-full justify-start",
-                    pathname === item.href ||
-                      pathname.startsWith(`${item.href}/`)
-                      ? "bg-secondary hover:bg-secondary"
-                      : "",
-                  )}
-                >
-                  <item.icon className="mr-2 h-4 w-4" />
-                  {item.title}
-                </Button>
-              </Link>
-            ))}
-          </div>
-        </>
-      ) : null}
+          ) : null}
 
-      {mounted && profile?.account_type === "developer" && (
-        <div className="my-2 grid items-start gap-2 border-t pt-4">
-          <div className="mb-2 px-2 text-xs font-semibold tracking-tight flex items-center text-blue-600">
-            <Terminal className="mr-1 h-3 w-3" />
-            Developer
-          </div>
-          {developerNavItems.map((item, index) => (
-            <Link key={index} href={item.href}>
-              <Button
-                variant={
-                  pathname === item.href || pathname.startsWith(`${item.href}/`)
-                    ? "secondary"
-                    : "ghost"
-                }
-                className={cn(
-                  "w-full justify-start",
-                  pathname === item.href || pathname.startsWith(`${item.href}/`)
-                    ? "bg-secondary hover:bg-secondary text-blue-700"
-                    : "",
-                )}
-              >
-                <item.icon className="mr-2 h-4 w-4" />
-                {item.title}
-              </Button>
-            </Link>
-          ))}
+          {mounted && isAdminOrManager ? (
+            <NavSection title="Admin" icon={Shield} accentClassName="text-rose-600">
+              {adminNavItems.map((item) => {
+                const active = isNavItemActive(pathname, item.href);
+                return (
+                  <NavItem
+                    key={item.href}
+                    href={item.href}
+                    title={item.title}
+                    icon={item.icon}
+                    active={active}
+                  />
+                );
+              })}
+            </NavSection>
+          ) : null}
+
+          {mounted && profile?.account_type === "developer" ? (
+            <NavSection
+              title="Developer"
+              icon={Terminal}
+              accentClassName="text-blue-600"
+            >
+              {developerNavItems.map((item) => {
+                const active = isNavItemActive(pathname, item.href);
+                return (
+                  <NavItem
+                    key={item.href}
+                    href={item.href}
+                    title={item.title}
+                    icon={item.icon}
+                    active={active}
+                  />
+                );
+              })}
+            </NavSection>
+          ) : null}
         </div>
-      )}
+      </div>
     </nav>
   );
 }
