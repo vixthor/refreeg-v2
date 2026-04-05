@@ -1,6 +1,103 @@
 export interface Database {
   public: {
     Tables: {
+      api_keys: {
+        Row: {
+          id: string;
+          user_id: string;
+          name: string;
+          key_prefix: string;
+          key_hash: string;
+          mode: "live" | "test";
+          created_at: string;
+          last_used_at: string | null;
+          revoked_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          name: string;
+          key_prefix: string;
+          key_hash: string;
+          mode?: "live" | "test";
+          created_at?: string;
+          last_used_at?: string | null;
+          revoked_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          name?: string;
+          key_prefix?: string;
+          key_hash?: string;
+          mode?: "live" | "test";
+          created_at?: string;
+          last_used_at?: string | null;
+          revoked_at?: string | null;
+        };
+      };
+      api_campaigns: {
+        Row: {
+          id: string;
+          developer_id: string;
+          api_key_id: string | null;
+          title: string;
+          description: string;
+          goal_amount: number;
+          raised_amount: number;
+          currency: string;
+          status: string;
+          payout_mode: string;
+          deadline: string | null;
+          bank_account_number: string;
+          bank_code: string;
+          bank_account_name: string;
+          sub_account_code: string | null;
+          created_at: string;
+          updated_at: string;
+          mode: string;
+        };
+        Insert: {
+          id?: string;
+          developer_id: string;
+          api_key_id?: string | null;
+          title: string;
+          description: string;
+          goal_amount: number;
+          raised_amount?: number;
+          currency?: string;
+          status?: string;
+          payout_mode: string;
+          deadline?: string | null;
+          bank_account_number: string;
+          bank_code: string;
+          bank_account_name: string;
+          sub_account_code?: string | null;
+          created_at?: string;
+          updated_at?: string;
+          mode?: string;
+        };
+        Update: {
+          id?: string;
+          developer_id?: string;
+          api_key_id?: string | null;
+          title?: string;
+          description?: string;
+          goal_amount?: number;
+          raised_amount?: number;
+          currency?: string;
+          status?: string;
+          payout_mode?: string;
+          deadline?: string | null;
+          bank_account_number?: string;
+          bank_code?: string;
+          bank_account_name?: string;
+          sub_account_code?: string | null;
+          created_at?: string;
+          updated_at?: string;
+          mode?: string;
+        };
+      };
       profiles: {
         Row: {
           id: string;
@@ -361,6 +458,137 @@ export interface Database {
           content?: string;
           updated_at?: string;
           parent_id?: string | null;
+        };
+      };
+      api_donations: {
+        Row: {
+          id: string;
+          api_campaign_id: string;
+          amount: number;
+          tip_amount: number;
+          donor_name: string;
+          donor_email: string;
+          message: string | null;
+          is_anonymous: boolean;
+          status: string;
+          paystack_reference: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          api_campaign_id: string;
+          amount: number;
+          tip_amount?: number;
+          donor_name: string;
+          donor_email: string;
+          message?: string | null;
+          is_anonymous?: boolean;
+          status?: string;
+          paystack_reference: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          api_campaign_id?: string;
+          amount?: number;
+          tip_amount?: number;
+          donor_name?: string;
+          donor_email?: string;
+          message?: string | null;
+          is_anonymous?: boolean;
+          status?: string;
+          paystack_reference?: string;
+          created_at?: string;
+        };
+      };
+      api_webhooks: {
+        Row: {
+          id: string;
+          user_id: string;
+          url: string;
+          secret: string;
+          events: string[];
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          url: string;
+          secret: string;
+          events?: string[];
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          url?: string;
+          secret?: string;
+          events?: string[];
+          is_active?: boolean;
+          updated_at?: string;
+        };
+      };
+      api_webhook_logs: {
+        Row: {
+          id: string;
+          webhook_id: string;
+          event: string;
+          payload: any;
+          status_code: number | null;
+          response_body: string | null;
+          attempts: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          webhook_id: string;
+          event: string;
+          payload: any;
+          status_code?: number | null;
+          response_body?: string | null;
+          attempts?: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          webhook_id?: string;
+          event?: string;
+          payload?: any;
+          status_code?: number | null;
+          response_body?: string | null;
+          attempts?: number;
+        };
+      };
+      api_campaign_reports: {
+        Row: {
+          id: string;
+          api_campaign_id: string;
+          reason: string;
+          message: string | null;
+          status: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          api_campaign_id: string;
+          reason: string;
+          message?: string | null;
+          status?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          api_campaign_id?: string;
+          reason?: string;
+          message?: string | null;
+          status?: string;
+          updated_at?: string;
         };
       };
     };

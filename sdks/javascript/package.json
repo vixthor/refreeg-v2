@@ -1,0 +1,21 @@
+{
+  "name": "refreeg-js",
+  "version": "0.1.0",
+  "description": "Lightweight JavaScript SDK for the RefreeG crowdfunding API",
+  "type": "module",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "sideEffects": false,
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "README.md"
+  ],
+  "keywords": [
+    "refreeg",
+    "crowdfunding",
+    "api",
+    "sdk"
+  ],
+  "license": "UNLICENSED"
+}

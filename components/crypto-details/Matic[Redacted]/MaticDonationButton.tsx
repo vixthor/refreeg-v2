@@ -8,6 +8,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useToast } from "@/components/ui/use-toast";
 import NavigationLoader from "@/components/NavigationLoader";
+import { useAuthContext } from "@/components/auth-provider";
 
 const DEFAULT_MATIC_TO_NAIRA_RATE = 413;
 
@@ -40,6 +41,7 @@ export default function MaticDonationButton({
   const [inputMode, setInputMode] = useState<"matic" | "naira">("matic");
   const params = useParams();
   const supabase = createClient();
+  const { user } = useAuthContext();
 
   const formatNumberWithCommas = (value: string): string => {
     if (!value || isNaN(parseFloat(value))) return value;
@@ -138,15 +140,10 @@ export default function MaticDonationButton({
     try {
       console.log("Starting donation logging process...");
 
-      // 1. Verify authentication
-      const {
-        data: { user },
-        error: authError,
-      } = await supabase.auth.getUser();
-      console.log("User auth status:", { user, authError });
+      console.log("User auth status:", { user });
 
-      if (authError || !user) {
-        throw new Error(authError?.message || "User not authenticated");
+      if (!user) {
+        throw new Error("User not authenticated");
       }
 
       // 2. Log to crypto_donations

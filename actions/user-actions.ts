@@ -5,13 +5,12 @@ import { revalidatePath } from "next/cache";
 import { createClient as createSupabaseAdmin } from "@supabase/supabase-js";
 import { getUserRole } from "@/actions/role-actions";
 import { logAdminActivity } from "@/actions/database-actions";
+import { getCachedUser } from "@/lib/supabase/cached-user";
 
 export async function blockUser(userId: string): Promise<boolean> {
   const supabase = await createClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user } = await getCachedUser();
 
   if (!user) {
     console.error("Unauthorized: No user found");
@@ -38,9 +37,7 @@ export async function blockUser(userId: string): Promise<boolean> {
 export async function unblockUser(userId: string): Promise<boolean> {
   const supabase = await createClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user } = await getCachedUser();
 
   if (!user) {
     console.error("Unauthorized: No user found");
@@ -154,9 +151,7 @@ export async function deleteUserAsAdmin(
 ): Promise<{ error: string | null }> {
   try {
     const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { user } = await getCachedUser();
 
     if (!user) {
       return { error: "Not authenticated" };

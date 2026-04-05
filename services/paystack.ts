@@ -37,7 +37,7 @@ const Paystack = {
         currency: "NGN",
         email: data.email,
         amount: Math.round(totalCharge * 100),
-        callback_url: `${baseUrl}/causes/${data.causeId}/payment/verify`,
+        callback_url: data.callbackUrl || `${baseUrl}/causes/${data.causeId}/payment/verify`,
         transaction_charge: Math.round(feePlusTip * 100),
         subaccount: data.subaccounts[0].subaccount,
         bearer: "subaccount",
@@ -84,6 +84,12 @@ const Paystack = {
       `/transaction/verify/${transactionReference}`
     );
     return response.data.data.status === "success";
+  },
+  verifyTransactionFull: async function (transactionReference: string) {
+    const response = await this.api.get(
+      `/transaction/verify/${transactionReference}`
+    );
+    return response.data.data;
   },
   createSubaccount: async function (data: ICreateSubaccount) {
     const response = await this.api.post("/subaccount", {
