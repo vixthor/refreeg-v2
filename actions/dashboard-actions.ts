@@ -62,10 +62,27 @@ export async function getDonationTrends(userId: string) {
   const sixMonthsAgo = new Date();
   sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
 
+  const { data: causes, error: causesError } = await supabase
+    .from("causes")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("status", "approved");
+
+  if (causesError) {
+    console.error("Error fetching causes for donation trends:", causesError);
+    return [];
+  }
+
+  const causeIds = (causes || []).map((cause) => cause.id);
+
+  if (causeIds.length === 0) {
+    return [];
+  }
+
   const { data: donations, error } = await supabase
     .from("donations")
     .select("amount, created_at")
-    .eq("user_id", userId)
+    .in("cause_id", causeIds)
     .gte("created_at", sixMonthsAgo.toISOString())
     .order("created_at", { ascending: true });
 

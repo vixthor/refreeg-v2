@@ -63,6 +63,7 @@ export function DonationForm({
     isAnonymous: false,
   });
   const [amountError, setAmountError] = useState("");
+  const [submitError, setSubmitError] = useState("");
 
   // Sync internal amount with prop when prop changes
   useEffect(() => {
@@ -202,6 +203,8 @@ export function DonationForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmitError("");
+
     if (Number(formData.amount) < MIN_DONATION_AMOUNT) {
       setAmountError(`Minimum donation is ₦${MIN_DONATION_AMOUNT}.`);
       return;
@@ -218,21 +221,29 @@ export function DonationForm({
       plan = process.env.NEXT_PUBLIC_PAYSTACK_PLAN_ID_MONTHLY;
     }
 
-    await initializePayment({
-      email: formData.email,
-      amount: Number(formData.amount),
-      causeId: causeId,
-      id: profile.id || "",
-      full_name: formData.name,
-      serviceFee: serviceFee,
-      tipAmount: tip,
-      plan: plan,
-      subaccounts: [
-        { subaccount: subaccount || "", share: Number(formData.amount) * 100 },
-      ],
-      message: formData.message,
-      isAnonymous: formData.isAnonymous,
-    });
+    try {
+      await initializePayment({
+        email: formData.email,
+        amount: Number(formData.amount),
+        causeId: causeId,
+        id: profile.id || undefined,
+        full_name: formData.name,
+        serviceFee: serviceFee,
+        tipAmount: tip,
+        plan: plan,
+        subaccounts: [
+          { subaccount: subaccount || "", share: Number(formData.amount) * 100 },
+        ],
+        message: formData.message,
+        isAnonymous: formData.isAnonymous,
+      });
+    } catch (error) {
+      setSubmitError(
+        error instanceof Error
+          ? error.message
+          : "Failed to initialize payment. Please try again.",
+      );
+    }
   };
 
   const donationAmount = Number(formData.amount) || 0;
@@ -317,6 +328,10 @@ export function DonationForm({
             />
             <Label htmlFor="anonymous">Donate anonymously</Label>
           </div>
+
+          {submitError ? (
+            <p className="text-sm font-medium text-rose-600">{submitError}</p>
+          ) : null}
 
           {donationAmount > 0 && (
             <div className="space-y-2 pt-4 border-t">
