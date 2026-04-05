@@ -36,6 +36,7 @@ export async function middleware(request: NextRequest) {
     }
 
     // Authenticated or public — let the request through.
+
     return response;
   }
 
