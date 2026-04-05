@@ -3,40 +3,6 @@ import { formatCurrency } from "@/lib/utils";
 
 export async function getDashboardStats(userId: string) {
   const supabase = await createClient();
-  const { data: donations, error: donationsError } = await supabase
-    .from("donations")
-    .select("amount")
-    .eq("user_id", userId);
-
-  if (donationsError) {
-    console.error("Error fetching donations:", donationsError);
-    return {
-      totalRaised: 0,
-      totalDonors: 0,
-      activeCauses: 0,
-    };
-  }
-
-  const totalRaised = donations.reduce(
-    (sum, donation) => sum + donation.amount,
-    0
-  );
-
-  const { data: donors, error: donorsError } = await supabase
-    .from("donations")
-    .select("user_id", { count: "exact" })
-    .eq("user_id", userId)
-    .order("user_id");
-
-  if (donorsError) {
-    console.error("Error fetching donors:", donorsError);
-    return {
-      totalRaised,
-      totalDonors: 0,
-      activeCauses: 0,
-    };
-  }
-
   const { data: causes, error: causesError } = await supabase
     .from("causes")
     .select("id")
@@ -46,15 +12,46 @@ export async function getDashboardStats(userId: string) {
   if (causesError) {
     console.error("Error fetching causes:", causesError);
     return {
-      totalRaised,
-      totalDonors: donors?.length || 0,
+      totalRaised: formatCurrency(0),
+      totalDonors: 0,
       activeCauses: 0,
     };
   }
 
+  const causeIds = (causes || []).map((c) => c.id);
+  if (causeIds.length === 0) {
+    return {
+      totalRaised: formatCurrency(0),
+      totalDonors: 0,
+      activeCauses: 0,
+    };
+  }
+
+  const { data: donations, error: donationsError } = await supabase
+    .from("donations")
+    .select("amount, user_id, cause_id")
+    .in("cause_id", causeIds);
+
+  if (donationsError) {
+    console.error("Error fetching cause donations:", donationsError);
+    return {
+      totalRaised: formatCurrency(0),
+      totalDonors: 0,
+      activeCauses: causes?.length || 0,
+    };
+  }
+
+  const totalRaised = (donations || []).reduce(
+    (sum, donation) => sum + Number(donation.amount || 0),
+    0
+  );
+  const totalDonors = new Set(
+    (donations || []).map((d) => d.user_id).filter(Boolean)
+  ).size;
+
   return {
     totalRaised: formatCurrency(totalRaised),
-    totalDonors: donors?.length || 0,
+    totalDonors,
     activeCauses: causes?.length || 0,
   };
 }
@@ -65,10 +62,27 @@ export async function getDonationTrends(userId: string) {
   const sixMonthsAgo = new Date();
   sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
 
+  const { data: causes, error: causesError } = await supabase
+    .from("causes")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("status", "approved");
+
+  if (causesError) {
+    console.error("Error fetching causes for donation trends:", causesError);
+    return [];
+  }
+
+  const causeIds = (causes || []).map((cause) => cause.id);
+
+  if (causeIds.length === 0) {
+    return [];
+  }
+
   const { data: donations, error } = await supabase
     .from("donations")
     .select("amount, created_at")
-    .eq("user_id", userId)
+    .in("cause_id", causeIds)
     .gte("created_at", sixMonthsAgo.toISOString())
     .order("created_at", { ascending: true });
 
@@ -116,6 +130,96 @@ export async function getUserCauses(userId: string, status?: string) {
   }
 
   return causes;
+}
+
+/**
+ * Fetch the user's causes with `raised` computed live from the donations table,
+ * so it is never stale regardless of whether increment_cause_raised was called.
+ */
+export async function getUserCausesWithStats(userId: string) {
+  const supabase = await createClient();
+
+  const { data: causes, error: causesError } = await supabase
+    .from("causes")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
+
+  if (causesError) {
+    console.error("Error fetching user causes:", causesError);
+    return [];
+  }
+
+  if (!causes || causes.length === 0) return [];
+
+  const causeIds = causes.map((c) => c.id);
+
+  const { data: donations, error: donationsError } = await supabase
+    .from("donations")
+    .select("cause_id, amount")
+    .in("cause_id", causeIds);
+
+  if (donationsError) {
+    console.error("Error fetching cause donations:", donationsError);
+    // Return causes with whatever raised value is stored in the DB
+    return causes;
+  }
+
+  // Sum donations per cause in JS
+  const raisedByCause: Record<string, number> = {};
+  for (const d of donations || []) {
+    raisedByCause[d.cause_id] =
+      (raisedByCause[d.cause_id] || 0) + Number(d.amount || 0);
+  }
+
+  return causes.map((cause) => ({
+    ...cause,
+    raised: raisedByCause[cause.id] || 0,
+  }));
+}
+
+/**
+ * Fetch the user's petitions with signature counts in a single batch query.
+ */
+export async function getUserPetitionsWithStats(userId: string) {
+  const supabase = await createClient();
+
+  const { data: petitions, error: petitionsError } = await supabase
+    .from("petitions")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
+
+  if (petitionsError) {
+    console.error("Error fetching user petitions:", petitionsError);
+    return [];
+  }
+
+  if (!petitions || petitions.length === 0) return [];
+
+  const petitionIds = petitions.map((p) => p.id);
+
+  const { data: signatures, error: signaturesError } = await supabase
+    .from("signatures")
+    .select("petition_id")
+    .in("petition_id", petitionIds);
+
+  if (signaturesError) {
+    console.error("Error fetching petition signatures:", signaturesError);
+    return petitions.map((p) => ({ ...p, signatures: 0 }));
+  }
+
+  // Count signatures per petition in JS
+  const countByPetition: Record<string, number> = {};
+  for (const s of signatures || []) {
+    countByPetition[s.petition_id] =
+      (countByPetition[s.petition_id] || 0) + 1;
+  }
+
+  return petitions.map((petition) => ({
+    ...petition,
+    signatures: countByPetition[petition.id] || 0,
+  }));
 }
 
 export async function getCauseAnalytics(causeId: string) {
@@ -210,41 +314,6 @@ export async function getCauseAnalytics(causeId: string) {
 
 export async function getPetitionDashboardStats(userId: string) {
   const supabase = await createClient();
-
-  const { data: signatures, error: signaturesError } = await supabase
-    .from("signatures")
-    .select("amount")
-    .eq("user_id", userId);
-
-  if (signaturesError) {
-    console.error("Error fetching donations:", signaturesError);
-    return {
-      totalRaised: 0,
-      totalDonors: 0,
-      activePetitions: 0,
-    };
-  }
-
-  const totalRaised = signatures.reduce(
-    (sum, signature) => sum + signature.amount,
-    0
-  );
-
-  const { data: signers, error: signersError } = await supabase
-    .from("signatures")
-    .select("user_id", { count: "exact" })
-    .eq("user_id", userId)
-    .order("user_id");
-
-  if (signersError) {
-    console.error("Error fetching signers:", signersError);
-    return {
-      totalRaised,
-      totalSigners: 0,
-      activePetitions: 0,
-    };
-  }
-
   const { data: petitions, error: petitionsError } = await supabase
     .from("petitions")
     .select("id")
@@ -254,15 +323,46 @@ export async function getPetitionDashboardStats(userId: string) {
   if (petitionsError) {
     console.error("Error fetching petitions:", petitionsError);
     return {
-      totalRaised,
-      totalDonors: signers?.length || 0,
+      totalRaised: formatCurrency(0),
+      totalDonors: 0,
       activePetitions: 0,
     };
   }
 
+  const petitionIds = (petitions || []).map((p) => p.id);
+  if (petitionIds.length === 0) {
+    return {
+      totalRaised: formatCurrency(0),
+      totalDonors: 0,
+      activePetitions: 0,
+    };
+  }
+
+  const { data: signatures, error: signaturesError } = await supabase
+    .from("signatures")
+    .select("amount, user_id, petition_id")
+    .in("petition_id", petitionIds);
+
+  if (signaturesError) {
+    console.error("Error fetching petition signatures:", signaturesError);
+    return {
+      totalRaised: formatCurrency(0),
+      totalDonors: 0,
+      activePetitions: petitions?.length || 0,
+    };
+  }
+
+  const totalRaised = (signatures || []).reduce(
+    (sum, signature) => sum + Number(signature.amount || 0),
+    0
+  );
+  const totalDonors = new Set(
+    (signatures || []).map((s) => s.user_id).filter(Boolean)
+  ).size;
+
   return {
     totalRaised: formatCurrency(totalRaised),
-    totalDonors: signers?.length || 0,
+    totalDonors,
     activePetitions: petitions?.length || 0,
   };
 }

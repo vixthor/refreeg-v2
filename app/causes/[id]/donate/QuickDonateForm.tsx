@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/carousel";
 import Image from "next/image";
 
+const MIN_DONATION_AMOUNT = 100;
 const PRESETS = [500, 1000, 5000, 10000];
 
 interface QuickDonateFormProps {
@@ -54,6 +55,7 @@ export default function QuickDonateForm({
   const [email, setEmail] = useState(defaultEmail);
   const [message, setMessage] = useState("");
   const [isAnonymous, setIsAnonymous] = useState(false);
+  const [amountError, setAmountError] = useState("");
 
   const donationAmount = Number(amount) || 0;
   const serviceFee = useMemo(
@@ -66,7 +68,10 @@ export default function QuickDonateForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (donationAmount <= 0) return;
+    if (donationAmount < MIN_DONATION_AMOUNT) {
+      setAmountError(`Minimum donation is ₦${MIN_DONATION_AMOUNT}.`);
+      return;
+    }
 
     await initializePayment({
       email,
@@ -179,10 +184,24 @@ export default function QuickDonateForm({
               type="number"
               placeholder="Or enter custom amount"
               value={amount}
-              onChange={(e) => setAmount(e.target.value)}
+              onChange={(e) => {
+                setAmount(e.target.value);
+                if (amountError) {
+                  setAmountError("");
+                }
+              }}
               className="mt-2"
-              min={1}
+              min={MIN_DONATION_AMOUNT}
             />
+            {amountError ? (
+              <p className="mt-2 text-xs font-medium text-rose-600">
+                {amountError}
+              </p>
+            ) : (
+              <p className="mt-2 text-xs text-slate-500">
+                Minimum donation is ₦{MIN_DONATION_AMOUNT}.
+              </p>
+            )}
           </div>
 
           {/* Name */}
@@ -253,7 +272,7 @@ export default function QuickDonateForm({
 
           <Button
             type="submit"
-            disabled={isLoading || donationAmount <= 0}
+            disabled={isLoading || donationAmount < MIN_DONATION_AMOUNT}
             className="w-full rounded-full bg-blue-600 text-white hover:bg-blue-700"
           >
             {isLoading ? (
