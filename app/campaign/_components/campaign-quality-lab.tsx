@@ -220,41 +220,17 @@ function StatItem({
 function HeaderMeta({
   status,
   formattedDate,
-<<<<<<< HEAD
   trustScore,
-}: {
-  status: string;
-  formattedDate: string;
-  trustScore?: string;
-}) {
-  const resolvedTrustScore = trustScore || "B+";
-
-  return (
-    <motion.div className="space-y-2" variants={fadeUp}>
-      <div className="flex flex-wrap items-center gap-2 text-xs text-[#64748B] sm:hidden">
-        <span className="inline-flex items-center gap-2 rounded-full border border-[#E5E7EB] bg-white px-3 py-1 text-xs font-semibold text-[#0F172A]">
-          <ShieldCheck className="h-4 w-4" />
-          {status === "approved" ? "Verified" : "In review"}
-        </span>
-        <span className="inline-flex items-center gap-2 rounded-full border border-[#E5E7EB] bg-white px-3 py-1 text-xs font-semibold text-[#0F172A]">
-          <BadgeCheck className="h-4 w-4 text-[#2563EB]" />
-          Trust {resolvedTrustScore}
-        </span>
-        <span className="inline-flex items-center gap-2 rounded-full border border-[#E5E7EB] bg-white px-3 py-1 text-xs font-semibold text-[#0F172A]">
-          <CalendarClock className="h-4 w-4 text-[#64748B]" />
-          {formattedDate}
-        </span>
-      </div>
-=======
   cause,
   profile,
 }: {
   status: string;
   formattedDate: string;
+  trustScore?: string;
   cause: CauseDetail;
   profile: ProfileSummary;
 }) {
-
+  const resolvedTrustScore = trustScore || "B+";
   const router = useRouter();
 
   return (
@@ -266,7 +242,6 @@ function HeaderMeta({
             <ShieldCheck className="h-4 w-4 sm:h-5 sm:w-5" />
             <span>{status === "approved" ? "Verified" : "In review"}</span>
           </span>
->>>>>>> dev
 
           <span className="inline-flex items-center gap-2 rounded-full border border-[#E5E7EB] bg-white px-3 py-1 sm:px-4 sm:py-2 font-medium text-[#0F172A] shadow-sm">
             <BadgeCheck className="h-4 w-4 sm:h-5 sm:w-5 text-[#2563EB]" />
@@ -274,13 +249,9 @@ function HeaderMeta({
               Trust
             </span>
             <span className="rounded-full bg-[#2563EB] px-2 py-0.5 text-xs font-semibold text-white">
-              A-
+              {resolvedTrustScore}
             </span>
           </span>
-<<<<<<< HEAD
-          <span className="rounded-full bg-[#2563EB] px-2.5 py-0.5 text-xs font-semibold text-white">
-            {resolvedTrustScore}
-=======
 
           <span className="inline-flex items-center gap-2 rounded-full border border-[#E5E7EB] bg-white px-3 py-1 sm:px-4 sm:py-2 font-medium text-[#0F172A] shadow-sm">
             <CalendarClock className="h-4 w-4 sm:h-5 sm:w-5 text-[#64748B]" />
@@ -290,7 +261,6 @@ function HeaderMeta({
             <span className="text-xs sm:text-sm font-semibold text-[#0F172A]">
               {formattedDate}
             </span>
->>>>>>> dev
           </span>
         </div>
 
@@ -1270,15 +1240,13 @@ export default function CampaignQualityLab({
             initial="hidden"
             animate="show"
           >
-<<<<<<< HEAD
             <HeaderMeta
               status={cause.status}
               formattedDate={formattedDate}
               trustScore={cause.trust_score?.impact}
+              cause={cause}
+              profile={profile}
             />
-=======
-            <HeaderMeta status={cause.status} formattedDate={formattedDate} cause={cause} profile={profile} />
->>>>>>> dev
 
             <motion.div className="grid gap-6" variants={stagger}>
               <HeroSummary cause={cause} donorsCount={donors.length} />
