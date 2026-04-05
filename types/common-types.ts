@@ -59,10 +59,8 @@ export interface SignatureFormData {
   isAnonymous: boolean;
 }
 
-export interface TransactionData extends Pick<
-  Profile,
-  "email" | "full_name" | "id"
-> {
+export interface TransactionData
+  extends Partial<Pick<Profile, "email" | "full_name" | "id">> {
   amount: number;
   serviceFee: number;
   tipAmount?: number;

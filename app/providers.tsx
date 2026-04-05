@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { NotificationProvider } from "@/components/notification-provider";
 import { AuthProvider } from "@/components/auth-provider";
+import { GlobalSupportBoundary } from "@/components/global-support-boundary";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -16,18 +17,20 @@ const queryClient = new QueryClient({
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <QueryClientProvider client={queryClient}>
-      <NuqsAdapter>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="light"
-          disableTransitionOnChange
-        >
-          <NotificationProvider>
-            <AuthProvider>{children}</AuthProvider>
-          </NotificationProvider>
-        </ThemeProvider>
-      </NuqsAdapter>
-    </QueryClientProvider>
+    <GlobalSupportBoundary>
+      <QueryClientProvider client={queryClient}>
+        <NuqsAdapter>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="light"
+            disableTransitionOnChange
+          >
+            <NotificationProvider>
+              <AuthProvider>{children}</AuthProvider>
+            </NotificationProvider>
+          </ThemeProvider>
+        </NuqsAdapter>
+      </QueryClientProvider>
+    </GlobalSupportBoundary>
   );
 }
