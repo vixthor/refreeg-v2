@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DashboardCauses } from "@/components/dashboard-causes";
 import { DashboardStats } from "@/components/dashboard-stats";
 import { DashboardPetitions } from "@/components/dashboard-petitions";
+import { DonationTrends } from "@/components/charts/donation-trends";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -35,6 +36,7 @@ import { ApiCausesFilter } from "@/components/dashboard/ApiCausesFilter";
 import { redirect } from "next/navigation";
 import {
   getDashboardStats,
+  getDonationTrends,
   getPetitionDashboardStats,
   getUserCausesWithStats,
   getUserPetitionsWithStats,
@@ -79,6 +81,7 @@ export default async function DashboardPage({
     authResult,
     stats,
     petitionStats,
+    donationTrends,
     userCauses,
     userPetitions,
     apiCampaignsResult,
@@ -91,6 +94,10 @@ export default async function DashboardPage({
     (async () => {
       const { user } = await getCachedUser();
       return user ? getPetitionDashboardStats(user.id) : null;
+    })(),
+    (async () => {
+      const { user } = await getCachedUser();
+      return user ? getDonationTrends(user.id) : [];
     })(),
     (async () => {
       const { user } = await getCachedUser();
@@ -241,6 +248,10 @@ export default async function DashboardPage({
   const activeCauses = Number(stats?.activeCauses ?? 0);
   const totalSigners = Number(petitionStats?.totalDonors ?? 0);
   const activePetitions = Number(petitionStats?.activePetitions ?? 0);
+  const donationTrendData = donationTrends.map((item) => ({
+    date: item.month,
+    amount: Number(item.amount ?? 0),
+  }));
 
   return (
     <div className="space-y-4 px-2 py-2 sm:space-y-6 sm:px-4 sm:py-4 lg:px-6">
@@ -537,21 +548,7 @@ export default async function DashboardPage({
               </CardContent>
             </Card>
 
-            <Card className="rounded-[28px] border-slate-200/80 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] shadow-[0_20px_50px_-38px_rgba(15,23,42,0.45)]">
-              <CardHeader>
-                <CardTitle className="text-xl text-slate-950">
-                  Donation Trends
-                </CardTitle>
-                <CardDescription className="text-sm text-slate-600">
-                  View your donation activity over time.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="flex h-[280px] items-center justify-center rounded-[24px] border border-dashed border-slate-200 bg-slate-50/70">
-                <p className="px-4 text-center text-sm text-slate-500">
-                  Donation chart will appear here.
-                </p>
-              </CardContent>
-            </Card>
+            <DonationTrends data={donationTrendData} />
           </TabsContent>
         </Tabs>
       </div>
