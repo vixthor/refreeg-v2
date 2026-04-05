@@ -53,7 +53,7 @@ export default async function CausesPage({
 
             {/* Header */}
             <div className="space-y-2 text-center md:pt-10">
-              <H1 className="font-bold tracking-tight">
+              <H1 className="font-bold tracking-tight text-secondary">
                 {username
                   ? `Support ${username}'s Causes`       // ✨ real name!
                   : "Discover Causes That Matter"}
