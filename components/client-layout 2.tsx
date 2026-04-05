@@ -3,7 +3,6 @@
 import { usePathname } from "next/navigation";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
-import { KYCBanner } from "@/components/kyc-banner";
 import NavigationLoader from "@/components/NavigationLoader";
 
 interface ClientLayoutProps {
@@ -19,7 +18,6 @@ export function ClientLayout({ children }: ClientLayoutProps) {
   return (
     <>
       {!hideLayout && <Header />}
-      {!hideLayout && <KYCBanner />}
       <div className="flex min-h-screen flex-col">
         <NavigationLoader />
         <main className="flex-1">{children}</main>

@@ -17,18 +17,8 @@ export default function OnboardingNav({
   showUserNav = false,
 }: OnboardingNavProps) {
   return (
-    <nav
-      className="
-        sticky top-0 z-50
-        bg-white/30
-        backdrop-blur-md
-        backdrop-saturate-150
-        supports-[backdrop-filter]:bg-white/40
-        py-2 px-4
-        shadow-sm
-      "
-    >
-      <div className="max-w-7xl mx-auto flex items-center justify-between">
+    <nav className="sticky top-0 z-50 bg-white/30 backdrop-blur-md backdrop-saturate-150 supports-[backdrop-filter]:bg-white/40 py-2 px-4 shadow-sm w-full">
+      <div className="max-w-7xl mx-auto w-full flex items-center justify-between">
         {/* Left side */}
         <div className="flex items-center">
           <Logo />

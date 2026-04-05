@@ -17,6 +17,7 @@ const accountOptions = [
   { id: "non-profit", label: "I’m a non-profit" },
   { id: "organization", label: "I’m an organisation" },
   { id: "community", label: "I’m a community" },
+  { id: "developer", label: "I’m a developer" },
 ];
 
 export default function Step1({

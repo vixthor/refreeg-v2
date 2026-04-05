@@ -32,6 +32,7 @@ import type { Comment } from "@/types/common-types";
 import Image from "next/image";
 import { Skeleton } from "@/components/ui/skeleton";
 import { followCampaign } from "@/actions/cause-actions";
+import { SupportErrorCta } from "@/components/support-error-cta";
 import {
   Dialog,
   DialogContent,
@@ -220,49 +221,59 @@ function StatItem({
 function HeaderMeta({
   status,
   formattedDate,
+  trustScore,
+  cause,
+  profile,
 }: {
   status: string;
   formattedDate: string;
+  trustScore?: string;
+  cause: CauseDetail;
+  profile: ProfileSummary;
 }) {
+  const resolvedTrustScore = trustScore || "B+";
+  const router = useRouter();
+
   return (
     <motion.div className="space-y-2" variants={fadeUp}>
-      <div className="flex flex-wrap items-center gap-2 text-xs text-[#64748B] sm:hidden">
-        <span className="inline-flex items-center gap-2 rounded-full border border-[#E5E7EB] bg-white px-3 py-1 text-xs font-semibold text-[#0F172A]">
-          <ShieldCheck className="h-4 w-4" />
-          {status === "approved" ? "Verified" : "In review"}
-        </span>
-        <span className="inline-flex items-center gap-2 rounded-full border border-[#E5E7EB] bg-white px-3 py-1 text-xs font-semibold text-[#0F172A]">
-          <BadgeCheck className="h-4 w-4 text-[#2563EB]" />
-          Trust A-
-        </span>
-        <span className="inline-flex items-center gap-2 rounded-full border border-[#E5E7EB] bg-white px-3 py-1 text-xs font-semibold text-[#0F172A]">
-          <CalendarClock className="h-4 w-4 text-[#64748B]" />
-          {formattedDate}
-        </span>
-      </div>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between w-full">
+        {/* LEFT: Badges */}
+        <div className="flex flex-wrap items-center gap-2 text-xs text-[#64748B] sm:text-sm">
+          <span className="inline-flex items-center gap-2 rounded-full border border-[#E5E7EB] bg-white px-3 py-1 sm:px-4 sm:py-2 font-semibold text-[#0F172A] shadow-sm">
+            <ShieldCheck className="h-4 w-4 sm:h-5 sm:w-5" />
+            <span>{status === "approved" ? "Verified" : "In review"}</span>
+          </span>
 
-      <div className="hidden flex-wrap items-center gap-3 text-xs text-[#64748B] sm:flex sm:text-sm">
-        <div className="inline-flex items-center gap-2 rounded-full border border-[#E5E7EB] bg-white px-4 py-2 font-semibold text-[#0F172A] shadow-sm">
-          <ShieldCheck className="h-5 w-5" />
-          <span>{status === "approved" ? "Verified" : "In review"}</span>
+          <span className="inline-flex items-center gap-2 rounded-full border border-[#E5E7EB] bg-white px-3 py-1 sm:px-4 sm:py-2 font-medium text-[#0F172A] shadow-sm">
+            <BadgeCheck className="h-4 w-4 sm:h-5 sm:w-5 text-[#2563EB]" />
+            <span className="uppercase tracking-[0.2em] text-[10px] text-slate-400">
+              Trust
+            </span>
+            <span className="rounded-full bg-[#2563EB] px-2 py-0.5 text-xs font-semibold text-white">
+              {resolvedTrustScore}
+            </span>
+          </span>
+
+          <span className="inline-flex items-center gap-2 rounded-full border border-[#E5E7EB] bg-white px-3 py-1 sm:px-4 sm:py-2 font-medium text-[#0F172A] shadow-sm">
+            <CalendarClock className="h-4 w-4 sm:h-5 sm:w-5 text-[#64748B]" />
+            <span className="hidden sm:inline uppercase tracking-[0.2em] text-[10px] text-[#64748B]">
+              Updated
+            </span>
+            <span className="text-xs sm:text-sm font-semibold text-[#0F172A]">
+              {formattedDate}
+            </span>
+          </span>
         </div>
-        <div className="inline-flex items-center gap-2 rounded-full border border-[#E5E7EB] bg-white px-4 py-2 font-medium text-[#0F172A] shadow-sm">
-          <BadgeCheck className="h-5 w-5 text-[#2563EB]" />
-          <span className="uppercase tracking-[0.2em] text-[10px] text-slate-400">
-            Trust
-          </span>
-          <span className="rounded-full bg-[#2563EB] px-2.5 py-0.5 text-xs font-semibold text-white">
-            A-
-          </span>
-        </div>
-        <div className="inline-flex items-center gap-2 rounded-full border border-[#E5E7EB] bg-white px-4 py-2 font-medium text-[#0F172A] shadow-sm">
-          <CalendarClock className="h-5 w-5 text-[#64748B]" />
-          <span className="uppercase tracking-[0.2em] text-[10px] text-[#64748B]">
-            Updated
-          </span>
-          <span className="text-sm font-semibold text-[#0F172A]">
-            {formattedDate}
-          </span>
+
+        {/* RIGHT: Button (always visible) */}
+        <div className="w-full sm:w-auto">
+          <Button
+            onClick={() => router.push(`/causes/${cause.id}/pledge`)}
+            className="w-full gap-x-1 sm:w-auto rounded-full bg-[#0F172A] px-6 py-3 text-sm font-semibold text-white shadow-lg hover:bg-[#1E293B]"
+          >
+            <HandHeart className="h-4 w-4 text-white" />
+            Make a Pledge
+          </Button>
         </div>
       </div>
     </motion.div>
@@ -985,6 +996,7 @@ function CampaignHealthCard({
   const [followed, setFollowed] = useState(isFollowing || false);
   const [followError, setFollowError] = useState<string | null>(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showSupportModal, setShowSupportModal] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   const handleFollow = () => {
@@ -997,6 +1009,7 @@ function CampaignHealthCard({
       const result = await followCampaign(causeId);
       if (result.error && result.error !== "unauthenticated") {
         setFollowError(result.error);
+        setShowSupportModal(true);
       } else if (result.error === "unauthenticated") {
         setShowLoginModal(true);
       } else {
@@ -1061,11 +1074,6 @@ function CampaignHealthCard({
             <Bell className="h-3 w-3" />
             {isPending ? "Following..." : "Follow campaign"}
           </button>
-          {followError && (
-            <p className="mt-1 text-center text-xs text-red-500">
-              {followError}
-            </p>
-          )}
         </>
       )}
 
@@ -1100,6 +1108,21 @@ function CampaignHealthCard({
               Create account
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showSupportModal} onOpenChange={setShowSupportModal}>
+        <DialogContent className="border-0 bg-transparent p-0 shadow-none sm:max-w-2xl">
+          <SupportErrorCta
+            compact
+            title="We couldn't follow this campaign"
+            description="For customer support, follow us on X and join our Telegram community. Our team can help you there."
+            errorMessage={followError}
+            onRetry={() => {
+              setShowSupportModal(false);
+              handleFollow();
+            }}
+          />
         </DialogContent>
       </Dialog>
     </motion.div>
@@ -1216,21 +1239,27 @@ export default function CampaignQualityLab({
 
   return (
     <div
-      className="min-h-screen bg-[#F6F8FB] pt-10 text-[#0F172A] sm:pt-14"
+      className="min-h-screen bg-[#F6F8FB] pt-0 text-[#0F172A]"
       style={{
         backgroundImage:
           "radial-gradient(circle at 50% 20%, rgba(37,99,235,0.08), transparent 60%)",
       }}
     >
       <div className="border-b border-[#E5E7EB] bg-white">
-        <div className="container px-4 py-4 sm:py-6">
+        <div className="container px-4 pb-4 pt-0 sm:pb-6 sm:pt-0">
           <motion.div
             className="flex flex-col gap-5 sm:gap-6"
             variants={stagger}
             initial="hidden"
             animate="show"
           >
-            <HeaderMeta status={cause.status} formattedDate={formattedDate} />
+            <HeaderMeta
+              status={cause.status}
+              formattedDate={formattedDate}
+              trustScore={cause.trust_score?.impact}
+              cause={cause}
+              profile={profile}
+            />
 
             <motion.div className="grid gap-6" variants={stagger}>
               <HeroSummary cause={cause} donorsCount={donors.length} />

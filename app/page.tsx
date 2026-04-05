@@ -20,9 +20,22 @@ export const metadata: Metadata = {
     "Join RefreeG to launch causes, start petitions, and drive social change with secure, transparent blockchain crowdfunding.",
 };
 
-export default function Home() {
+export default async function Home({
+  searchParams,
+}: {
+  searchParams?: Promise<{ testGlobalSupportError?: string }>;
+}) {
+  const params = await searchParams;
+
+  if (
+    process.env.NODE_ENV === "development" &&
+    params?.testGlobalSupportError === "1"
+  ) {
+    throw new Error("Test support screen");
+  }
+
   return (
-    <div className="flex flex-col min-h-screen mt-16 ">
+    <div className="flex flex-col min-h-screen mt-12 md:mt-16 ">
       <Hero />
       <AIAgentBot />
 

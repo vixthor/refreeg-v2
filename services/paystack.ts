@@ -32,18 +32,24 @@ const Paystack = {
       console.log(data.isAnonymous);
       const totalCharge = data.amount + data.serviceFee + (data.tipAmount || 0);
       const feePlusTip = data.serviceFee + (data.tipAmount || 0);
+      const primarySubaccount = data.subaccounts?.find(
+        (entry) => entry?.subaccount?.trim().length,
+      )?.subaccount;
 
       const requestData = {
         currency: "NGN",
         email: data.email,
         amount: Math.round(totalCharge * 100),
-        callback_url: `${baseUrl}/causes/${data.causeId}/payment/verify`,
+        callback_url: data.callbackUrl || `${baseUrl}/causes/${data.causeId}/payment/verify`,
         transaction_charge: Math.round(feePlusTip * 100),
-        subaccount: data.subaccounts[0].subaccount,
-        bearer: "subaccount",
-        plan: data.plan, // For recurring donations
+        ...(primarySubaccount
+          ? {
+              subaccount: primarySubaccount,
+              bearer: "subaccount",
+            }
+          : {}),
+        ...(data.plan ? { plan: data.plan } : {}),
         metadata: {
-          user_id: data.id,
           amount: data.amount,
           tip_amount: data.tipAmount || 0,
           customer_name: data.full_name,
@@ -51,7 +57,8 @@ const Paystack = {
           email: data.email,
           message: data.message,
           is_anonymous: data.isAnonymous,
-          plan: data.plan,
+          ...(data.id ? { user_id: data.id } : {}),
+          ...(data.plan ? { plan: data.plan } : {}),
         },
       };
 
@@ -84,6 +91,12 @@ const Paystack = {
       `/transaction/verify/${transactionReference}`
     );
     return response.data.data.status === "success";
+  },
+  verifyTransactionFull: async function (transactionReference: string) {
+    const response = await this.api.get(
+      `/transaction/verify/${transactionReference}`
+    );
+    return response.data.data;
   },
   createSubaccount: async function (data: ICreateSubaccount) {
     const response = await this.api.post("/subaccount", {

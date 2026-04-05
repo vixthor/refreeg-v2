@@ -145,7 +145,7 @@ const Hero = () => {
           {...slideUp(0.1)}
         >
           <Image src="/Users.svg" alt="Users icon" width={20} height={20} />
-          <p className="whitespace-nowrap text-sm">
+          <p className="whitespace-nowrap text-xs md:text-sm ">
             Join thousands already fundraising on RefreeG
           </p>
         </motion.div>
