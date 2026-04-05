@@ -220,15 +220,17 @@ function StatItem({
 function HeaderMeta({
   status,
   formattedDate,
+  trustScore,
   cause,
   profile,
 }: {
   status: string;
   formattedDate: string;
+  trustScore?: string;
   cause: CauseDetail;
   profile: ProfileSummary;
 }) {
-
+  const resolvedTrustScore = trustScore || "B+";
   const router = useRouter();
 
   return (
@@ -247,7 +249,7 @@ function HeaderMeta({
               Trust
             </span>
             <span className="rounded-full bg-[#2563EB] px-2 py-0.5 text-xs font-semibold text-white">
-              A-
+              {resolvedTrustScore}
             </span>
           </span>
 
@@ -1224,21 +1226,27 @@ export default function CampaignQualityLab({
 
   return (
     <div
-      className="min-h-screen bg-[#F6F8FB] pt-10 text-[#0F172A] sm:pt-14"
+      className="min-h-screen bg-[#F6F8FB] pt-0 text-[#0F172A]"
       style={{
         backgroundImage:
           "radial-gradient(circle at 50% 20%, rgba(37,99,235,0.08), transparent 60%)",
       }}
     >
       <div className="border-b border-[#E5E7EB] bg-white">
-        <div className="container px-4 py-4 sm:py-6">
+        <div className="container px-4 pb-4 pt-0 sm:pb-6 sm:pt-0">
           <motion.div
             className="flex flex-col gap-5 sm:gap-6"
             variants={stagger}
             initial="hidden"
             animate="show"
           >
-            <HeaderMeta status={cause.status} formattedDate={formattedDate} cause={cause} profile={profile} />
+            <HeaderMeta
+              status={cause.status}
+              formattedDate={formattedDate}
+              trustScore={cause.trust_score?.impact}
+              cause={cause}
+              profile={profile}
+            />
 
             <motion.div className="grid gap-6" variants={stagger}>
               <HeroSummary cause={cause} donorsCount={donors.length} />
