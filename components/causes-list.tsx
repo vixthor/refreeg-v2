@@ -19,12 +19,16 @@ interface CausesListProps {
   category: string;
   page: number;
   pageSize: number;
+  userId?: string | null;   // ✅ ADD THIS
+  action?: string | null;   // ✅ ADD THIS
 }
 
 export async function CausesList({
   category,
   page,
   pageSize,
+  userId,
+  action,
 }: CausesListProps) {
   const categoriesWithIcons = [
     {
@@ -74,24 +78,31 @@ export async function CausesList({
     limit: pageSize,
     offset: (page - 1) * pageSize,
   });
-  const filteredCauses =
-    category === "all"
-      ? causes
-      : causes.filter((cause) => cause.category === category);
+  const filteredCauses = causes.filter((cause) => {
+    const matchesCategory =
+      category === "all" || cause.category === category;
 
-  const paginatedCauses = filteredCauses.slice(
-    (page - 1) * pageSize,
-    page * pageSize,
-  );
+    const matchesUser = userId
+      ? cause.user_id === userId
+      : true;
+
+    return matchesCategory && matchesUser;
+  });
+
+  const paginatedCauses = filteredCauses;
   const totalCauses = filteredCauses.length;
-  const totalPages = Math.ceil(totalCauses / pageSize);
+  const totalPages = Math.max(1, page);
 
   if (paginatedCauses.length === 0) {
     return (
       <div className="text-center py-10">
-        <h3 className="text-lg font-medium">No causes found</h3>
+        <h3 className="text-lg font-medium">
+          {userId ? "No causes yet" : "No causes found"}
+        </h3>
         <p className="text-muted-foreground">
-          Try selecting a different category or check back later.
+          {userId
+            ? "This user hasn’t created any causes yet."
+            : "Try selecting a different category or check back later."}
         </p>
       </div>
     );
@@ -105,6 +116,7 @@ export async function CausesList({
           description: cause.description || "",
           raised: cause.raised,
           signatures: undefined,
+          action: action, // ✅ correct
         }))}
         type="cause"
       />
