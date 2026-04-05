@@ -25,6 +25,8 @@ import paystack from "@/services/paystack";
 import { usePayment } from "@/hooks/use-payment";
 import { sendUnfinishedDonationEmail } from "@/services/mail";
 
+const MIN_DONATION_AMOUNT = 100;
+
 interface DonationFormProps {
   causeId: string;
   profile: {
@@ -60,6 +62,7 @@ export function DonationForm({
     message: "",
     isAnonymous: false,
   });
+  const [amountError, setAmountError] = useState("");
 
   // Sync internal amount with prop when prop changes
   useEffect(() => {
@@ -187,6 +190,9 @@ export function DonationForm({
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     const { name, value } = e.target;
+    if (name === "amount" && amountError) {
+      setAmountError("");
+    }
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -196,6 +202,10 @@ export function DonationForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (Number(formData.amount) < MIN_DONATION_AMOUNT) {
+      setAmountError(`Minimum donation is ₦${MIN_DONATION_AMOUNT}.`);
+      return;
+    }
 
     // Clear donation attempt when user successfully submits
     localStorage.removeItem("donationAttempt");
@@ -248,8 +258,18 @@ export function DonationForm({
               placeholder="Enter amount in Naira"
               value={formData.amount}
               onChange={handleChange}
+              min={MIN_DONATION_AMOUNT}
               required
             />
+            {amountError ? (
+              <p className="text-xs font-medium text-rose-600">
+                {amountError}
+              </p>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                Minimum donation is ₦{MIN_DONATION_AMOUNT}.
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -350,7 +370,9 @@ export function DonationForm({
 
           <Button
             type="submit"
-            disabled={isLoading || isDisabled}
+            disabled={
+              isLoading || isDisabled || donationAmount < MIN_DONATION_AMOUNT
+            }
             className="w-full"
           >
             {isLoading ? (
