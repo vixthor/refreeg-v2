@@ -189,6 +189,7 @@ export function Footer() {
   const theme =
     routeThemes[pathname as keyof typeof routeThemes] ?? routeThemes.default;
 
+
   return (
     <footer className="bg-background px-4 pb-5 pt-10 sm:px-6 lg:px-8">
       <div
@@ -360,5 +361,6 @@ export function Footer() {
         </div>
       </div>
     </footer>
+
   );
 }

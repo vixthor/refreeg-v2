@@ -220,6 +220,7 @@ function StatItem({
 function HeaderMeta({
   status,
   formattedDate,
+<<<<<<< HEAD
   trustScore,
 }: {
   status: string;
@@ -244,29 +245,64 @@ function HeaderMeta({
           {formattedDate}
         </span>
       </div>
+=======
+  cause,
+  profile,
+}: {
+  status: string;
+  formattedDate: string;
+  cause: CauseDetail;
+  profile: ProfileSummary;
+}) {
 
-      <div className="hidden flex-wrap items-center gap-3 text-xs text-[#64748B] sm:flex sm:text-sm">
-        <div className="inline-flex items-center gap-2 rounded-full border border-[#E5E7EB] bg-white px-4 py-2 font-semibold text-[#0F172A] shadow-sm">
-          <ShieldCheck className="h-5 w-5" />
-          <span>{status === "approved" ? "Verified" : "In review"}</span>
-        </div>
-        <div className="inline-flex items-center gap-2 rounded-full border border-[#E5E7EB] bg-white px-4 py-2 font-medium text-[#0F172A] shadow-sm">
-          <BadgeCheck className="h-5 w-5 text-[#2563EB]" />
-          <span className="uppercase tracking-[0.2em] text-[10px] text-slate-400">
-            Trust
+  const router = useRouter();
+
+  return (
+    <motion.div className="space-y-2" variants={fadeUp}>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between w-full">
+        {/* LEFT: Badges */}
+        <div className="flex flex-wrap items-center gap-2 text-xs text-[#64748B] sm:text-sm">
+          <span className="inline-flex items-center gap-2 rounded-full border border-[#E5E7EB] bg-white px-3 py-1 sm:px-4 sm:py-2 font-semibold text-[#0F172A] shadow-sm">
+            <ShieldCheck className="h-4 w-4 sm:h-5 sm:w-5" />
+            <span>{status === "approved" ? "Verified" : "In review"}</span>
           </span>
+>>>>>>> dev
+
+          <span className="inline-flex items-center gap-2 rounded-full border border-[#E5E7EB] bg-white px-3 py-1 sm:px-4 sm:py-2 font-medium text-[#0F172A] shadow-sm">
+            <BadgeCheck className="h-4 w-4 sm:h-5 sm:w-5 text-[#2563EB]" />
+            <span className="uppercase tracking-[0.2em] text-[10px] text-slate-400">
+              Trust
+            </span>
+            <span className="rounded-full bg-[#2563EB] px-2 py-0.5 text-xs font-semibold text-white">
+              A-
+            </span>
+          </span>
+<<<<<<< HEAD
           <span className="rounded-full bg-[#2563EB] px-2.5 py-0.5 text-xs font-semibold text-white">
             {resolvedTrustScore}
+=======
+
+          <span className="inline-flex items-center gap-2 rounded-full border border-[#E5E7EB] bg-white px-3 py-1 sm:px-4 sm:py-2 font-medium text-[#0F172A] shadow-sm">
+            <CalendarClock className="h-4 w-4 sm:h-5 sm:w-5 text-[#64748B]" />
+            <span className="hidden sm:inline uppercase tracking-[0.2em] text-[10px] text-[#64748B]">
+              Updated
+            </span>
+            <span className="text-xs sm:text-sm font-semibold text-[#0F172A]">
+              {formattedDate}
+            </span>
+>>>>>>> dev
           </span>
         </div>
-        <div className="inline-flex items-center gap-2 rounded-full border border-[#E5E7EB] bg-white px-4 py-2 font-medium text-[#0F172A] shadow-sm">
-          <CalendarClock className="h-5 w-5 text-[#64748B]" />
-          <span className="uppercase tracking-[0.2em] text-[10px] text-[#64748B]">
-            Updated
-          </span>
-          <span className="text-sm font-semibold text-[#0F172A]">
-            {formattedDate}
-          </span>
+
+        {/* RIGHT: Button (always visible) */}
+        <div className="w-full sm:w-auto">
+          <Button
+            onClick={() => router.push(`/causes/${cause.id}/pledge`)}
+            className="w-full gap-x-1 sm:w-auto rounded-full bg-[#0F172A] px-6 py-3 text-sm font-semibold text-white shadow-lg hover:bg-[#1E293B]"
+          >
+            <HandHeart className="h-4 w-4 text-white" />
+            Make a Pledge
+          </Button>
         </div>
       </div>
     </motion.div>
@@ -1234,11 +1270,15 @@ export default function CampaignQualityLab({
             initial="hidden"
             animate="show"
           >
+<<<<<<< HEAD
             <HeaderMeta
               status={cause.status}
               formattedDate={formattedDate}
               trustScore={cause.trust_score?.impact}
             />
+=======
+            <HeaderMeta status={cause.status} formattedDate={formattedDate} cause={cause} profile={profile} />
+>>>>>>> dev
 
             <motion.div className="grid gap-6" variants={stagger}>
               <HeroSummary cause={cause} donorsCount={donors.length} />
