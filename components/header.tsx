@@ -8,6 +8,7 @@ import { UserNav } from "@/components/user-nav";
 import { useAuth } from "@/hooks/use-auth";
 import { Logo } from "@/components/logo";
 import { useAdmin } from "@/hooks/use-admin";
+import { cn } from "@/lib/utils";
 import {
   ArrowRight,
   BarChart3,
@@ -182,6 +183,7 @@ export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
 
   const isDashboardRoute = pathname.startsWith("/dashboard");
 
@@ -196,6 +198,19 @@ export function Header() {
     setIsMenuOpen(false);
     setOpenDropdown(null);
   }, [pathname]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 12);
+    };
+
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
 
   const activeTheme = useMemo(() => {
     const themeMap: Record<
@@ -266,8 +281,15 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 px-0 pt-0 sm:px-0 sm:pt-0">
-      <div className="mx-auto max-w-7xl">
-        <div className="overflow-visible border-b border-slate-200/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(248,250,252,0.92))] shadow-[0_18px_40px_-36px_rgba(15,23,42,0.45)] backdrop-blur-xl">
+      <div
+        className={cn(
+          "overflow-visible transition-[background-color,backdrop-filter,box-shadow,border-color] duration-200",
+          isScrolled
+            ? "border-b border-slate-200/80 bg-white/70 shadow-[0_18px_40px_-36px_rgba(15,23,42,0.45)] backdrop-blur-xl"
+            : "border-b border-transparent bg-white/95 shadow-none"
+        )}
+      >
+        <div className="mx-auto max-w-7xl">
           <nav className="flex items-center justify-between gap-3 px-4 py-3 sm:px-5 lg:px-6">
             <div className="flex min-w-0 items-center gap-3 lg:gap-6">
               <Link href="/" className="shrink-0">
