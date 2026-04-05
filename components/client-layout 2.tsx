@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import NavigationLoader from "@/components/NavigationLoader";
@@ -11,15 +12,25 @@ interface ClientLayoutProps {
 
 export function ClientLayout({ children }: ClientLayoutProps) {
   const pathname = usePathname();
+  const [isRouteLoading, setIsRouteLoading] = useState(false);
 
   const noLayoutRoutes = ["/auth/signin", "/auth/signup", "/onboarding"];
   const hideLayout = noLayoutRoutes.some((route) => pathname.startsWith(route));
+
+  useEffect(() => {
+    setIsRouteLoading(true);
+    const timeout = setTimeout(() => {
+      setIsRouteLoading(false);
+    }, 700);
+
+    return () => clearTimeout(timeout);
+  }, [pathname]);
 
   return (
     <>
       {!hideLayout && <Header />}
       <div className="flex min-h-screen flex-col">
-        <NavigationLoader />
+        {isRouteLoading && <NavigationLoader />}
         <main className="flex-1">{children}</main>
       </div>
       {!hideLayout && <Footer />}
