@@ -32,6 +32,7 @@ export interface PetitionWithUser extends Petition {
   user: {
     name: string;
     email: string;
+    sub_account_code?: string;
   };
 }
 

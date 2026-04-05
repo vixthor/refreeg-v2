@@ -2,26 +2,43 @@
 
 import React from "react";
 import SidebarItem from "./SidebarItem";
-import { X, Home, FileText, Users, HeartHandshake, LifeBuoy } from "lucide-react";
+import { 
+  X, 
+  Home, 
+  FileText, 
+  Users, 
+  HeartHandshake, 
+  LifeBuoy,
+  Zap,
+  Key,
+  Terminal,
+  Activity,
+  ShieldAlert,
+  Play
+} from "lucide-react";
 
 export default function MobileSidebar({
   open,
   onClose,
   selected,
   onSelect,
+  activeTab = "Get Started",
 }: {
   open: boolean;
   onClose: () => void;
   selected: string;
   onSelect: (label: string) => void;
+  activeTab?: string;
 }) {
-  const items = [
+  const platformItems = [
     { label: "Overview", icon: Home },
     { label: "Introduction", icon: FileText },
     { label: "For Fundraisers", icon: Users },
     { label: "For Donors", icon: HeartHandshake },
     { label: "Support", icon: LifeBuoy },
   ];
+
+  const items = platformItems;
 
   return (
     <div

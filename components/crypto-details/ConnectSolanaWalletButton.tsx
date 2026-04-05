@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
+import { useAuthContext } from "@/components/auth-provider";
 
 interface ConnectSolanaWalletButtonProps {
   onConnected?: (address: string) => void;
@@ -18,6 +19,7 @@ export function ConnectSolanaWalletButton({
   const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const { user } = useAuthContext();
 
   const installPhantom = () => {
     window.open("https://phantom.app/", "_blank");
@@ -50,9 +52,6 @@ export function ConnectSolanaWalletButton({
       const publicKey = response.publicKey.toString();
 
       const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
 
       if (!user) {
         throw new Error("You must be logged in to connect a wallet");

@@ -8,7 +8,6 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DashboardCauses } from "@/components/dashboard-causes";
 import { DashboardStats } from "@/components/dashboard-stats";
-import { getCurrentUser } from "@/actions/auth-actions";
 import { DashboardPetitions } from "@/components/dashboard-petitions";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +22,15 @@ import {
 import { Search, Satellite } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createSupabaseAdmin } from "@supabase/supabase-js";
+import { getCachedUser } from "@/lib/supabase/cached-user";
+import { ApiCausesFilter } from "@/components/dashboard/ApiCausesFilter";
+import { redirect } from "next/navigation";
+import { 
+  getDashboardStats, 
+  getPetitionDashboardStats, 
+  getUserCausesWithStats, 
+  getUserPetitionsWithStats 
+} from "@/actions/dashboard-actions";
 
 import { Metadata } from "next";
 
@@ -54,107 +62,148 @@ type ApiKeyRow = {
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ search?: string }> | { search?: string };
+  searchParams?: Promise<{ search?: string; mode?: string }> | { search?: string; mode?: string };
 }) {
-  const params = ((await searchParams) || {}) as { search?: string };
+  const params = ((await searchParams) || {}) as { search?: string; mode?: string };
   const search = params.search?.trim() || "";
+  const modeFilter = params.mode || "all";
 
-  const user = await getCurrentUser();
-  const supabase = await createClient();
+  const [
+    authResult,
+    stats,
+    petitionStats,
+    userCauses,
+    userPetitions,
+    apiCampaignsResult
+  ] = await Promise.all([
+    getCachedUser(),
+    (async () => { 
+      const { user } = await getCachedUser(); 
+      return user ? getDashboardStats(user.id) : null; 
+    })(),
+    (async () => {
+      const { user } = await getCachedUser();
+      return user ? getPetitionDashboardStats(user.id) : null;
+    })(),
+    (async () => {
+      const { user } = await getCachedUser();
+      return user ? getUserCausesWithStats(user.id) : [];
+    })(),
+    (async () => {
+      const { user } = await getCachedUser();
+      return user ? getUserPetitionsWithStats(user.id) : [];
+    })(),
+    (async () => {
+      try {
+        const supabase = await createClient();
+        const canUseServiceRole =
+          !!process.env.NEXT_PUBLIC_SUPABASE_URL &&
+          !!process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-  let apiCauses: ApiCauseRow[] = [];
-  let apiKeys: ApiKeyRow[] = [];
-  let apiCausesUnavailable = false;
-  let apiCausesError = "";
+        const dbClient = canUseServiceRole
+          ? createSupabaseAdmin(
+              process.env.NEXT_PUBLIC_SUPABASE_URL!,
+              process.env.SUPABASE_SERVICE_ROLE_KEY!,
+              {
+                auth: {
+                  autoRefreshToken: false,
+                  persistSession: false,
+                },
+              },
+            )
+          : (supabase as any);
 
-  try {
-    const canUseServiceRole =
-      !!process.env.NEXT_PUBLIC_SUPABASE_URL &&
-      !!process.env.SUPABASE_SERVICE_ROLE_KEY;
+        const { data: causeData, error: causeError } = await (dbClient as any)
+          .from("api_campaigns")
+          .select("*")
+          .order("created_at", { ascending: false })
+          .limit(50);
 
-    const dbClient = canUseServiceRole
-      ? createSupabaseAdmin(
-          process.env.NEXT_PUBLIC_SUPABASE_URL!,
-          process.env.SUPABASE_SERVICE_ROLE_KEY!,
-          {
-            auth: {
-              autoRefreshToken: false,
-              persistSession: false,
-            },
-          },
-        )
-      : (supabase as any);
+        if (causeError) return { error: causeError.message };
+        
+        const apiCauses = ((causeData || []) as any[]).map((row) => ({
+          id: row.id,
+          developer_id: row.developer_id,
+          title: row.title || row.name || "Untitled cause",
+          status: row.status || "unknown",
+          created_at: row.created_at,
+          api_key_id: row.api_key_id ?? null,
+          mode: row.mode,
+          goal_amount: row.goal_amount,
+          raised_amount: row.raised_amount,
+        }));
 
-    const { data: causeData, error: causeError } = await (dbClient as any)
-      .from("api_campaigns")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(50);
+        const apiKeyIds = [
+          ...new Set(
+            apiCauses
+              .map((cause) => cause.api_key_id)
+              .filter((id): id is string => Boolean(id)),
+          ),
+        ];
 
-    if (causeError) {
-      apiCausesUnavailable = true;
-      apiCausesError = causeError.message || "Unable to fetch api_campaigns";
-    } else {
-      apiCauses = ((causeData || []) as any[]).map((row) => ({
-        id: row.id,
-        developer_id: row.developer_id,
-        title: row.title || row.name || "Untitled cause",
-        status: row.status || "unknown",
-        created_at: row.created_at,
-        api_key_id: row.api_key_id ?? null,
-        mode: row.mode,
-        goal_amount: row.goal_amount,
-        raised_amount: row.raised_amount,
-      }));
+        let apiKeys: ApiKeyRow[] = [];
+        if (apiKeyIds.length > 0) {
+          const { data: keyData, error: keyError } = await (dbClient as any)
+            .from("api_keys")
+            .select("id, name, key_prefix, mode")
+            .in("id", apiKeyIds);
 
-      const apiKeyIds = [
-        ...new Set(
-          apiCauses
-            .map((cause) => cause.api_key_id)
-            .filter((id): id is string => Boolean(id)),
-        ),
-      ];
-
-      if (apiKeyIds.length > 0) {
-        const { data: keyData, error: keyError } = await (dbClient as any)
-          .from("api_keys")
-          .select("id, name, key_prefix, mode")
-          .in("id", apiKeyIds);
-
-        if (!keyError) {
-          apiKeys = (keyData || []) as ApiKeyRow[];
+          if (!keyError) {
+            apiKeys = (keyData || []) as ApiKeyRow[];
+          }
         }
+
+        return { apiCauses, apiKeys };
+      } catch (err) {
+        return { error: err instanceof Error ? err.message : "Unexpected error" };
       }
-    }
-  } catch (error) {
-    apiCausesUnavailable = true;
-    apiCausesError = error instanceof Error ? error.message : "Unexpected error";
+    })()
+  ]);
+
+  const { user, error: authError } = authResult;
+
+  if (!user || authError) {
+    redirect("/auth/signin");
   }
 
-  const keyMap = new Map(apiKeys.map((key) => [key.id, key]));
+  const apiCauses = 'apiCauses' in apiCampaignsResult ? (apiCampaignsResult as any).apiCauses : [];
+  const apiKeys = 'apiKeys' in apiCampaignsResult ? (apiCampaignsResult as any).apiKeys : [];
+  const apiCausesUnavailable = 'error' in apiCampaignsResult;
+  const apiCausesError = 'error' in apiCampaignsResult ? (apiCampaignsResult as any).error : "";
 
-  const apiCauseRows = apiCauses.map((cause) => {
-    const key = cause.api_key_id ? keyMap.get(cause.api_key_id) : null;
+  const keyMap = new Map(apiKeys.map((key: any) => [key.id, key]));
+
+  const apiCauseRows = apiCauses.map((cause: any) => {
+    const key = cause.api_key_id ? keyMap.get(cause.api_key_id) as ApiKeyRow | undefined : null;
     return {
       ...cause,
       apiName: key?.name || "Unknown API",
       apiPrefix: key?.key_prefix || "N/A",
-      apiMode: key?.mode || "unknown",
+      apiMode: cause.mode || key?.mode || "unknown",
       developerId: cause.developer_id || "N/A",
     };
   });
 
-  const filteredRows = search
-    ? apiCauseRows.filter((row) => {
-        const needle = search.toLowerCase();
-        return (
-          row.title.toLowerCase().includes(needle) ||
-          row.apiName.toLowerCase().includes(needle) ||
-          row.apiMode.toLowerCase().includes(needle) ||
-          row.developerId.toLowerCase().includes(needle)
-        );
-      })
-    : apiCauseRows;
+
+  const filteredRows = apiCauseRows.filter((row: any) => {
+    let matchesSearch = true;
+    let matchesMode = true;
+
+    if (search) {
+      const needle = search.toLowerCase();
+      matchesSearch =
+        row.title.toLowerCase().includes(needle) ||
+        row.apiName.toLowerCase().includes(needle) ||
+        row.apiMode.toLowerCase().includes(needle) ||
+        row.developerId.toLowerCase().includes(needle);
+    }
+
+    if (modeFilter !== "all") {
+      matchesMode = row.apiMode === modeFilter;
+    }
+
+    return matchesSearch && matchesMode;
+  });
 
   return (
     <div className="space-y-4 sm:space-y-6 px-4 sm:px-6 lg:px-8">
@@ -178,11 +227,17 @@ export default async function DashboardPage({
           </TabsTrigger>
         </TabsList>
         <TabsContent value="overview" className="space-y-4">
-          <DashboardStats userId={user?.id} type="all" />
-          <DashboardCauses />
-          <DashboardPetitions />
+          <DashboardStats 
+            userId={user.id} 
+            type="all" 
+            initialStats={stats} 
+            initialPetitionStats={petitionStats} 
+          />
+          <DashboardCauses initialCauses={userCauses} />
+          <DashboardPetitions initialPetitions={userPetitions} />
         </TabsContent>
         <TabsContent value="analytics" className="space-y-4">
+
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between gap-3">
@@ -201,15 +256,7 @@ export default async function DashboardPage({
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <form className="relative w-full md:w-96" method="GET">
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  name="search"
-                  placeholder="Search API, developer ID, mode, or cause..."
-                  className="pl-8"
-                  defaultValue={search}
-                />
-              </form>
+              <ApiCausesFilter search={search} modeFilter={modeFilter} />
 
               {apiCausesUnavailable ? (
                 <div className="space-y-3">
@@ -238,16 +285,22 @@ export default async function DashboardPage({
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredRows.map((row) => (
+                      {filteredRows.map((row: any) => (
                         <TableRow key={row.id}>
                           <TableCell className="font-medium">{row.apiName}</TableCell>
                           <TableCell className="text-xs text-muted-foreground">
                             {row.developerId}
                           </TableCell>
                           <TableCell>
-                            <Badge variant="secondary" className="capitalize">
-                              {row.apiMode}
-                            </Badge>
+                            {row.apiMode === "test" ? (
+                              <Badge variant="outline" className="capitalize text-amber-600 border-amber-200 bg-amber-50 font-bold tracking-tight">
+                                Test
+                              </Badge>
+                            ) : (
+                              <Badge variant="secondary" className="capitalize">
+                                Live
+                              </Badge>
+                            )}
                           </TableCell>
                           <TableCell className="max-w-[260px] truncate">
                             {row.title}

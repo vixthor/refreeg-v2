@@ -4,19 +4,9 @@ import nodemailer from "nodemailer";
 import fs from "fs";
 import path from "path";
 import Handlebars from "handlebars";
+import { headers } from "next/headers";
 import { getCurrentUser } from "@/actions/auth-actions";
 import { getProfile } from "@/actions/profile-actions";
-
-export async function getDeviceInfo() {
-  if (typeof window === "undefined") return "Unknown Device";
-  const ua = window.navigator.userAgent;
-  if (/android/i.test(ua)) return "Android";
-  if (/iPad|iPhone|iPod/.test(ua)) return "iOS";
-  if (/Windows NT/.test(ua)) return "Windows";
-  if (/Macintosh/.test(ua)) return "Mac";
-  if (/Linux/.test(ua)) return "Linux";
-  return "Other";
-}
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || "smtp.gmail.com",
@@ -51,9 +41,7 @@ export async function sendMail({
   subject,
   templateName,
   context,
-  from = process.env.SMTP_USER ||
-    process.env.EMAIL_FROM ||
-    "noreply@example.com",
+  from = process.env.EMAIL_FROM  || "noreply@refreeg.com",
   cc,
   bcc,
 }: SendMailOptions) {
@@ -365,7 +353,6 @@ export async function sendPetitionSubmissionAdminNotification(
 }
 
 export async function sendLoginNotificationEmail(context: {
-  ipAddress?: string;
   device?: string;
   loginTime?: string;
 }) {
@@ -375,16 +362,37 @@ export async function sendLoginNotificationEmail(context: {
   }
   const profile = await getProfile(user.id);
   const currentYear = new Date().getFullYear();
+
+  // Resolve IP server-side from the request headers instead of
+  // relying on a client-side fetch to api.ipify.org.
+  // This is faster and more secure for production.
+  let ipAddress = "Unknown IP";
+  try {
+    const headersList = await headers();
+    const xff = headersList.get("x-forwarded-for");
+    const xri = headersList.get("x-real-ip");
+    
+    let detectedIp = (xff?.split(",")[0] || xri || "Unknown IP").trim();
+    
+    // Label localhost clearly for local development
+    if (detectedIp === "::1" || detectedIp === "127.0.0.1") {
+      detectedIp = `${detectedIp} (Localhost)`;
+    }
+    
+    ipAddress = detectedIp;
+  } catch {
+    // headers() may fail outside of a request context
+  }
+
   return sendMail({
     to: profile?.email || "",
     subject: "New Login Notification",
     templateName: "login-notification",
     context: {
-      ...context,
       userName: profile?.full_name || "User",
       loginTime: context.loginTime || new Date().toLocaleString(),
       device: context.device || "Unknown Device",
-      ipAddress: context.ipAddress || "Unknown IP",
+      ipAddress,
       currentYear,
     },
   });
