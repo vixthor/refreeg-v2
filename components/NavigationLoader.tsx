@@ -1,48 +1,35 @@
 "use client";
 
-import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
 import Image from "next/image";
 
 export default function NavigationLoader() {
-  const router = useRouter();
-  const pathname = usePathname();
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    // Show loader when pathname changes
-    setLoading(true);
-
-    // Hide loader after a short delay to ensure the new page has started rendering
-    const timeout = setTimeout(() => {
-      setLoading(false);
-    }, 800);
-
-    return () => clearTimeout(timeout);
-  }, [pathname]);
-
-  if (!loading) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/70 backdrop-blur-md">
-      <div className="relative w-[75px] h-[100px]">
-        {/* Bars */}
-        <div className="absolute bottom-0 left-0 w-[10px] h-1/2 bg-black origin-bottom animate-barUp1" />
-        <div className="absolute bottom-0 left-[15px] w-[10px] h-1/2 bg-black origin-bottom animate-barUp2" />
-        <div className="absolute bottom-0 left-[30px] w-[10px] h-1/2 bg-black origin-bottom animate-barUp3" />
-        <div className="absolute bottom-0 left-[45px] w-[10px] h-1/2 bg-black origin-bottom animate-barUp4" />
-        <div className="absolute bottom-0 left-[60px] w-[10px] h-1/2 bg-black origin-bottom animate-barUp5" />
+    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-[linear-gradient(180deg,#f8fafc_0%,#eef2f7_100%)] px-4">
+      <div className="flex flex-col items-center gap-6">
+        <div className="relative flex h-28 w-28 items-center justify-center sm:h-32 sm:w-32">
+          <div className="absolute inset-0 rounded-full border-4 border-blue-100" />
+          <div className="absolute inset-0 animate-spin rounded-full border-4 border-transparent border-t-[#003366] border-r-[#214570]" />
+          <div className="absolute inset-[10px] animate-[spin_1.4s_linear_infinite_reverse] rounded-full border-2 border-transparent border-b-blue-400" />
 
-        {/* Refreeg Logo as the ball */}
-        <div className="absolute bottom-[10px] left-0 w-[14px] h-[14px] animate-ball624">
-          <Image
-            src="/logo.svg"
-            alt="Refreeg Logo"
-            width={14}
-            height={14}
-            className="object-contain"
-            priority
-          />
+          <div className="relative z-10 h-16 w-16 overflow-hidden rounded-xl border border-slate-200 bg-white p-1.5 shadow-sm sm:h-20 sm:w-20">
+            <Image
+              src="/logo.svg"
+              alt="RefreeG logo"
+              width={72}
+              height={72}
+              className="h-full w-full object-contain"
+              priority
+            />
+          </div>
+        </div>
+
+        <div className="text-center">
+          <p className="text-sm font-semibold text-[#003366] sm:text-base">
+            Loading RefreeG
+          </p>
+          <p className="mt-1 text-xs text-slate-500 sm:text-sm">
+            Please wait while we prepare your page...
+          </p>
         </div>
       </div>
     </div>
