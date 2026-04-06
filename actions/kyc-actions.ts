@@ -12,6 +12,7 @@ import {
   sendKycApprovedEmail,
   sendKycRejectedEmail,
   sendKycSubmissionAdminNotification,
+  sendKycReminderEmail,
 } from "@/services/mail";
 
 export async function uploadKycDocument(
@@ -421,6 +422,99 @@ export async function updateVerificationStatus(
         error instanceof Error
           ? error.message
           : JSON.stringify(error) || "Failed to update status",
+    };
+  }
+}
+
+/**
+ * Sends a KYC reminder email to all platform users who have not yet verified
+ * their identity and have no pending KYC submission.
+ * Restricted to admins and managers.
+ */
+export async function sendKycReminderToUnverifiedUsers(): Promise<{
+  sent: number;
+  failed: number;
+  skipped: number;
+  error: string | null;
+}> {
+  try {
+    const user = await getCurrentUser();
+    if (!user) return { sent: 0, failed: 0, skipped: 0, error: "Not authenticated" };
+
+    const authorized = await isAdminOrManager(user.id);
+    if (!authorized) return { sent: 0, failed: 0, skipped: 0, error: "Unauthorized" };
+
+    const supabaseAdmin = createSupabaseAdmin(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { auth: { persistSession: false } },
+    );
+
+    // Fetch all non-verified users who have a valid email address
+    const { data: unverifiedProfiles, error: profilesError } =
+      await supabaseAdmin
+        .from("profiles")
+        .select("id, email, full_name")
+        .eq("is_verified", false)
+        .not("email", "is", null);
+
+    if (profilesError) {
+      console.error("[KYC Reminder] Error fetching unverified profiles:", profilesError);
+      return { sent: 0, failed: 0, skipped: 0, error: profilesError.message };
+    }
+
+    if (!unverifiedProfiles || unverifiedProfiles.length === 0) {
+      return { sent: 0, failed: 0, skipped: 0, error: null };
+    }
+
+    // Fetch user IDs that already have a pending or approved KYC submission
+    // so we don't spam users who are already in the process
+    const { data: activeKyc } = await supabaseAdmin
+      .from("kyc_verifications")
+      .select("user_id")
+      .in("status", ["pending", "approved"]);
+
+    const activeUserIds = new Set(
+      (activeKyc ?? []).map((k: { user_id: string }) => k.user_id),
+    );
+
+    const eligibleUsers = unverifiedProfiles.filter(
+      (p) => p.email && !activeUserIds.has(p.id),
+    );
+
+    const skipped = unverifiedProfiles.length - eligibleUsers.length;
+
+    if (eligibleUsers.length === 0) {
+      return { sent: 0, failed: 0, skipped, error: null };
+    }
+
+    // Send reminder emails in parallel, collecting results
+    const results = await Promise.allSettled(
+      eligibleUsers.map((profile) =>
+        sendKycReminderEmail(
+          profile.email as string,
+          profile.full_name || "Refreegerian",
+        ),
+      ),
+    );
+
+    const sent = results.filter((r) => r.status === "fulfilled" && (r.value as any)?.success !== false).length;
+    const failed = results.length - sent;
+
+    console.log(
+      `[KYC Reminder] Emails dispatched — sent: ${sent}, failed: ${failed}, skipped (already in progress): ${skipped}`,
+    );
+
+    await logAdminActivity("send-kyc-reminders", user.id);
+
+    return { sent, failed, skipped, error: null };
+  } catch (error) {
+    console.error("[KYC Reminder] Unhandled error:", error);
+    return {
+      sent: 0,
+      failed: 0,
+      skipped: 0,
+      error: error instanceof Error ? error.message : "Unexpected error",
     };
   }
 }
