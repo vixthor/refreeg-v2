@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/pledge-charges",
+      "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/pledge-reminders",
+      "schedule": "15 6 * * *"
+    }
+  ]
+}

@@ -5,6 +5,10 @@ import { toast } from "@/components/ui/use-toast";
 
 interface UsePaymentReturn {
   initializePayment: (data: TransactionData) => Promise<void>;
+  initializePledgeCheckout: (input: {
+    pledgeId: string;
+    guestToken?: string | null;
+  }) => Promise<void>;
   verifyPayment: (reference: string) => Promise<boolean>;
   isLoading: boolean;
   error: string | null;
@@ -50,6 +54,48 @@ export const usePayment = (): UsePaymentReturn => {
     }
   }, []);
 
+  const initializePledgeCheckout = useCallback(
+    async (input: { pledgeId: string; guestToken?: string | null }) => {
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        const response = await fetch("/api/payments/pledge/initialize", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            pledgeId: input.pledgeId,
+            ...(input.guestToken ? { guestToken: input.guestToken } : {}),
+          }),
+        });
+
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
+          throw new Error(result.error || "Failed to initialize pledge payment");
+        }
+
+        localStorage.setItem("payment_reference", result.data.reference);
+
+        window.location.href = result.data.authorization_url;
+      } catch (error) {
+        console.error("Pledge checkout initialization failed:", error);
+        setError("Failed to open Paystack. Please try again.");
+        toast({
+          title: "Could not start payment",
+          description: "Please try again.",
+          variant: "destructive",
+        });
+        throw error;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [],
+  );
+
   const verifyPayment = useCallback(
     async (reference: string): Promise<boolean> => {
       try {
@@ -90,6 +136,7 @@ export const usePayment = (): UsePaymentReturn => {
 
   return {
     initializePayment,
+    initializePledgeCheckout,
     verifyPayment,
     isLoading,
     error,

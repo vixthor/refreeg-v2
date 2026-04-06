@@ -1,8 +1,6 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { sendPledgeConfirmationEmail } from "@/services/mail";
-
 type CreatePledgeInput = {
   causeId: string;
   amount: number;
@@ -38,6 +36,7 @@ export async function createPledge(input: CreatePledgeInput) {
       currency: "NGN",
       status: "pending",
       token: user?.id ? null : crypto.randomUUID(), // Generate token for guests
+      paystack_payment_status: "awaiting_authorization",
     })
     .select()
     .single();
@@ -46,19 +45,7 @@ export async function createPledge(input: CreatePledgeInput) {
     return { data: null, error: error.message };
   }
 
-  // Fire-and-forget confirmation email — works for guests and logged-in users
-  const baseUrl =
-    process.env.NEXT_PUBLIC_APP_URL || "https://www.refreeg.com";
-  sendPledgeConfirmationEmail({
-    to: input.email,
-    userName: input.name,
-    causeTitle: input.causeTitle || "this campaign",
-    amount: input.amount,
-    reminderDate: input.reminderDate,
-    donateUrl: `${baseUrl}/causes/${input.causeId}`,
-  }).catch((err) =>
-    console.error("Background pledge confirmation email error:", err),
-  );
+  // Confirmation email is sent after Paystack saves the card (see webhook → processPledgeAuthorizationSuccess).
 
   return { data, error: null };
 }
