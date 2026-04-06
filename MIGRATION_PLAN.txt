@@ -1,0 +1,1196 @@
+================================================================================
+  REFREEG v2 — FULL MIGRATION PLAN
+  Supabase + Vercel  →  Self-Hosted PostgreSQL (Prisma) + AWS / VPS
+================================================================================
+  Document Version : 1.0
+  Prepared For     : RefreeG Engineering Team
+  Date             : February 2026
+================================================================================
+
+
+────────────────────────────────────────────────────────────────────────────────
+SECTION 1 — EXECUTIVE SUMMARY
+────────────────────────────────────────────────────────────────────────────────
+
+This document describes the complete strategy and step-by-step execution plan
+for migrating the RefreeG v2 platform from:
+
+  CURRENT STACK
+  ├── Database  : Supabase (hosted PostgreSQL + Auth + Storage + Edge Functions)
+  ├── ORM       : Supabase JS client (@supabase/supabase-js + @supabase/ssr)
+  ├── Hosting   : Vercel (Next.js 15 + serverless functions)
+  └── Cron/Jobs : Supabase Edge Functions (Deno)
+
+  TARGET STACK
+  ├── Database  : Self-hosted PostgreSQL 16 on a VPS / AWS RDS
+  ├── ORM       : Prisma 5 (type-safe, schema-first)
+  ├── Auth      : NextAuth.js v5 (Credentials + OAuth providers)
+  ├── Storage   : AWS S3 (or self-hosted MinIO on VPS)
+  ├── Hosting   : AWS EC2 or Hetzner/DigitalOcean VPS (Node.js process manager)
+  └── Cron/Jobs : Node-cron inside the Next.js app OR a separate worker process
+
+Estimated total migration duration : 6–8 weeks (with a 2-person team)
+Estimated cost difference          : See Section 9
+
+
+────────────────────────────────────────────────────────────────────────────────
+SECTION 2 — CURRENT CODEBASE INVENTORY
+────────────────────────────────────────────────────────────────────────────────
+
+2.1  FILES USING SUPABASE (56 total files)
+  ─────────────────────────────────────────
+  Server actions (20 files):
+    actions/admin-analytics-actions.ts
+    actions/auth-actions.ts
+    actions/cause-actions.ts
+    actions/comment-actions.ts
+    actions/dashboard-actions.ts
+    actions/database-actions.ts
+    actions/donation-actions.ts
+    actions/event-reward-actions.ts
+    actions/kyc-actions.ts
+    actions/petition-actions.ts
+    actions/petition-comment-actions.ts
+    actions/pledge-actions.ts
+    actions/profile-actions.ts
+    actions/role-actions.ts
+    actions/signature-actions.ts
+    actions/subscription-actions.ts
+    actions/url-actions.ts
+    actions/user-actions.ts
+
+  API routes (8 files):
+    app/api/cities/route.ts
+    app/api/comments/[id]/route.ts
+    app/api/comments/replies/route.ts
+    app/api/comments/route.ts
+    app/api/countries/route.ts
+    app/api/crypto-donations/route.ts
+    app/api/states/route.ts
+    app/auth/callback/route.ts
+
+  Pages / components (10 files):
+    app/auth/signup/page.tsx
+    app/auth/update-password/page.tsx
+    app/referrals/page.tsx
+    app/onboarding/page.tsx
+    app/onboarding/step3.tsx
+    hooks/use-auth.ts
+    hooks/use-wallet.ts
+    hooks/use-event-listeners.ts
+    components/auth-provider.tsx
+    components/crypto-details/* (4 crypto wallet components)
+
+  Supabase client / config (3 files):
+    lib/supabase/client.ts
+    lib/supabase/server.ts
+    lib/supabase/middleware.ts
+
+  Edge Functions (2 Deno functions):
+    supabase/functions/pledge-reminders/index.ts
+    supabase/functions/process-referral-v1/index.ts
+
+2.2  SUPABASE AUTH METHODS IN USE
+  ─────────────────────────────────
+  supabase.auth.getUser()              — 34 call sites
+  supabase.auth.getSession()           — 3 call sites
+  supabase.auth.onAuthStateChange()    — 3 call sites
+  supabase.auth.signOut()              — 2 call sites
+  supabase.auth.updateUser()           — 1 call site
+  supabase.auth.signUp()               — 1 call site
+  supabase.auth.signInWithPassword()   — 1 call site
+  supabase.auth.signInWithOAuth()      — 1 call site (Google OAuth)
+  supabase.auth.resetPasswordForEmail()— 1 call site
+  supabase.auth.exchangeCodeForSession()— 1 call site
+  supabase.auth.admin.*                — 1 call site (admin panel)
+
+2.3  SUPABASE STORAGE IN USE
+  ────────────────────────────
+  Buckets used: profile-photos, cause images, petition images, KYC documents
+  Files: actions/profile-actions.ts, actions/cause-actions.ts,
+         actions/petition-actions.ts, actions/kyc-actions.ts,
+         components/ui/image-upload.tsx
+
+2.4  RPC / STORED FUNCTIONS
+  ───────────────────────────
+  increment_cause_raised(cause_id, amount)  — called from crypto-donations API
+  increment_cause_raised                    — called from SolanaDonationButton
+
+2.5  DATABASE MIGRATIONS (34 files)
+  ─────────────────────────────────
+  All 34 SQL migration files in supabase/migrations/ will be converted to a
+  single Prisma schema.prisma file as the canonical source of truth.
+
+
+────────────────────────────────────────────────────────────────────────────────
+SECTION 3 — INFRASTRUCTURE DECISION: AWS vs VPS
+────────────────────────────────────────────────────────────────────────────────
+
+3.1  COST COMPARISON (monthly, USD)
+  ───────────────────────────────────
+
+  CURRENT (Supabase Pro + Vercel Pro):
+    Supabase Pro                 $25/mo
+    Vercel Pro                   $20/mo
+    ─────────────────────────────────
+    Total                       ~$45/mo
+
+  OPTION A — AWS (EC2 + RDS)
+    EC2 t3.small (app server)    $15/mo
+    RDS t3.micro PostgreSQL 16   $25/mo  (managed, automated backups)
+    S3 (storage, ~50 GB)         $1.15/mo
+    Data transfer                ~$5/mo
+    Route 53 DNS                 $0.50/mo
+    ─────────────────────────────────
+    Total                       ~$47/mo
+
+  OPTION B — Hetzner VPS (all-in-one)
+    CX21 VPS (2 vCPU, 4 GB RAM)  $5.83/mo
+    OR CX31 (2 vCPU, 8 GB RAM)   $12.49/mo
+    PostgreSQL (on same VPS)      $0 (self-managed)
+    Hetzner Object Storage        $5/mo (1 TB included)
+    ─────────────────────────────────
+    Total                       ~$18/mo (CX31 + storage)
+
+  OPTION C — DigitalOcean Droplet
+    4 GB RAM / 2 vCPU Droplet    $24/mo
+    Managed PostgreSQL (basic)   $15/mo
+    Spaces Object Storage        $5/mo
+    ─────────────────────────────────
+    Total                       ~$44/mo
+
+  ┌─────────────────────────────────────────────────────────────────────┐
+  │ RECOMMENDATION: Hetzner VPS (Option B)                             │
+  │                                                                     │
+  │ Cheapest by far at ~$18/mo. Hetzner has excellent uptime SLAs,     │
+  │ EU-based data centers (GDPR-friendly), and simple management.      │
+  │                                                                     │
+  │ For production-critical workloads, use AWS with RDS if your team   │
+  │ wants managed database backups, automatic failover, and the AWS    │
+  │ ecosystem. Budget ~$47/mo.                                         │
+  └─────────────────────────────────────────────────────────────────────┘
+
+3.2  RECOMMENDED SERVER SETUP (Hetzner CX31 or AWS EC2 t3.small)
+  ──────────────────────────────────────────────────────────────────
+  OS              : Ubuntu 24.04 LTS
+  Node.js         : v22 LTS (via nvm)
+  Process manager : PM2 (cluster mode, auto-restart, log rotation)
+  Web server      : Nginx (reverse proxy, SSL termination)
+  SSL             : Let's Encrypt (Certbot, auto-renewal)
+  Database        : PostgreSQL 16 (self-managed on VPS) OR AWS RDS
+  File storage    : Hetzner Object Storage OR AWS S3 (via AWS SDK)
+  CI/CD           : GitHub Actions → SSH deploy to VPS
+
+
+────────────────────────────────────────────────────────────────────────────────
+SECTION 4 — MIGRATION PHASES OVERVIEW
+────────────────────────────────────────────────────────────────────────────────
+
+  Phase 0 — Preparation & Environment Setup          (Week 1)
+  Phase 1 — Prisma Schema & Database Migration       (Week 1–2)
+  Phase 2 — Auth Migration (Supabase Auth → NextAuth)(Week 2–3)
+  Phase 3 — Replace Supabase Client with Prisma      (Week 3–4)
+  Phase 4 — Storage Migration (Supabase → S3/MinIO)  (Week 4)
+  Phase 5 — Edge Functions → API Routes / Cron       (Week 4–5)
+  Phase 6 — Server Setup & Deployment                (Week 5–6)
+  Phase 7 — Data Migration (Live Supabase → New DB)  (Week 6)
+  Phase 8 — Testing, Cutover & Go-Live               (Week 7–8)
+
+
+────────────────────────────────────────────────────────────────────────────────
+SECTION 5 — DETAILED PHASE BREAKDOWN
+────────────────────────────────────────────────────────────────────────────────
+
+══════════════════════════════════════════════════════════════════════════════
+PHASE 0 — PREPARATION & ENVIRONMENT SETUP  [Week 1, Days 1–3]
+══════════════════════════════════════════════════════════════════════════════
+
+  Goals:
+    - Set up new server
+    - Install all required software
+    - Create staging environment that mirrors production
+
+  Tasks:
+
+  [ ] 0.1  Provision server
+        → If Hetzner: Create CX31 Droplet, attach Volume for PostgreSQL data
+        → If AWS: Launch EC2 t3.small + RDS PostgreSQL 16
+
+  [ ] 0.2  Install server software
+        sudo apt update && apt upgrade -y
+        sudo apt install -y nginx certbot python3-certbot-nginx git
+        curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+        nvm install 22 && nvm use 22
+        npm install -g pm2 pnpm
+
+  [ ] 0.3  Install and configure PostgreSQL 16 (if self-hosted)
+        sudo apt install -y postgresql-16 postgresql-contrib
+        sudo -u postgres createuser refreeg_user -P
+        sudo -u postgres createdb refreeg_db -O refreeg_user
+        # Enable pg_cron extension for scheduled jobs
+        sudo -u postgres psql -c "CREATE EXTENSION pg_cron;"
+
+  [ ] 0.4  Set up Nginx reverse proxy config
+        # /etc/nginx/sites-available/refreeg
+        server {
+          listen 80;
+          server_name refreeg.com www.refreeg.com;
+          location / {
+            proxy_pass http://localhost:3000;
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection 'upgrade';
+            proxy_set_header Host $host;
+            proxy_cache_bypass $http_upgrade;
+          }
+        }
+        sudo certbot --nginx -d refreeg.com -d www.refreeg.com
+
+  [ ] 0.5  Set up GitHub Actions CI/CD pipeline
+        Create .github/workflows/deploy.yml:
+          - On push to main: run build, run tests, SSH deploy to VPS
+          - SSH key stored as GitHub Secret
+
+  [ ] 0.6  Create .env.production with all new variables
+        DATABASE_URL="postgresql://refreeg_user:password@localhost:5432/refreeg_db"
+        NEXTAUTH_SECRET="<generate with: openssl rand -base64 32>"
+        NEXTAUTH_URL="https://refreeg.com"
+        AWS_S3_BUCKET="refreeg-uploads"
+        AWS_ACCESS_KEY_ID="..."
+        AWS_SECRET_ACCESS_KEY="..."
+        AWS_REGION="eu-central-1"
+        SMTP_USER="hello@refreeg.com"
+        SMTP_PASSWORD="..."
+        SMTP_HOST="smtppro.zoho.com"
+        SMTP_PORT="587"
+        PAYSTACK_SECRET_KEY="sk_live_..."
+        NEXT_PUBLIC_PAYSTACK_KEY="pk_live_..."
+        NEXT_PUBLIC_REFREEG_SERVICE_FEE="2"
+
+  Deliverables: Running server, Nginx serving a test page, DB accessible
+
+
+══════════════════════════════════════════════════════════════════════════════
+PHASE 1 — PRISMA SCHEMA & DATABASE MIGRATION  [Week 1–2, Days 3–7]
+══════════════════════════════════════════════════════════════════════════════
+
+  Goals:
+    - Convert all 34 Supabase SQL migrations into a single Prisma schema
+    - Set up Prisma client singleton
+    - Validate schema by generating and applying migrations to staging DB
+
+  Tasks:
+
+  [ ] 1.1  Install Prisma
+        pnpm add prisma @prisma/client
+        pnpm add -D prisma
+        npx prisma init --datasource-provider postgresql
+
+  [ ] 1.2  Create prisma/schema.prisma
+        Consolidate all tables from 34 migration files into one schema.
+        Key models to create (from current Supabase DB):
+
+        model Profile {
+          id              String    @id @default(uuid())
+          email           String?   @unique
+          fullName        String?   @map("full_name")
+          firstName       String?   @map("first_name")
+          lastName        String?   @map("last_name")
+          username        String?   @unique
+          phone           String?
+          profilePhoto    String?   @map("profile_photo")
+          accountNumber   String?   @map("account_number")
+          bankName        String?   @map("bank_name")
+          accountName     String?   @map("account_name")
+          subAccountCode  String?   @map("sub_account_code")
+          isBlocked       Boolean   @default(false) @map("is_blocked")
+          isVerified      Boolean?  @map("is_verified")
+          accountType     String?   @map("account_type")
+          bio             String?
+          gender          String?
+          location        String?
+          referralCode    String?   @unique @map("referral_code")
+          createdAt       DateTime  @default(now()) @map("created_at")
+          updatedAt       DateTime  @updatedAt @map("updated_at")
+          causes          Cause[]
+          donations       Donation[]
+          roles           Role[]
+          referralsGiven  Referral[] @relation("Referrer")
+          referralsReceived Referral[] @relation("Referee")
+          @@map("profiles")
+        }
+
+        model Cause {
+          id              String    @id @default(uuid())
+          userId          String    @map("user_id")
+          title           String
+          description     String
+          category        String
+          goal            Int
+          raised          Int       @default(0)
+          status          String    @default("pending")
+          rejectionReason String?   @map("rejection_reason")
+          image           String?
+          multimedia      String[]
+          videoLinks      String[]  @map("video_links")
+          daysActive      Int?      @map("days_active")
+          shared          Int       @default(0)
+          createdAt       DateTime  @default(now()) @map("created_at")
+          updatedAt       DateTime  @updatedAt @map("updated_at")
+          profile         Profile   @relation(fields: [userId], references: [id])
+          donations       Donation[]
+          @@map("causes")
+        }
+
+        model Donation {
+          id          String   @id @default(uuid())
+          causeId     String   @map("cause_id")
+          userId      String   @map("user_id")
+          amount      Float
+          status      String   @default("pending")
+          reference   String?
+          message     String?
+          createdAt   DateTime @default(now()) @map("created_at")
+          cause       Cause    @relation(fields: [causeId], references: [id])
+          profile     Profile  @relation(fields: [userId], references: [id])
+          @@map("donations")
+        }
+
+        model Referral {
+          id            String   @id @default(uuid())
+          referrerId    String   @map("referrer_id")
+          refereeId     String?  @map("referee_id")
+          refereeEmail  String?  @map("referee_email")
+          registered    Boolean  @default(false)
+          reward        String?
+          createdAt     DateTime @default(now()) @map("created_at")
+          referrer      Profile  @relation("Referrer", fields: [referrerId], references: [id])
+          referee       Profile? @relation("Referee", fields: [refereeId], references: [id])
+          @@unique([referrerId, refereeEmail])
+          @@map("referrals")
+        }
+
+        (... continue for all remaining tables: Petition, Signature,
+         KycVerification, Role, Comment, CauseEdit, PetitionEdit,
+         CryptoDonation, Subscription, Pledge, Reward, etc.)
+
+  [ ] 1.3  Create lib/prisma.ts (singleton client)
+        import { PrismaClient } from "@prisma/client"
+
+        const globalForPrisma = globalThis as unknown as {
+          prisma: PrismaClient | undefined
+        }
+
+        export const prisma =
+          globalForPrisma.prisma ??
+          new PrismaClient({
+            log: process.env.NODE_ENV === "development"
+              ? ["query", "error", "warn"]
+              : ["error"],
+          })
+
+        if (process.env.NODE_ENV !== "production")
+          globalForPrisma.prisma = prisma
+
+  [ ] 1.4  Generate Prisma client and push schema to staging DB
+        npx prisma generate
+        npx prisma db push   # to staging database
+        # Then verify with: npx prisma studio
+
+  [ ] 1.5  Create initial Prisma migration file
+        npx prisma migrate dev --name init
+
+  Deliverables: prisma/schema.prisma fully defined, Prisma client working,
+                tables created in staging DB
+
+
+══════════════════════════════════════════════════════════════════════════════
+PHASE 2 — AUTH MIGRATION: Supabase Auth → NextAuth.js v5  [Week 2–3]
+══════════════════════════════════════════════════════════════════════════════
+
+  Goals:
+    - Replace all 48 Supabase auth call sites with NextAuth.js
+    - Support: Email/password login, Google OAuth, password reset
+    - Maintain session management with HTTP-only cookies
+    - Preserve admin auth (role-based access)
+
+  This is the most complex phase. Supabase Auth handles JWTs, sessions,
+  and cookie management automatically. NextAuth requires explicit setup.
+
+  Tasks:
+
+  [ ] 2.1  Install NextAuth.js v5
+        pnpm add next-auth@beta @auth/prisma-adapter bcryptjs
+        pnpm add -D @types/bcryptjs
+
+  [ ] 2.2  Add password field to Profile model in Prisma
+        model Profile {
+          ...
+          password        String?   // hashed with bcryptjs
+          emailVerified   DateTime? @map("email_verified")
+          ...
+        }
+
+        Also add NextAuth required tables:
+        model Account {
+          id                String  @id @default(uuid())
+          userId            String  @map("user_id")
+          type              String
+          provider          String
+          providerAccountId String  @map("provider_account_id")
+          refresh_token     String?
+          access_token      String?
+          expires_at        Int?
+          token_type        String?
+          scope             String?
+          id_token          String?
+          session_state     String?
+          user              Profile @relation(fields: [userId], references: [id])
+          @@unique([provider, providerAccountId])
+          @@map("accounts")
+        }
+
+        model Session {
+          id           String   @id @default(uuid())
+          sessionToken String   @unique @map("session_token")
+          userId       String   @map("user_id")
+          expires      DateTime
+          user         Profile  @relation(fields: [userId], references: [id])
+          @@map("sessions")
+        }
+
+        model VerificationToken {
+          identifier String
+          token      String   @unique
+          expires    DateTime
+          @@unique([identifier, token])
+          @@map("verification_tokens")
+        }
+
+  [ ] 2.3  Create auth.ts (NextAuth config)
+        // auth.ts
+        import NextAuth from "next-auth"
+        import { PrismaAdapter } from "@auth/prisma-adapter"
+        import Credentials from "next-auth/providers/credentials"
+        import Google from "next-auth/providers/google"
+        import { prisma } from "@/lib/prisma"
+        import bcrypt from "bcryptjs"
+
+        export const { handlers, auth, signIn, signOut } = NextAuth({
+          adapter: PrismaAdapter(prisma),
+          session: { strategy: "jwt" },
+          providers: [
+            Google({
+              clientId: process.env.GOOGLE_CLIENT_ID!,
+              clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+            }),
+            Credentials({
+              credentials: {
+                email: { label: "Email", type: "email" },
+                password: { label: "Password", type: "password" },
+              },
+              async authorize(credentials) {
+                if (!credentials?.email || !credentials?.password) return null
+                const user = await prisma.profile.findUnique({
+                  where: { email: credentials.email as string },
+                })
+                if (!user?.password) return null
+                const valid = await bcrypt.compare(
+                  credentials.password as string,
+                  user.password
+                )
+                if (!valid) return null
+                return { id: user.id, email: user.email, name: user.fullName }
+              },
+            }),
+          ],
+          callbacks: {
+            async jwt({ token, user }) {
+              if (user) token.id = user.id
+              return token
+            },
+            async session({ session, token }) {
+              if (token) session.user.id = token.id as string
+              return session
+            },
+          },
+          pages: {
+            signIn: "/auth/signin",
+            newUser: "/onboarding",
+          },
+        })
+
+  [ ] 2.4  Create app/api/auth/[...nextauth]/route.ts
+        import { handlers } from "@/auth"
+        export const { GET, POST } = handlers
+
+  [ ] 2.5  Update middleware.ts
+        Replace Supabase session refresh middleware with NextAuth middleware:
+        // middleware.ts
+        export { auth as middleware } from "@/auth"
+        export const config = {
+          matcher: ["/dashboard/:path*", "/onboarding/:path*"],
+        }
+
+  [ ] 2.6  Replace all 48 Supabase auth call sites
+        The main patterns to replace:
+
+        BEFORE (Supabase):
+          const supabase = createClient()
+          const { data: { user } } = await supabase.auth.getUser()
+
+        AFTER (NextAuth):
+          import { auth } from "@/auth"
+          const session = await auth()
+          const user = session?.user
+
+        BEFORE (Supabase sign-in):
+          await supabase.auth.signInWithPassword({ email, password })
+
+        AFTER (NextAuth):
+          import { signIn } from "@/auth"
+          await signIn("credentials", { email, password })
+
+        BEFORE (Supabase sign-up):
+          await supabase.auth.signUp({ email, password })
+
+        AFTER (NextAuth):
+          // Hash password, create profile in DB, then sign in
+          const hashed = await bcrypt.hash(password, 12)
+          await prisma.profile.create({
+            data: { email, password: hashed, ... }
+          })
+          await signIn("credentials", { email, password })
+
+        BEFORE (Supabase sign-out):
+          await supabase.auth.signOut()
+
+        AFTER (NextAuth):
+          import { signOut } from "@/auth"
+          await signOut()
+
+  [ ] 2.7  Create getCurrentUser() helper for server components
+        // actions/auth-actions.ts
+        import { auth } from "@/auth"
+        export async function getCurrentUser() {
+          const session = await auth()
+          if (!session?.user?.id) return null
+          return prisma.profile.findUnique({
+            where: { id: session.user.id }
+          })
+        }
+
+  [ ] 2.8  Replace use-auth.ts hook
+        // hooks/use-auth.ts
+        import { useSession } from "next-auth/react"
+        export function useAuth() {
+          const { data: session, status } = useSession()
+          return {
+            user: session?.user ?? null,
+            isLoading: status === "loading",
+            isAuthenticated: status === "authenticated",
+          }
+        }
+
+  [ ] 2.9  Replace auth-provider.tsx
+        // components/auth-provider.tsx
+        "use client"
+        import { SessionProvider } from "next-auth/react"
+        export function AuthProvider({ children }: { children: React.ReactNode }) {
+          return <SessionProvider>{children}</SessionProvider>
+        }
+
+  [ ] 2.10 Password reset flow
+        Since Supabase handled password reset via magic links, implement:
+        - Create a PasswordResetToken model in Prisma
+        - API route that generates a token, emails it via Nodemailer (already set up)
+        - Page at /auth/reset-password/[token] that verifies token + updates password
+
+  Deliverables: All auth working end-to-end, no Supabase auth calls remaining
+
+
+══════════════════════════════════════════════════════════════════════════════
+PHASE 3 — REPLACE SUPABASE CLIENT WITH PRISMA  [Week 3–4]
+══════════════════════════════════════════════════════════════════════════════
+
+  Goals:
+    - Replace all supabase.from("table").select/insert/update/delete calls
+      with Prisma equivalents in all 20 action files
+    - Remove @supabase/supabase-js and @supabase/ssr from dependencies
+
+  Migration pattern guide:
+
+  BEFORE (Supabase):
+    const { data, error } = await supabase
+      .from("causes")
+      .select("*, profiles(full_name, email)")
+      .eq("status", "approved")
+      .order("created_at", { ascending: false })
+
+  AFTER (Prisma):
+    const data = await prisma.cause.findMany({
+      where: { status: "approved" },
+      include: { profile: { select: { fullName: true, email: true } } },
+      orderBy: { createdAt: "desc" },
+    })
+
+  ─────────────────────────────────────────────────────────────────────────
+  BEFORE (insert):
+    await supabase.from("referrals").insert({
+      referrer_id: refFromUrl,
+      referee_email: email,
+      registered: false,
+    })
+
+  AFTER (Prisma):
+    await prisma.referral.create({
+      data: {
+        referrerId: refFromUrl,
+        refereeEmail: email,
+        registered: false,
+      },
+    })
+  ─────────────────────────────────────────────────────────────────────────
+  BEFORE (update):
+    await supabase
+      .from("causes")
+      .update({ status: "approved" })
+      .eq("id", causeId)
+
+  AFTER (Prisma):
+    await prisma.cause.update({
+      where: { id: causeId },
+      data: { status: "approved" },
+    })
+  ─────────────────────────────────────────────────────────────────────────
+  BEFORE (RPC/stored function):
+    await supabase.rpc("increment_cause_raised", { cause_id, amount })
+
+  AFTER (Prisma):
+    await prisma.cause.update({
+      where: { id: cause_id },
+      data: { raised: { increment: amount } },
+    })
+  ─────────────────────────────────────────────────────────────────────────
+
+  [ ] 3.1  Replace actions/cause-actions.ts
+  [ ] 3.2  Replace actions/donation-actions.ts
+  [ ] 3.3  Replace actions/petition-actions.ts
+  [ ] 3.4  Replace actions/profile-actions.ts
+  [ ] 3.5  Replace actions/dashboard-actions.ts
+  [ ] 3.6  Replace actions/admin-analytics-actions.ts
+  [ ] 3.7  Replace actions/comment-actions.ts
+  [ ] 3.8  Replace actions/signature-actions.ts
+  [ ] 3.9  Replace actions/kyc-actions.ts
+  [ ] 3.10 Replace actions/role-actions.ts
+  [ ] 3.11 Replace actions/referral-related code in app/auth/signup/page.tsx
+  [ ] 3.12 Replace all app/api/* routes
+  [ ] 3.13 Replace actions/subscription-actions.ts
+  [ ] 3.14 Replace actions/pledge-actions.ts
+  [ ] 3.15 Replace actions/user-actions.ts
+  [ ] 3.16 Remove lib/supabase/ directory entirely
+  [ ] 3.17 Remove supabase.ts, supabase/client.ts
+  [ ] 3.18 pnpm remove @supabase/supabase-js @supabase/ssr
+
+  Deliverables: Zero Supabase client imports remaining in codebase
+
+
+══════════════════════════════════════════════════════════════════════════════
+PHASE 4 — STORAGE MIGRATION  [Week 4]
+══════════════════════════════════════════════════════════════════════════════
+
+  Goals:
+    - Replace Supabase Storage with AWS S3 or Hetzner Object Storage
+    - Migrate existing files from Supabase Storage buckets
+
+  Files affected:
+    actions/profile-actions.ts     (profile photos)
+    actions/cause-actions.ts       (cause images, multimedia)
+    actions/petition-actions.ts    (petition images)
+    actions/kyc-actions.ts         (KYC documents)
+    components/ui/image-upload.tsx (upload component)
+
+  [ ] 4.1  Create AWS S3 bucket (or Hetzner Object Storage)
+        - Create bucket: refreeg-uploads
+        - Folders: profile-photos/, cause-images/, petition-images/, kyc-docs/
+        - Set CORS policy to allow uploads from refreeg.com
+        - Create IAM user with s3:PutObject, s3:GetObject, s3:DeleteObject
+
+  [ ] 4.2  Install AWS SDK
+        pnpm add @aws-sdk/client-s3 @aws-sdk/s3-request-presigner
+
+  [ ] 4.3  Create lib/storage.ts
+        import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3"
+
+        export const s3 = new S3Client({
+          region: process.env.AWS_REGION!,
+          credentials: {
+            accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+            secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+          },
+        })
+
+        export async function uploadFile(
+          file: Buffer,
+          key: string,
+          contentType: string
+        ): Promise<string> {
+          await s3.send(new PutObjectCommand({
+            Bucket: process.env.AWS_S3_BUCKET!,
+            Key: key,
+            Body: file,
+            ContentType: contentType,
+          }))
+          return `https://${process.env.AWS_S3_BUCKET}.s3.amazonaws.com/${key}`
+        }
+
+  [ ] 4.4  Replace upload code in all action files
+        BEFORE (Supabase Storage):
+          const { data: uploadData } = await supabase.storage
+            .from("profile-photos")
+            .upload(fileName, file)
+          const { data: urlData } = supabase.storage
+            .from("profile-photos")
+            .getPublicUrl(fileName)
+          profilePhotoUrl = urlData.publicUrl
+
+        AFTER (S3):
+          const buffer = Buffer.from(await file.arrayBuffer())
+          const key = `profile-photos/${userId}-${Date.now()}-${file.name}`
+          profilePhotoUrl = await uploadFile(buffer, key, file.type)
+
+  [ ] 4.5  Migrate existing files from Supabase Storage to S3
+        # Use the Supabase CLI to download all storage objects, then re-upload
+        # Script: scripts/migrate-storage.ts
+        # 1. List all objects in each Supabase bucket
+        # 2. Download each file
+        # 3. Upload to equivalent S3 path
+        # 4. Update database URLs if needed
+
+  Deliverables: All file uploads going to S3, old files migrated
+
+
+══════════════════════════════════════════════════════════════════════════════
+PHASE 5 — EDGE FUNCTIONS → API ROUTES / CRON  [Week 4–5]
+══════════════════════════════════════════════════════════════════════════════
+
+  Goals:
+    - Convert 2 Supabase Edge Functions (Deno) to Next.js API routes
+    - Replace Supabase cron (pg_cron) with node-cron
+
+  [ ] 5.1  Convert supabase/functions/pledge-reminders/index.ts
+        → Create app/api/cron/pledge-reminders/route.ts
+        → Schedule with node-cron or pg_cron on the server
+
+  [ ] 5.2  Convert supabase/functions/process-referral-v1/index.ts
+        → Create app/api/referrals/process/route.ts
+        → Call this from the appropriate trigger point
+
+  [ ] 5.3  Set up node-cron for scheduled jobs
+        // lib/cron.ts (loaded at app startup)
+        import cron from "node-cron"
+
+        // Run pledge reminders daily at 9 AM
+        cron.schedule("0 9 * * *", async () => {
+          // Call pledge reminder logic
+        })
+
+        // Run days_active decrement daily (replaces pg_cron)
+        cron.schedule("0 0 * * *", async () => {
+          await prisma.cause.updateMany({
+            where: { daysActive: { gt: 0 }, status: "approved" },
+            data: { daysActive: { decrement: 1 } },
+          })
+        })
+
+  Deliverables: All scheduled jobs running in Node.js, no Edge Functions
+
+
+══════════════════════════════════════════════════════════════════════════════
+PHASE 6 — SERVER SETUP & DEPLOYMENT PIPELINE  [Week 5–6]
+══════════════════════════════════════════════════════════════════════════════
+
+  [ ] 6.1  Create production-ready Next.js start command
+        # In package.json:
+        "build": "prisma generate && next build",
+        "start": "next start -p 3000",
+        "migrate": "prisma migrate deploy"
+
+  [ ] 6.2  Set up PM2 ecosystem file
+        // ecosystem.config.js
+        module.exports = {
+          apps: [{
+            name: "refreeg",
+            script: "node_modules/.bin/next",
+            args: "start",
+            instances: "max",       // uses all CPU cores
+            exec_mode: "cluster",
+            env: { NODE_ENV: "production", PORT: 3000 },
+            max_memory_restart: "1G",
+            error_file: "./logs/error.log",
+            out_file: "./logs/out.log",
+          }]
+        }
+
+  [ ] 6.3  Create GitHub Actions deployment workflow
+        # .github/workflows/deploy.yml
+        name: Deploy to Production
+        on:
+          push:
+            branches: [main]
+        jobs:
+          deploy:
+            runs-on: ubuntu-latest
+            steps:
+              - uses: actions/checkout@v4
+              - uses: actions/setup-node@v4
+                with: { node-version: "22" }
+              - run: pnpm install --frozen-lockfile
+              - run: pnpm build
+              - name: Deploy via SSH
+                uses: appleboy/ssh-action@v1
+                with:
+                  host: ${{ secrets.SERVER_HOST }}
+                  username: ${{ secrets.SERVER_USER }}
+                  key: ${{ secrets.SSH_PRIVATE_KEY }}
+                  script: |
+                    cd /var/www/refreeg
+                    git pull origin main
+                    pnpm install --frozen-lockfile
+                    pnpm run migrate
+                    pnpm build
+                    pm2 reload refreeg --update-env
+
+  [ ] 6.4  Set up automated database backups (if self-hosted PostgreSQL)
+        # Daily backup script: /etc/cron.daily/backup-refreeg-db
+        #!/bin/bash
+        DATE=$(date +%Y%m%d_%H%M%S)
+        pg_dump -U refreeg_user refreeg_db | gzip > /backups/refreeg_$DATE.sql.gz
+        # Upload to S3 for offsite storage
+        aws s3 cp /backups/refreeg_$DATE.sql.gz s3://refreeg-backups/
+        # Keep only last 30 days locally
+        find /backups -name "*.sql.gz" -mtime +30 -delete
+
+  Deliverables: App running on server, CI/CD pipeline, automated backups
+
+
+══════════════════════════════════════════════════════════════════════════════
+PHASE 7 — DATA MIGRATION (Live Supabase → New DB)  [Week 6]
+══════════════════════════════════════════════════════════════════════════════
+
+  Goals:
+    - Export all live data from Supabase
+    - Import into new PostgreSQL database with zero data loss
+    - Migrate all user passwords (Supabase uses GoTrue; passwords are not
+      exportable — see NOTE below)
+
+  NOTE ON PASSWORDS:
+    Supabase Auth (GoTrue) stores passwords using bcrypt, but does NOT expose
+    them via any export API. This means:
+    a) All existing users will need to reset their passwords on first login.
+    b) Implement a "forced password reset" flow:
+       - On login attempt, check if passwordResetRequired = true on their Profile
+       - Redirect them to a one-time password reset page
+       - Send a reset email automatically on first login attempt
+
+  [ ] 7.1  Export data from Supabase
+        # Option A: Use Supabase Dashboard → Settings → Database → Backups
+        # Option B: Use pg_dump directly (requires direct DB access)
+        pg_dump "postgresql://postgres:[password]@[project-ref].supabase.co:5432/postgres" \
+          --data-only \
+          --no-owner \
+          --no-privileges \
+          -t profiles \
+          -t causes \
+          -t donations \
+          -t petitions \
+          -t signatures \
+          -t referrals \
+          -t roles \
+          -t kyc_verifications \
+          > supabase_export.sql
+
+  [ ] 7.2  Transform exported data
+        - Map Supabase's auth.users table to profiles with passwordResetRequired = true
+        - Strip any Supabase-specific columns
+        - Run a transformation script: scripts/transform-export.ts
+
+  [ ] 7.3  Import into new PostgreSQL
+        psql -U refreeg_user -d refreeg_db < transformed_data.sql
+
+  [ ] 7.4  Verify data integrity
+        - Row counts match for all tables
+        - Spot-check critical records (donations, causes, profiles)
+        - Run: npx prisma studio to visually inspect
+
+  [ ] 7.5  Migrate Supabase Storage files to S3
+        - Run scripts/migrate-storage.ts
+        - Verify all image URLs in the database point to new S3 URLs
+
+  [ ] 7.6  Update all database URL references
+        - UPDATE profiles SET profile_photo = REPLACE(profile_photo,
+            'https://eivlgwyipqojpeaxoajm.supabase.co/storage/v1/object/public/',
+            'https://refreeg-uploads.s3.amazonaws.com/')
+
+  Deliverables: All data in new DB, all files in S3, URL references updated
+
+
+══════════════════════════════════════════════════════════════════════════════
+PHASE 8 — TESTING, CUTOVER & GO-LIVE  [Week 7–8]
+══════════════════════════════════════════════════════════════════════════════
+
+  [ ] 8.1  End-to-end testing on staging
+        Test all critical user journeys:
+        ✓ Sign up (new user)
+        ✓ Sign in (email/password)
+        ✓ Sign in (Google OAuth)
+        ✓ Password reset
+        ✓ Onboarding flow
+        ✓ Create a cause
+        ✓ Make a donation (Paystack)
+        ✓ Crypto donation (Solana, MATIC)
+        ✓ Create a petition
+        ✓ Sign a petition
+        ✓ Admin approve/reject cause
+        ✓ Referral link generation and tracking
+        ✓ Profile photo upload
+        ✓ KYC document upload
+        ✓ Dashboard analytics
+
+  [ ] 8.2  Performance testing
+        - Run load tests with k6 or Artillery
+        - Target: < 200ms API response time, > 99% uptime
+
+  [ ] 8.3  Security review
+        - Confirm all routes are properly protected
+        - Review Prisma query inputs for injection safety
+        - Confirm CORS is properly configured on S3
+        - Run: pnpm audit
+
+  [ ] 8.4  DNS cutover plan (zero-downtime)
+        - Keep Vercel + Supabase running until go-live
+        - Point DNS to new server only after full verification
+        - Set DNS TTL to 60 seconds 24 hours before cutover
+        - DNS change: refreeg.com A record → new server IP
+        - Monitor for 2 hours post-cutover
+        - Keep Supabase active for 48 hours as fallback
+
+  [ ] 8.5  Post go-live monitoring
+        - Set up UptimeRobot or Better Uptime (free tier) for health checks
+        - Set up PM2 log monitoring: pm2 logs refreeg
+        - Configure log alerts for 500 errors
+
+  [ ] 8.6  Disable Supabase (after 30-day confirmation period)
+        - Cancel Supabase Pro subscription
+        - Cancel Vercel Pro subscription
+        - Archive supabase/ directory in repo (do not delete, keep as reference)
+
+  Deliverables: Production app live on new infrastructure, old services cancelled
+
+
+────────────────────────────────────────────────────────────────────────────────
+SECTION 6 — PACKAGES TO ADD / REMOVE
+────────────────────────────────────────────────────────────────────────────────
+
+  ADD:
+    pnpm add prisma @prisma/client
+    pnpm add next-auth@beta @auth/prisma-adapter
+    pnpm add bcryptjs
+    pnpm add @aws-sdk/client-s3 @aws-sdk/s3-request-presigner
+    pnpm add node-cron
+    pnpm add -D @types/bcryptjs @types/node-cron
+
+  REMOVE (after migration complete):
+    pnpm remove @supabase/supabase-js @supabase/ssr
+
+
+────────────────────────────────────────────────────────────────────────────────
+SECTION 7 — NEW ENV VARIABLES REQUIRED
+────────────────────────────────────────────────────────────────────────────────
+
+  # Database
+  DATABASE_URL="postgresql://refreeg_user:PASSWORD@HOST:5432/refreeg_db"
+
+  # NextAuth
+  NEXTAUTH_SECRET="<32 char random string — openssl rand -base64 32>"
+  NEXTAUTH_URL="https://refreeg.com"
+
+  # Google OAuth (from Google Cloud Console)
+  GOOGLE_CLIENT_ID="..."
+  GOOGLE_CLIENT_SECRET="..."
+
+  # AWS S3 / Object Storage
+  AWS_REGION="eu-central-1"
+  AWS_S3_BUCKET="refreeg-uploads"
+  AWS_ACCESS_KEY_ID="..."
+  AWS_SECRET_ACCESS_KEY="..."
+
+  # Keep existing:
+  SMTP_USER, SMTP_PASSWORD, SMTP_HOST, SMTP_PORT, EMAIL_FROM
+  NEXT_PUBLIC_PAYSTACK_KEY, NEXT_PUBLIC_REFREEG_SERVICE_FEE
+
+  REMOVE:
+  NEXT_PUBLIC_SUPABASE_URL
+  NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+
+────────────────────────────────────────────────────────────────────────────────
+SECTION 8 — RISKS & MITIGATIONS
+────────────────────────────────────────────────────────────────────────────────
+
+  RISK 1: Password migration (HIGH IMPACT)
+    Problem: Supabase passwords cannot be exported.
+    Mitigation: Force-reset flow. On first login after migration, any user
+    with passwordResetRequired=true is redirected to set a new password.
+    A reset email is automatically sent. This affects 100% of existing users.
+
+  RISK 2: Downtime during DNS cutover (MEDIUM IMPACT)
+    Problem: DNS propagation can take up to 24 hours.
+    Mitigation: Reduce TTL to 60 seconds 24 hours before cutover. Keep
+    Supabase + Vercel running as fallback for 48 hours.
+
+  RISK 3: Row Level Security (RLS) gaps (MEDIUM IMPACT)
+    Problem: Supabase RLS policies are enforced at the DB level. Prisma
+    has no built-in equivalent — security must be enforced at the
+    application layer (action/API route level).
+    Mitigation: Audit every action file to ensure user ID checks are
+    explicit. Create a requireAuth() helper that verifies the session
+    user matches the requested resource owner.
+
+  RISK 4: Missing Supabase Realtime features (LOW IMPACT)
+    Problem: If any feature uses Supabase Realtime (live subscriptions),
+    it will need to be replaced with polling or WebSockets.
+    Mitigation: Search for .channel() and .on("postgres_changes") calls.
+    None found in current review, but verify before migration.
+
+  RISK 5: Self-managed database reliability (MEDIUM IMPACT)
+    Problem: Supabase provides automatic backups, PITR, failover. Self-
+    hosted PostgreSQL requires manual configuration of all of this.
+    Mitigation: Use AWS RDS instead of self-hosted PostgreSQL if budget
+    allows ($47/mo). RDS provides automated backups and Multi-AZ failover.
+    For Hetzner: implement the daily pg_dump + S3 backup script (Phase 6.4).
+
+  RISK 6: Codebase size (LOW IMPACT)
+    Problem: 56 files touch Supabase. Missing one creates a runtime error.
+    Mitigation: After Phase 3, run:
+    grep -r "supabase\|@supabase" ./src --include="*.ts" --include="*.tsx"
+    This should return zero results before going to production.
+
+
+────────────────────────────────────────────────────────────────────────────────
+SECTION 9 — COST SUMMARY
+────────────────────────────────────────────────────────────────────────────────
+
+  CURRENT MONTHLY COST
+  ─────────────────────
+  Supabase Pro       $25
+  Vercel Pro         $20
+  ─────────────────────
+  Total              $45/mo  ($540/yr)
+
+  AFTER MIGRATION (Hetzner, recommended)
+  ────────────────────────────────────────
+  Hetzner CX31 VPS   $12.49
+  Hetzner Storage    $5.00
+  Domain + DNS       ~$1
+  ─────────────────────────
+  Total              ~$18.50/mo  ($222/yr)
+  SAVINGS            ~$26.50/mo  ($318/yr)
+
+  AFTER MIGRATION (AWS, enterprise option)
+  ──────────────────────────────────────────
+  EC2 t3.small        $15.18
+  RDS t3.micro        $25.92
+  S3 + transfer       ~$6
+  ─────────────────────────
+  Total               ~$47/mo  ($564/yr)
+  SAVINGS             ~$0/mo  (similar cost but with better managed services)
+
+
+────────────────────────────────────────────────────────────────────────────────
+SECTION 10 — TIMELINE SUMMARY
+────────────────────────────────────────────────────────────────────────────────
+
+  Week 1 (Days 1–7):
+    ✦ Phase 0: Server provisioned, Nginx, PostgreSQL, CI/CD scaffold
+    ✦ Phase 1: Prisma schema written, staging DB created, Prisma client set up
+
+  Week 2 (Days 8–14):
+    ✦ Phase 1: Schema finalized, migrations generated
+    ✦ Phase 2: NextAuth installed, auth.ts created, middleware replaced
+
+  Week 3 (Days 15–21):
+    ✦ Phase 2: All 48 auth call sites replaced
+    ✦ Phase 3: Begin replacing Supabase client (cause, donation, petition actions)
+
+  Week 4 (Days 22–28):
+    ✦ Phase 3: Complete remaining action files (profile, role, comment, etc.)
+    ✦ Phase 4: S3 storage set up, upload code replaced
+    ✦ Phase 5: Edge Functions converted to API routes
+
+  Week 5 (Days 29–35):
+    ✦ Phase 5: Cron jobs set up with node-cron
+    ✦ Phase 6: PM2 configured, GitHub Actions CI/CD pipeline complete
+    ✦ Full staging test deploy
+
+  Week 6 (Days 36–42):
+    ✦ Phase 7: Data export from Supabase, import into new DB
+    ✦ Phase 7: Storage migration (files to S3)
+    ✦ URL reference updates in DB
+
+  Week 7 (Days 43–49):
+    ✦ Phase 8: End-to-end testing on staging with real data
+    ✦ Phase 8: Performance and security testing
+
+  Week 8 (Days 50–56):
+    ✦ Phase 8: DNS TTL reduction
+    ✦ Phase 8: Production cutover
+    ✦ Phase 8: 48-hour monitoring window
+    ✦ Phase 8: Supabase / Vercel cancellation
+
+  ─────────────────────────────────────────────────────────────────────────
+  TOTAL ESTIMATED EFFORT (2-person team):
+    Backend dev:    ~120 hours
+    DevOps:          ~30 hours
+    QA / Testing:    ~20 hours
+    ─────────────────────────────────────────────────────
+    Total:          ~170 hours over 8 weeks
+  ─────────────────────────────────────────────────────────────────────────
+
+
+────────────────────────────────────────────────────────────────────────────────
+SECTION 11 — QUICK REFERENCE CHEAT SHEET
+────────────────────────────────────────────────────────────────────────────────
+
+  Supabase SDK → Prisma equivalents:
+
+  supabase.from("t").select("*")              → prisma.t.findMany()
+  supabase.from("t").select().eq("id", id)    → prisma.t.findUnique({ where: {id} })
+  supabase.from("t").insert({...})             → prisma.t.create({ data: {...} })
+  supabase.from("t").update({...}).eq("id",id)→ prisma.t.update({ where:{id}, data:{...} })
+  supabase.from("t").delete().eq("id", id)    → prisma.t.delete({ where: {id} })
+  supabase.from("t").select().in("id", ids)   → prisma.t.findMany({ where:{id:{in:ids}} })
+  supabase.from("t").select().gte("c", val)   → prisma.t.findMany({ where:{c:{gte:val}} })
+  supabase.rpc("increment", {id, amt})         → prisma.t.update({ data:{field:{increment:amt}} })
+
+  Supabase Auth → NextAuth.js equivalents:
+
+  supabase.auth.getUser()              → auth() then session.user
+  supabase.auth.signInWithPassword()   → signIn("credentials", {...})
+  supabase.auth.signInWithOAuth()      → signIn("google")
+  supabase.auth.signUp()               → prisma.profile.create() + signIn()
+  supabase.auth.signOut()              → signOut()
+  supabase.auth.updateUser()           → prisma.profile.update()
+  supabase.auth.resetPasswordForEmail()→ custom token + Nodemailer email
+  const { user } = useAuth()           → const { data: session } = useSession()
+
+  Supabase Storage → AWS S3:
+
+  supabase.storage.from(b).upload(path, file)      → s3.send(new PutObjectCommand({...}))
+  supabase.storage.from(b).getPublicUrl(path)      → construct S3 URL directly
+  supabase.storage.from(b).remove([path])          → s3.send(new DeleteObjectCommand({...}))
+
+
+================================================================================
+END OF DOCUMENT
+================================================================================
