@@ -209,7 +209,7 @@ export const getCountries = async (): Promise<string[]> => {
       const data = await response.json();
       // If API returns valid data with countries, use it
       if (Array.isArray(data) && data.length > 0) {
-        console.log(`Loaded ${data.length} countries from API`);
+
         return data;
       }
     }
@@ -220,7 +220,7 @@ export const getCountries = async (): Promise<string[]> => {
   }
 
   // Always fallback to static list - this ensures countries are always available
-  console.log(`Using fallback list with ${ALL_COUNTRIES.length} countries`);
+
   return ALL_COUNTRIES;
 };
 

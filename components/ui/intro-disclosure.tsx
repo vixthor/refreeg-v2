@@ -216,7 +216,7 @@ interface Step {
 }
 
 interface FeatureDisclosureProps {
-  steps: Step[];
+  steps: readonly Step[];
   featureId: string;
   onComplete?: () => void;
   onSkip?: () => void;
@@ -227,7 +227,7 @@ interface FeatureDisclosureProps {
 }
 
 interface StepContentProps {
-  steps: Step[];
+  steps: readonly Step[];
   currentStep: number;
   onSkip: () => void;
   onNext: () => void;

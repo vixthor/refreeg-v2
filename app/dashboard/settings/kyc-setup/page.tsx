@@ -18,7 +18,7 @@ import StepPersonalDetails from "./StepPersonalDetails";
 import StepDocumentUpload from "./StepDocumentUpload";
 import StepProgress from "./StepProgress";
 import StepSuccess from "./StepSuccess";
-import { uploadKycDocument } from "@/actions/kyc-actions";
+import { uploadKycDocument, getVerificationStatus } from "@/actions/kyc-actions";
 import { useAuth } from "@/hooks/use-auth";
 import ProgressNav from "./components/ProgressNav";
 import StepAddressDetails from "./StepAddressDetails";
@@ -55,16 +55,60 @@ export default function KycSetupPage() {
   const { user } = useAuth();
   const [uploadError, setUploadError] = useState<string | null>(null);
 
-  // Auto-save KYC progress to localStorage
+  // Auto-save KYC progress to localStorage or load from DB if rejected
   useEffect(() => {
-    const savedKycDraft = localStorage.getItem("kycDraft");
-    if (savedKycDraft) {
-      const parsedDraft = JSON.parse(savedKycDraft);
-      setFormData(parsedDraft.formData || formData);
-      setSelectedDoc(parsedDraft.selectedDoc || "");
-      setStep(parsedDraft.step || 0);
+    async function initFormData() {
+      // 1. Try to load from localStorage first (most recent draft)
+      const savedKycDraft = localStorage.getItem("kycDraft");
+      if (savedKycDraft) {
+        const parsedDraft = JSON.parse(savedKycDraft);
+        setFormData(parsedDraft.formData || formData);
+        setSelectedDoc(parsedDraft.selectedDoc || "");
+        setStep(parsedDraft.step || 0);
+        return;
+      }
+
+      // 2. If no draft, check DB for last rejected submission
+      if (user?.id) {
+        try {
+          const { status, error: kycError } = await getVerificationStatus(
+            user.id,
+          );
+          if (status && status.status === "rejected") {
+            // Split DOB "YYYY-MM-DD" back into parts
+            const dobParts = (status.dob || "").split("-");
+            const year = dobParts[0] || "";
+            const month = dobParts[1] ? parseInt(dobParts[1]).toString() : "";
+            const day = dobParts[2] ? parseInt(dobParts[2]).toString() : "";
+
+            // Split full_name into first and last
+            const nameParts = (status.full_name || "").split(" ");
+            const firstName = nameParts[0] || "";
+            const lastName = nameParts.slice(1).join(" ") || "";
+
+            setFormData({
+              firstName,
+              lastName,
+              dobDay: day,
+              dobMonth: month,
+              dobYear: year,
+              phone: status.phone || "",
+              address: status.address || "",
+              city: status.city || "",
+              state: status.state || "",
+              postal: status.postal || "",
+              country: status.country || "",
+            });
+            setSelectedDoc(status.document_type || "");
+          }
+        } catch (err) {
+          console.error("Failed to fetch existing KYC for pre-filling:", err);
+        }
+      }
     }
-  }, []);
+
+    initFormData();
+  }, [user?.id]);
 
   useEffect(() => {
     // Save KYC progress to localStorage
@@ -120,7 +164,6 @@ export default function KycSetupPage() {
           await sendIncompleteKycVerificationEmail({
             continueUrl: `${window.location.origin}/dashboard/settings/kyc`,
           });
-          console.log("Incomplete KYC reminder sent");
         } catch (error) {
           console.error("Failed to send incomplete KYC email:", error);
         }
@@ -230,15 +273,13 @@ export default function KycSetupPage() {
 
   // Only show ProgressNav for steps 0, 1, 2
   const showProgressNav = step <= 2;
-  // Only pass completed steps for 3 steps
-  const completedSteps = Array.from({ length: Math.min(step, 3) }, (_, i) => i);
 
   return (
     <div className="flex w-full h-screen bg-white">
       {/* Sidebar */}
       {showProgressNav && (
         <div className="w-[380px] border-r hidden md:block">
-          <ProgressNav currentStep={step} completedSteps={completedSteps} />
+          <ProgressNav currentStep={step} />
         </div>
       )}
       <div className="flex-1 flex items-start md:px-10">

@@ -8,7 +8,7 @@ import { FaGoogle } from "react-icons/fa";
 export default function SignupFormDemo() {
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log("Form submitted");
+
   };
   return (
     <div className="shadow-input mx-auto w-full max-w-md rounded-none bg-white p-4 md:rounded-2xl md:p-8 dark:bg-black">

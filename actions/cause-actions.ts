@@ -119,7 +119,6 @@ async function uploadImageToSupabase(
     ? "cause-videos"
     : "profile-photos";
 
-  console.log("bucket", bucket);
 
   const { data: uploadData, error: uploadError } = await supabase.storage
     .from(bucket)
@@ -157,7 +156,6 @@ export async function createCause(
     );
   }
 
-  console.log("Uploaded");
 
   let daysActive = null;
   if (causeData.startDate && causeData.endDate) {
@@ -217,7 +215,6 @@ export async function createCause(
     })
     .select()
     .single();
-  console.log(cause);
   if (causeError) {
     console.error("Error creating cause:", causeError);
     throw causeError;

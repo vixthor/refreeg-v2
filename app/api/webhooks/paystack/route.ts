@@ -119,7 +119,6 @@ export async function POST(request: Request) {
         );
 
       default:
-        console.log("Unhandled Paystack event:", event);
         return new NextResponse(
           JSON.stringify({ message: "Webhook event not supported yet" }),
           { status: 200 }
