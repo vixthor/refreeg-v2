@@ -1,4 +1,5 @@
 import dynamic from "next/dynamic";
+import Link from "next/link";
 import { Search, Satellite, Layers3, KeyRound, Globe, FlaskConical } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getUserRole } from "@/actions/role-actions";
@@ -11,6 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -67,25 +69,65 @@ type ApiKeyRow = {
   mode: "live" | "test";
 };
 
+import { getCachedUser } from "@/lib/supabase/cached-user";
+
 export default async function AdminAnalyticsPage({
   searchParams,
 }: {
-  searchParams: { search?: string };
+  searchParams: Promise<{ search?: string }> | { search?: string };
 }) {
   const params = await searchParams;
   const search = params?.search?.trim() || "";
 
-  const supabase = await createClient();
 
-  const {
-    data: { user: currentUser },
-  } = await supabase.auth.getUser();
 
-  if (!currentUser) {
-    redirect("/signin");
+  const [authResult, apiCampaignsResult] = await Promise.all([
+    getCachedUser(),
+    (async () => {
+      try {
+        const supabase = await createClient();
+        const { data: apiCauses, error: causeError } = await (supabase as any)
+          .from("api_campaigns")
+          .select("id, title, status, created_at, api_key_id")
+          .order("created_at", { ascending: false })
+          .limit(50);
+
+        if (causeError) return { error: causeError.message };
+
+        const apiKeyIds = [
+          ...new Set(
+            (apiCauses || [])
+              .map((cause: any) => cause.api_key_id)
+              .filter((id: any): id is string => Boolean(id)),
+          ),
+        ];
+
+        let apiKeys: ApiKeyRow[] = [];
+        if (apiKeyIds.length > 0) {
+          const { data: keysData, error: keysError } = await (supabase as any)
+            .from("api_keys")
+            .select("id, name, key_prefix, mode")
+            .in("id", apiKeyIds);
+
+          if (!keysError) {
+            apiKeys = (keysData || []) as ApiKeyRow[];
+          }
+        }
+
+        return { apiCauses: (apiCauses || []), apiKeys };
+      } catch (err: any) {
+        return { error: err.message || "Failed to fetch API data" };
+      }
+    })()
+  ]);
+
+  const { user, error: authError } = authResult;
+
+  if (!user || authError) {
+    redirect("/auth/signin");
   }
 
-  const role = await getUserRole(currentUser.id);
+  const role = await getUserRole(user.id);
 
   if (!role || (role !== "admin" && role !== "manager")) {
     return (
@@ -100,53 +142,14 @@ export default async function AdminAnalyticsPage({
     );
   }
 
-  // This table is part of the API integration rollout and may not exist in all environments.
-  // We handle missing-table errors gracefully and still render the page.
-  let apiCauses: ApiCauseRow[] = [];
-  let apiKeys: ApiKeyRow[] = [];
-  let apiCausesUnavailable = false;
+  const apiCauses = 'apiCauses' in apiCampaignsResult ? (apiCampaignsResult as any).apiCauses : [];
+  const apiKeys = 'apiKeys' in apiCampaignsResult ? (apiCampaignsResult as any).apiKeys : [];
+  const apiCausesUnavailable = 'error' in apiCampaignsResult;
 
-  try {
-    const query = (supabase as any)
-      .from("api_campaigns")
-      .select("id, title, status, created_at, api_key_id")
-      .order("created_at", { ascending: false })
-      .limit(50);
+  const keyMap = new Map(apiKeys.map((key: any) => [key.id, key]));
 
-    const { data, error } = await query;
-
-    if (error) {
-      apiCausesUnavailable = true;
-    } else {
-      apiCauses = (data || []) as ApiCauseRow[];
-
-      const apiKeyIds = [
-        ...new Set(
-          (apiCauses || [])
-            .map((cause) => cause.api_key_id)
-            .filter((id): id is string => Boolean(id)),
-        ),
-      ];
-
-      if (apiKeyIds.length > 0) {
-        const { data: keysData, error: keysError } = await (supabase as any)
-          .from("api_keys")
-          .select("id, name, key_prefix, mode")
-          .in("id", apiKeyIds);
-
-        if (!keysError) {
-          apiKeys = (keysData || []) as ApiKeyRow[];
-        }
-      }
-    }
-  } catch {
-    apiCausesUnavailable = true;
-  }
-
-  const keyMap = new Map(apiKeys.map((key) => [key.id, key]));
-
-  const apiCauseRows = apiCauses.map((cause) => {
-    const key = cause.api_key_id ? keyMap.get(cause.api_key_id) : null;
+  const apiCauseRows = apiCauses.map((cause: any) => {
+    const key = cause.api_key_id ? keyMap.get(cause.api_key_id) as ApiKeyRow | undefined : null;
     return {
       ...cause,
       apiName: key?.name || "Unknown API",
@@ -156,7 +159,7 @@ export default async function AdminAnalyticsPage({
   });
 
   const filteredRows = search
-    ? apiCauseRows.filter((row) => {
+    ? apiCauseRows.filter((row: any) => {
         const needle = search.toLowerCase();
         return (
           row.title.toLowerCase().includes(needle) ||
@@ -168,12 +171,24 @@ export default async function AdminAnalyticsPage({
     : apiCauseRows;
 
   const totalCauses = apiCauseRows.length;
-  const uniqueApis = new Set(apiCauseRows.map((row) => row.apiPrefix)).size;
-  const liveCauses = apiCauseRows.filter((row) => row.apiMode === "live").length;
-  const testCauses = apiCauseRows.filter((row) => row.apiMode === "test").length;
+  const uniqueApis = new Set(apiCauseRows.map((row: any) => row.apiPrefix)).size;
+  const liveCauses = apiCauseRows.filter((row: any) => row.apiMode === "live").length;
+  const testCauses = apiCauseRows.filter((row: any) => row.apiMode === "test").length;
 
   return (
     <div className="space-y-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Admin Analytics</h1>
+          <p className="text-muted-foreground">Monitor platform performance and API metrics.</p>
+        </div>
+        <div className="flex gap-2">
+           <Button asChild variant="outline" size="sm">
+            <Link href="/dashboard/admin/api-monitoring">Detailed API Reports</Link>
+          </Button>
+        </div>
+      </div>
+
       {!apiCausesUnavailable && (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <Card>
@@ -226,100 +241,102 @@ export default async function AdminAnalyticsPage({
         </div>
       )}
 
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <div className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 text-primary">
-                <Satellite className="h-4 w-4" />
+      <div className="grid gap-6">
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <div className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 text-primary">
+                  <Satellite className="h-4 w-4" />
+                </div>
+                <CardTitle>Recent API Causes</CardTitle>
               </div>
-              <CardTitle>API Causes Table</CardTitle>
+              {!apiCausesUnavailable && (
+                <Badge variant="secondary">{filteredRows.length} shown</Badge>
+              )}
             </div>
-            {!apiCausesUnavailable && (
-              <Badge variant="secondary">{filteredRows.length} shown</Badge>
-            )}
-          </div>
-          <CardDescription>
-            List of APIs and the causes created with each API key.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <form className="relative w-full md:w-96" method="GET">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                name="search"
-                placeholder="Search API, key prefix, mode, or cause..."
-                className="pl-8"
-                defaultValue={search}
-              />
-            </form>
-            {search && (
-              <Badge variant="outline" className="w-fit">
-                Filter: {search}
-              </Badge>
-            )}
-          </div>
+            <CardDescription>
+              List of recent campaigns created via API keys.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <form className="relative w-full md:w-96" method="GET">
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  name="search"
+                  placeholder="Search API, key prefix, mode, or cause..."
+                  className="pl-8"
+                  defaultValue={search}
+                />
+              </form>
+              {search && (
+                <Badge variant="outline" className="w-fit">
+                  Filter: {search}
+                </Badge>
+              )}
+            </div>
 
-          {apiCausesUnavailable ? (
-            <p className="text-sm text-muted-foreground">
-              API cause data is not available yet in this environment.
-            </p>
-          ) : filteredRows.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              No API causes found{search ? ` for "${search}"` : ""}.
-            </p>
-          ) : (
-            <div className="rounded-md border bg-background">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>API</TableHead>
-                    <TableHead>Key Prefix</TableHead>
-                    <TableHead>Mode</TableHead>
-                    <TableHead>Cause</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Created</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredRows.map((row) => (
-                    <TableRow key={row.id}>
-                      <TableCell className="font-medium">
-                        <div className="flex items-center gap-2">
-                          <span className="inline-flex h-6 w-6 items-center justify-center rounded bg-primary/10 text-primary text-[10px] font-semibold">
-                            API
-                          </span>
-                          <span>{row.apiName}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">
-                        {row.apiPrefix}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="secondary" className="capitalize">
-                          {row.apiMode}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="max-w-[260px] truncate">{row.title}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="capitalize">
-                          {row.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">
-                        {new Date(row.created_at).toLocaleDateString()}
-                      </TableCell>
+            {apiCausesUnavailable ? (
+              <p className="text-sm text-muted-foreground">
+                API cause data is not available yet in this environment.
+              </p>
+            ) : filteredRows.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No API causes found{search ? ` for "${search}"` : ""}.
+              </p>
+            ) : (
+              <div className="rounded-md border bg-background">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>API</TableHead>
+                      <TableHead>Key Prefix</TableHead>
+                      <TableHead>Mode</TableHead>
+                      <TableHead>Cause</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Created</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredRows.map((row: any) => (
+                      <TableRow key={row.id}>
+                        <TableCell className="font-medium">
+                          <div className="flex items-center gap-2">
+                            <span className="inline-flex h-6 w-6 items-center justify-center rounded bg-primary/10 text-primary text-[10px] font-semibold">
+                              API
+                            </span>
+                            <span>{row.apiName}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground">
+                          {row.apiPrefix}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="secondary" className="capitalize">
+                            {row.apiMode}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="max-w-[260px] truncate">{row.title}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="capitalize">
+                            {row.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground">
+                          {new Date(row.created_at).toLocaleDateString()}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
-      <AdminAnalytics />
+        <AdminAnalytics />
+      </div>
     </div>
   );
 }

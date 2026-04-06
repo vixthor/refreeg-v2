@@ -279,7 +279,6 @@ export default function CreatePetitionForm() {
           await sendIncompletePetitionDraftEmail({
             continueUrl: `${window.location.origin}/dashboard/petitions/create`,
           });
-          console.log("Incomplete petition reminder sent");
         } catch (error) {
           console.error("Failed to send incomplete petition email:", error);
         }
@@ -318,11 +317,12 @@ export default function CreatePetitionForm() {
     }
   };
 
-  const handleImageUpload = (files: File[]) => {
-    const MAX_FILE_SIZE = 100 * 1024 * 1024;
+  const handleImageUpload = async (files: File[]) => {
     const file = files[0];
+    if (!file) return;
 
-    if (file && file.size > MAX_FILE_SIZE) {
+    const MAX_FILE_SIZE = 100 * 1024 * 1024;
+    if (file.size > MAX_FILE_SIZE) {
       setErrors((prev) => ({
         ...prev,
         coverImage: "Cover image must be less than 100MB",
@@ -330,13 +330,24 @@ export default function CreatePetitionForm() {
       return;
     }
 
-    setFormData((prev) => ({ ...prev, coverImage: file }));
-    if (errors.coverImage) {
-      setErrors((prev) => ({ ...prev, coverImage: undefined }));
+    try {
+      let fileToUpload = file;
+      if (file.type.startsWith("image/")) {
+        const { compressImage } = await import("@/utils/image-compression");
+        fileToUpload = await compressImage(file, 1200, 0.7);
+      }
+
+      setFormData((prev) => ({ ...prev, coverImage: fileToUpload }));
+      if (errors.coverImage) {
+        setErrors((prev) => ({ ...prev, coverImage: undefined }));
+      }
+    } catch (error) {
+      console.error("Compression error:", error);
+      setFormData((prev) => ({ ...prev, coverImage: file }));
     }
   };
 
-  const handleMultimediaUpload = (files: File[]) => {
+  const handleMultimediaUpload = async (files: File[]) => {
     const MAX_FILES = 5;
     const MAX_TOTAL_SIZE = 100 * 1024 * 1024;
 
@@ -349,29 +360,50 @@ export default function CreatePetitionForm() {
       return;
     }
 
-    const currentSize =
-      formData.multimedia && formData.multimedia.length > 0
-        ? formData.multimedia.reduce((acc, file) => acc + file.size, 0)
-        : 0;
-    const newFilesSize = files.reduce((acc, file) => acc + file.size, 0);
+    try {
+      const { compressImage } = await import("@/utils/image-compression");
+      
+      const processedFiles = await Promise.all(
+        files.map(async (file) => {
+          if (file.type.startsWith("image/")) {
+            return await compressImage(file, 1000, 0.7);
+          }
+          return file;
+        })
+      );
 
-    if (currentSize + newFilesSize > MAX_TOTAL_SIZE) {
-      setErrors((prev) => ({
+      const currentSize =
+        formData.multimedia && formData.multimedia.length > 0
+          ? formData.multimedia.reduce((acc, file) => acc + file.size, 0)
+          : 0;
+      const newFilesSize = processedFiles.reduce((acc, file) => acc + file.size, 0);
+
+      if (currentSize + newFilesSize > MAX_TOTAL_SIZE) {
+        setErrors((prev) => ({
+          ...prev,
+          multimedia: "Total multimedia size must be less than 100MB",
+        }));
+        return;
+      }
+
+      setFormData((prev) => ({
         ...prev,
-        multimedia: "Total multimedia size must be less than 100MB",
+        multimedia: Array.isArray(prev.multimedia)
+          ? [...prev.multimedia, ...processedFiles]
+          : [...processedFiles],
       }));
-      return;
-    }
 
-    setFormData((prev) => ({
-      ...prev,
-      multimedia: Array.isArray(prev.multimedia)
-        ? [...prev.multimedia, ...files]
-        : [...files],
-    }));
-
-    if (errors.multimedia) {
-      setErrors((prev) => ({ ...prev, multimedia: undefined }));
+      if (errors.multimedia) {
+        setErrors((prev) => ({ ...prev, multimedia: undefined }));
+      }
+    } catch (error) {
+      console.error("Multimedia compression error:", error);
+      setFormData((prev) => ({
+        ...prev,
+        multimedia: Array.isArray(prev.multimedia)
+          ? [...prev.multimedia, ...files]
+          : [...files],
+      }));
     }
   };
 
@@ -442,7 +474,6 @@ export default function CreatePetitionForm() {
     });
 
     if (hasErrors) {
-      console.log("Found validation errors:", validationErrors);
       setErrors(validationErrors);
       setSubmitting(false);
       return;

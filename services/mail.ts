@@ -1,22 +1,13 @@
 "use server";
+import "server-only";
 
 import nodemailer from "nodemailer";
 import fs from "fs";
 import path from "path";
 import Handlebars from "handlebars";
+import { headers } from "next/headers";
 import { getCurrentUser } from "@/actions/auth-actions";
 import { getProfile } from "@/actions/profile-actions";
-
-export async function getDeviceInfo() {
-  if (typeof window === "undefined") return "Unknown Device";
-  const ua = window.navigator.userAgent;
-  if (/android/i.test(ua)) return "Android";
-  if (/iPad|iPhone|iPod/.test(ua)) return "iOS";
-  if (/Windows NT/.test(ua)) return "Windows";
-  if (/Macintosh/.test(ua)) return "Mac";
-  if (/Linux/.test(ua)) return "Linux";
-  return "Other";
-}
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || "smtp.gmail.com",
@@ -51,18 +42,13 @@ export async function sendMail({
   subject,
   templateName,
   context,
-  from = process.env.SMTP_USER ||
-    process.env.EMAIL_FROM ||
-    "noreply@example.com",
+  from = process.env.EMAIL_FROM  || "noreply@refreeg.com",
   cc,
   bcc,
 }: SendMailOptions) {
   try {
     const template = loadTemplate(templateName);
     const html = template(context);
-
-    console.log("Email template loaded:", html);
-    console.log("Sending email with context:", context);
 
     const info = await transporter.sendMail({
       from,
@@ -73,10 +59,8 @@ export async function sendMail({
       html,
     });
 
-    console.log(`Email sent: ${info.messageId}`);
     return { success: true, messageId: info.messageId };
   } catch (error) {
-    console.error("Error sending email:", error);
     return { success: false, error };
   }
 }
@@ -260,7 +244,6 @@ export async function sendCauseSubmissionAdminNotification(
   const adminEmails = await getAdminEmails();
 
   if (adminEmails.length === 0) {
-    console.warn("No admin emails found to send cause notification");
     return { success: false, error: "No admin emails found" };
   }
 
@@ -288,17 +271,12 @@ export async function sendCauseSubmissionAdminNotification(
     const successful = results.filter((r) => r.status === "fulfilled").length;
     const failed = results.filter((r) => r.status === "rejected").length;
 
-    console.log(
-      `Cause admin notification sent: ${successful} successful, ${failed} failed`,
-    );
-
     return {
       success: successful > 0,
       sent: successful,
       failed,
     };
   } catch (error) {
-    console.error("Error sending cause admin notifications:", error);
     return {
       success: false,
       error:
@@ -317,7 +295,6 @@ export async function sendPetitionSubmissionAdminNotification(
   const adminEmails = await getAdminEmails();
 
   if (adminEmails.length === 0) {
-    console.warn("No admin emails found to send petition notification");
     return { success: false, error: "No admin emails found" };
   }
 
@@ -345,17 +322,12 @@ export async function sendPetitionSubmissionAdminNotification(
     const successful = results.filter((r) => r.status === "fulfilled").length;
     const failed = results.filter((r) => r.status === "rejected").length;
 
-    console.log(
-      `Petition admin notification sent: ${successful} successful, ${failed} failed`,
-    );
-
     return {
       success: successful > 0,
       sent: successful,
       failed,
     };
   } catch (error: any) {
-    console.error("Error sending petition admin notifications:", error);
     return {
       success: false,
       error:
@@ -365,7 +337,6 @@ export async function sendPetitionSubmissionAdminNotification(
 }
 
 export async function sendLoginNotificationEmail(context: {
-  ipAddress?: string;
   device?: string;
   loginTime?: string;
 }) {
@@ -375,16 +346,37 @@ export async function sendLoginNotificationEmail(context: {
   }
   const profile = await getProfile(user.id);
   const currentYear = new Date().getFullYear();
+
+  // Resolve IP server-side from the request headers instead of
+  // relying on a client-side fetch to api.ipify.org.
+  // This is faster and more secure for production.
+  let ipAddress = "Unknown IP";
+  try {
+    const headersList = await headers();
+    const xff = headersList.get("x-forwarded-for");
+    const xri = headersList.get("x-real-ip");
+    
+    let detectedIp = (xff?.split(",")[0] || xri || "Unknown IP").trim();
+    
+    // Label localhost clearly for local development
+    if (detectedIp === "::1" || detectedIp === "127.0.0.1") {
+      detectedIp = `${detectedIp} (Localhost)`;
+    }
+    
+    ipAddress = detectedIp;
+  } catch {
+    // headers() may fail outside of a request context
+  }
+
   return sendMail({
     to: profile?.email || "",
     subject: "New Login Notification",
     templateName: "login-notification",
     context: {
-      ...context,
       userName: profile?.full_name || "User",
       loginTime: context.loginTime || new Date().toLocaleString(),
       device: context.device || "Unknown Device",
-      ipAddress: context.ipAddress || "Unknown IP",
+      ipAddress,
       currentYear,
     },
   });
@@ -737,7 +729,6 @@ export async function sendKycSubmissionAdminNotification(
   const adminEmails = await getAdminEmails();
 
   if (adminEmails.length === 0) {
-    console.warn("No admin emails found to send KYC notification");
     return { success: false, error: "No admin emails found" };
   }
 
@@ -761,10 +752,6 @@ export async function sendKycSubmissionAdminNotification(
     const results = await Promise.allSettled(emailPromises);
     const successful = results.filter((r) => r.status === "fulfilled").length;
     const failed = results.filter((r) => r.status === "rejected").length;
-
-    console.log(
-      `KYC admin notification sent: ${successful} successful, ${failed} failed`,
-    );
 
     return {
       success: successful > 0,

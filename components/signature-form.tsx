@@ -77,8 +77,6 @@ export function SignatureForm({
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  console.log(formData.isAnonymous);
-
   const handleSwitchChange = (checked: boolean) => {
     if (isFormDisabled) return;
     setFormData((prev) => ({ ...prev, isAnonymous: checked }));
@@ -125,7 +123,6 @@ export function SignatureForm({
           `${window.location.origin}/petitions/${petitionId}`,
           formData.isAnonymous,
         );
-        console.log("Petition signed confirmation email sent");
       } catch (emailError) {
         console.error("Failed to send confirmation email:", emailError);
       }

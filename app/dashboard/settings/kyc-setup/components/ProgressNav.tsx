@@ -25,7 +25,7 @@ const steps = [
   },
 ];
 
-export default function KycStep({ currentStep }: { currentStep: number }) {
+export default function ProgressNav({ currentStep }: { currentStep: number }) {
   const step = steps[currentStep];
 
   return (
