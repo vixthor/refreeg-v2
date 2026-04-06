@@ -423,7 +423,19 @@ export function Header() {
               </div>
 
               {!isLoading && !user ? (
-                <Link href="/auth/signin" className="hidden sm:block">
+                <Link href="/auth/signin" className="lg:hidden">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={`h-10 rounded-full border px-3 text-xs ${activeTheme.outline} bg-white transition-colors hover:text-white sm:px-4 sm:text-sm`}
+                  >
+                    Sign In
+                  </Button>
+                </Link>
+              ) : null}
+
+              {!isLoading && !user ? (
+                <Link href="/auth/signin" className="hidden lg:block">
                   <Button
                     variant="outline"
                     size="sm"
