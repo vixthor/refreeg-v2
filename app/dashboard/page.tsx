@@ -270,7 +270,7 @@ export default async function DashboardPage({
             </div>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 sm:text-base sm:leading-7">
               Monitor donations, keep campaigns moving, and stay on top of your
-              petitions and API activity from one cleaner workspace.
+              petitions, campaigns, and developer tools in one place.
             </p>
 
             <div className="mt-5 grid gap-2 sm:mt-6 sm:flex sm:flex-wrap sm:gap-3">
