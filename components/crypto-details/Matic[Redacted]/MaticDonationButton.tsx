@@ -95,7 +95,7 @@ export default function MaticDonationButton({
   useEffect(() => {
     const fetchRecipientAddress = async () => {
       try {
-        console.log("Fetching recipient address for cause:", causeId);
+
         const { data: cause, error: causeError } = await supabase
           .from("causes")
           .select("user_id")
@@ -105,7 +105,7 @@ export default function MaticDonationButton({
         if (causeError) throw causeError;
         if (!cause) throw new Error("Cause not found");
 
-        console.log("Found cause, fetching profile for user:", cause.user_id);
+
         const { data: profile, error: profileError } = await supabase
           .from("profiles")
           .select("polygon_wallet")
@@ -115,7 +115,7 @@ export default function MaticDonationButton({
         if (profileError) throw profileError;
         if (!profile) throw new Error("Creator not found");
 
-        console.log("Recipient wallet address:", profile.polygon_wallet);
+
         setRecipientAddress(profile.polygon_wallet || null);
       } catch (err) {
         console.error("Error fetching recipient address:", err);
@@ -138,16 +138,16 @@ export default function MaticDonationButton({
     recipientAddress: string
   ) => {
     try {
-      console.log("Starting donation logging process...");
 
-      console.log("User auth status:", { user });
+
+
 
       if (!user) {
         throw new Error("User not authenticated");
       }
 
       // 2. Log to crypto_donations
-      console.log("Inserting into crypto_donations...");
+
       const { data, error: insertError } = await supabase
         .from("crypto_donations")
         .insert({
@@ -174,10 +174,10 @@ export default function MaticDonationButton({
         throw insertError;
       }
 
-      console.log("Donation logged successfully:", data);
+
 
       // 3. Update raised amount
-      console.log("Updating raised amount...");
+
       const { data: causeData, error: selectError } = await supabase
         .from("causes")
         .select("raised")
@@ -204,7 +204,7 @@ export default function MaticDonationButton({
         throw updateError;
       }
 
-      console.log("Raised amount updated successfully");
+
       return data;
     } catch (error) {
       console.error("Complete donation logging error:", error);
@@ -214,17 +214,17 @@ export default function MaticDonationButton({
 
   const switchToPolygonAmoyTestnet = async () => {
     try {
-      console.log("Attempting to switch to Polygon Amoy Testnet");
+
       await window.ethereum?.request({
         method: "wallet_switchEthereumChain",
         params: [{ chainId: "0x13882" }],
       });
-      console.log("Successfully switched to Polygon Amoy Testnet");
+
     } catch (switchError: any) {
       console.error("Switch error:", switchError);
       if (switchError.code === 4902) {
         try {
-          console.log("Adding Polygon Amoy Testnet to MetaMask");
+
           await window.ethereum?.request({
             method: "wallet_addEthereumChain",
             params: [
@@ -241,7 +241,7 @@ export default function MaticDonationButton({
               },
             ],
           });
-          console.log("Successfully added Polygon Amoy Testnet");
+
         } catch (addError) {
           console.error("Failed to add Polygon Amoy network:", addError);
           throw new Error(
@@ -274,12 +274,7 @@ export default function MaticDonationButton({
         throw new Error("Recipient wallet address not available");
       }
 
-      console.log(
-        "Initiating donation of",
-        amount,
-        "MATIC to",
-        recipientAddress
-      );
+
 
       await window.ethereum.request({ method: "eth_requestAccounts" });
       await switchToPolygonAmoyTestnet();
@@ -290,9 +285,9 @@ export default function MaticDonationButton({
       const balance = await provider.getBalance(walletAddress);
       const amountInWei = ethers.parseEther(donationAmount);
 
-      console.log("Wallet address:", walletAddress);
-      console.log("Balance:", ethers.formatEther(balance), "MATIC");
-      console.log("Amount to send:", donationAmount, "MATIC");
+
+
+
 
       if (balance < amountInWei) {
         throw new Error("Insufficient MATIC balance");
@@ -316,8 +311,8 @@ export default function MaticDonationButton({
       const gasWithBuffer =
         (BigInt(gasEstimate.toString()) * BigInt(130)) / BigInt(100);
 
-      console.log("Gas estimate:", gasEstimate.toString());
-      console.log("Gas with buffer:", gasWithBuffer.toString());
+
+
 
       // FIXED: More robust transaction formatting
       const tx = await signer.sendTransaction({
@@ -328,7 +323,7 @@ export default function MaticDonationButton({
         type: 2, // EIP-1559 transaction
       });
 
-      console.log("Transaction submitted, hash:", tx.hash);
+
       setTxHash(tx.hash);
       toast({
         title: "Transaction Submitted",
@@ -336,7 +331,7 @@ export default function MaticDonationButton({
       });
 
       try {
-        console.log("Waiting for transaction confirmation...");
+
         const receipt = await tx.wait();
 
         setIsDonating(false);
@@ -346,7 +341,7 @@ export default function MaticDonationButton({
           throw new Error("Transaction failed on chain");
         }
 
-        console.log("Transaction confirmed:", receipt);
+
         toast({
           title: "Success",
           description: "Transaction confirmed! Thank you for your donation.",
@@ -356,7 +351,7 @@ export default function MaticDonationButton({
         const maticAmount = parseFloat(donationAmount);
 
         try {
-          console.log("Logging donation to database...");
+
           await logDonation(
             causeId,
             tx.hash,
@@ -366,7 +361,7 @@ export default function MaticDonationButton({
             recipientAddress
           );
 
-          console.log("Donation successfully logged");
+
           onDonationSuccess?.(nairaAmount);
         } catch (dbError) {
           console.error("Database operation error:", dbError);

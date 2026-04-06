@@ -147,7 +147,6 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
   const [videoLinkInput, setVideoLinkInput] = useState("");
   const [videoLinkError, setVideoLinkError] = useState<string | null>(null);
 
-  console.log(cause.startDate, cause.endDate);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,

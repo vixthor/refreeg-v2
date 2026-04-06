@@ -85,7 +85,20 @@ export async function uploadKycDocument(
         return { documentUrl: "", error: "Failed to get public URL" };
       }
 
-      const { error: updateError } = await supabase
+      // Use Admin client for the update to ensure it bypasses any restrictive RLS 
+      // that might prevent users from updating rejected KYC records.
+      const supabaseAdmin = createSupabaseAdmin(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        {
+          auth: {
+            autoRefreshToken: false,
+            persistSession: false,
+          },
+        },
+      );
+
+      const { error: updateError } = await supabaseAdmin
         .from("kyc_verifications")
         .update({
           document_type: documentType,
@@ -105,8 +118,12 @@ export async function uploadKycDocument(
         .eq("id", existingKyc.id);
 
       if (updateError) {
+        console.error("Error updating existing KYC:", updateError);
         return { documentUrl: "", error: updateError.message };
       }
+
+      revalidatePath("/dashboard/settings/kyc");
+      revalidatePath(`/dashboard/admin/users/kyc/${userId}`);
 
       try {
         const { data: profile } = await supabase
@@ -197,6 +214,9 @@ export async function uploadKycDocument(
         return { documentUrl: "", error: insertError.message };
       }
 
+      revalidatePath("/dashboard/settings/kyc");
+      revalidatePath(`/dashboard/admin/users/kyc/${userId}`);
+
       try {
         const { data: profile } = await supabase
           .from("profiles")
@@ -235,7 +255,6 @@ export async function getVerificationStatus(
 ): Promise<{ status: KycVerification | null; error: string | null }> {
   try {
     const supabase = await createClient();
-    console.log("Fetching KYC for user:", userId);
     const { data, error } = await supabase
       .from("kyc_verifications")
       .select("*")
@@ -300,12 +319,6 @@ export async function updateVerificationStatus(
           persistSession: false,
         },
       },
-    );
-    console.log(
-      "[KYC] Updating status for verificationId:",
-      verificationId,
-      "to status:",
-      status,
     );
     const { error: updateError } = await supabaseAdmin
       .from("kyc_verifications")

@@ -1,4 +1,7 @@
-import { IntroDisclosure } from "./intro-disclosure";
+"use client";
+
+import { useState } from "react";
+import { IntroDisclosure } from "@/components/ui/intro-disclosure";
 
 const steps = [
   {
@@ -22,18 +25,22 @@ const steps = [
     },
     action: {
       label: "Try Now",
-      onClick: () => console.log("Action clicked"),
+      onClick: () => {},
     },
   },
 ] as const;
 
 export function OnboardingIntro() {
+  const [open, setOpen] = useState(true);
+
   return (
     <IntroDisclosure
       steps={steps}
+      open={open}
+      setOpen={setOpen}
       featureId="onboarding-intro"
-      onComplete={() => console.log("Completed")}
-      onSkip={() => console.log("Skipped")}
+      onComplete={() => {}}
+      onSkip={() => {}}
     />
   );
 }

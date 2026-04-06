@@ -56,7 +56,6 @@ export async function updateProfile(
     updated_at: new Date().toISOString(),
   };
 
-  console.log("Updating profile with data:", updateData);
 
   const { data, error } = await supabase
     .from("profiles")
@@ -264,9 +263,6 @@ export async function hasCompletedOnboarding(userId: string): Promise<boolean> {
       const onboardingcutoff = new Date("2024-12-21"); // Date when onboarding was added
 
       if (createdAt < onboardingcutoff) {
-        console.log(
-          `Grandfathered existing user ${userId} - has basic profile but no onboarding fields`,
-        );
         return true;
       }
     }
