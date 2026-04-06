@@ -153,7 +153,7 @@ export default function Step3({
     }
   };
 
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
@@ -173,16 +173,28 @@ export default function Step3({
         return;
       }
 
-      setProfilePhoto(file);
-      const photoUrl = URL.createObjectURL(file);
-      setProfilePhotoUrl(photoUrl);
-      setErrors((prev) => ({ ...prev, profilePhoto: "" }));
+      try {
+        // Compress the image before storing it
+        const { compressImage } = await import("@/utils/image-compression");
+        const compressedFile = await compressImage(file, 800, 0.8);
+        setProfilePhoto(compressedFile);
 
-      // Update onboarding data with photo info
-      updateOnboardingData("profile", {
-        ...formData,
-        profilePhoto: photoUrl,
-      });
+        const photoUrl = URL.createObjectURL(compressedFile);
+        setProfilePhotoUrl(photoUrl);
+        setErrors((prev) => ({ ...prev, profilePhoto: "" }));
+
+        // Update onboarding data with photo info
+        updateOnboardingData("profile", {
+          ...formData,
+          profilePhoto: photoUrl,
+        });
+      } catch (error) {
+        console.error("Error compressing image:", error);
+        setErrors((prev) => ({
+          ...prev,
+          profilePhoto: "Error processing the image",
+        }));
+      }
     }
   };
 

@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { UploadCloud } from "lucide-react";
 import { useDropzone } from "react-dropzone";
 import { useCallback, useState } from "react";
+import { compressImage } from "@/utils/image-compression";
 
 const documentTypes = [
   "NIN",
@@ -28,7 +29,7 @@ export default function StepDocumentUpload({
   const [error, setError] = useState<string | null>(null);
 
   const onDrop = useCallback(
-    (acceptedFiles: File[]) => {
+    async (acceptedFiles: File[]) => {
       const f = acceptedFiles[0];
       if (!f) return;
       const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -40,13 +41,25 @@ export default function StepDocumentUpload({
         setFile(null);
         return;
       }
-      if (f.size > MAX_FILE_SIZE) {
+
+      let fileToSet = f;
+      if (f.type.startsWith("image/")) {
+        try {
+          const compressed = await compressImage(f, 1200, 0.7);
+          fileToSet = compressed;
+        } catch (err) {
+          console.error("Compression failed, using original:", err);
+          fileToSet = f;
+        }
+      }
+
+      if (fileToSet.size > MAX_FILE_SIZE) {
         setError("File size too large. Maximum size is 5MB.");
         setFile(null);
         return;
       }
       setError(null);
-      setFile(f);
+      setFile(fileToSet);
     },
     [setFile]
   );

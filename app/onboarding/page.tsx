@@ -65,9 +65,7 @@ export default function OnboardingPage() {
 
   useEffect(() => {
     const checkUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const { data: { user } } = await supabase.auth.getUser();
 
       if (!user) {
         router.push("/auth/signin");
@@ -110,10 +108,7 @@ export default function OnboardingPage() {
           },
         }));
 
-        console.log(
-          `Resuming onboarding from step ${currentStepFromDB}`,
-          existingData,
-        );
+
       } catch (error) {
         console.error("Error loading onboarding progress:", error);
         // If there's an error, start from step 1

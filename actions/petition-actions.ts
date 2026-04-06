@@ -95,7 +95,7 @@ async function uploadImageToSupabase(
     ? "petition-videos"
     : "profile-photos";
 
-  console.log("bucket", bucket);
+
 
   const { data: uploadData, error: uploadError } = await supabase.storage
     .from(bucket)
@@ -130,7 +130,7 @@ export async function createPetition(
     );
   }
 
-  console.log("Uploaded");
+
 
   let daysActive = null;
   if (petitionData.startDate && petitionData.endDate) {
@@ -189,7 +189,7 @@ export async function createPetition(
     })
     .select()
     .single();
-  console.log(petition);
+
   if (petitionError) {
     console.error("Error creating petition:", petitionError);
     throw petitionError;

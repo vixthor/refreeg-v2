@@ -1,88 +1,54 @@
-import { type NextRequest } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
-import { createClient } from "@/lib/supabase/server";
-import { NextResponse } from "next/server";
-import {
-  isProfileComplete,
-  hasCompletedOnboarding,
-} from "@/actions/profile-actions";
+
+/**
+ * Public API route prefixes that do NOT require a Supabase user session.
+ * These routes either use their own auth (API keys) or are intentionally public.
+ */
+const PUBLIC_API_PREFIXES = [
+  "/api/bot",       // Developer API — authenticated via API keys
+  "/api/webhooks",  // Incoming webhooks (Paystack, etc.)
+  "/api/payments",  // Guest donation checkout + verification
+  "/api/cities",    // Public lookup data
+  "/api/countries", // Public lookup data
+  "/api/states",    // Public lookup data
+  "/api/mail",      // Donor-facing email endpoints (no auth required)
+];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // 1. Skip middleware for static assets, favicons, etc.
-  if (
-    pathname.startsWith("/_next") ||
-    pathname.includes(".") ||
-    pathname.startsWith("/favicon") ||
-    pathname.startsWith("/api")
-  ) {
-    return NextResponse.next();
-  }
+  // ── 1. Refresh session & get user (single getUser() call) ─────────
+  const { response, user } = await updateSession(request);
 
-  // 2. Update session and get user once.
-  // updateSession already calls getUser() internally.
-  const response = await updateSession(request);
+  // ── 2. Protect API routes ─────────────────────────────────────────
+  // Return 401 for authenticated API routes when no session exists.
+  // Public API routes (bot, webhooks, lookups, mail) are excluded.
+  if (pathname.startsWith("/api")) {
+    const isPublicApi = PUBLIC_API_PREFIXES.some((prefix) =>
+      pathname.startsWith(prefix)
+    );
 
-  let user: any = null;
-  try {
-    const supabase = await createClient();
-    const result = await supabase.auth.getUser();
-    user = result?.data?.user ?? null;
-  } catch (err) {
-    // If Supabase fetch/auth fails, log and continue without blocking the request.
-    // This prevents middleware from terminating due to transient network/TLS errors.
-    // eslint-disable-next-line no-console
-    console.error("Supabase middleware getUser error:", err);
+    if (!isPublicApi && !user) {
+      return NextResponse.json(
+        { error: "Authentication required" },
+        { status: 401 }
+      );
+    }
+
+    // Authenticated or public — let the request through.
+
     return response;
   }
 
-  if (!user) {
-    return response;
-  }
+  // ── 3. Redirect unauthenticated users away from protected pages ───
+  const isProtectedRoute =
+    pathname.startsWith("/dashboard") || pathname.startsWith("/onboarding");
 
-  // 3. User is logged in. 
-  // Skip expensive onboarding checks for public landing pages and non-dashboard routes
-  // to reduce landing page latency and database load.
-  const isPublicLanding = pathname === "/";
-  const isDashboard = pathname.startsWith("/dashboard");
-  const isOnboarding = pathname.startsWith("/onboarding");
-  const isAuth = pathname.startsWith("/auth");
-
-  // Only run onboarding check on dashboard routes
-  if (isDashboard && !isOnboarding && !isAuth) {
-    const hasCompleted = await hasCompletedOnboarding(user.id);
-    if (!hasCompleted) {
-      return NextResponse.redirect(new URL("/onboarding", request.url));
-    }
-  }
-
-  // 4. Restricted dashboard routes (Create Cause/Petition)
-  if (pathname.startsWith("/dashboard/causes/create") || pathname.startsWith("/dashboard/petitions/create")) {
-    const { data: kycVerification } = await supabase
-      .from("kyc_verifications")
-      .select("status")
-      .eq("user_id", user.id)
-      .single();
-
-    if (!kycVerification) {
-      return NextResponse.redirect(
-        new URL("/dashboard/settings/kyc?error=kyc_required", request.url)
-      );
-    }
-
-    if (kycVerification.status !== "approved") {
-      return NextResponse.redirect(
-        new URL(`/dashboard/settings/kyc?error=kyc_${kycVerification.status}`, request.url)
-      );
-    }
-
-    const { isComplete } = await isProfileComplete(user.id);
-    if (!isComplete) {
-      return NextResponse.redirect(
-        new URL("/dashboard/settings/profile?error=profile_incomplete", request.url)
-      );
-    }
+  if (isProtectedRoute && !user) {
+    const signInUrl = new URL("/auth/signin", request.url);
+    signInUrl.searchParams.set("redirect", pathname);
+    return NextResponse.redirect(signInUrl);
   }
 
   return response;

@@ -198,6 +198,7 @@ export interface TransactionData
   amount: number;
   serviceFee: number;
   causeId: string;
+  callbackUrl?: string;
   subaccounts: {
     subaccount: string;
     share: number;

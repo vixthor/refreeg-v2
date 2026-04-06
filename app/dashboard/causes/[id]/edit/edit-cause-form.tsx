@@ -147,7 +147,6 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
   const [videoLinkInput, setVideoLinkInput] = useState("");
   const [videoLinkError, setVideoLinkError] = useState<string | null>(null);
 
-  console.log(cause.startDate, cause.endDate);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -168,7 +167,7 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
     }
   };
 
-  const handleImageUpload = (files: File[]) => {
+  const handleImageUpload = async (files: File[]) => {
     const MAX_FILE_SIZE = 100 * 1024 * 1024;
     const file = files[0];
 
@@ -180,7 +179,17 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
       return;
     }
 
-    setFormData((prev) => ({ ...prev, coverImage: file }));
+    if (file) {
+      try {
+        const { compressImage } = await import("@/utils/image-compression");
+        const compressed = await compressImage(file, 1200, 0.7);
+        setFormData((prev) => ({ ...prev, coverImage: compressed }));
+      } catch (err) {
+        console.error("Compression failed, using original:", err);
+        setFormData((prev) => ({ ...prev, coverImage: file }));
+      }
+    }
+
     if (errors.coverImage) {
       setErrors((prev) => ({ ...prev, coverImage: undefined }));
     }
@@ -229,7 +238,7 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
     }));
   };
 
-  const handleMultimediaUpload = (files: File[]) => {
+  const handleMultimediaUpload = async (files: File[]) => {
     const MAX_FILES = 5;
     const MAX_TOTAL_SIZE = 100 * 1024 * 1024;
 
@@ -242,11 +251,29 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
       return;
     }
 
+    // Process and compress each file if it's an image
+    const processedFiles: File[] = [];
+    const { compressImage } = await import("@/utils/image-compression");
+
+    for (const file of files) {
+      if (file.type.startsWith("image/")) {
+        try {
+          const compressed = await compressImage(file, 1000, 0.7);
+          processedFiles.push(compressed);
+        } catch (err) {
+          console.error("Compression error:", err);
+          processedFiles.push(file);
+        }
+      } else {
+        processedFiles.push(file);
+      }
+    }
+
     const currentSize =
       formData.multimedia && formData.multimedia.length > 0
         ? formData.multimedia.reduce((acc, file) => acc + file.size, 0)
         : 0;
-    const newFilesSize = files.reduce((acc, file) => acc + file.size, 0);
+    const newFilesSize = processedFiles.reduce((acc, file) => acc + file.size, 0);
 
     if (currentSize + newFilesSize > MAX_TOTAL_SIZE) {
       setErrors((prev) => ({
@@ -259,8 +286,8 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
     setFormData((prev) => ({
       ...prev,
       multimedia: Array.isArray(prev.multimedia)
-        ? [...prev.multimedia, ...files]
-        : [...files],
+        ? [...prev.multimedia, ...processedFiles]
+        : [...processedFiles],
     }));
 
     if (errors.multimedia) {

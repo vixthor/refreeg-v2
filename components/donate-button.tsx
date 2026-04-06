@@ -29,12 +29,12 @@ export function DonateButton({
     (pathname.includes("/causes")
       ? "cause"
       : pathname.includes("/petitions")
-      ? "petition"
-      : null);
+        ? "petition"
+        : null);
 
   if (!detectedType && !href) {
     console.warn(
-      "DonateButton: Could not detect type from pathname. Provide 'type' or 'href'."
+      "DonateButton: Could not detect type from pathname. Provide 'type' or 'href'.",
     );
     return null;
   }
@@ -52,7 +52,7 @@ export function DonateButton({
   const button = (
     <Button
       className={`${
-        fullWidth ? "w-full" : ""
+        fullWidth ? "" : ""
       } bg-white hover:text-white border border-blue-900 text-blue-900`}
       variant="default"
       size="default"

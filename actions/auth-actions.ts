@@ -1,24 +1,25 @@
-"use server"
+"use server";
 
-import { createClient } from "@/lib/supabase/server"
-import { recordEvent, updateUserStreaks } from "@/actions/event-reward-actions"
-import { cache } from "react"
+import { createClient } from "@/lib/supabase/server";
+import { recordEvent, updateUserStreaks } from "@/actions/event-reward-actions";
+import { cache } from "react";
+import { getCachedUser } from "@/lib/supabase/cached-user";
 
 /**
  * Get the current user
  * Cached to prevent multiple fetch calls during a single request/render.
  */
 export const getCurrentUser = cache(async () => {
-  const supabase = await createClient()
+  const supabase = await createClient();
 
-  const { data: { user }, error } = await supabase.auth.getUser()
+  const { user, error } = await getCachedUser();
 
   if (error) {
-    return null
+    return null;
   }
 
-  return user
-})
+  return user;
+});
 
 /**
  * Track user login and update streaks
@@ -32,20 +33,23 @@ export async function trackLogin(userId: string) {
       metadata: {
         timestamp: new Date().toISOString(),
       },
-    })
+    });
 
     // Update user streaks
-    await updateUserStreaks(userId)
+    await updateUserStreaks(userId);
   } catch (error) {
-    console.error("Error tracking login:", error)
+    console.error("Error tracking login:", error);
     // Don't throw - login tracking shouldn't break authentication
   }
 }
 /**
  * Initialize wallet for new user with signup bonus
  */
-export async function initializeUserWallet(userId: string, signupBonus: number = 0) {
-  const supabase = await createClient()
+export async function initializeUserWallet(
+  userId: string,
+  signupBonus: number = 0,
+) {
+  const supabase = await createClient();
 
   try {
     // Check if wallet already exists
@@ -53,11 +57,11 @@ export async function initializeUserWallet(userId: string, signupBonus: number =
       .from("user_wallets")
       .select("id")
       .eq("user_id", userId)
-      .single()
+      .single();
 
     if (existingWallet) {
       // Wallet already exists, don't initialize again
-      return existingWallet
+      return existingWallet;
     }
 
     // Create wallet (signup bonus handled separately)
@@ -70,11 +74,11 @@ export async function initializeUserWallet(userId: string, signupBonus: number =
         updated_at: new Date().toISOString(),
       })
       .select()
-      .single()
+      .single();
 
     if (error) {
-      console.error("Error initializing user wallet:", error)
-      throw error
+      console.error("Error initializing user wallet:", error);
+      throw error;
     }
 
     // Initialize user streaks
@@ -89,11 +93,11 @@ export async function initializeUserWallet(userId: string, signupBonus: number =
         updated_at: new Date().toISOString(),
       })
       .select()
-      .single()
+      .single();
 
-    return data
+    return data;
   } catch (error) {
-    console.error("Error in initializeUserWallet:", error)
+    console.error("Error in initializeUserWallet:", error);
     // Don't throw - wallet initialization shouldn't break signup
   }
 }
@@ -102,7 +106,7 @@ export async function initializeUserWallet(userId: string, signupBonus: number =
  * Record a one-time signup reward transaction
  */
 export async function recordSignupReward(userId: string, amount: number = 1) {
-  const supabase = await createClient()
+  const supabase = await createClient();
 
   try {
     const { data: existingReward, error: existingError } = await supabase
@@ -111,15 +115,15 @@ export async function recordSignupReward(userId: string, amount: number = 1) {
       .eq("user_id", userId)
       .eq("transaction_type", "signup")
       .limit(1)
-      .single()
+      .single();
 
     if (existingReward) {
-      return existingReward
+      return existingReward;
     }
 
     if (existingError && existingError.code !== "PGRST116") {
-      console.error("Error checking signup reward:", existingError)
-      throw existingError
+      console.error("Error checking signup reward:", existingError);
+      throw existingError;
     }
 
     const { data, error } = await supabase
@@ -133,11 +137,11 @@ export async function recordSignupReward(userId: string, amount: number = 1) {
         updated_at: new Date().toISOString(),
       })
       .select()
-      .single()
+      .single();
 
     if (error) {
-      console.error("Error recording signup reward:", error)
-      throw error
+      console.error("Error recording signup reward:", error);
+      throw error;
     }
 
     // Update user's wallet balance
@@ -145,34 +149,32 @@ export async function recordSignupReward(userId: string, amount: number = 1) {
       .from("user_wallets")
       .select("balance")
       .eq("user_id", userId)
-      .single()
+      .single();
 
     if (walletError && walletError.code !== "PGRST116") {
-      console.error("Error fetching wallet for signup reward:", walletError)
-      throw walletError
+      console.error("Error fetching wallet for signup reward:", walletError);
+      throw walletError;
     }
 
-    const currentBalance = walletData?.balance || 0
-    const newBalance = currentBalance + amount
+    const currentBalance = walletData?.balance || 0;
+    const newBalance = currentBalance + amount;
 
-    const { error: updateError } = await supabase
-      .from("user_wallets")
-      .upsert(
-        {
-          user_id: userId,
-          balance: newBalance,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "user_id" }
-      )
+    const { error: updateError } = await supabase.from("user_wallets").upsert(
+      {
+        user_id: userId,
+        balance: newBalance,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "user_id" },
+    );
 
     if (updateError) {
-      console.error("Error updating wallet for signup reward:", updateError)
-      throw updateError
+      console.error("Error updating wallet for signup reward:", updateError);
+      throw updateError;
     }
 
-    return data
+    return data;
   } catch (error) {
-    console.error("Error in recordSignupReward:", error)
+    console.error("Error in recordSignupReward:", error);
   }
 }

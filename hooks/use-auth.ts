@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@/components/ui/use-toast";
 import {
@@ -9,11 +8,14 @@ import {
   sendWelcomeEmailToUser,
 } from "@/services/mail";
 import { subscribeToConvertKit } from "@/services/convertkit";
-import { hasCompletedOnboarding } from "@/actions/profile-actions";
 
 import { useAuthContext } from "@/components/auth-provider";
 
-function getDeviceInfo() {
+/**
+ * Derive a human-readable device label from the browser's User-Agent.
+ * Kept client-side because the UA is only available in the browser context.
+ */
+function getDeviceLabel(): string {
   if (typeof window === "undefined") return "Unknown Device";
   const ua = window.navigator.userAgent;
   if (/android/i.test(ua)) return "Android";
@@ -44,54 +46,22 @@ export function useAuth() {
         return;
       }
 
-      const device = getDeviceInfo();
-      let ipAddress = "Unknown IP";
-      try {
-        const res = await fetch("https://api.ipify.org?format=json");
-        if (res.ok) {
-          const data = await res.json();
-          ipAddress = data.ip || ipAddress;
-        }
-      } catch (e) {
-        // Ignore IP fetch errors
-      }
-
+      // Fire-and-forget login notification email.
+      // IP is resolved server-side via x-forwarded-for (no more api.ipify.org).
+      // Device label comes from the browser's User-Agent.
       sendLoginNotificationEmail({
         loginTime: new Date().toLocaleString(),
-        device,
-        ipAddress,
+        device: getDeviceLabel(),
       }).catch((e) => console.error("Login notification email error:", e));
-
-      const {
-        data: { user: currentUser },
-      } = await supabase.auth.getUser();
-
-      if (!currentUser) {
-        toast({
-          title: "Error",
-          description: "Unable to get user information.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const completedOnboarding = await hasCompletedOnboarding(currentUser.id);
-
-      if (!completedOnboarding) {
-        toast({
-          title: "Complete your profile",
-          description: "Please finish setting up your account.",
-        });
-        router.push("/onboarding");
-        return;
-      }
 
       toast({
         title: "Welcome back!",
         description: "You have successfully signed in.",
       });
 
-      router.push("/");
+      // Navigate to dashboard — the dashboard layout handles the
+      // onboarding redirect if the user hasn't completed it yet.
+      router.push("/dashboard");
     } catch (error: any) {
       toast({
         title: "Error signing in",
@@ -173,8 +143,6 @@ export function useAuth() {
             signup_date: new Date().toISOString(),
           },
         });
-
-        console.log("Successfully subscribed user to ConvertKit:", email);
       } catch (convertkitError) {
         console.error("Error subscribing to ConvertKit:", convertkitError);
       }

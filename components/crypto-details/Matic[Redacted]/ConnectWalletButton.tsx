@@ -5,6 +5,7 @@ import { BrowserProvider } from "ethers";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
+import { useAuthContext } from "@/components/auth-provider";
 
 interface ConnectWalletButtonProps {
   onConnected?: (address: string, network?: string) => void;
@@ -19,6 +20,7 @@ export function ConnectWalletButton({
   const [error, setError] = useState<string | null>(null);
   const supabase = createClient();
   const { toast } = useToast();
+  const { user } = useAuthContext();
 
   const installMetaMask = () => {
     window.open("https://metamask.io/download/", "_blank");
@@ -68,10 +70,6 @@ export function ConnectWalletButton({
           "Please switch to the Polygon Amoy testnet in MetaMask"
         );
       }
-
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
 
       if (!user) {
         throw new Error("You must be logged in to connect a wallet");

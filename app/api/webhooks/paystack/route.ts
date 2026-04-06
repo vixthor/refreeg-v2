@@ -13,7 +13,7 @@ interface PaystackWebhookData {
       interval: string;
     };
     metadata: {
-      user_id: string;
+      user_id?: string;
       cause_id: string;
       amount: number;
       tip_amount?: number;
@@ -87,7 +87,7 @@ export async function POST(request: Request) {
         const baseAmount = Number(metadata.amount);
         const tipAmount = Number(metadata.tip_amount || 0);
 
-        await createDonation(metadata.cause_id, metadata.user_id, {
+        await createDonation(metadata.cause_id, metadata.user_id || null, {
           amount: baseAmount,
           name: metadata.customer_name,
           email: metadata.email,
@@ -104,7 +104,7 @@ export async function POST(request: Request) {
 
       case "subscription.create":
         await createSubscription({
-          user_id: metadata.user_id,
+          user_id: metadata.user_id || undefined,
           cause_id: metadata.cause_id,
           paystack_subscription_code: data.subscription_code!,
           paystack_email_token: data.email_token,
@@ -119,7 +119,6 @@ export async function POST(request: Request) {
         );
 
       default:
-        console.log("Unhandled Paystack event:", event);
         return new NextResponse(
           JSON.stringify({ message: "Webhook event not supported yet" }),
           { status: 200 }
