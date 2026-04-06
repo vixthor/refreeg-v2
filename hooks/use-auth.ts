@@ -143,8 +143,6 @@ export function useAuth() {
             signup_date: new Date().toISOString(),
           },
         });
-
-        console.log("Successfully subscribed user to ConvertKit:", email);
       } catch (convertkitError) {
         console.error("Error subscribing to ConvertKit:", convertkitError);
       }

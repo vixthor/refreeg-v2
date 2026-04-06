@@ -165,7 +165,7 @@ export function DonationForm({
               attemptData.causeUrl || causeUrl
             }`,
           });
-          console.log("Unfinished donation reminder sent");
+
 
           // Clear the attempt after sending reminder
           localStorage.removeItem("donationAttempt");

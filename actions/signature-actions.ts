@@ -7,7 +7,6 @@ import type {
   SignatureWithPetition,
   SignatureFormData,
 } from "@/types";
-import { sendPetitionGoalReachedEmail } from "@/services/mail";
 
 /**
  * Check if a user has already signed a petition
@@ -179,6 +178,8 @@ async function checkAndSendPetitionGoalReachedEmail(petitionId: string) {
 
     if (creatorProfile?.email && creatorProfile?.full_name) {
       try {
+        const { sendPetitionGoalReachedEmail } = await import("@/services/mail");
+
         const { data: petitionWithTitle } = await supabase
           .from("petitions")
           .select("title")
@@ -198,9 +199,7 @@ async function checkAndSendPetitionGoalReachedEmail(petitionId: string) {
           totalAmount,
           petition.goal
         );
-        console.log(
-          `Petition goal reached notification sent to creator for petition ${petitionId}`
-        );
+
       } catch (emailError) {
         console.error(
           "Failed to send petition goal reached email:",
