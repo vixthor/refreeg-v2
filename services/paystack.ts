@@ -21,15 +21,12 @@ const Paystack = {
 
   initializeTransaction: async function (data: TransactionData) {
     try {
-      console.log("Initializing transaction with data:", data);
-
       if (!data.amount) {
         throw new Error(
           "Missing required fields for transaction initialization"
         );
       }
       const baseUrl = await getBaseURL();
-      console.log(data.isAnonymous);
       const totalCharge = data.amount + data.serviceFee + (data.tipAmount || 0);
       const feePlusTip = data.serviceFee + (data.tipAmount || 0);
       const primarySubaccount = data.subaccounts?.find(

@@ -279,7 +279,6 @@ export default function CreatePetitionForm() {
           await sendIncompletePetitionDraftEmail({
             continueUrl: `${window.location.origin}/dashboard/petitions/create`,
           });
-          console.log("Incomplete petition reminder sent");
         } catch (error) {
           console.error("Failed to send incomplete petition email:", error);
         }
@@ -475,7 +474,6 @@ export default function CreatePetitionForm() {
     });
 
     if (hasErrors) {
-      console.log("Found validation errors:", validationErrors);
       setErrors(validationErrors);
       setSubmitting(false);
       return;
