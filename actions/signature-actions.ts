@@ -198,9 +198,7 @@ async function checkAndSendPetitionGoalReachedEmail(petitionId: string) {
           totalAmount,
           petition.goal
         );
-        console.log(
-          `Petition goal reached notification sent to creator for petition ${petitionId}`
-        );
+
       } catch (emailError) {
         console.error(
           "Failed to send petition goal reached email:",
