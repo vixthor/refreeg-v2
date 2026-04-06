@@ -212,6 +212,13 @@ export interface Database {
           reminder_date: string;
           status: string;
           created_at: string;
+          paystack_authorization_code: string | null;
+          authorization_email: string | null;
+          first_transaction_reference: string | null;
+          paystack_payment_status: string | null;
+          scheduled_charge_reference: string | null;
+          last_charge_error: string | null;
+          charge_attempted_at: string | null;
         };
         Insert: {
           id?: string;
@@ -226,6 +233,13 @@ export interface Database {
           reminder_date: string;
           status?: string;
           created_at?: string;
+          paystack_authorization_code?: string | null;
+          authorization_email?: string | null;
+          first_transaction_reference?: string | null;
+          paystack_payment_status?: string | null;
+          scheduled_charge_reference?: string | null;
+          last_charge_error?: string | null;
+          charge_attempted_at?: string | null;
         };
         Update: {
           id?: string;
@@ -240,6 +254,13 @@ export interface Database {
           reminder_date?: string;
           status?: string;
           created_at?: string;
+          paystack_authorization_code?: string | null;
+          authorization_email?: string | null;
+          first_transaction_reference?: string | null;
+          paystack_payment_status?: string | null;
+          scheduled_charge_reference?: string | null;
+          last_charge_error?: string | null;
+          charge_attempted_at?: string | null;
         };
       };
       subscriptions: {

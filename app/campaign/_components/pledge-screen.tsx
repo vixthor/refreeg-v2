@@ -6,6 +6,8 @@ import { motion, type Variants } from "framer-motion";
 import { HandHeart, ShieldAlert } from "lucide-react";
 import type { Cause } from "@/types";
 import { createPledge } from "@/actions/pledge-actions";
+import { usePayment } from "@/hooks/use-payment";
+import { PLEDGE_VERIFICATION_AMOUNT_NGN } from "@/lib/pledge-constants";
 
 function getDefaultPledgeDate() {
   const date = new Date();
@@ -69,6 +71,9 @@ function StatItem({
 }
 
 export default function PledgeScreen({ cause, profile }: PledgeScreenProps) {
+  const { initializePledgeCheckout, isLoading: paymentLoading } =
+    usePayment();
+
   const [pledgeAmount, setPledgeAmount] = useState(25000);
   const [pledgeAmountInput, setPledgeAmountInput] = useState("25,000");
   const [pledgeDate, setPledgeDate] = useState(getDefaultPledgeDate);
@@ -79,6 +84,9 @@ export default function PledgeScreen({ cause, profile }: PledgeScreenProps) {
   const [pledgeSubmitting, setPledgeSubmitting] = useState(false);
   const [pledgeError, setPledgeError] = useState<string | null>(null);
   const [pledgeId, setPledgeId] = useState<string | null>(null);
+  const [guestPledgeToken, setGuestPledgeToken] = useState<string | null>(
+    null,
+  );
   const [fieldErrors, setFieldErrors] = useState<{
     amount?: string;
     date?: string;
@@ -170,7 +178,7 @@ export default function PledgeScreen({ cause, profile }: PledgeScreenProps) {
   };
 
   const handleSubmit = async () => {
-    if (pledgeSubmitting) return;
+    if (pledgeSubmitting || paymentLoading) return;
 
     const validationError = validatePledge();
     if (validationError) {
@@ -197,13 +205,28 @@ export default function PledgeScreen({ cause, profile }: PledgeScreenProps) {
         causeTitle: cause.title,
       });
 
-      if (error) {
+      if (error || !data?.id) {
         setPledgeError(error || "We could not save your pledge.");
         setPledgeSubmitted(false);
         return;
       }
 
-      setPledgeId(data?.id ?? null);
+      setPledgeId(data.id);
+      setGuestPledgeToken(data.token ?? null);
+
+      try {
+        await initializePledgeCheckout({
+          pledgeId: data.id,
+          guestToken: data.token,
+        });
+      } catch {
+        setPledgeError(
+          "Your pledge was saved, but Paystack did not open. Click “Continue to Paystack” below to add your card.",
+        );
+        setPledgeSubmitted(false);
+        return;
+      }
+
       setPledgeSubmitted(true);
     } catch (err) {
       const message =
@@ -212,6 +235,19 @@ export default function PledgeScreen({ cause, profile }: PledgeScreenProps) {
       setPledgeSubmitted(false);
     } finally {
       setPledgeSubmitting(false);
+    }
+  };
+
+  const handleRetryPaystack = async () => {
+    if (!pledgeId || paymentLoading) return;
+    setPledgeError(null);
+    try {
+      await initializePledgeCheckout({
+        pledgeId,
+        guestToken: guestPledgeToken,
+      });
+    } catch {
+      setPledgeError("Could not open Paystack. Please try again.");
     }
   };
 
@@ -244,7 +280,7 @@ export default function PledgeScreen({ cause, profile }: PledgeScreenProps) {
               </h1>
               <p className="text-sm leading-relaxed text-[#64748B] sm:text-base lg:text-lg">
                 {cause.summary ||
-                  "Make a pledge today and we will email you on your chosen date to complete the contribution."}
+                  "Make a pledge, save your card on Paystack, and your donation is charged on the date you pick."}
               </p>
             </div>
 
@@ -316,10 +352,13 @@ export default function PledgeScreen({ cause, profile }: PledgeScreenProps) {
             <h3 className="mt-3 text-xl font-semibold text-slate-900 sm:text-2xl">
               Pledge to donate later
             </h3>
-            <p className="mt-2 text-sm text-slate-600">
-              Make a pledge today and we will remind you by email on the date
-              you choose. This is a commitment only — no donation is taken now.
-            </p>
+              <p className="mt-2 text-sm text-slate-600">
+                Enter your pledge and card on Paystack. We charge a one-time
+                ₦{PLEDGE_VERIFICATION_AMOUNT_NGN.toLocaleString()} verification
+                to save your card; your full pledge amount is charged on the
+                reminder date and paid to the organiser (same routing as quick
+                donate).
+              </p>
 
             <div className="mt-4 grid gap-3">
               <label className="grid gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
@@ -472,46 +511,42 @@ export default function PledgeScreen({ cause, profile }: PledgeScreenProps) {
                 className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"
                 aria-live="polite"
               >
-                Pledge saved. We will remind you on{" "}
-                {pledgeDate || "your selected date"} to complete your ₦
-                {Number(pledgeAmount || 0).toLocaleString()} contribution.
-                {pledgeId && (
-                  <span className="mt-1 block text-xs text-emerald-700">
-                    Reference: {pledgeId}
-                  </span>
-                )}
-                <span className="mt-1 block text-xs text-emerald-700">
-                  Check your email for confirmation.
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setPledgeSubmitted(false)}
-                  className="mt-2 inline-flex text-xs font-semibold text-emerald-800 underline underline-offset-4"
-                >
-                  Edit pledge
-                </button>
+                Redirecting to Paystack… If nothing opens, use the button below.
               </div>
+            )}
+
+            {pledgeId && pledgeError?.includes("Paystack") && (
+              <button
+                type="button"
+                onClick={handleRetryPaystack}
+                disabled={paymentLoading}
+                className="mt-4 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 disabled:cursor-not-allowed disabled:opacity-70"
+              >
+                {paymentLoading ? "Opening Paystack…" : "Continue to Paystack"}
+              </button>
             )}
 
             <button
               type="button"
               onClick={handleSubmit}
-              disabled={pledgeSubmitting}
+              disabled={pledgeSubmitting || paymentLoading}
               className="mt-4 w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 disabled:cursor-not-allowed disabled:opacity-70"
             >
-              {pledgeSubmitting
-                ? "Saving pledge..."
-                : "Save pledge & remind me"}
+              {pledgeSubmitting || paymentLoading
+                ? "Working…"
+                : "Save pledge & pay card verification"}
             </button>
 
-            <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-[#7C2D12]">
-              <ShieldAlert className="h-4 w-4 text-[#F59E0B]" />
-              No payment today
+            <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600">
+              <ShieldAlert className="h-4 w-4 text-slate-400" />
+              ₦{PLEDGE_VERIFICATION_AMOUNT_NGN.toLocaleString()} verification now
+              · full pledge on {pledgeDate || "your date"}
             </div>
 
-            <div className="mt-6 flex items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-base font-semibold text-[#7C2D12] sm:text-lg">
-              <ShieldAlert className="h-5 w-5 text-[#F59E0B]" />
-              This is a pledge only. You will not be charged today.
+            <div className="mt-6 flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700 sm:text-base">
+              <ShieldAlert className="h-5 w-5 shrink-0 text-slate-400" />
+              By continuing, you authorise us to charge your pledge amount on the
+              reminder date to the card you enter on Paystack.
             </div>
           </motion.div>
         </section>
@@ -598,9 +633,9 @@ export default function PledgeScreen({ cause, profile }: PledgeScreenProps) {
               What happens next
             </p>
             <p className="mt-3">
-              We will email you on your selected reminder date with a direct
-              link to complete the contribution. You can edit or cancel the
-              pledge at any time before then.
+              After your card is saved, you will get a confirmation email. On
+              your reminder date we charge the full pledge automatically; you
+              will receive a receipt when it succeeds.
             </p>
           </motion.div>
         </aside>
@@ -611,10 +646,10 @@ export default function PledgeScreen({ cause, profile }: PledgeScreenProps) {
           <button
             type="button"
             onClick={handleSubmit}
-            disabled={pledgeSubmitting}
+            disabled={pledgeSubmitting || paymentLoading}
             className="flex-1 rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-70"
           >
-            {pledgeSubmitting ? "Saving pledge..." : "Save pledge"}
+            {pledgeSubmitting || paymentLoading ? "Working…" : "Save & Paystack"}
           </button>
         </div>
       </div>
