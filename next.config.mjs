@@ -10,6 +10,12 @@ try {
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Include email HTML templates in the serverless bundle.
+  // Without this, fs.readFileSync cannot find them at runtime on Vercel
+  // because Next.js only traces statically-imported files by default.
+  outputFileTracingIncludes: {
+    "**": ["./services/templates/**/*.html"],
+  },
   eslint: {
     ignoreDuringBuilds: true,
   },

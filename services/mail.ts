@@ -238,6 +238,26 @@ export async function sendKycRejectedEmail(
   });
 }
 
+export async function sendCauseRejectedEmailForUser(
+  userId: string,
+  context: { causeName: string; rejectionReason?: string; dashboardUrl: string },
+) {
+  const profile = await getProfile(userId);
+  if (!profile?.email) throw new Error("Recipient email not found");
+
+  return sendMail({
+    to: profile.email,
+    subject: "Update on Your Campaign ❌",
+    templateName: "cause-rejected",
+    context: {
+      ...context,
+      userName: profile.full_name || "User",
+      organizationName: "Refreeg",
+      causeResubmitLink: context.dashboardUrl,
+    },
+  });
+}
+
 export async function sendCauseSubmissionAdminNotification(
   userName: string,
   userEmail: string,
@@ -787,4 +807,21 @@ export async function sendKycSubmissionAdminNotification(
         error instanceof Error ? error.message : "Failed to send notifications",
     };
   }
+}
+
+export async function sendKycReminderEmail(
+  userEmail: string,
+  userName: string,
+) {
+  const currentYear = new Date().getFullYear();
+  return sendMail({
+    to: userEmail,
+    subject: "🔐 Your Refreeg account isn't verified yet — here's why it matters",
+    templateName: "kyc-reminder",
+    context: {
+      userName,
+      kycUrl: "https://www.refreeg.com/dashboard/settings?tab=kyc",
+      currentYear,
+    },
+  });
 }
