@@ -222,7 +222,11 @@ export async function getUserPetitionsWithStats(userId: string) {
   }));
 }
 
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export async function getCauseAnalytics(causeId: string) {
+  if (!UUID_REGEX.test(causeId)) return null;
   const supabase = await createClient();
 
   const { data: donations, error: donationsError } = await supabase
