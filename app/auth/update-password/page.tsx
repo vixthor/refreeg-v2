@@ -79,7 +79,7 @@ export default function UpdatePasswordPage() {
 
     try {
       await supabase.auth.signOut();
-      router.push("/");
+      router.push("/auth/signin");
     } catch (error) {
       router.push("/");
     }
