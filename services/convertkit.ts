@@ -83,7 +83,6 @@ export async function subscribeToConvertKit({
       };
     }
 
-    console.log("Successfully subscribed user to ConvertKit:", email);
     return {
       success: true,
       subscriberId: data.subscription?.subscriber?.id,

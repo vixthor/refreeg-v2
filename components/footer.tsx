@@ -189,7 +189,6 @@ export function Footer() {
   const theme =
     routeThemes[pathname as keyof typeof routeThemes] ?? routeThemes.default;
 
-
   return (
     <footer className="bg-background px-4 pb-5 pt-10 sm:px-6 lg:px-8">
       <div
@@ -199,33 +198,6 @@ export function Footer() {
         )}
       >
         <div className="grid gap-6 p-4 sm:p-6 lg:p-8">
-          <div
-            className={cn(
-              "rounded-[24px] border p-5 backdrop-blur sm:p-6",
-              theme.panel,
-            )}
-          >
-            <div className="max-w-3xl lg:mx-auto lg:flex lg:flex-col lg:items-center">
-              <div className="flex items-center gap-3 lg:justify-center">
-                <Logo />
-                <div className="text-left">
-                  <p className="text-lg font-semibold text-slate-950">
-                    RefreeG
-                  </p>
-                  <p className="text-sm text-slate-500">
-                    Transparent crowdfunding for causes that matter.
-                  </p>
-                </div>
-              </div>
-
-              <p className="mt-5 max-w-2xl text-sm leading-7 text-slate-600 sm:text-base lg:text-center">
-                Launch causes, receive support, and keep donors informed with a
-                platform built for trust, faster giving, and real community
-                impact.
-              </p>
-            </div>
-          </div>
-
           <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
             <div
               className={cn(
@@ -361,6 +333,5 @@ export function Footer() {
         </div>
       </div>
     </footer>
-
   );
 }

@@ -301,7 +301,6 @@ export default function CreateCauseForm() {
           await sendIncompleteCauseSetupEmail({
             continueUrl: `${window.location.origin}/dashboard/causes/create`,
           });
-          console.log("Incomplete cause reminder sent");
         } catch (error) {
           console.error("Failed to send incomplete cause email:", error);
         }
@@ -500,7 +499,6 @@ export default function CreateCauseForm() {
     });
 
     if (hasErrors) {
-      console.log("Found validation errors:", validationErrors);
       setErrors(validationErrors);
       setSubmitting(false);
       return;
