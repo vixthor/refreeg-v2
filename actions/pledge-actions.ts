@@ -11,8 +11,30 @@ type CreatePledgeInput = {
   causeTitle?: string;
 };
 
+/** Reminder must be today or a future calendar day (UTC) — past dates rejected. */
+function isReminderDateTodayOrFuture(isoDate: string): boolean {
+  const parts = isoDate.split("-").map(Number);
+  if (parts.length !== 3 || parts.some((n) => Number.isNaN(n))) return false;
+  const [y, m, d] = parts;
+  const selected = Date.UTC(y, m - 1, d);
+  const now = new Date();
+  const today = Date.UTC(
+    now.getUTCFullYear(),
+    now.getUTCMonth(),
+    now.getUTCDate(),
+  );
+  return selected >= today;
+}
+
 export async function createPledge(input: CreatePledgeInput) {
   const supabase = await createClient();
+
+  if (!isReminderDateTodayOrFuture(input.reminderDate)) {
+    return {
+      data: null,
+      error: "Reminder date cannot be in the past.",
+    };
+  }
 
   const {
     data: { user },
