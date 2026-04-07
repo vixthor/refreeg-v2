@@ -9,10 +9,26 @@ import { createPledge } from "@/actions/pledge-actions";
 import { usePayment } from "@/hooks/use-payment";
 import { PLEDGE_VERIFICATION_AMOUNT_NGN } from "@/lib/pledge-constants";
 
+/** Local calendar YYYY-MM-DD (avoids UTC shifts from toISOString). */
+function formatLocalYYYYMMDD(date: Date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+/** Earliest selectable day: today (past dates are not allowed). */
+function getMinPledgeDate() {
+  const date = new Date();
+  date.setHours(0, 0, 0, 0);
+  return formatLocalYYYYMMDD(date);
+}
+
 function getDefaultPledgeDate() {
   const date = new Date();
+  date.setHours(0, 0, 0, 0);
   date.setDate(date.getDate() + 7);
-  return date.toISOString().split("T")[0];
+  return formatLocalYYYYMMDD(date);
 }
 
 type ProfileSummary = {
@@ -159,6 +175,8 @@ export default function PledgeScreen({ cause, profile }: PledgeScreenProps) {
 
     if (!pledgeDate) {
       nextErrors.date = "Select a reminder date.";
+    } else if (pledgeDate < getMinPledgeDate()) {
+      nextErrors.date = "Choose today, tomorrow, or a later date.";
     }
 
     if (!trimmedEmail) {
@@ -352,13 +370,29 @@ export default function PledgeScreen({ cause, profile }: PledgeScreenProps) {
             <h3 className="mt-3 text-xl font-semibold text-slate-900 sm:text-2xl">
               Pledge to donate later
             </h3>
-              <p className="mt-2 text-sm text-slate-600">
-                Enter your pledge and card on Paystack. We charge a one-time
-                ₦{PLEDGE_VERIFICATION_AMOUNT_NGN.toLocaleString()} verification
-                to save your card; your full pledge amount is charged on the
-                reminder date and paid to the organiser (same routing as quick
-                donate).
+            <p className="mt-2 text-sm text-slate-600">
+              Set a date, enter your card on Paystack, and we charge your full
+              pledge on that day — automatically sent to the cause.
+            </p>
+
+            <div className="mt-4 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-800 space-y-1.5">
+              <p className="font-semibold text-blue-900">How it works</p>
+              <div className="flex justify-between">
+                <span>Card verification charge (paid now)</span>
+                <span className="font-semibold">₦{PLEDGE_VERIFICATION_AMOUNT_NGN.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Pledge amount charged on {pledgeDate || "your date"}</span>
+                <span className="font-semibold">
+                  ₦{pledgeAmount > 0 ? Number(pledgeAmount).toLocaleString() : "—"}
+                </span>
+              </div>
+              <p className="text-xs text-blue-600 pt-0.5">
+                Paystack will show ₦{PLEDGE_VERIFICATION_AMOUNT_NGN.toLocaleString()} on checkout — that is the card
+                verification only. Your pledge of ₦{pledgeAmount > 0 ? Number(pledgeAmount).toLocaleString() : "—"} is
+                charged on {pledgeDate || "the date you pick"}.
               </p>
+            </div>
 
             <div className="mt-4 grid gap-3">
               <label className="grid gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
@@ -414,12 +448,13 @@ export default function PledgeScreen({ cause, profile }: PledgeScreenProps) {
                 <input
                   type="date"
                   value={pledgeDate}
-                  min={getDefaultPledgeDate()}
+                  min={getMinPledgeDate()}
                   max={(() => {
                     if (!cause.days_active) return undefined;
                     const end = new Date();
+                    end.setHours(0, 0, 0, 0);
                     end.setDate(end.getDate() + cause.days_active);
-                    return end.toISOString().split("T")[0];
+                    return formatLocalYYYYMMDD(end);
                   })()}
                   onChange={(event) => {
                     handleFieldChange(setPledgeDate)(event);
@@ -433,8 +468,8 @@ export default function PledgeScreen({ cause, profile }: PledgeScreenProps) {
                   </p>
                 )}
                 <p className="text-xs text-slate-500">
-                  We will send a reminder on this date by email.{cause.days_active ? ` Date must be before the campaign ends.` : ""} SMS reminders
-                  can be added later.
+                  Today, tomorrow, or any later day (not in the past).{cause.days_active ? ` Latest: last day of the campaign window.` : ""}{" "}
+                  We will use this date for the charge / reminder. SMS can be added later.
                 </p>
               </label>
 
@@ -534,19 +569,20 @@ export default function PledgeScreen({ cause, profile }: PledgeScreenProps) {
             >
               {pledgeSubmitting || paymentLoading
                 ? "Working…"
-                : "Save pledge & pay card verification"}
+                : `Save pledge & verify card (₦${PLEDGE_VERIFICATION_AMOUNT_NGN.toLocaleString()} now)`}
             </button>
 
-            <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600">
-              <ShieldAlert className="h-4 w-4 text-slate-400" />
-              ₦{PLEDGE_VERIFICATION_AMOUNT_NGN.toLocaleString()} verification now
-              · full pledge on {pledgeDate || "your date"}
-            </div>
-
-            <div className="mt-6 flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700 sm:text-base">
-              <ShieldAlert className="h-5 w-5 shrink-0 text-slate-400" />
-              By continuing, you authorise us to charge your pledge amount on the
-              reminder date to the card you enter on Paystack.
+            <div className="mt-4 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+              <span>
+                Paystack checkout will show{" "}
+                <strong>₦{PLEDGE_VERIFICATION_AMOUNT_NGN.toLocaleString()}</strong> — this is only a
+                card-save verification. Your actual pledge of{" "}
+                <strong>
+                  ₦{pledgeAmount > 0 ? Number(pledgeAmount).toLocaleString() : "—"}
+                </strong>{" "}
+                will be charged on <strong>{pledgeDate || "your chosen date"}</strong>.
+              </span>
             </div>
           </motion.div>
         </section>
