@@ -62,10 +62,27 @@ export async function getDonationTrends(userId: string) {
   const sixMonthsAgo = new Date();
   sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
 
+  const { data: causes, error: causesError } = await supabase
+    .from("causes")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("status", "approved");
+
+  if (causesError) {
+    console.error("Error fetching causes for donation trends:", causesError);
+    return [];
+  }
+
+  const causeIds = (causes || []).map((cause) => cause.id);
+
+  if (causeIds.length === 0) {
+    return [];
+  }
+
   const { data: donations, error } = await supabase
     .from("donations")
     .select("amount, created_at")
-    .eq("user_id", userId)
+    .in("cause_id", causeIds)
     .gte("created_at", sixMonthsAgo.toISOString())
     .order("created_at", { ascending: true });
 
@@ -205,7 +222,11 @@ export async function getUserPetitionsWithStats(userId: string) {
   }));
 }
 
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export async function getCauseAnalytics(causeId: string) {
+  if (!UUID_REGEX.test(causeId)) return null;
   const supabase = await createClient();
 
   const { data: donations, error: donationsError } = await supabase

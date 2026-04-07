@@ -12,13 +12,20 @@ import type {
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "./auth-actions";
 import { isAdminOrManager } from "./role-actions";
-import { sendCauseSubmissionAdminNotification } from "@/services/mail";
+import {
+  sendCauseSubmissionAdminNotification,
+  sendCauseRejectedEmailForUser,
+} from "@/services/mail";
 import { cache } from "react";
+
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
  * Get a cause by ID
  */
 export async function getCause(causeId: string): Promise<CauseWithUser | null> {
+  if (!UUID_REGEX.test(causeId)) return null;
   const supabase = await createClient();
   const user = await getCurrentUser();
   const { data, error } = await supabase
@@ -119,7 +126,6 @@ async function uploadImageToSupabase(
     ? "cause-videos"
     : "profile-photos";
 
-  console.log("bucket", bucket);
 
   const { data: uploadData, error: uploadError } = await supabase.storage
     .from(bucket)
@@ -157,7 +163,6 @@ export async function createCause(
     );
   }
 
-  console.log("Uploaded");
 
   let daysActive = null;
   if (causeData.startDate && causeData.endDate) {
@@ -217,7 +222,6 @@ export async function createCause(
     })
     .select()
     .single();
-  console.log(cause);
   if (causeError) {
     console.error("Error creating cause:", causeError);
     throw causeError;
@@ -624,6 +628,17 @@ export async function updateCauseStatus(
     if (error) {
       console.error("Error updating cause status:", error);
       throw error;
+    }
+
+    // Notify the cause creator about the rejection
+    try {
+      await sendCauseRejectedEmailForUser(data.user_id, {
+        causeName: data.title,
+        rejectionReason,
+        dashboardUrl: "https://www.refreeg.com/dashboard/causes?status=rejected",
+      });
+    } catch (emailError) {
+      console.error("Error sending cause rejection email:", emailError);
     }
 
     revalidatePath("/dashboard/admin/causes");

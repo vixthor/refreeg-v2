@@ -4,6 +4,7 @@ import { listUserDonations } from "@/actions/donation-actions";
 import { getUserPetitions } from "@/actions/petition-actions";
 import { getCurrentUser } from "@/actions/auth-actions";
 import PublicProfile from "@/components/PublicProfile";
+import { notFound } from "next/navigation";
 
 type PageParams = {
   username: string;
@@ -24,7 +25,7 @@ export default async function PublicProfilePage({
 
   const profile = await getProfileByUsername(username);
   if (!profile) {
-    return <div className="text-center py-12">User not found</div>;
+    notFound();
   }
 
   const userId = profile.id;
