@@ -1,4 +1,5 @@
 "use server";
+import "server-only";
 
 import nodemailer from "nodemailer";
 import fs from "fs";
@@ -49,9 +50,6 @@ export async function sendMail({
     const template = loadTemplate(templateName);
     const html = template(context);
 
-    console.log("Email template loaded:", html);
-    console.log("Sending email with context:", context);
-
     const info = await transporter.sendMail({
       from,
       to,
@@ -61,10 +59,8 @@ export async function sendMail({
       html,
     });
 
-    console.log(`Email sent: ${info.messageId}`);
     return { success: true, messageId: info.messageId };
   } catch (error) {
-    console.error("Error sending email:", error);
     return { success: false, error };
   }
 }
@@ -238,6 +234,26 @@ export async function sendKycRejectedEmail(
   });
 }
 
+export async function sendCauseRejectedEmailForUser(
+  userId: string,
+  context: { causeName: string; rejectionReason?: string; dashboardUrl: string },
+) {
+  const profile = await getProfile(userId);
+  if (!profile?.email) throw new Error("Recipient email not found");
+
+  return sendMail({
+    to: profile.email,
+    subject: "Update on Your Campaign ❌",
+    templateName: "cause-rejected",
+    context: {
+      ...context,
+      userName: profile.full_name || "User",
+      organizationName: "Refreeg",
+      causeResubmitLink: context.dashboardUrl,
+    },
+  });
+}
+
 export async function sendCauseSubmissionAdminNotification(
   userName: string,
   userEmail: string,
@@ -248,7 +264,6 @@ export async function sendCauseSubmissionAdminNotification(
   const adminEmails = await getAdminEmails();
 
   if (adminEmails.length === 0) {
-    console.warn("No admin emails found to send cause notification");
     return { success: false, error: "No admin emails found" };
   }
 
@@ -276,17 +291,12 @@ export async function sendCauseSubmissionAdminNotification(
     const successful = results.filter((r) => r.status === "fulfilled").length;
     const failed = results.filter((r) => r.status === "rejected").length;
 
-    console.log(
-      `Cause admin notification sent: ${successful} successful, ${failed} failed`,
-    );
-
     return {
       success: successful > 0,
       sent: successful,
       failed,
     };
   } catch (error) {
-    console.error("Error sending cause admin notifications:", error);
     return {
       success: false,
       error:
@@ -305,7 +315,6 @@ export async function sendPetitionSubmissionAdminNotification(
   const adminEmails = await getAdminEmails();
 
   if (adminEmails.length === 0) {
-    console.warn("No admin emails found to send petition notification");
     return { success: false, error: "No admin emails found" };
   }
 
@@ -333,17 +342,12 @@ export async function sendPetitionSubmissionAdminNotification(
     const successful = results.filter((r) => r.status === "fulfilled").length;
     const failed = results.filter((r) => r.status === "rejected").length;
 
-    console.log(
-      `Petition admin notification sent: ${successful} successful, ${failed} failed`,
-    );
-
     return {
       success: successful > 0,
       sent: successful,
       failed,
     };
   } catch (error: any) {
-    console.error("Error sending petition admin notifications:", error);
     return {
       success: false,
       error:
@@ -745,7 +749,6 @@ export async function sendKycSubmissionAdminNotification(
   const adminEmails = await getAdminEmails();
 
   if (adminEmails.length === 0) {
-    console.warn("No admin emails found to send KYC notification");
     return { success: false, error: "No admin emails found" };
   }
 
@@ -770,10 +773,6 @@ export async function sendKycSubmissionAdminNotification(
     const successful = results.filter((r) => r.status === "fulfilled").length;
     const failed = results.filter((r) => r.status === "rejected").length;
 
-    console.log(
-      `KYC admin notification sent: ${successful} successful, ${failed} failed`,
-    );
-
     return {
       success: successful > 0,
       sent: successful,
@@ -787,4 +786,21 @@ export async function sendKycSubmissionAdminNotification(
         error instanceof Error ? error.message : "Failed to send notifications",
     };
   }
+}
+
+export async function sendKycReminderEmail(
+  userEmail: string,
+  userName: string,
+) {
+  const currentYear = new Date().getFullYear();
+  return sendMail({
+    to: userEmail,
+    subject: "🔐 Your Refreeg account isn't verified yet — here's why it matters",
+    templateName: "kyc-reminder",
+    context: {
+      userName,
+      kycUrl: "https://www.refreeg.com/dashboard/settings?tab=kyc",
+      currentYear,
+    },
+  });
 }

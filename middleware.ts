@@ -8,6 +8,8 @@ import { updateSession } from "@/lib/supabase/middleware";
 const PUBLIC_API_PREFIXES = [
   "/api/bot",       // Developer API — authenticated via API keys
   "/api/webhooks",  // Incoming webhooks (Paystack, etc.)
+  "/api/payments",  // Guest donation checkout + verification
+  "/api/cron",      // Scheduled jobs (CRON_SECRET)
   "/api/cities",    // Public lookup data
   "/api/countries", // Public lookup data
   "/api/states",    // Public lookup data

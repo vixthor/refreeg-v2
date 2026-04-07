@@ -59,10 +59,8 @@ export interface SignatureFormData {
   isAnonymous: boolean;
 }
 
-export interface TransactionData extends Pick<
-  Profile,
-  "email" | "full_name" | "id"
-> {
+export interface TransactionData
+  extends Partial<Pick<Profile, "email" | "full_name" | "id">> {
   amount: number;
   serviceFee: number;
   tipAmount?: number;
@@ -75,6 +73,11 @@ export interface TransactionData extends Pick<
     subaccount: string;
     share: number;
   }[];
+  /** Paystack: save card for future pledge charge */
+  pledgeFlow?: "authorization";
+  pledgeId?: string;
+  pledgeFutureAmount?: number;
+  reminderDate?: string;
 }
 
 export interface ICreateSubaccount {

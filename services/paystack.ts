@@ -21,17 +21,17 @@ const Paystack = {
 
   initializeTransaction: async function (data: TransactionData) {
     try {
-      console.log("Initializing transaction with data:", data);
-
       if (!data.amount) {
         throw new Error(
           "Missing required fields for transaction initialization"
         );
       }
       const baseUrl = await getBaseURL();
-      console.log(data.isAnonymous);
       const totalCharge = data.amount + data.serviceFee + (data.tipAmount || 0);
       const feePlusTip = data.serviceFee + (data.tipAmount || 0);
+      const primarySubaccount = data.subaccounts?.find(
+        (entry) => entry?.subaccount?.trim().length,
+      )?.subaccount;
 
       const requestData = {
         currency: "NGN",
@@ -39,11 +39,14 @@ const Paystack = {
         amount: Math.round(totalCharge * 100),
         callback_url: data.callbackUrl || `${baseUrl}/causes/${data.causeId}/payment/verify`,
         transaction_charge: Math.round(feePlusTip * 100),
-        subaccount: data.subaccounts[0].subaccount,
-        bearer: "subaccount",
-        plan: data.plan, // For recurring donations
+        ...(primarySubaccount
+          ? {
+              subaccount: primarySubaccount,
+              bearer: "subaccount",
+            }
+          : {}),
+        ...(data.plan ? { plan: data.plan } : {}),
         metadata: {
-          user_id: data.id,
           amount: data.amount,
           tip_amount: data.tipAmount || 0,
           customer_name: data.full_name,
@@ -51,7 +54,16 @@ const Paystack = {
           email: data.email,
           message: data.message,
           is_anonymous: data.isAnonymous,
-          plan: data.plan,
+          ...(data.id ? { user_id: data.id } : {}),
+          ...(data.plan ? { plan: data.plan } : {}),
+          ...(data.pledgeFlow
+            ? {
+                pledge_flow: data.pledgeFlow,
+                pledge_id: data.pledgeId,
+                future_pledge_amount: data.pledgeFutureAmount,
+                reminder_date: data.reminderDate,
+              }
+            : {}),
         },
       };
 
@@ -91,6 +103,53 @@ const Paystack = {
     );
     return response.data.data;
   },
+
+  /**
+   * Charge a saved card (authorization code) — used for scheduled pledge fulfillment.
+   * @see https://paystack.com/docs/api/#transaction-charge-authorization
+   */
+  chargeAuthorization: async function (params: {
+    authorizationCode: string;
+    email: string;
+    amountNgn: number;
+    serviceFeeNgn: number;
+    reference: string;
+    causeId: string;
+    subaccount?: string;
+    metadata: Record<string, string | number | boolean | undefined>;
+  }) {
+    const totalKobo = Math.round(
+      (params.amountNgn + params.serviceFeeNgn) * 100
+    );
+    const feeKobo = Math.round(params.serviceFeeNgn * 100);
+    const primarySubaccount = params.subaccount?.trim();
+
+    const body: Record<string, unknown> = {
+      authorization_code: params.authorizationCode,
+      email: params.email,
+      amount: totalKobo,
+      reference: params.reference,
+      currency: "NGN",
+      metadata: params.metadata,
+    };
+
+    if (primarySubaccount) {
+      body.subaccount = primarySubaccount;
+      body.bearer = "subaccount";
+      body.transaction_charge = feeKobo;
+    }
+
+    const response = await this.api.post(
+      "/transaction/charge_authorization",
+      body
+    );
+    return response.data.data as {
+      status?: string;
+      reference?: string;
+      gateway_response?: string;
+    };
+  },
+
   createSubaccount: async function (data: ICreateSubaccount) {
     const response = await this.api.post("/subaccount", {
       ...data,

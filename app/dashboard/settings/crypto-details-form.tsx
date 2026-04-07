@@ -12,7 +12,6 @@ export default function SolanaWalletForm() {
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
-  console.log("walletAddress", walletAddress, "solana_wallet active");
 
   useEffect(() => {
     let isCancelled = false;

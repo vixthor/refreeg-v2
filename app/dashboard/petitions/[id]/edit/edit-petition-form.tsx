@@ -130,8 +130,6 @@ export default function EditPetitionForm({ petition }: EditPetitionFormProps) {
   const [videoLinkInput, setVideoLinkInput] = useState("");
   const [videoLinkError, setVideoLinkError] = useState<string | null>(null);
 
-  console.log(petition.startDate, petition.endDate);
-
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
@@ -245,7 +243,6 @@ export default function EditPetitionForm({ petition }: EditPetitionFormProps) {
           const compressed = await compressImage(file, 1000, 0.7);
           processedFiles.push(compressed);
         } catch (err) {
-          console.error("Compression error:", err);
           processedFiles.push(file);
         }
       } else {

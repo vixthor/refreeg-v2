@@ -1,5 +1,10 @@
 import { NextResponse } from "next/server";
 import { createDonation, createSubscription } from "@/actions";
+import {
+  processPledgeAuthorizationSuccess,
+  processPledgeScheduledChargeSuccess,
+} from "@/lib/pledge-paystack";
+import Paystack from "@/services/paystack";
 import crypto from "crypto";
 
 interface PaystackWebhookData {
@@ -12,16 +17,18 @@ interface PaystackWebhookData {
     plan?: {
       interval: string;
     };
-    metadata: {
-      user_id: string;
-      cause_id: string;
-      amount: number;
+    metadata?: {
+      user_id?: string;
+      cause_id?: string;
+      amount?: number;
       tip_amount?: number;
-      customer_name: string;
-      email: string;
-      message: string;
-      is_anonymous: boolean;
+      customer_name?: string;
+      email?: string;
+      message?: string;
+      is_anonymous?: boolean;
       plan?: string;
+      pledge_flow?: string;
+      pledge_id?: string;
     };
   };
 }
@@ -32,7 +39,7 @@ export async function POST(request: Request) {
     if (!payload) {
       return new NextResponse(
         JSON.stringify({ error: "Empty payload received" }),
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -40,7 +47,7 @@ export async function POST(request: Request) {
     if (!signature) {
       return new NextResponse(
         JSON.stringify({ error: "Missing webhook signature" }),
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -48,7 +55,7 @@ export async function POST(request: Request) {
     if (!secretKey) {
       return new NextResponse(
         JSON.stringify({ error: "Server configuration error" }),
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -60,78 +67,127 @@ export async function POST(request: Request) {
     if (hash !== signature) {
       return new NextResponse(
         JSON.stringify({ error: "Invalid webhook signature" }),
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     const webhookData = JSON.parse(payload) as PaystackWebhookData;
-    if (!webhookData?.event || !webhookData?.data?.metadata) {
+    if (!webhookData?.event) {
       return new NextResponse(
         JSON.stringify({ error: "Invalid webhook data structure" }),
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     const { event, data } = webhookData;
-    const { metadata } = data;
-
-    if (!metadata?.cause_id) {
-      return new NextResponse(
-        JSON.stringify({ message: "Metadata missing cause_id, skipping" }),
-        { status: 200 }
-      );
-    }
 
     switch (event) {
       case "charge.success": {
-        const baseAmount = Number(metadata.amount);
-        const tipAmount = Number(metadata.tip_amount || 0);
+        const reference = data?.reference;
+        if (!reference) {
+          return new NextResponse(
+            JSON.stringify({ error: "Missing reference" }),
+            { status: 400 },
+          );
+        }
 
-        await createDonation(metadata.cause_id, metadata.user_id, {
-          amount: baseAmount,
-          name: metadata.customer_name,
-          email: metadata.email,
-          message: metadata.message,
-          isAnonymous: metadata.is_anonymous,
-          tip_amount: tipAmount,
-        });
+        const full = (await Paystack.verifyTransactionFull(reference)) as {
+          status?: string;
+          metadata?: Record<string, string | number | boolean | undefined>;
+        };
+
+        if (full.status !== "success") {
+          return new NextResponse(
+            JSON.stringify({ message: "Transaction not successful" }),
+            { status: 200 },
+          );
+        }
+
+        const meta = full.metadata || {};
+
+        if (String(meta.pledge_flow) === "authorization") {
+          await processPledgeAuthorizationSuccess(reference);
+          return new NextResponse(
+            JSON.stringify({ message: "Pledge authorization stored" }),
+            { status: 201 },
+          );
+        }
+
+        if (String(meta.pledge_flow) === "scheduled_charge") {
+          await processPledgeScheduledChargeSuccess(reference);
+          return new NextResponse(
+            JSON.stringify({ message: "Pledge charge processed" }),
+            { status: 201 },
+          );
+        }
+
+        if (!meta.cause_id) {
+          return new NextResponse(
+            JSON.stringify({ message: "Metadata missing cause_id, skipping" }),
+            { status: 200 },
+          );
+        }
+
+        const baseAmount = Number(meta.amount);
+        const tipAmount = Number(meta.tip_amount || 0);
+
+        await createDonation(
+          String(meta.cause_id),
+          meta.user_id ? String(meta.user_id) : null,
+          {
+            amount: baseAmount,
+            name: String(meta.customer_name || ""),
+            email: String(meta.email || ""),
+            message: String(meta.message || ""),
+            isAnonymous: Boolean(meta.is_anonymous),
+            tip_amount: tipAmount,
+          },
+        );
 
         return new NextResponse(
           JSON.stringify({ message: "Donation processed successfully" }),
-          { status: 201 }
+          { status: 201 },
         );
       }
 
-      case "subscription.create":
+      case "subscription.create": {
+        const metadata = data?.metadata;
+        if (!metadata?.cause_id) {
+          return new NextResponse(
+            JSON.stringify({ message: "Metadata missing cause_id, skipping" }),
+            { status: 200 },
+          );
+        }
+
         await createSubscription({
-          user_id: metadata.user_id,
-          cause_id: metadata.cause_id,
+          user_id: metadata.user_id || undefined,
+          cause_id: String(metadata.cause_id),
           paystack_subscription_code: data.subscription_code!,
           paystack_email_token: data.email_token,
           amount: Number(metadata.amount),
           interval: data.plan?.interval || "monthly",
           status: "active",
         });
-        
+
         return new NextResponse(
           JSON.stringify({ message: "Subscription created successfully" }),
-          { status: 201 }
+          { status: 201 },
         );
+      }
 
       default:
-        console.log("Unhandled Paystack event:", event);
         return new NextResponse(
           JSON.stringify({ message: "Webhook event not supported yet" }),
-          { status: 200 }
+          { status: 200 },
         );
     }
   } catch (e) {
     console.error("Webhook processing error:", e);
     return new NextResponse(
-      JSON.stringify({ 
-        error: e instanceof Error ? e.message : "Internal Error" 
+      JSON.stringify({
+        error: e instanceof Error ? e.message : "Internal Error",
       }),
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
