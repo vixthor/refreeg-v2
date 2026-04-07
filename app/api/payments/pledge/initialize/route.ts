@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import Paystack from "@/services/paystack";
-import { calculateServiceFee, getBaseURL } from "@/lib/utils";
+import { getBaseURL } from "@/lib/utils";
 import { PLEDGE_VERIFICATION_AMOUNT_NGN } from "@/lib/pledge-constants";
 
 export async function POST(request: NextRequest) {
@@ -80,7 +80,8 @@ export async function POST(request: NextRequest) {
     const subaccount = profile?.sub_account_code?.trim() || "";
 
     const verificationAmount = PLEDGE_VERIFICATION_AMOUNT_NGN;
-    const serviceFee = calculateServiceFee(verificationAmount);
+    // No service fee on the verification charge — it is not a donation.
+    const serviceFee = 0;
     const baseUrl = getBaseURL();
 
     const response = await Paystack.initializeTransaction({
@@ -88,7 +89,7 @@ export async function POST(request: NextRequest) {
       amount: verificationAmount,
       serviceFee,
       causeId: pledge.cause_id,
-      message: "Pledge card authorization",
+      message: `Card verification for pledge of ₦${Number(pledge.amount).toLocaleString()} on ${pledge.reminder_date}`,
       isAnonymous: false,
       full_name: pledge.name,
       id: pledge.user_id || undefined,
