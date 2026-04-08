@@ -18,6 +18,9 @@ import { ExpandableCard } from "./ExpandableCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQueryState } from "nuqs";
 import { HandHeart, ShieldAlert, FilePenLine } from "lucide-react";
+import { Instagram, Facebook, Linkedin } from "lucide-react";
+import { FaXTwitter } from "react-icons/fa6";
+import { motion } from "framer-motion";
 
 type ProfileProps = {
   profile: any;
@@ -253,11 +256,91 @@ export default function PublicProfile({
               </div>
             )}
           </div>
-          <div className="mt-4 flex justify-end">
-            <div className="text-sm text-gray-500 text-right">
-              Social media links go here in the future!
+          {(profile.instagram_url ||
+            profile.twitter_url ||
+            profile.facebook_url ||
+            profile.linkedin_url) && (
+            <div className="mt-4 flex justify-end">
+              <motion.div
+                initial="hidden"
+                animate="visible"
+                variants={{
+                  visible: {
+                    transition: {
+                      staggerChildren: 0.08,
+                    },
+                  },
+                }}
+                className="flex items-center gap-2 md:gap-3"
+              >
+
+                {profile.instagram_url && (
+                  <motion.a
+                    href={profile.instagram_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="Instagram"
+                    variants={{
+                      hidden: { opacity: 0, y: 10 },
+                      visible: { opacity: 1, y: 0 },
+                    }}
+                    className="p-2 md:p-3 rounded-full bg-gray-100 hover:bg-pink-100 transition-all duration-200 transform hover:scale-110 hover:shadow-sm group"
+                  >
+                    <Instagram className="h-4 w-4 md:h-5 md:w-5 text-gray-600 group-hover:text-pink-600 transition-colors" />
+                  </motion.a>
+                )}
+
+                {profile.twitter_url && (
+                  <motion.a
+                    href={profile.twitter_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="X"
+                    variants={{
+                      hidden: { opacity: 0, y: 10 },
+                      visible: { opacity: 1, y: 0 },
+                    }}
+                    className="p-2 md:p-3 rounded-full bg-gray-100 hover:bg-black/10 transition-all duration-200 transform hover:scale-110 hover:shadow-sm group"
+                  >
+                    <FaXTwitter className="h-4 w-4 md:h-5 md:w-5 text-gray-600 group-hover:text-black transition-colors" />
+                  </motion.a>
+                )}
+
+                {profile.facebook_url && (
+                  <motion.a
+                    href={profile.facebook_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="Facebook"
+                    variants={{
+                      hidden: { opacity: 0, y: 10 },
+                      visible: { opacity: 1, y: 0 },
+                    }}
+                    className="p-2 md:p-3 rounded-full bg-gray-100 hover:bg-blue-100 transition-all duration-200 transform hover:scale-110 hover:shadow-sm group"
+                  >
+                    <Facebook className="h-4 w-4 md:h-5 md:w-5 text-gray-600 group-hover:text-blue-600 transition-colors" />
+                  </motion.a>
+                )}
+
+                {profile.linkedin_url && (
+                  <motion.a
+                    href={profile.linkedin_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="LinkedIn"
+                    variants={{
+                      hidden: { opacity: 0, y: 10 },
+                      visible: { opacity: 1, y: 0 },
+                    }}
+                    className="p-2 md:p-3 rounded-full bg-gray-100 hover:bg-blue-100 transition-all duration-200 transform hover:scale-110 hover:shadow-sm group"
+                  >
+                    <Linkedin className="h-4 w-4 md:h-5 md:w-5 text-gray-600 group-hover:text-blue-700 transition-colors" />
+                  </motion.a>
+                )}
+
+              </motion.div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Impact metrics */}
