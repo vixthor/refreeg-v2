@@ -1,151 +1,7 @@
-import Link from "next/link";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { PaginationButton } from "@/components/pagination-button";
 import { listPetitions } from "@/actions/petition-actions";
 import { listSignaturesForPetition } from "@/actions/signature-actions";
-import {
-  GraduationCap,
-  HeartPulse,
-  Leaf,
-  Users,
-  AlertTriangle,
-  PawPrint,
-  Sparkles,
-} from "lucide-react";
-import { ExpandableCard } from "./ExpandableCard";
-
-// Mock data for petitions
-const mockPetitions = [
-  {
-    id: "1",
-    title: "Clean Water Initiative",
-    description: "Providing clean water to communities in rural areas.",
-    category: "environment",
-    raised: 12500,
-    goal: 20000,
-    image: "/placeholder.svg?height=200&width=400",
-    created_at: "2023-05-15T10:30:00Z",
-  },
-  {
-    id: "2",
-    title: "Education for All",
-    description: "Supporting education for underprivileged children.",
-    category: "education",
-    raised: 8700,
-    goal: 15000,
-    image: "/placeholder.svg?height=200&width=400",
-    created_at: "2023-06-10T14:45:00Z",
-  },
-  {
-    id: "3",
-    title: "Medical Supplies Drive",
-    description: "Collecting medical supplies for local clinics.",
-    category: "health",
-    raised: 5300,
-    goal: 10000,
-    image: "/placeholder.svg?height=200&width=400",
-    created_at: "2023-07-05T09:15:00Z",
-  },
-  {
-    id: "4",
-    title: "Community Garden Project",
-    description: "Creating a sustainable garden in our neighborhood.",
-    category: "community",
-    raised: 3200,
-    goal: 5000,
-    image: "/placeholder.svg?height=200&width=400",
-    created_at: "2023-07-10T11:30:00Z",
-  },
-  {
-    id: "5",
-    title: "Disaster Relief Fund",
-    description: "Providing emergency aid to affected communities.",
-    category: "disaster",
-    raised: 15000,
-    goal: 25000,
-    image: "/placeholder.svg?height=200&width=400",
-    created_at: "2023-08-01T08:45:00Z",
-  },
-  {
-    id: "6",
-    title: "Animal Shelter Support",
-    description: "Helping local animal shelters with supplies and care.",
-    category: "animals",
-    raised: 6800,
-    goal: 12000,
-    image: "/placeholder.svg?height=200&width=400",
-    created_at: "2023-08-15T13:20:00Z",
-  },
-  {
-    id: "7",
-    title: "Renewable Energy Project",
-    description: "Installing solar panels in underserved communities.",
-    category: "environment",
-    raised: 9500,
-    goal: 18000,
-    image: "/placeholder.svg?height=200&width=400",
-    created_at: "2023-09-01T10:00:00Z",
-  },
-  {
-    id: "8",
-    title: "School Supplies Drive",
-    description: "Collecting school supplies for children in need.",
-    category: "education",
-    raised: 4200,
-    goal: 7500,
-    image: "/placeholder.svg?height=200&width=400",
-    created_at: "2023-09-10T15:30:00Z",
-  },
-  {
-    id: "9",
-    title: "Mental Health Awareness",
-    description: "Promoting mental health awareness and support.",
-    category: "health",
-    raised: 7300,
-    goal: 15000,
-    image: "/placeholder.svg?height=200&width=400",
-    created_at: "2023-09-20T09:45:00Z",
-  },
-  {
-    id: "10",
-    title: "Neighborhood Cleanup",
-    description: "Organizing community cleanup events.",
-    category: "community",
-    raised: 2100,
-    goal: 4000,
-    image: "/placeholder.svg?height=200&width=400",
-    created_at: "2023-10-01T14:15:00Z",
-  },
-  {
-    id: "11",
-    title: "Hurricane Relief",
-    description: "Supporting families affected by recent hurricanes.",
-    category: "disaster",
-    raised: 18500,
-    goal: 30000,
-    image: "/placeholder.svg?height=200&width=400",
-    created_at: "2023-10-10T11:00:00Z",
-  },
-  {
-    id: "12",
-    title: "Wildlife Conservation",
-    description: "Protecting endangered species and their habitats.",
-    category: "animals",
-    raised: 8900,
-    goal: 20000,
-    image: "/placeholder.svg?height=200&width=400",
-    created_at: "2023-10-20T16:30:00Z",
-  },
-];
+import { PaginationButton } from "@/components/pagination-button";
+import { PetitionCard } from "./petition-card";
 
 interface PetitionsListProps {
   category: string;
@@ -158,77 +14,83 @@ export async function PetitionsList({
   page,
   pageSize,
 }: PetitionsListProps) {
-  const categoriesWithIcons = [
-    {
-      id: "education",
-      name: "Education",
-      icon: <GraduationCap className="mr-1 h-4 w-4" />,
-    },
-    {
-      id: "health",
-      name: "Healthcare",
-      icon: <HeartPulse className="mr-1 h-4 w-4" />,
-    },
-    {
-      id: "environment",
-      name: "Environment",
-      icon: <Leaf className="mr-1 h-4 w-4" />,
-    },
-    {
-      id: "community",
-      name: "Community",
-      icon: <Users className="mr-1 h-4 w-4" />,
-    },
-    {
-      id: "disaster",
-      name: "Disaster Relief",
-      icon: <AlertTriangle className="mr-1 h-4 w-4" />,
-    },
-    {
-      id: "animals",
-      name: "Animal Welfare",
-      icon: <PawPrint className="mr-1 h-4 w-4" />,
-    },
-    {
-      id: "creative",
-      name: "Creative",
-      icon: <Sparkles className="mr-1 h-4 w-4" />,
-    },
-  ];
+  // Fetch ALL approved petitions to allow for custom sorting logic
+  const petitions = await listPetitions();
 
-  const petitions = await listPetitions({
-    category: category === "all" ? undefined : category,
-    limit: pageSize,
-    offset: (page - 1) * pageSize,
-  });
-  const filteredPetitions =
-    category === "all"
-      ? petitions
-      : petitions.filter((petition) => petition.category === category);
-
-  const paginatedPetitions = filteredPetitions.slice(
-    (page - 1) * pageSize,
-    page * pageSize,
+  // Filter by activity and status (matching FeaturedPetitions logic)
+  const activePetitions = petitions.filter(
+    (p) => (p.days_active ?? 0) > 0 && p.status !== ("expired" as any)
   );
-  const totalPetitions = filteredPetitions.length;
-  const totalPages = Math.ceil(totalPetitions / pageSize);
 
-  // Fetch signature counts for each petition
+  // Filter by category if specified
+  const categoryFiltered =
+    category === "all"
+      ? activePetitions
+      : activePetitions.filter((p) => p.category === category);
+
+  // Fetch signature counts and calculate percentage/totals for each petition
   const petitionsWithSigners = await Promise.all(
-    paginatedPetitions.map(async (petition) => {
+    categoryFiltered.map(async (petition) => {
       const signers = await listSignaturesForPetition(petition.id);
+      const signerCount = signers?.length || 0;
+      const totalAmount = signers.reduce((sum, s) => sum + (s.amount || 0), 0);
+
+      const percentRaised =
+        petition.goal > 0
+          ? Math.min(Math.round((totalAmount / petition.goal) * 100), 100)
+          : 0;
+
       return {
         ...petition,
-        signatures: signers.length,
+        image: petition.image ?? undefined,
+        days_active: petition.days_active ?? undefined,
+        signerCount,
+        totalAmount,
+        percentRaised,
       };
-    }),
+    })
+  );
+
+  // Sort based on the logic in FeaturedPetitions (percent -> signers -> amount -> date)
+  const sortedPetitions = petitionsWithSigners.sort((a, b) => {
+    // ✅ Push 0% to bottom
+    if (a.percentRaised === 0 && b.percentRaised !== 0) return 1;
+    if (b.percentRaised === 0 && a.percentRaised !== 0) return -1;
+
+    // ✅ Higher percentage first
+    if (b.percentRaised !== a.percentRaised) {
+      return b.percentRaised - a.percentRaised;
+    }
+
+    // ✅ Then most signed
+    if (b.signerCount !== a.signerCount) {
+      return b.signerCount - a.signerCount;
+    }
+
+    // ✅ Then highest amount raised
+    if (b.totalAmount !== a.totalAmount) {
+      return b.totalAmount - a.totalAmount;
+    }
+
+    // ✅ Then newest
+    return (
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+  });
+
+  // Handle pagination
+  const totalPetitions = sortedPetitions.length;
+  const totalPages = Math.ceil(totalPetitions / pageSize);
+  const paginatedPetitions = sortedPetitions.slice(
+    (page - 1) * pageSize,
+    page * pageSize
   );
 
   if (paginatedPetitions.length === 0) {
     return (
-      <div className="text-center py-10">
-        <h3 className="text-lg font-medium">No petitions found</h3>
-        <p className="text-muted-foreground">
+      <div className="text-center py-20 bg-gray-50 rounded-3xl border border-dashed border-gray-300">
+        <h3 className="text-xl font-semibold text-gray-900">No petitions found</h3>
+        <p className="text-muted-foreground mt-2">
           Try selecting a different category or check back later.
         </p>
       </div>
@@ -236,22 +98,27 @@ export async function PetitionsList({
   }
 
   return (
-    <div className="space-y-6">
-      <ExpandableCard
-        items={petitionsWithSigners.map((petition) => ({
-          id: petition.id,
-          title: petition.title,
-          description: petition.description || "",
-          image: petition.image ?? null,
-          goal: petition.goal,
-          signatures: petition.signatures,
-          category: petition.category,
-        }))}
-        type="petition"
-      />
+    <div className="space-y-12">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {paginatedPetitions.map((petition) => (
+          <PetitionCard
+            key={petition.id}
+            petition={{
+              id: petition.id,
+              title: petition.title,
+              image: petition.image,
+              percentRaised: petition.percentRaised,
+              days_active: petition.days_active,
+              totalAmount: petition.totalAmount,
+              goal: petition.goal,
+              profiles: petition.profiles,
+            }}
+          />
+        ))}
+      </div>
 
       {totalPages > 1 && (
-        <div className="flex justify-center pt-6">
+        <div className="flex justify-center pt-8 border-t border-gray-100">
           <PaginationButton currentPage={page} totalPages={totalPages} />
         </div>
       )}
