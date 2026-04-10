@@ -11,18 +11,7 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-
-import { Progress } from "@/components/ui/progress";
-import { DonateButton } from "@/components/donate-button";
-import { H4, P } from "../typograpy";
-import AnimatedCard from "./components/AnimatedCard";
+import { PetitionCard } from "../petition-card";
 
 type Petition = {
   id: string;
@@ -34,7 +23,7 @@ type Petition = {
   goal?: number;
   profiles?: {
     full_name?: string;
-  };
+  } | null;
 };
 
 export default function FeaturedPetitionsCarousel({
@@ -66,82 +55,14 @@ export default function FeaturedPetitionsCarousel({
   }, [api]);
   
 
-  // ✅ Reusable card
-  const renderCard = (petition: any) => (
-    <Link
-      href={`/petitions/${petition.id}`}
-      className="group block h-full"
-    >
-      <AnimatedCard>
-        <Card className="overflow-hidden cursor-pointer transition h-[420px] flex flex-col border border-gray-300">
-          
-          <div className="aspect-video w-full overflow-hidden">
-            <img
-              src={petition.image || "/placeholder.svg"}
-              alt={petition.title}
-              loading="lazy"
-              className="object-cover w-full h-full"
-            />
-          </div>
-
-          <CardHeader className="flex flex-col flex-1 p-4">
-            <CardTitle>
-              <H4 className="line-clamp-2">
-                {petition.title}
-              </H4>
-
-              <P className="font-extralight">
-                {petition.profiles?.full_name || "Unknown"}
-              </P>
-            </CardTitle>
-
-            <hr className="border-t-2 border-gray-400" />
-
-            <div className="flex justify-between items-center pt-2 text-xs">
-              <P>Sign Now</P>
-
-              <P>
-                {petition.percentRaised}% •{" "}
-                {Number(petition.days_active || 0)} Days left
-              </P>
-            </div>
-          </CardHeader>
-
-          <div className="mt-auto w-full">
-            <CardContent>
-              <Progress
-                value={petition.percentRaised}
-                className="h-2 bg-muted"
-              />
-            </CardContent>
-
-            <CardFooter>
-              <div className="w-full flex justify-between">
-                <span className="flex flex-col">
-                  <H4>
-                    {petition.totalAmount.toLocaleString()}
-                  </H4>
-
-                  <P className="font-light">
-                    Signed of {petition.goal?.toLocaleString()}
-                  </P>
-                </span>
-
-                <DonateButton type="petition" disableLink />
-              </div>
-            </CardFooter>
-          </div>
-        </Card>
-      </AnimatedCard>
-    </Link>
-  );
-
   return (
     <>
       {/* ✅ MOBILE: Vertical (only 3) */}
       <div className="flex flex-col gap-4 md:hidden mt-6 mb-6">
         {petitions.slice(0, 3).map((petition) => (
-          <div key={petition.id}>{renderCard(petition)}</div>
+          <div key={petition.id}>
+            <PetitionCard petition={petition} />
+          </div>
         ))}
 
         <Link href="/petitions" className="w-full">
@@ -166,7 +87,7 @@ export default function FeaturedPetitionsCarousel({
                 key={petition.id}
                 className="md:pl-4 md:basis-[33.33%]"
               >
-                {renderCard(petition)}
+                <PetitionCard petition={petition} />
               </CarouselItem>
             ))}
           </CarouselContent>
