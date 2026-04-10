@@ -529,7 +529,7 @@ export async function getProfileByUsername(
       .from("profiles")
       .select("*")
       .eq("username", username)
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error("Error fetching profile by username:", error);

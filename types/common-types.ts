@@ -73,6 +73,11 @@ export interface TransactionData
     subaccount: string;
     share: number;
   }[];
+  /** Paystack: save card for future pledge charge */
+  pledgeFlow?: "authorization";
+  pledgeId?: string;
+  pledgeFutureAmount?: number;
+  reminderDate?: string;
 }
 
 export interface ICreateSubaccount {
