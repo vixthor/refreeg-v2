@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import type { Donation, DonationWithCause, DonationFormData } from "@/types";
 import { recordEvent } from "@/actions/event-reward-actions";
+import { sendDonationReceivedEmail } from "@/services/mail";
 
 export async function createDonation(
   causeId: string,
@@ -137,6 +138,42 @@ export async function createDonation(
     }
   } catch (milestoneError) {
     console.error("Error in milestone detection:", milestoneError);
+  }
+
+  // Notify the campaign owner about the new donation
+  try {
+    const { data: causeWithOwner } = await supabase
+      .from("causes")
+      .select("title, raised, goal, user_id, profiles(full_name, email)")
+      .eq("id", causeId)
+      .single();
+
+    if (causeWithOwner) {
+      const ownerProfile = causeWithOwner.profiles as any;
+      const ownerEmail = ownerProfile?.email;
+      const ownerName = ownerProfile?.full_name || "Campaign Owner";
+
+      if (ownerEmail) {
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.refreeg.com";
+        const donorName =
+          String(donationData.isAnonymous).toLowerCase() === "true"
+            ? "An anonymous donor"
+            : donationData.name || "A donor";
+
+        sendDonationReceivedEmail({
+          to: ownerEmail,
+          ownerName,
+          donorName,
+          causeTitle: causeWithOwner.title,
+          amount: donationAmount,
+          causeUrl: `${appUrl}/causes/${causeId}`,
+          amountRaised: Number(causeWithOwner.raised),
+          goalAmount: Number(causeWithOwner.goal),
+        }).catch((err) => console.error("Error sending donation received email:", err));
+      }
+    }
+  } catch (ownerEmailError) {
+    console.error("Error fetching cause owner for donation email:", ownerEmailError);
   }
 
   revalidatePath(`/causes/${causeId}`);
