@@ -804,3 +804,48 @@ export async function sendKycReminderEmail(
     },
   });
 }
+
+export async function sendDonationReceivedEmail({
+  to,
+  ownerName,
+  donorName,
+  causeTitle,
+  amount,
+  causeUrl,
+  amountRaised,
+  goalAmount,
+}: {
+  to: string;
+  ownerName: string;
+  donorName: string;
+  causeTitle: string;
+  amount: number;
+  causeUrl: string;
+  amountRaised?: number;
+  goalAmount?: number;
+}) {
+  const currentYear = new Date().getFullYear();
+  const showProgress =
+    typeof amountRaised === "number" && typeof goalAmount === "number" && goalAmount > 0;
+  const percent = showProgress
+    ? Math.min(Math.round((amountRaised! / goalAmount!) * 100), 100)
+    : 0;
+
+  return sendMail({
+    to,
+    subject: `💚 You just received a donation for "${causeTitle}"!`,
+    templateName: "donation-received",
+    context: {
+      ownerName,
+      donorName,
+      causeTitle,
+      amount: amount.toLocaleString(),
+      causeUrl,
+      showProgress,
+      amountRaised: amountRaised?.toLocaleString() ?? "0",
+      goalAmount: goalAmount?.toLocaleString() ?? "0",
+      percent,
+      currentYear,
+    },
+  });
+}
