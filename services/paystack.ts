@@ -56,6 +56,14 @@ const Paystack = {
           is_anonymous: data.isAnonymous,
           ...(data.id ? { user_id: data.id } : {}),
           ...(data.plan ? { plan: data.plan } : {}),
+          ...(data.pledgeFlow
+            ? {
+                pledge_flow: data.pledgeFlow,
+                pledge_id: data.pledgeId,
+                future_pledge_amount: data.pledgeFutureAmount,
+                reminder_date: data.reminderDate,
+              }
+            : {}),
         },
       };
 
@@ -95,6 +103,53 @@ const Paystack = {
     );
     return response.data.data;
   },
+
+  /**
+   * Charge a saved card (authorization code) — used for scheduled pledge fulfillment.
+   * @see https://paystack.com/docs/api/#transaction-charge-authorization
+   */
+  chargeAuthorization: async function (params: {
+    authorizationCode: string;
+    email: string;
+    amountNgn: number;
+    serviceFeeNgn: number;
+    reference: string;
+    causeId: string;
+    subaccount?: string;
+    metadata: Record<string, string | number | boolean | undefined>;
+  }) {
+    const totalKobo = Math.round(
+      (params.amountNgn + params.serviceFeeNgn) * 100
+    );
+    const feeKobo = Math.round(params.serviceFeeNgn * 100);
+    const primarySubaccount = params.subaccount?.trim();
+
+    const body: Record<string, unknown> = {
+      authorization_code: params.authorizationCode,
+      email: params.email,
+      amount: totalKobo,
+      reference: params.reference,
+      currency: "NGN",
+      metadata: params.metadata,
+    };
+
+    if (primarySubaccount) {
+      body.subaccount = primarySubaccount;
+      body.bearer = "subaccount";
+      body.transaction_charge = feeKobo;
+    }
+
+    const response = await this.api.post(
+      "/transaction/charge_authorization",
+      body
+    );
+    return response.data.data as {
+      status?: string;
+      reference?: string;
+      gateway_response?: string;
+    };
+  },
+
   createSubaccount: async function (data: ICreateSubaccount) {
     const response = await this.api.post("/subaccount", {
       ...data,

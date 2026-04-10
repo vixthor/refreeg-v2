@@ -1,8 +1,6 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { sendPledgeConfirmationEmail } from "@/services/mail";
-
 type CreatePledgeInput = {
   causeId: string;
   amount: number;
@@ -13,8 +11,30 @@ type CreatePledgeInput = {
   causeTitle?: string;
 };
 
+/** Reminder must be today or a future calendar day (UTC) — past dates rejected. */
+function isReminderDateTodayOrFuture(isoDate: string): boolean {
+  const parts = isoDate.split("-").map(Number);
+  if (parts.length !== 3 || parts.some((n) => Number.isNaN(n))) return false;
+  const [y, m, d] = parts;
+  const selected = Date.UTC(y, m - 1, d);
+  const now = new Date();
+  const today = Date.UTC(
+    now.getUTCFullYear(),
+    now.getUTCMonth(),
+    now.getUTCDate(),
+  );
+  return selected >= today;
+}
+
 export async function createPledge(input: CreatePledgeInput) {
   const supabase = await createClient();
+
+  if (!isReminderDateTodayOrFuture(input.reminderDate)) {
+    return {
+      data: null,
+      error: "Reminder date cannot be in the past.",
+    };
+  }
 
   const {
     data: { user },
@@ -38,6 +58,7 @@ export async function createPledge(input: CreatePledgeInput) {
       currency: "NGN",
       status: "pending",
       token: user?.id ? null : crypto.randomUUID(), // Generate token for guests
+      paystack_payment_status: "awaiting_authorization",
     })
     .select()
     .single();
@@ -46,19 +67,7 @@ export async function createPledge(input: CreatePledgeInput) {
     return { data: null, error: error.message };
   }
 
-  // Fire-and-forget confirmation email — works for guests and logged-in users
-  const baseUrl =
-    process.env.NEXT_PUBLIC_APP_URL || "https://www.refreeg.com";
-  sendPledgeConfirmationEmail({
-    to: input.email,
-    userName: input.name,
-    causeTitle: input.causeTitle || "this campaign",
-    amount: input.amount,
-    reminderDate: input.reminderDate,
-    donateUrl: `${baseUrl}/causes/${input.causeId}`,
-  }).catch((err) =>
-    console.error("Background pledge confirmation email error:", err),
-  );
+  // Confirmation email is sent after Paystack saves the card (see webhook → processPledgeAuthorizationSuccess).
 
   return { data, error: null };
 }

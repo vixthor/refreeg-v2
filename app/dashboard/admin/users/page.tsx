@@ -45,6 +45,7 @@ import type { UserWithRole } from "@/types";
 import { getUserRole, listUsersWithRoles } from "@/actions/role-actions";
 import Link from "next/link";
 import { ExportCSVButton } from "./components/export-csv-button";
+import { SendKycReminderButton } from "./components/send-kyc-reminder-button";
 
 import { getCachedUser } from "@/lib/supabase/cached-user";
 
@@ -133,6 +134,7 @@ export default async function AdminUsersPage({
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <CardTitle>Users</CardTitle>
             <div className="flex items-center gap-2">
+              <SendKycReminderButton />
               <ExportCSVButton />
               <UserSearch defaultValue={params.search} />
             </div>
