@@ -49,6 +49,7 @@ import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { sendCauseEditedEmail } from "@/services/mail";
+import { useToast } from "@/hooks/use-toast";
 
 const Calendar = dynamic(
   () => import("@/components/ui/calendar").then((mod) => mod.Calendar),
@@ -97,7 +98,7 @@ type FormData = {
   sections: { heading: string; description: string }[];
   startDate: Date | undefined;
   endDate: Date | undefined;
-  multimedia: File[];
+  multimedia: (File | string)[];
   videoLinks: string[];
 };
 
@@ -124,6 +125,7 @@ type EditCauseFormProps = {
 export default function EditCauseForm({ cause }: EditCauseFormProps) {
   const { user } = useAuth();
   const { isLoading, updateCause } = useCause();
+  const { toast } = useToast();
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<FormData>({
@@ -136,11 +138,11 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
     coverImage: null,
     image: cause.image || "",
     sections: cause.sections || [{ heading: "", description: "" }],
-    startDate: cause.days_active ? new Date() : undefined,
-    endDate: cause.days_active
-      ? new Date(Date.now() + cause.days_active * 24 * 60 * 60 * 1000)
-      : undefined,
-    multimedia: [],
+    startDate: cause.created_at ? new Date(cause.created_at) : (cause.days_active ? new Date() : undefined),
+    endDate: (cause.created_at && cause.days_active)
+      ? new Date(new Date(cause.created_at).getTime() + cause.days_active * 24 * 60 * 60 * 1000)
+      : (cause.days_active ? new Date(Date.now() + cause.days_active * 24 * 60 * 60 * 1000) : undefined),
+    multimedia: cause.multimedia || [],
     videoLinks: (cause as any).video_links || [],
   });
   const [errors, setErrors] = useState<FormErrors>({});
@@ -252,7 +254,7 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
     }
 
     // Process and compress each file if it's an image
-    const processedFiles: File[] = [];
+    const processedFiles: (File | string)[] = [];
     const { compressImage } = await import("@/utils/image-compression");
 
     for (const file of files) {
@@ -271,9 +273,9 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
 
     const currentSize =
       formData.multimedia && formData.multimedia.length > 0
-        ? formData.multimedia.reduce((acc, file) => acc + file.size, 0)
+        ? formData.multimedia.reduce((acc, item) => acc + (typeof item === "string" ? 0 : item.size), 0)
         : 0;
-    const newFilesSize = processedFiles.reduce((acc, file) => acc + file.size, 0);
+    const newFilesSize = processedFiles.reduce((acc, item) => acc + (typeof item === "string" ? 0 : item.size), 0);
 
     if (currentSize + newFilesSize > MAX_TOTAL_SIZE) {
       setErrors((prev) => ({
@@ -381,9 +383,19 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
         dashboardUrl: `${window.location.origin}/dashboard/causes`,
       });
 
+      toast({
+        title: "Success",
+        description: "Your changes have been submitted for review.",
+      });
+
       router.push("/dashboard/causes");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error updating cause:", error);
+      toast({
+        title: "Update Failed",
+        description: error.message || "Something went wrong while saving your changes. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -939,8 +951,8 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
                 <div className="glass-panel overflow-hidden rounded-3xl">
                   <MultimediaCarousel
                     media={[
-                      ...(formData.multimedia?.map((file) =>
-                        URL.createObjectURL(file),
+                      ...(formData.multimedia?.map((item) =>
+                        typeof item === "string" ? item : URL.createObjectURL(item),
                       ) || []),
                       ...(formData.videoLinks || []),
                     ]}
@@ -1062,7 +1074,20 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
       <FormStepper steps={steps} currentStep={currentStep} />
 
       <main className="max-w-4xl mx-auto mt-12">
-        <form onSubmit={handleSubmit} className="space-y-12">
+        <form 
+          className="space-y-12"
+          onKeyDown={(e) => {
+            if (
+              currentStep === 5 &&
+              e.key === "Enter" &&
+              e.target instanceof HTMLElement &&
+              e.target.tagName !== "TEXTAREA" &&
+              e.target.tagName !== "BUTTON"
+            ) {
+              e.preventDefault();
+            }
+          }}
+        >
           <AnimatePresence mode="wait">
             <motion.div
               key={currentStep}
@@ -1086,7 +1111,8 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
               Back
             </Button>
             <Button
-              type="submit"
+              type="button"
+              onClick={currentStep === 5 ? (e: any) => handleSubmit(e) : nextStep}
               disabled={isLoading}
               className="premium-button-primary h-12 px-10 min-w-[160px]"
             >
