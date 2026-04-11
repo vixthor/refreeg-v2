@@ -192,9 +192,10 @@ export async function createCause(
   ) {
     try {
       multimediaUrls = await Promise.all(
-        causeData.multimedia.map((file) =>
-          uploadImageToSupabase(file, userId, "additional"),
-        ),
+        causeData.multimedia.map(async (file) => {
+          if (typeof file === "string") return file;
+          return await uploadImageToSupabase(file, userId, "additional");
+        }),
       );
     } catch (error) {
       console.error("Error uploading multimedia:", error);
@@ -282,6 +283,19 @@ export async function updateCause(
 ): Promise<any> {
   const supabase = await createClient();
 
+  // Check for existing pending edit for this cause
+  const { data: existingEdit, error: checkError } = await supabase
+    .from("cause_edits")
+    .select("id")
+    .eq("original_cause_id", causeId)
+    .eq("status", "pending")
+    .limit(1)
+    .maybeSingle();
+
+  if (existingEdit) {
+    throw new Error("You already have a pending edit for this cause. Please wait for it to be reviewed before making another change.");
+  }
+
   let coverImageUrl = causeData.coverImage
     ? await uploadImageToSupabase(causeData.coverImage, userId, "cover")
     : causeData.image || null;
@@ -314,9 +328,10 @@ export async function updateCause(
   ) {
     try {
       multimediaUrls = await Promise.all(
-        causeData.multimedia.map((file) =>
-          uploadImageToSupabase(file, userId, "additional"),
-        ),
+        causeData.multimedia.map(async (item) => {
+          if (typeof item === "string") return item; // Keep existing URL
+          return await uploadImageToSupabase(item, userId, "additional");
+        }),
       );
     } catch (error) {
       console.error("Error uploading multimedia:", error);
@@ -556,6 +571,8 @@ export async function updateCauseStatus(
         days_active: edit.days_active,
         multimedia: edit.multimedia,
         video_links: edit.video_links,
+        summary: edit.summary,
+        location: edit.location,
         status: "approved",
         updated_at: new Date().toISOString(),
       };
