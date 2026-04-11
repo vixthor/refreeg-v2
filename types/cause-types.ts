@@ -62,7 +62,7 @@ export interface CauseFormData {
   sections?: { heading: string; description: string }[];
   startDate?: Date | undefined;
   endDate?: Date | undefined;
-  multimedia: File[];
+  multimedia: (File | string)[];
   video_links?: string[];
   summary?: string | null;
   location?: string | null;

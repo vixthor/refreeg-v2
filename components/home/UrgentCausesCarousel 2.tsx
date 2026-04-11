@@ -24,7 +24,7 @@ import { DonateButton } from "@/components/donate-button";
 import { H4, P } from "../typograpy";
 import AnimatedCard from "./components/AnimatedCard";
 
-export default function UrgentCausesCarousel({ causes }) {
+export default function UrgentCausesCarousel({ causes }: { causes: any[] }) {
   const [api, setApi] = useState<any>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -57,7 +57,7 @@ export default function UrgentCausesCarousel({ causes }) {
       onMouseLeave={startAutoplay}
     >
       <CarouselContent className="mt-6 mb-6 md:mr-4 md:ml-4">
-        {causes.map((cause) => {
+        {causes.map((cause: any) => {
           const percentRaised =
             cause.goal > 0
               ? Math.round((cause.raised / cause.goal) * 100)
