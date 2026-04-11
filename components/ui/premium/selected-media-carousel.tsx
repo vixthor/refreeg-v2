@@ -14,8 +14,8 @@ import { cn } from "@/lib/utils";
 
 import { motion, AnimatePresence } from "framer-motion";
 
-interface SelectedMediaCarouselProps {
-  files: File[];
+  interface SelectedMediaCarouselProps {
+  files: (File | string)[];
   onRemove: (index: number) => void;
   className?: string;
 }
@@ -28,10 +28,16 @@ export function SelectedMediaCarousel({
   const [previews, setPreviews] = React.useState<string[]>([]);
 
   React.useEffect(() => {
-    const urls = files.map((file) => URL.createObjectURL(file));
+    const urls = files.map((file) => 
+      typeof file === "string" ? file : URL.createObjectURL(file)
+    );
     setPreviews(urls);
     return () => {
-      urls.forEach((url) => URL.revokeObjectURL(url));
+      urls.forEach((url, index) => {
+        if (typeof files[index] !== "string") {
+          URL.revokeObjectURL(url);
+        }
+      });
     };
   }, [files]);
 

@@ -24,7 +24,7 @@ import { DonateButton } from "@/components/donate-button";
 import { H4, P } from "../typograpy";
 import AnimatedCard from "./components/AnimatedCard";
 
-export default function FeaturedPetitionsCarousel({ petitions }) {
+export default function FeaturedPetitionsCarousel({ petitions }: { petitions: any[] }) {
   const [api, setApi] = useState<any>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -59,7 +59,7 @@ export default function FeaturedPetitionsCarousel({ petitions }) {
       onMouseLeave={startAutoplay}
     >
       <CarouselContent className="mt-6 mb-6 md:mr-4 md:ml-4">
-        {petitions.map((petition) => (
+        {petitions.map((petition: any) => (
           <CarouselItem
             key={petition.id}
             className="md:pl-4 basis-[85%] sm:basis-[50%] md:basis-[33.33%]"
