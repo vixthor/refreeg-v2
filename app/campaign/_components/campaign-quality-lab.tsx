@@ -171,6 +171,8 @@ type CauseDetail = Cause & {
     name: string;
     email: string;
     sub_account_code?: string | null;
+    username: string;
+    profile_photo?: string | null;
   };
   sections?: { heading: string; description: string }[];
   summary?: string | null;
@@ -1329,9 +1331,23 @@ export default function CampaignQualityLab({
             <div className="mt-3 space-y-4">
               <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
                 <span>Created by</span>
-                <span className="font-medium text-slate-800">
-                  {cause.user.name}
-                </span>
+                <Link
+                  href={`/${cause.user.username}`}
+                  className="flex items-center gap-1.5 hover:underline"
+                >
+                  {cause.user.profile_photo && (
+                    <Image
+                      src={cause.user.profile_photo}
+                      alt={cause.user.name}
+                      width={20}
+                      height={20}
+                      className="rounded-full object-cover"
+                    />
+                  )}
+                  <span className="font-medium text-slate-800">
+                    {cause.user.name}
+                  </span>
+                </Link>
                 <span className="text-slate-300">•</span>
                 <span className="capitalize">{cause.category}</span>
                 <span className="text-slate-300">•</span>
