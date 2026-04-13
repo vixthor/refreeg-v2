@@ -36,6 +36,7 @@ export async function getCause(causeId: string): Promise<CauseWithUser | null> {
       profiles!inner (
         full_name,
         email,
+        username,
         sub_account_code,
         profile_photo
       ),
@@ -85,6 +86,7 @@ export async function getCause(causeId: string): Promise<CauseWithUser | null> {
     user: {
       name: data.profiles?.full_name || "Anonymous",
       email: data.profiles?.email || "",
+      username: data.profiles?.username || null,
       sub_account_code: data.profiles?.sub_account_code || "",
       profile_photo: data.profiles?.profile_photo || null,
     },
@@ -126,7 +128,6 @@ async function uploadImageToSupabase(
     ? "cause-videos"
     : "profile-photos";
 
-
   const { data: uploadData, error: uploadError } = await supabase.storage
     .from(bucket)
     .upload(fileName, file, {
@@ -162,7 +163,6 @@ export async function createCause(
       "cover",
     );
   }
-
 
   let daysActive = null;
   if (causeData.startDate && causeData.endDate) {
@@ -293,7 +293,9 @@ export async function updateCause(
     .maybeSingle();
 
   if (existingEdit) {
-    throw new Error("You already have a pending edit for this cause. Please wait for it to be reviewed before making another change.");
+    throw new Error(
+      "You already have a pending edit for this cause. Please wait for it to be reviewed before making another change.",
+    );
   }
 
   let coverImageUrl = causeData.coverImage
@@ -420,62 +422,62 @@ export async function updateCause(
  * Get causes with filtering options.
  * Using React cache to deduplicate requests in the same render pass.
  */
-export const listCauses = cache(async (
-  options: CauseFilterOptions = {},
-): Promise<Cause[]> => {
-  const supabase = await createClient();
+export const listCauses = cache(
+  async (options: CauseFilterOptions = {}): Promise<Cause[]> => {
+    const supabase = await createClient();
 
-  let query = supabase
-    .from("causes")
-    .select("*,profiles(full_name,email,profile_photo)")
-    .order("created_at", { ascending: false });
+    let query = supabase
+      .from("causes")
+      .select("*,profiles(full_name,email,profile_photo)")
+      .order("created_at", { ascending: false });
 
-  if (options.category && options.category !== "all") {
-    query = query.eq("category", options.category);
-  }
-
-  if (options.status) {
-    query = query.eq("status", options.status);
-  } else {
-    if (!options.userId) {
-      query = query.eq("status", "approved");
+    if (options.category && options.category !== "all") {
+      query = query.eq("category", options.category);
     }
-  }
 
-  if (options.userId) {
-    query = query.eq("user_id", options.userId);
-  }
+    if (options.status) {
+      query = query.eq("status", options.status);
+    } else {
+      if (!options.userId) {
+        query = query.eq("status", "approved");
+      }
+    }
 
-  if (options.limit) {
-    query = query.limit(options.limit);
-  }
+    if (options.userId) {
+      query = query.eq("user_id", options.userId);
+    }
 
-  if (options.offset) {
-    query = query.range(
-      options.offset,
-      options.offset + (options.limit || 10) - 1,
-    );
-  }
+    if (options.limit) {
+      query = query.limit(options.limit);
+    }
 
-  const { data, error } = await query;
+    if (options.offset) {
+      query = query.range(
+        options.offset,
+        options.offset + (options.limit || 10) - 1,
+      );
+    }
 
-  if (error) {
-    console.error("Error listing causes:", error);
-    throw error;
-  }
+    const { data, error } = await query;
 
-  const causes = (data as Cause[]) || [];
+    if (error) {
+      console.error("Error listing causes:", error);
+      throw error;
+    }
 
-  // Side effect removed from getter to avoid unnecessary POST/UPDATE requests 
-  // on every page load. Expiry should be handled by a cleanup job.
+    const causes = (data as Cause[]) || [];
 
-  const isOwnerScoped = !!options.userId;
-  const result = isOwnerScoped
-    ? causes
-    : causes.filter((c) => c.status !== ("expired" as any));
+    // Side effect removed from getter to avoid unnecessary POST/UPDATE requests
+    // on every page load. Expiry should be handled by a cleanup job.
 
-  return result;
-});
+    const isOwnerScoped = !!options.userId;
+    const result = isOwnerScoped
+      ? causes
+      : causes.filter((c) => c.status !== ("expired" as any));
+
+    return result;
+  },
+);
 
 /**
  * Count causes with filtering options
@@ -652,7 +654,8 @@ export async function updateCauseStatus(
       await sendCauseRejectedEmailForUser(data.user_id, {
         causeName: data.title,
         rejectionReason,
-        dashboardUrl: "https://www.refreeg.com/dashboard/causes?status=rejected",
+        dashboardUrl:
+          "https://www.refreeg.com/dashboard/causes?status=rejected",
       });
     } catch (emailError) {
       console.error("Error sending cause rejection email:", emailError);
@@ -898,5 +901,8 @@ export async function followCampaign(
   }
 
   // data will be empty if ignoreDuplicates triggered
-  return { data: (data && data.length > 0) ? data[0] : { already_following: true }, error: null };
+  return {
+    data: data && data.length > 0 ? data[0] : { already_following: true },
+    error: null,
+  };
 }
