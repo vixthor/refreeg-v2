@@ -138,10 +138,10 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
     coverImage: null,
     image: cause.image || "",
     sections: cause.sections || [{ heading: "", description: "" }],
-    startDate: cause.created_at ? new Date(cause.created_at) : (cause.days_active ? new Date() : undefined),
-    endDate: (cause.created_at && cause.days_active)
-      ? new Date(new Date(cause.created_at).getTime() + cause.days_active * 24 * 60 * 60 * 1000)
-      : (cause.days_active ? new Date(Date.now() + cause.days_active * 24 * 60 * 60 * 1000) : undefined),
+    startDate: new Date(),
+    endDate: cause.days_active != null 
+      ? new Date(Date.now() + cause.days_active * 24 * 60 * 60 * 1000) 
+      : undefined,
     multimedia: cause.multimedia || [],
     videoLinks: (cause as any).video_links || [],
   });
