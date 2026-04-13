@@ -591,6 +591,26 @@ export async function updateCauseStatus(
         throw updateError;
       }
 
+      const { data: editSections } = await supabaseAdmin
+        .from("cause_edit_sections")
+        .select("heading, description")
+        .eq("cause_edit_id", edit.id);
+
+      if (editSections && editSections.length > 0) {
+        await supabaseAdmin
+          .from("cause_sections")
+          .delete()
+          .eq("cause_id", causeId);
+
+        const newSections = editSections.map((section: any) => ({
+          cause_id: causeId,
+          heading: section.heading,
+          description: section.description,
+        }));
+
+        await supabaseAdmin.from("cause_sections").insert(newSections);
+      }
+
       await supabaseAdmin.from("cause_edits").delete().eq("id", edit.id);
 
       revalidatePath("/dashboard/admin/causes");
