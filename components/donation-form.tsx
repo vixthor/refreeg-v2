@@ -35,7 +35,7 @@ interface DonationFormProps {
     id?: string;
   };
   subaccount?: string;
-  status: "pending" | "rejected" | "approved";
+  status: "pending" | "rejected" | "approved" | "expired";
   causeName?: string; // Add causeName prop
   causeUrl?: string; // Add causeUrl prop for the continue link
   recurring?: "one_time" | "weekly" | "monthly";
@@ -81,7 +81,9 @@ export function DonationForm({
   // Note: Donations can continue even after the goal is reached
   // The form is only disabled if the cause status is pending or rejected
   const isDisabled =
-    status === "pending" || status === "rejected" ? true : false;
+    status === "pending" || status === "rejected" || status === "expired"
+      ? true
+      : false;
 
   // Track when user starts filling donation form
   useEffect(() => {

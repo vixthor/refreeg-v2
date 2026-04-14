@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import NavigationLoader from "@/components/NavigationLoader";
+import AIAgentBot from "@/app/ai-agent/_components/ai-agent-bot";
 
 interface ClientLayoutProps {
   children: React.ReactNode;
@@ -33,6 +34,7 @@ export function ClientLayout({ children }: ClientLayoutProps) {
         {isRouteLoading && <NavigationLoader />}
         <main className="flex-1">{children}</main>
       </div>
+      {!hideLayout && <AIAgentBot />}
       {!hideLayout && <Footer />}
     </>
   );

@@ -1,515 +1,607 @@
 "use client";
 
-import { useEffect, useRef, useState, type PointerEvent } from "react";
-import { Bot, Sparkles, X } from "lucide-react";
-import { useRouter } from "next/navigation";
+import {
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import {
+  ArrowRight,
+  Bot,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  LifeBuoy,
+  MessageSquareText,
+  Search,
+  ShieldCheck,
+  Sparkles,
+  Wallet,
+  X,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
-type Position = { x: number; y: number };
-type BotPath = "support" | "rewards" | "launch";
-
-type AIAgentBotProps = {
-  size?: number;
-  bottomOffset?: number;
-  rightOffset?: number;
-  storageKey?: string;
+type SupportTopic = {
+  id: string;
+  question: string;
+  answer: string;
   href?: string;
+  hrefLabel?: string;
+  icon: ReactNode;
+  keywords: string[];
 };
 
-export default function AIAgentBot({
-  size = 64,
-  bottomOffset = 24,
-  rightOffset = 24,
-  storageKey = "home-floating-ai-agent-position",
-  href = "/ai-agent",
-}: AIAgentBotProps) {
-  const router = useRouter();
-  const [position, setPosition] = useState<Position | null>(null);
-  const [dragging, setDragging] = useState(false);
-  const [popupDragging, setPopupDragging] = useState(false);
-  const [showIntro, setShowIntro] = useState(false);
-  const [popupPosition, setPopupPosition] = useState<Position | null>(null);
-  const [typedWelcome, setTypedWelcome] = useState("");
-  const [activePath, setActivePath] = useState<BotPath | null>(null);
-  const [hoveredLauncher, setHoveredLauncher] = useState(false);
-  const [launcherBurst, setLauncherBurst] = useState(false);
-  const pointerOffsetRef = useRef<Position>({ x: 0, y: 0 });
-  const pointerStartRef = useRef<Position>({ x: 0, y: 0 });
-  const popupPointerOffsetRef = useRef<Position>({ x: 0, y: 0 });
-  const popupPointerStartRef = useRef<Position>({ x: 0, y: 0 });
-  const movedRef = useRef(false);
-  const popupMovedRef = useRef(false);
-  const fullWelcome =
-    "Hello, I'm Refreeg AI Assistant 🤖. Want to crowdfund with us 💙, earn EIZA rewards ✨, or launch your own cause 🚀?";
-  const desktopPopupWidth = 320;
-  const mobilePopupWidth = 280;
-  const popupSafeMargin = 12;
+type LauncherConfig = {
+  eyebrow: string;
+  title: string;
+  nudgeTitle: string;
+  nudgeBody: string;
+  primaryHref: string;
+  primaryLabel: string;
+};
+
+type SupportShortcut = {
+  id: string;
+  label: string;
+  href: string;
+};
+
+const supportTopics: SupportTopic[] = [
+  {
+    id: "create-campaign",
+    question: "How do I create a campaign?",
+    answer:
+      "Sign in, complete your profile, then open the cause creation flow and fill in your title, story, goal amount, category, and cover image. Your submission goes through review before it becomes publicly visible.",
+    href: "/dashboard/causes/create",
+    hrefLabel: "Start a cause",
+    icon: <Sparkles className="h-4 w-4" />,
+    keywords: ["campaign", "cause", "create", "launch", "start", "fundraiser"],
+  },
+  {
+    id: "kyc-required",
+    question: "Do I need KYC before launching?",
+    answer:
+      "Yes. RefreeG gates cause and petition creation behind approved KYC and a complete profile. That keeps fundraising safer for donors and reduces fraud on the platform.",
+    href: "/dashboard/settings/kyc",
+    hrefLabel: "Open KYC settings",
+    icon: <ShieldCheck className="h-4 w-4" />,
+    keywords: ["kyc", "verification", "verify", "identity", "approved"],
+  },
+  {
+    id: "donation-methods",
+    question: "How do donations work on RefreeG?",
+    answer:
+      "Users can donate to active causes using supported payment rails such as local payments and selected crypto options. Each contribution is attached to a cause so donors can see where support is going.",
+    href: "/causes",
+    hrefLabel: "Explore causes",
+    icon: <Wallet className="h-4 w-4" />,
+    keywords: ["donate", "donation", "pay", "payment", "crypto", "naira"],
+  },
+  {
+    id: "cause-legit",
+    question: "How do I know a cause is legitimate?",
+    answer:
+      "Causes are reviewed by the moderation team, and approved causes can surface trust indicators such as verification status. RefreeG also uses transparent transaction tracking to strengthen accountability.",
+    href: "/#faq",
+    hrefLabel: "Read more FAQs",
+    icon: <CheckCircle2 className="h-4 w-4" />,
+    keywords: ["verified", "legit", "safe", "scam", "fraud", "trust"],
+  },
+  {
+    id: "support-contact",
+    question: "What if I still need help?",
+    answer:
+      "Start with the answers in this assistant. If your issue is account-specific or looks like a bug, contact the team through the support channel so they can inspect your case directly.",
+    href: "/faq",
+    hrefLabel: "Open help page",
+    icon: <LifeBuoy className="h-4 w-4" />,
+    keywords: ["support", "help", "contact", "bug", "issue", "admin"],
+  },
+];
+
+const hiddenPrefixes = [
+  "/auth/signin",
+  "/auth/signup",
+  "/onboarding",
+  "/docs/api",
+];
+
+const elevatedBottomPrefixes = [
+  "/dashboard/causes/create",
+  "/dashboard/petitions/create",
+];
+
+const supportShortcuts: SupportShortcut[] = [
+  {
+    id: "crowdfund",
+    label: "Crowdfund with us 💙",
+    href: "/causes",
+  },
+  {
+    id: "rewards",
+    label: "Earn EIZA rewards",
+    href: "/ai-agent",
+  },
+  {
+    id: "launch",
+    label: "Help me launch my cause",
+    href: "/dashboard/causes/create",
+  },
+];
+
+const getLauncherConfig = (pathname: string): LauncherConfig => {
+  if (pathname.startsWith("/dashboard/causes/create")) {
+    return {
+      eyebrow: "Launch Support",
+      title: "Need help launching?",
+      nudgeTitle: "Need help launching?",
+      nudgeBody: "Ask about KYC, setup, or campaign requirements.",
+      primaryHref: "/dashboard/causes/create",
+      primaryLabel: "Launch flow",
+    };
+  }
+
+  if (pathname.startsWith("/dashboard")) {
+    return {
+      eyebrow: "Dashboard Help",
+      title: "Need help here?",
+      nudgeTitle: "Need help in your dashboard?",
+      nudgeBody: "Ask about KYC, campaigns, or common setup issues.",
+      primaryHref: "/dashboard",
+      primaryLabel: "Open dashboard",
+    };
+  }
+
+  return {
+    eyebrow: "Support",
+    title: "Need help?",
+    nudgeTitle: "Need help?",
+    nudgeBody: "Ask about campaigns, KYC, or donations.",
+    primaryHref: "/dashboard/causes/create",
+    primaryLabel: "Launch flow",
+  };
+};
+
+export default function AIAgentBot() {
+  const pathname = usePathname();
+  const [isOpen, setIsOpen] = useState(false);
+  const [showNudge, setShowNudge] = useState(false);
+  const [hasNudged, setHasNudged] = useState(false);
+  const [search, setSearch] = useState("");
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const deferredSearch = useDeferredValue(search);
+
+  const hideBot = hiddenPrefixes.some((prefix) => pathname.startsWith(prefix));
+  const elevatedBottom = elevatedBottomPrefixes.some((prefix) =>
+    pathname.startsWith(prefix),
+  );
+  const animateOnHome = pathname === "/";
+  const launcherConfig = useMemo(() => getLauncherConfig(pathname), [pathname]);
 
   useEffect(() => {
+    setIsOpen(false);
+    setShowNudge(false);
+    setHasNudged(false);
+    setSearch("");
+    setSelectedId(null);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (hideBot || isOpen || hasNudged) return;
+
+    const timeout = window.setTimeout(() => {
+      setShowNudge(true);
+      setHasNudged(true);
+    }, 30000);
+
+    return () => window.clearTimeout(timeout);
+  }, [hasNudged, hideBot, isOpen]);
+
+  useEffect(() => {
+    if (!showNudge) return;
+
+    const timeout = window.setTimeout(() => {
+      setShowNudge(false);
+    }, 7000);
+
+    return () => window.clearTimeout(timeout);
+  }, [showNudge]);
+
+  const filteredTopics = useMemo(() => {
+    const query = deferredSearch.trim().toLowerCase();
+
+    if (!query) {
+      return supportTopics;
+    }
+
+    return supportTopics.filter((topic) => {
+      const haystack = [
+        topic.question,
+        topic.answer,
+        topic.hrefLabel,
+        ...topic.keywords,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+
+      return haystack.includes(query);
+    });
+  }, [deferredSearch]);
+
+  const selectedTopic = selectedId
+    ? filteredTopics.find((topic) => topic.id === selectedId) ?? null
+    : null;
+
+  useEffect(() => {
+    if (selectedId && !filteredTopics.some((topic) => topic.id === selectedId)) {
+      setSelectedId(null);
+    }
+  }, [filteredTopics, selectedId]);
+
+  const trackEvent = (event: string, detail?: Record<string, string>) => {
     if (typeof window === "undefined") return;
 
-    const maxX = window.innerWidth - size;
-    const maxY = window.innerHeight - size;
-    const fallbackX = Math.max(0, maxX - rightOffset);
-    const fallbackY = Math.max(0, maxY - bottomOffset);
+    window.dispatchEvent(
+      new CustomEvent("refreeg-support-bot", {
+        detail: { event, pathname, ...detail },
+      }),
+    );
 
-    const saved = window.localStorage.getItem(storageKey);
-    if (!saved) {
-      setPosition({ x: fallbackX, y: fallbackY });
-      return;
-    }
-
-    try {
-      const parsed = JSON.parse(saved) as Position;
-      setPosition({
-        x: Math.max(0, Math.min(parsed.x, maxX)),
-        y: Math.max(0, Math.min(parsed.y, maxY)),
-      });
-    } catch {
-      setPosition({ x: fallbackX, y: fallbackY });
-    }
-  }, [size, bottomOffset, rightOffset, storageKey]);
-
-  useEffect(() => {
-    if (!position || typeof window === "undefined") return;
-    window.localStorage.setItem(storageKey, JSON.stringify(position));
-  }, [position, storageKey]);
-
-  const openBotAction = () => {
-    setLauncherBurst(true);
-    setShowIntro(true);
-    setActivePath(null);
-    setPopupPosition(null);
-  };
-
-  useEffect(() => {
-    if (!launcherBurst) return;
-    const timeout = window.setTimeout(() => setLauncherBurst(false), 320);
-    return () => window.clearTimeout(timeout);
-  }, [launcherBurst]);
-
-  useEffect(() => {
-    if (!showIntro) return;
-    setTypedWelcome("");
-    let index = 0;
-    const timer = window.setInterval(() => {
-      index += 1;
-      setTypedWelcome(fullWelcome.slice(0, index));
-      if (index >= fullWelcome.length) {
-        window.clearInterval(timer);
-      }
-    }, 18);
-
-    return () => window.clearInterval(timer);
-  }, [showIntro, fullWelcome]);
-
-  const closeIntro = () => {
-    setShowIntro(false);
-    setActivePath(null);
-    setTypedWelcome("");
-  };
-
-  const handlePrimaryAction = () => {
-    if (activePath === "support") {
-      closeIntro();
-      router.push("/causes");
-      return;
-    }
-    if (activePath === "rewards") {
-      closeIntro();
-      router.push(href);
-      return;
-    }
-    if (activePath === "launch") {
-      closeIntro();
-      router.push("/dashboard/causes/create");
+    if (process.env.NODE_ENV === "development") {
+      console.debug("[support-bot]", event, { pathname, ...detail });
     }
   };
 
-  useEffect(() => {
-    if (!position || typeof window === "undefined") return;
+  if (hideBot) return null;
 
-    const onResize = () => {
-      const maxX = window.innerWidth - size;
-      const maxY = window.innerHeight - size;
-      setPosition((prev) => {
-        if (!prev) return prev;
-        return {
-          x: Math.max(0, Math.min(prev.x, maxX)),
-          y: Math.max(0, Math.min(prev.y, maxY)),
-        };
-      });
-    };
-
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, [position, size]);
-
-  const handlePointerDown = (event: PointerEvent<HTMLButtonElement>) => {
-    if (!position) return;
-    setDragging(true);
-    movedRef.current = false;
-    pointerOffsetRef.current = {
-      x: event.clientX - position.x,
-      y: event.clientY - position.y,
-    };
-    pointerStartRef.current = {
-      x: event.clientX,
-      y: event.clientY,
-    };
-    event.currentTarget.setPointerCapture(event.pointerId);
+  const shellStyle = {
+    bottom: elevatedBottom
+      ? "max(6rem, calc(env(safe-area-inset-bottom) + 0.75rem))"
+      : "calc(env(safe-area-inset-bottom) + 0.75rem)",
   };
-
-  const handlePointerMove = (event: PointerEvent<HTMLButtonElement>) => {
-    if (!dragging || !position || typeof window === "undefined") return;
-
-    const maxX = window.innerWidth - size;
-    const maxY = window.innerHeight - size;
-    const x = event.clientX - pointerOffsetRef.current.x;
-    const y = event.clientY - pointerOffsetRef.current.y;
-    const movementX = event.clientX - pointerStartRef.current.x;
-    const movementY = event.clientY - pointerStartRef.current.y;
-
-    if (Math.abs(movementX) + Math.abs(movementY) > 6) {
-      movedRef.current = true;
-    }
-
-    setPosition({
-      x: Math.max(0, Math.min(x, maxX)),
-      y: Math.max(0, Math.min(y, maxY)),
-    });
-  };
-
-  const handlePointerUp = (event: PointerEvent<HTMLButtonElement>) => {
-    setDragging(false);
-    event.currentTarget.releasePointerCapture(event.pointerId);
-
-    if (!movedRef.current) {
-      openBotAction();
-    }
-  };
-
-  const handlePointerCancel = (event: PointerEvent<HTMLButtonElement>) => {
-    setDragging(false);
-    movedRef.current = true;
-    event.currentTarget.releasePointerCapture(event.pointerId);
-  };
-
-  const viewportWidth =
-    typeof window === "undefined" ? desktopPopupWidth + popupSafeMargin * 2 : window.innerWidth;
-  const viewportHeight = typeof window === "undefined" ? 800 : window.innerHeight;
-  const isMobileViewport = viewportWidth < 640;
-  const popupWidth =
-    isMobileViewport
-      ? Math.min(mobilePopupWidth, viewportWidth - popupSafeMargin * 2)
-      : desktopPopupWidth;
-  const estimatedPopupHeight = activePath
-    ? isMobileViewport
-      ? 340
-      : 360
-    : isMobileViewport
-      ? 300
-      : 320;
-  const maxPopupLeft = Math.max(popupSafeMargin, viewportWidth - popupWidth - popupSafeMargin);
-  const maxPopupTop = Math.max(popupSafeMargin, viewportHeight - estimatedPopupHeight - popupSafeMargin);
-
-  const handlePopupPointerDown = (event: PointerEvent<HTMLDivElement>) => {
-    if (!showIntro) return;
-    setPopupDragging(true);
-    popupMovedRef.current = false;
-    popupPointerOffsetRef.current = {
-      x: event.clientX - popupAnchor.x,
-      y: event.clientY - popupAnchor.y,
-    };
-    popupPointerStartRef.current = {
-      x: event.clientX,
-      y: event.clientY,
-    };
-    event.currentTarget.setPointerCapture(event.pointerId);
-  };
-
-  const handlePopupPointerMove = (event: PointerEvent<HTMLDivElement>) => {
-    if (!popupDragging) return;
-    const x = event.clientX - popupPointerOffsetRef.current.x;
-    const y = event.clientY - popupPointerOffsetRef.current.y;
-    const movementX = event.clientX - popupPointerStartRef.current.x;
-    const movementY = event.clientY - popupPointerStartRef.current.y;
-
-    if (Math.abs(movementX) + Math.abs(movementY) > 6) {
-      popupMovedRef.current = true;
-    }
-
-    setPopupPosition({
-      x: Math.min(Math.max(popupSafeMargin, x), maxPopupLeft),
-      y: Math.min(Math.max(popupSafeMargin, y), maxPopupTop),
-    });
-  };
-
-  const handlePopupPointerUp = (event: PointerEvent<HTMLDivElement>) => {
-    setPopupDragging(false);
-    event.currentTarget.releasePointerCapture(event.pointerId);
-  };
-
-  const handlePopupPointerCancel = (event: PointerEvent<HTMLDivElement>) => {
-    setPopupDragging(false);
-    event.currentTarget.releasePointerCapture(event.pointerId);
-  };
-
-  useEffect(() => {
-    if (!showIntro) return;
-    setPopupPosition((prev) => {
-      if (!prev) return prev;
-      const clamped = {
-        x: Math.min(Math.max(popupSafeMargin, prev.x), maxPopupLeft),
-        y: Math.min(Math.max(popupSafeMargin, prev.y), maxPopupTop),
-      };
-      if (clamped.x === prev.x && clamped.y === prev.y) {
-        return prev;
-      }
-      return clamped;
-    });
-  }, [showIntro, maxPopupLeft, maxPopupTop, popupSafeMargin]);
-
-  if (!position) return null;
-
-  const baseLeft = isMobileViewport
-    ? (viewportWidth - popupWidth) / 2
-    : position.x + size / 2 - popupWidth / 2;
-  const popupLeft = Math.min(Math.max(popupSafeMargin, baseLeft), maxPopupLeft);
-  const preferAbove = position.y > viewportHeight / 2;
-  const baseTop = isMobileViewport
-    ? viewportHeight - estimatedPopupHeight - 20
-    : preferAbove
-      ? position.y - estimatedPopupHeight - 12
-      : position.y + size + 12;
-  const popupTop = Math.min(Math.max(popupSafeMargin, baseTop), maxPopupTop);
-  const popupAnchor = popupPosition
-    ? {
-        x: Math.min(Math.max(popupSafeMargin, popupPosition.x), maxPopupLeft),
-        y: Math.min(Math.max(popupSafeMargin, popupPosition.y), maxPopupTop),
-      }
-    : { x: popupLeft, y: popupTop };
 
   return (
-    <>
-      {showIntro && (
-        <div
-          className="fixed z-50 w-[280px] max-h-[72vh] overflow-y-auto rounded-2xl border border-blue-100 bg-white p-3 shadow-2xl intro-panel sm:w-[320px] sm:max-h-none sm:overflow-visible sm:p-4"
-          style={{ left: popupAnchor.x, top: popupAnchor.y }}
-        >
-          <div
-            onPointerDown={handlePopupPointerDown}
-            onPointerMove={handlePopupPointerMove}
-            onPointerUp={handlePopupPointerUp}
-            onPointerCancel={handlePopupPointerCancel}
-            className="flex items-start justify-between gap-2 cursor-grab active:cursor-grabbing"
-            style={{ touchAction: "none" }}
-          >
-            <button
-              type="button"
-              className="inline-flex items-center gap-1 rounded-full border border-blue-100 bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-blue-700"
-              aria-label="AI Guide"
-              title="AI Guide"
-            >
-              <Sparkles size={11} />
-              AI Guide
-            </button>
-            <button
-              type="button"
-              onPointerDown={(event) => event.stopPropagation()}
-              onClick={closeIntro}
-              aria-label="Close assistant"
-              className="rounded-md p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
-            >
-              <X size={14} />
-            </button>
-          </div>
-          <p className="mt-2 min-h-[52px] text-sm font-medium leading-6 text-slate-700">
-            {typedWelcome}
-            {typedWelcome.length < fullWelcome.length ? (
-              <span className="ml-0.5 inline-block h-4 w-[1px] animate-pulse bg-blue-500 align-middle" />
-            ) : null}
-          </p>
-
-          {!activePath ? (
-            <div className="mt-3 grid gap-2 panel-slide-in">
-              <button
-                type="button"
-                onClick={() => setActivePath("support")}
-                className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-left text-sm font-semibold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 active:scale-[0.99]"
-              >
-                Crowdfund with us 💙
-              </button>
-              <button
-                type="button"
-                onClick={() => setActivePath("rewards")}
-                className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-left text-sm font-semibold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 active:scale-[0.99]"
-              >
-                Earn EIZA rewards
-              </button>
-              <button
-                type="button"
-                onClick={() => setActivePath("launch")}
-                className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-left text-sm font-semibold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 active:scale-[0.99]"
-              >
-                Help me launch my cause
-              </button>
-            </div>
-          ) : (
-            <div className="mt-3 rounded-xl border border-blue-100 bg-blue-50/70 p-3 panel-slide-in">
-              <div className="mb-2 flex items-center justify-between text-[11px] font-semibold uppercase tracking-wide">
-                <span className="text-blue-700">Step 1 of 3</span>
-                <span className="text-slate-500">Guided setup</span>
-              </div>
-              <p className="text-sm font-semibold text-slate-800">
-                {activePath === "support" && "Discover causes that match your interests."}
-                {activePath === "rewards" && "Track your streak and grow your EIZA points."}
-                {activePath === "launch" && "Start your cause and get fundraising-ready fast."}
-              </p>
-              <p className="mt-1 text-xs text-slate-600">
-                {activePath === "support" &&
-                  "I will take you to causes where you can comment, share, and donate in a few taps."}
-                {activePath === "rewards" &&
-                  "I will open your rewards flow so you can view points and your latest transactions."}
-                {activePath === "launch" &&
-                  "I will open the create-cause flow and guide you through the first required step."}
-              </p>
-              <div className="mt-3 flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => setActivePath(null)}
-                  className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
-                >
-                  Back
-                </button>
-                <button
-                  type="button"
-                  onClick={handlePrimaryAction}
-                  className="flex-1 rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-blue-700"
-                >
-                  Continue
-                </button>
-              </div>
-            </div>
-          )}
-          <div className="mt-2 h-1.5 rounded-full bg-slate-100">
-            <div
-              className={`h-1.5 rounded-full bg-blue-500 transition-all duration-300 ${
-                activePath ? "w-1/3" : "w-[10%]"
-              }`}
-            />
-          </div>
-        </div>
+    <div
+      className={cn(
+        "pointer-events-none fixed right-3 z-[120] flex max-w-[calc(100vw-1rem)] flex-col items-end sm:right-6 sm:max-w-[calc(100vw-1.5rem)]",
       )}
-
-      {!showIntro && (
+      style={shellStyle}
+    >
+      {showNudge && !isOpen ? (
         <button
           type="button"
-          aria-label="AI Agent Bot"
-          title="Drag or open AI Agent Bot"
-          onPointerDown={handlePointerDown}
-          onPointerMove={handlePointerMove}
-          onPointerUp={handlePointerUp}
-          onPointerCancel={handlePointerCancel}
-          onMouseEnter={() => setHoveredLauncher(true)}
-          onMouseLeave={() => setHoveredLauncher(false)}
-          onKeyDown={(event) => {
-            if (event.key === "Enter" || event.key === " ") {
-              event.preventDefault();
-              openBotAction();
-            }
+          onClick={() => {
+            setIsOpen(true);
+            setShowNudge(false);
+            trackEvent("nudge_open");
           }}
-          className={`fixed z-50 flex items-center justify-center rounded-full text-white shadow-xl transition-transform duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 ${
-            hoveredLauncher ? "scale-105" : "scale-100"
-          } ${launcherBurst ? "launcher-burst" : ""}`}
-          style={{
-            width: size,
-            height: size,
-            left: position.x,
-            top: position.y,
-            cursor: dragging ? "grabbing" : "grab",
-            touchAction: "none",
-          }}
+          className="pointer-events-auto mb-3 max-w-[14rem] rounded-2xl border border-blue-200 bg-white px-3 py-2 text-left shadow-[0_16px_32px_-28px_rgba(37,99,235,0.45)] transition hover:-translate-y-0.5"
         >
-          <span className="absolute inset-0 rounded-full bg-blue-100/70 animate-pulse" />
-          <span className="absolute inset-1 rounded-full border border-blue-200/80 bg-gradient-to-b from-blue-100 to-blue-200 shadow-inner" />
-          <span className="absolute inset-2 rounded-full border border-blue-300/70" />
-          <span className="orbit-ring absolute inset-0">
-            <span className="orbit-dot" />
+          <div className="flex items-start gap-3">
+            <span className="mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blue-600 text-white">
+              <MessageSquareText className="h-3.5 w-3.5" />
+            </span>
+            <div>
+              <p className="text-[13px] font-semibold text-slate-900">
+                {launcherConfig.nudgeTitle}
+              </p>
+              <p className="mt-1 text-[11px] leading-4 text-slate-600">
+                {launcherConfig.nudgeBody}
+              </p>
+            </div>
+          </div>
+        </button>
+      ) : null}
+
+      {isOpen ? (
+        <section className="pointer-events-auto w-[calc(100vw-1rem)] max-w-[21rem] overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-[0_28px_90px_-42px_rgba(15,23,42,0.35)] ring-1 ring-slate-950/5 animate-[botSheetIn_220ms_ease-out] sm:w-[22rem] sm:max-w-none">
+          <div className="border-b border-slate-200 bg-white px-4 py-3.5 text-slate-900">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-sm">
+                  <span
+                    className={cn(
+                      "flex h-full w-full items-center justify-center rounded-2xl transition-transform duration-300",
+                      animateOnHome && isOpen && "home-bot-float",
+                    )}
+                  >
+                    <Bot className="h-4.5 w-4.5" />
+                  </span>
+                </span>
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                    {launcherConfig.eyebrow}
+                  </p>
+                  <h2 className="mt-0.5 text-base font-semibold leading-tight">
+                    Ask a question
+                  </h2>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsOpen(false)}
+                className="rounded-xl p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                aria-label="Close support bot"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+
+          <div className="flex h-[min(31rem,62vh)] flex-col sm:h-[min(35rem,72vh)]">
+            <div className="border-b border-slate-200 px-3.5 py-3">
+              <label className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 focus-within:border-blue-400 focus-within:bg-white focus-within:ring-4 focus-within:ring-blue-100">
+                <Search className="h-4 w-4 text-slate-400" />
+                <input
+                  value={search}
+                  onChange={(event) => {
+                    setSearch(event.target.value);
+                    trackEvent("search_change", { query: event.target.value });
+                  }}
+                  placeholder="Search FAQs: KYC, campaign, donations..."
+                  className="w-full bg-transparent text-[13px] text-slate-900 outline-none placeholder:text-slate-400"
+                />
+              </label>
+            </div>
+
+            <div className="min-h-0 flex-1 overflow-y-auto px-3.5 py-3.5">
+              {!selectedTopic ? (
+                <div className="rounded-[20px] border border-slate-200 bg-slate-50/70 p-2.5">
+                  <p className="px-1 pb-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                    Popular topics
+                  </p>
+                  <div className="space-y-2 animate-[botFadeIn_180ms_ease-out]">
+                    {filteredTopics.length > 0 ? (
+                      filteredTopics.map((topic) => {
+                        const isActive = topic.id === selectedId;
+
+                        return (
+                          <button
+                            key={topic.id}
+                            type="button"
+                            onClick={() => {
+                              setSelectedId(topic.id);
+                              trackEvent("topic_open", { topic: topic.id });
+                            }}
+                            className={cn(
+                              "w-full rounded-2xl border px-3 py-3 text-left transition",
+                              isActive
+                                ? "border-blue-200 bg-white text-slate-950 shadow-sm"
+                                : "border-transparent bg-white/70 text-slate-700 hover:border-slate-200 hover:bg-white",
+                            )}
+                          >
+                            <div className="flex items-center gap-3">
+                              <span
+                                className={cn(
+                                  "inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl",
+                                  isActive
+                                    ? "bg-blue-600 text-white"
+                                    : "bg-slate-100 text-slate-500",
+                                )}
+                              >
+                                {topic.icon}
+                              </span>
+                              <div className="min-w-0">
+                                <div className="flex items-center justify-between gap-3">
+                                  <p className="text-[13px] font-semibold leading-5 text-balance">
+                                    {topic.question}
+                                  </p>
+                                  <ChevronRight className="h-4 w-4 shrink-0 text-slate-400" />
+                                </div>
+                              </div>
+                            </div>
+                          </button>
+                        );
+                      })
+                    ) : (
+                      <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-5 text-sm text-slate-600">
+                        <p>No FAQ matched that search.</p>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {["KYC", "create campaign", "donations"].map((suggestion) => (
+                            <button
+                              key={suggestion}
+                              type="button"
+                              onClick={() => {
+                                setSearch(suggestion);
+                                trackEvent("search_suggestion", { query: suggestion });
+                              }}
+                              className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-[12px] font-medium text-slate-700 transition hover:border-blue-300 hover:text-blue-700"
+                            >
+                              Try {suggestion}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : null}
+
+              {!selectedTopic ? (
+                <div className="mt-3 rounded-[20px] border border-blue-100 bg-blue-50/70 p-3.5">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">
+                    Quick actions
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {supportShortcuts.map((shortcut) => (
+                      <Link
+                        key={shortcut.id}
+                        href={shortcut.href}
+                        onClick={() =>
+                          trackEvent("shortcut_click", {
+                            shortcut: shortcut.id,
+                            href: shortcut.href,
+                          })
+                        }
+                        className="rounded-full border border-blue-200 bg-white px-3 py-1.5 text-[12px] font-medium text-slate-700 transition hover:border-blue-300 hover:text-blue-700"
+                      >
+                        {shortcut.label}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
+              {selectedTopic ? (
+                <div className="mt-3 rounded-[20px] border border-slate-200 bg-white p-4 shadow-[0_20px_50px_-40px_rgba(15,23,42,0.45)] animate-[botFadeUp_180ms_ease-out]">
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">
+                      <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-blue-100 text-blue-700">
+                        <Bot className="h-3.5 w-3.5" />
+                      </span>
+                      Recommended answer
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedId(null);
+                        trackEvent("topic_back");
+                      }}
+                      className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-500 transition hover:text-blue-700"
+                    >
+                      <ChevronLeft className="h-3.5 w-3.5" />
+                      Back
+                    </button>
+                  </div>
+                  <h3 className="mt-3 text-lg font-semibold leading-7 text-slate-950">
+                    {selectedTopic.question}
+                  </h3>
+                  <p className="mt-3 text-[14px] leading-7 text-slate-600">
+                    {selectedTopic.answer}
+                  </p>
+
+                  {selectedTopic.href && selectedTopic.hrefLabel ? (
+                    <Link
+                      href={selectedTopic.href}
+                      onClick={() =>
+                        trackEvent("primary_cta", { href: selectedTopic.href || "" })
+                      }
+                      className="mt-4 inline-flex items-center gap-2 rounded-full bg-blue-600 px-3.5 py-2 text-[13px] font-semibold text-white transition hover:bg-blue-700"
+                    >
+                      {selectedTopic.hrefLabel}
+                      <ArrowRight className="h-4 w-4" />
+                    </Link>
+                  ) : null}
+                </div>
+              ) : null}
+
+              {!selectedTopic ? (
+                <div className="mt-3 rounded-[20px] border border-blue-100 bg-blue-50/70 p-3.5">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">
+                    Good first questions
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {supportTopics.slice(0, 4).map((topic) => (
+                      <button
+                        key={topic.id}
+                        type="button"
+                        onClick={() => {
+                          setSearch("");
+                          setSelectedId(topic.id);
+                          trackEvent("quick_topic", { topic: topic.id });
+                        }}
+                        className="rounded-full border border-blue-200 bg-white px-3 py-1.5 text-[12px] text-slate-700 transition hover:border-blue-300 hover:text-blue-700"
+                      >
+                        {topic.question}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
+              <div className="mt-3 rounded-[20px] border border-slate-200 bg-slate-50 px-3.5 py-3.5">
+                <p className="text-[13px] font-semibold text-slate-900">
+                  Still blocked?
+                </p>
+                <p className="mt-1 text-[12px] leading-5 text-slate-600">
+                  Use the next best action for this page.
+                </p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <Link
+                    href={launcherConfig.primaryHref}
+                    onClick={() =>
+                      trackEvent("footer_primary", {
+                        href: launcherConfig.primaryHref,
+                      })
+                    }
+                    className="inline-flex items-center gap-2 rounded-full bg-blue-600 px-3.5 py-2 text-[12px] font-semibold text-white transition hover:bg-blue-700"
+                  >
+                    {launcherConfig.primaryLabel}
+                    <ChevronRight className="h-4 w-4" />
+                  </Link>
+                  <Link
+                    href="/faq"
+                    onClick={() => trackEvent("footer_help_center", { href: "/faq" })}
+                    className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3.5 py-2 text-[12px] font-semibold text-slate-700 transition hover:border-blue-300 hover:text-blue-700"
+                  >
+                    Help center
+                    <ChevronRight className="h-4 w-4" />
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      ) : null}
+
+      {!isOpen ? (
+        <button
+          type="button"
+          onClick={() => {
+            setIsOpen(true);
+            setShowNudge(false);
+            trackEvent("launcher_open");
+          }}
+          aria-label="Open support bot"
+          className="pointer-events-auto group relative flex items-center justify-center gap-2 text-left text-slate-900 transition duration-200 focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-200 sm:rounded-full sm:border sm:border-white/90 sm:bg-white sm:px-2.5 sm:py-2 sm:shadow-[0_18px_40px_-24px_rgba(15,23,42,0.55)] sm:ring-1 sm:ring-slate-950/8"
+        >
+          <span
+            className={cn(
+              "relative inline-flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full border border-white/90 bg-gradient-to-br from-blue-500 to-blue-700 text-white shadow-[0_18px_40px_-24px_rgba(15,23,42,0.55)] ring-1 ring-slate-950/8 transition-transform duration-300 group-hover:translate-y-[-3px] group-hover:scale-[1.03] [transform:translateZ(0)] sm:h-[52px] sm:w-[52px]",
+              animateOnHome && isOpen && "home-bot-float",
+            )}
+          >
+            <span className="absolute inset-0 rounded-full animate-[botPulse_3.4s_ease-in-out_infinite] border border-white/30" />
+            <Bot className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={2.4} />
           </span>
-          <span className="orbit-ring-reverse absolute inset-1">
-            <span className="orbit-dot" />
-          </span>
-          <span className="relative z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white text-blue-600 shadow-sm">
-            <Bot size={18} strokeWidth={2.5} />
+
+          <span className="pr-0.5">
+            <span className="inline-flex rounded-full bg-blue-50 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.16em] text-blue-700 ring-1 ring-blue-100">
+              Support
+            </span>
+            <span className="mt-1 hidden text-sm font-semibold leading-5 text-slate-950 sm:block">
+              {launcherConfig.title}
+            </span>
           </span>
         </button>
-      )}
+      ) : null}
       <style jsx>{`
-        .intro-panel {
-          animation: popup-in 220ms ease-out;
-        }
-
-        .panel-slide-in {
-          animation: panel-in 220ms ease-out;
-        }
-
-        .launcher-burst {
-          animation: burst 260ms ease-out;
-        }
-
-        .orbit-ring {
-          animation: orbit 7s linear infinite;
-        }
-
-        .orbit-ring-reverse {
-          animation: orbit-reverse 9s linear infinite;
-        }
-
-        .orbit-dot {
-          position: absolute;
-          top: 1px;
-          left: 50%;
-          width: 8px;
-          height: 8px;
-          margin-left: -4px;
-          border-radius: 9999px;
-          background: #60a5fa;
-          box-shadow: 0 0 10px rgba(59, 130, 246, 0.8);
-        }
-
-        @keyframes orbit {
-          from {
-            transform: rotate(0deg);
+        @keyframes botPulse {
+          0%,
+          100% {
+            transform: scale(1);
+            opacity: 0.65;
           }
-          to {
-            transform: rotate(360deg);
-          }
-        }
-
-        @keyframes orbit-reverse {
-          from {
-            transform: rotate(360deg);
-          }
-          to {
-            transform: rotate(0deg);
-          }
-        }
-
-        @keyframes popup-in {
-          from {
-            opacity: 0;
-            transform: translateY(6px) scale(0.98);
-          }
-          to {
+          50% {
+            transform: scale(1.08);
             opacity: 1;
-            transform: translateY(0) scale(1);
           }
         }
 
-        @keyframes panel-in {
+        .home-bot-float {
+          animation: botPulse 3.4s ease-in-out infinite,
+            botFloat 4.8s ease-in-out infinite;
+        }
+
+        @keyframes botSheetIn {
           from {
             opacity: 0;
-            transform: translateY(4px);
+            transform: translateY(10px);
           }
           to {
             opacity: 1;
@@ -517,18 +609,42 @@ export default function AIAgentBot({
           }
         }
 
-        @keyframes burst {
-          0% {
-            transform: scale(1);
+        @keyframes botFadeUp {
+          from {
+            opacity: 0;
+            transform: translateY(8px);
           }
-          45% {
-            transform: scale(0.93);
+          to {
+            opacity: 1;
+            transform: translateY(0);
           }
+        }
+
+        @keyframes botFadeIn {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
+
+        @keyframes botFloat {
+          0%,
           100% {
-            transform: scale(1.04);
+            transform: translate3d(0, 0, 0);
+          }
+          25% {
+            transform: translate3d(-1px, -4px, 0);
+          }
+          50% {
+            transform: translate3d(2px, -7px, 0);
+          }
+          75% {
+            transform: translate3d(-1px, -3px, 0);
           }
         }
       `}</style>
-    </>
+    </div>
   );
 }

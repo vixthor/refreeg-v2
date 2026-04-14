@@ -119,14 +119,22 @@ const routeThemes = {
 } as const;
 
 function FooterLinkItem({ href, label }: FooterLink) {
+  const pathname = usePathname();
+  const isDarkTheme = pathname === "/disaster-relief";
   const className =
-    "group inline-flex w-full items-center justify-between gap-3 rounded-2xl border border-transparent bg-white/55 px-3 py-2.5 text-sm text-slate-600 transition-all hover:-translate-y-0.5 hover:border-blue-200 hover:bg-white hover:text-blue-700 active:scale-[0.99]";
+    isDarkTheme
+      ? "group inline-flex w-full items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/10 px-3 py-2.5 text-sm text-slate-200 transition-all hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/14 hover:text-white active:scale-[0.99]"
+      : "group inline-flex w-full items-center justify-between gap-3 rounded-2xl border border-transparent bg-white/55 px-3 py-2.5 text-sm text-slate-600 transition-all hover:-translate-y-0.5 hover:border-blue-200 hover:bg-white hover:text-blue-700 active:scale-[0.99]";
+
+  const iconClassName = isDarkTheme
+    ? "flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/15 text-slate-200 transition-all group-hover:bg-white/20 group-hover:text-white"
+    : "flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-400 transition-all group-hover:bg-blue-50 group-hover:text-blue-700";
 
   if (href.startsWith("/")) {
     return (
       <Link href={href} className={className}>
         <span>{label}</span>
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-400 transition-all group-hover:bg-blue-50 group-hover:text-blue-700">
+        <span className={iconClassName}>
           <MoveRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
         </span>
       </Link>
@@ -136,7 +144,7 @@ function FooterLinkItem({ href, label }: FooterLink) {
   return (
     <a href={href} className={className}>
       <span>{label}</span>
-      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-400 transition-all group-hover:bg-blue-50 group-hover:text-blue-700">
+      <span className={iconClassName}>
         <MoveRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
       </span>
     </a>
@@ -152,11 +160,22 @@ function ContactItem({
   label: string;
   icon: React.ReactNode;
 }) {
+  const pathname = usePathname();
+  const isDarkTheme = pathname === "/disaster-relief";
   const className =
-    "flex items-center gap-3 rounded-2xl border border-slate-200/70 bg-white/70 px-4 py-2.5 text-sm leading-6 text-slate-600 transition-all hover:-translate-y-0.5 hover:border-slate-300 hover:text-slate-950";
+    isDarkTheme
+      ? "flex items-center gap-3 rounded-2xl border border-white/10 bg-white/10 px-4 py-2.5 text-sm leading-6 text-slate-200 transition-all hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/14 hover:text-white"
+      : "flex items-center gap-3 rounded-2xl border border-slate-200/70 bg-white/70 px-4 py-2.5 text-sm leading-6 text-slate-600 transition-all hover:-translate-y-0.5 hover:border-slate-300 hover:text-slate-950";
   const content = (
     <>
-      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-500">
+      <span
+        className={cn(
+          "flex h-8 w-8 shrink-0 items-center justify-center rounded-xl",
+          isDarkTheme
+            ? "bg-white/15 text-slate-100"
+            : "bg-slate-100 text-slate-500",
+        )}
+      >
         {icon}
       </span>
       <span>{label}</span>
@@ -188,6 +207,7 @@ export function Footer() {
   const year = new Date().getFullYear();
   const theme =
     routeThemes[pathname as keyof typeof routeThemes] ?? routeThemes.default;
+  const isDarkTheme = pathname === "/disaster-relief";
 
   return (
     <footer className="bg-background px-4 pb-5 pt-10 sm:px-6 lg:px-8">
@@ -205,7 +225,14 @@ export function Footer() {
                 theme.panel,
               )}
             >
-              <span className="inline-flex w-fit items-center rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+              <span
+                className={cn(
+                  "inline-flex w-fit items-center rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em]",
+                  isDarkTheme
+                    ? "border border-white/10 bg-white/10 text-slate-100"
+                    : "border border-slate-200 bg-white/80 text-slate-500",
+                )}
+              >
                 Contact
               </span>
               <div className="mt-5 grid gap-3">
@@ -227,7 +254,14 @@ export function Footer() {
                   theme.panel,
                 )}
               >
-                <span className="inline-flex w-fit items-center rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                <span
+                  className={cn(
+                    "inline-flex w-fit items-center rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em]",
+                    isDarkTheme
+                      ? "border border-white/10 bg-white/10 text-slate-100"
+                      : "border border-slate-200 bg-white/80 text-slate-500",
+                  )}
+                >
                   Platform
                 </span>
                 <div className="mt-5 flex flex-col gap-3">
@@ -247,7 +281,14 @@ export function Footer() {
                   theme.panel,
                 )}
               >
-                <span className="inline-flex w-fit items-center rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                <span
+                  className={cn(
+                    "inline-flex w-fit items-center rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em]",
+                    isDarkTheme
+                      ? "border border-white/10 bg-white/10 text-slate-100"
+                      : "border border-slate-200 bg-white/80 text-slate-500",
+                  )}
+                >
                   Resources
                 </span>
                 <div className="mt-5 flex flex-col gap-3">
@@ -271,24 +312,62 @@ export function Footer() {
           >
             <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
               <div className="max-w-xl">
-                <span className="inline-flex items-center rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                <span
+                  className={cn(
+                    "inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em]",
+                    isDarkTheme
+                      ? "border border-white/10 bg-white/10 text-slate-100"
+                      : "border border-slate-200 bg-white/80 text-slate-500",
+                  )}
+                >
                   Social
                 </span>
-                <p className="mt-4 text-xl font-semibold text-slate-950 sm:text-2xl">
+                <p
+                  className={cn(
+                    "mt-4 text-xl font-semibold sm:text-2xl",
+                    isDarkTheme ? "text-white" : "text-slate-950",
+                  )}
+                >
                   Follow RefreeG
                 </p>
-                <p className="mt-3 text-sm leading-7 text-slate-600">
+                <p
+                  className={cn(
+                    "mt-3 text-sm leading-7",
+                    isDarkTheme ? "text-slate-300" : "text-slate-600",
+                  )}
+                >
                   Stay close to new campaigns, platform updates, and community
                   stories across our social channels.
                 </p>
                 <div className="mt-5 flex flex-wrap gap-2">
-                  <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
+                  <span
+                    className={cn(
+                      "rounded-full px-3 py-1 text-xs font-medium",
+                      isDarkTheme
+                        ? "bg-white/10 text-slate-100"
+                        : "bg-slate-100 text-slate-600",
+                    )}
+                  >
                     Campaign updates
                   </span>
-                  <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
+                  <span
+                    className={cn(
+                      "rounded-full px-3 py-1 text-xs font-medium",
+                      isDarkTheme
+                        ? "bg-white/10 text-slate-100"
+                        : "bg-slate-100 text-slate-600",
+                    )}
+                  >
                     Community stories
                   </span>
-                  <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
+                  <span
+                    className={cn(
+                      "rounded-full px-3 py-1 text-xs font-medium",
+                      isDarkTheme
+                        ? "bg-white/10 text-slate-100"
+                        : "bg-slate-100 text-slate-600",
+                    )}
+                  >
                     Platform news
                   </span>
                 </div>
@@ -301,9 +380,21 @@ export function Footer() {
                     href={item.href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="group inline-flex min-w-[140px] items-center gap-3 rounded-2xl border border-slate-200/70 bg-white/70 px-4 py-3.5 text-sm text-slate-600 transition-all hover:-translate-y-0.5 hover:border-slate-300 hover:text-slate-950 sm:min-w-fit"
+                    className={cn(
+                      "group inline-flex min-w-[140px] items-center gap-3 rounded-2xl px-4 py-3.5 text-sm transition-all hover:-translate-y-0.5 sm:min-w-fit",
+                      isDarkTheme
+                        ? "border border-white/10 bg-white/10 text-slate-100 hover:border-white/20 hover:bg-white/14 hover:text-white"
+                        : "border border-slate-200/70 bg-white/70 text-slate-600 hover:border-slate-300 hover:text-slate-950",
+                    )}
                   >
-                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-500 transition-colors group-hover:bg-slate-900 group-hover:text-white">
+                    <span
+                      className={cn(
+                        "flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl transition-colors",
+                        isDarkTheme
+                          ? "bg-white/15 text-slate-100 group-hover:bg-white group-hover:text-slate-950"
+                          : "bg-slate-100 text-slate-500 group-hover:bg-slate-900 group-hover:text-white",
+                      )}
+                    >
                       {item.icon}
                     </span>
                     <span className="text-[15px] font-medium">
@@ -315,7 +406,14 @@ export function Footer() {
             </div>
           </div>
 
-          <div className="flex flex-col gap-4 border-t border-white/50 px-1 pt-2 text-sm text-slate-500 md:flex-row md:items-center md:justify-between">
+          <div
+            className={cn(
+              "flex flex-col gap-4 border-t px-1 pt-2 text-sm md:flex-row md:items-center md:justify-between",
+              isDarkTheme
+                ? "border-white/10 text-slate-300"
+                : "border-white/50 text-slate-500",
+            )}
+          >
             <p>Copyright © {year} RefreeG. Built by Eiza Innovations.</p>
 
             <div className="flex flex-wrap gap-x-5 gap-y-2">
@@ -323,7 +421,12 @@ export function Footer() {
                 <Link
                   key={`${link.label}-legal`}
                   href={link.route}
-                  className="transition-colors hover:text-slate-950"
+                  className={cn(
+                    "transition-colors",
+                    isDarkTheme
+                      ? "hover:text-white"
+                      : "hover:text-slate-950",
+                  )}
                 >
                   {link.label}
                 </Link>
