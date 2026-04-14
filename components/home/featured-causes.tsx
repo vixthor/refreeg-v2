@@ -20,6 +20,7 @@ import {
   CarouselContent,
   CarouselItem,
   CarouselNext,
+  CarouselPagination,
   CarouselPrevious,
 } from "@/components/ui/carousel";
 
@@ -63,7 +64,7 @@ export async function FeaturedCauses() {
 
   return (
     <div className="space-y-10 relative py-12">
-      <Carousel className="w-full">
+      <Carousel className="w-full px-14">
         <div className="flex items-start justify-between w-full relative">
           <AnimatedHeader>
             <H2 className="text-black text-4xl font-bold font-['Montserrat'] leading-[48px] mb-2">
@@ -74,10 +75,6 @@ export async function FeaturedCauses() {
               opportunities.
             </P>
           </AnimatedHeader>
-          <div className="flex items-center gap-2 ml-4">
-            <CarouselPrevious className="static translate-y-0 translate-x-0" />
-            <CarouselNext className="static translate-y-0 translate-x-0" />
-          </div>
         </div>
         <CarouselContent className="mt-6 mb-6 md:mr-4 md:ml-4">
           {featuredCauses.map((cause) => {
@@ -91,7 +88,7 @@ export async function FeaturedCauses() {
             return (
               <CarouselItem
                 key={cause.id}
-                className="md:pl-4 basis-[85%] sm:basis-[50%] md:basis-[33.33%]"
+                className="md:pl-4 basis-[88%] sm:basis-[68%] md:basis-[44%]"
               >
                 <Link
                   href={`/causes/${cause.id}`}
@@ -158,6 +155,11 @@ export async function FeaturedCauses() {
             );
           })}
         </CarouselContent>
+        <CarouselPrevious className="left-0 top-[50%] -translate-y-1/2" />
+        <CarouselNext className="right-0 top-[50%] -translate-y-1/2" />
+        <div className="flex justify-center">
+          <CarouselPagination />
+        </div>
       </Carousel>
 
       {/* View All Causes Button */}
