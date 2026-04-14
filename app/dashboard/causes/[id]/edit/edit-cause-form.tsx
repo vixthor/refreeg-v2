@@ -182,14 +182,7 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
     }
 
     if (file) {
-      try {
-        const { compressImage } = await import("@/utils/image-compression");
-        const compressed = await compressImage(file, 1200, 0.7);
-        setFormData((prev) => ({ ...prev, coverImage: compressed }));
-      } catch (err) {
-        console.error("Compression failed, using original:", err);
-        setFormData((prev) => ({ ...prev, coverImage: file }));
-      }
+      setFormData((prev) => ({ ...prev, coverImage: file }));
     }
 
     if (errors.coverImage) {
@@ -893,7 +886,7 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
                           }));
                         }}
                         placeholder="Paste video link"
-                        className="premium-input bg-white group-hover:border-brand/30"
+                        className="premium-input bg-white"
                       />
                       <Button
                         type="button"
@@ -922,7 +915,7 @@ export default function EditCauseForm({ cause }: EditCauseFormProps) {
                       }))
                     }
                     variant="outline"
-                    className="w-full border-dashed border-2 border-gray-200 text-gray-500 hover:border-brand/30 hover:text-brand h-12 rounded-xl transition-all"
+                    className="h-12 w-full rounded-xl border-2 border-dashed border-gray-200 bg-transparent text-gray-500 transition-colors hover:border-brand/30 hover:bg-brand/5 hover:text-brand"
                   >
                     + Add Video Link
                   </Button>
