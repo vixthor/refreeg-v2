@@ -10,7 +10,6 @@ import { FeaturedPetitions } from "@/components/home/featured-petitions";
 import { UrgentCauses } from "@/components/home/urgentCauses";
 import CTASection from "@/components/home/cta-section";
 import Numbers from "@/components/numbers";
-import AIAgentBot from "@/app/ai-agent/_components/ai-agent-bot";
 
 import { Metadata } from "next";
 
@@ -37,7 +36,6 @@ export default async function Home({
   return (
     <div className="flex flex-col min-h-screen mt-12 md:mt-16 ">
       <Hero />
-      <AIAgentBot />
 
       <div className="mx-8">
         <Numbers />
