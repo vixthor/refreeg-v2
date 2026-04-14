@@ -152,13 +152,13 @@ const Hero = () => {
 
         <motion.div {...slideUp(0.2)}>
           <H1 className="font-bold">
-            Empower Communities, Build a Better World
+            Support Fundraisers for People, Causes, and Communities.
           </H1>
         </motion.div>
         <motion.div {...slideUp(0.3)}>
           <P className="font-light">
-            Support causes that foster socioeconomic growth through transparent
-            and secure crowdfunding
+            RefreeG helps you donate securely and support fundraising for
+            trusted individuals, communities, and nonprofits.
           </P>
         </motion.div>
         <div className="flex gap-4">
