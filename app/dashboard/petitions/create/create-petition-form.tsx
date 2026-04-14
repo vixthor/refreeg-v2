@@ -330,20 +330,9 @@ export default function CreatePetitionForm() {
       return;
     }
 
-    try {
-      let fileToUpload = file;
-      if (file.type.startsWith("image/")) {
-        const { compressImage } = await import("@/utils/image-compression");
-        fileToUpload = await compressImage(file, 1200, 0.7);
-      }
-
-      setFormData((prev) => ({ ...prev, coverImage: fileToUpload }));
-      if (errors.coverImage) {
-        setErrors((prev) => ({ ...prev, coverImage: undefined }));
-      }
-    } catch (error) {
-      console.error("Compression error:", error);
-      setFormData((prev) => ({ ...prev, coverImage: file }));
+    setFormData((prev) => ({ ...prev, coverImage: file }));
+    if (errors.coverImage) {
+      setErrors((prev) => ({ ...prev, coverImage: undefined }));
     }
   };
 
@@ -911,7 +900,7 @@ export default function CreatePetitionForm() {
                           }));
                         }}
                         placeholder="Paste video link"
-                        className="premium-input bg-white group-hover:border-brand/30"
+                        className="premium-input bg-white"
                       />
                       <Button
                         type="button"
@@ -940,7 +929,7 @@ export default function CreatePetitionForm() {
                       }))
                     }
                     variant="outline"
-                    className="w-full border-dashed border-2 border-gray-200 text-gray-500 hover:border-brand/30 hover:text-brand h-12 rounded-xl transition-all"
+                    className="h-12 w-full rounded-xl border-2 border-dashed border-gray-200 bg-transparent text-gray-500 transition-colors hover:border-brand/30 hover:bg-brand/5 hover:text-brand"
                   >
                     + Add Video Link
                   </Button>
