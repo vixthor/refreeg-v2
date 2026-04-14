@@ -216,6 +216,8 @@ export async function createCause(
       status: "pending",
       image: coverImageUrl,
       days_active: daysActive,
+      start_date: causeData.startDate ? (causeData.startDate instanceof Date ? causeData.startDate.toISOString() : causeData.startDate) : null,
+      end_date: causeData.endDate ? (causeData.endDate instanceof Date ? causeData.endDate.toISOString() : causeData.endDate) : null,
       multimedia: multimediaUrls,
       video_links: causeData.video_links || [],
       summary: causeData.summary || null,
@@ -352,6 +354,8 @@ export async function updateCause(
         : causeData.goal,
     image: coverImageUrl,
     days_active: daysActive,
+    start_date: causeData.startDate ? (causeData.startDate instanceof Date ? causeData.startDate.toISOString() : causeData.startDate) : null,
+    end_date: causeData.endDate ? (causeData.endDate instanceof Date ? causeData.endDate.toISOString() : causeData.endDate) : null,
     multimedia: multimediaUrls.length > 0 ? multimediaUrls : [],
     video_links: causeData.video_links || [],
     summary: causeData.summary || null,
@@ -428,13 +432,14 @@ export const listCauses = cache(
 
     let query = supabase
       .from("causes")
-      .select("*,profiles(full_name,email,profile_photo)")
-      .order("created_at", { ascending: false });
+      .select("*,profiles(full_name,email,profile_photo)");
 
+    // Category filter
     if (options.category && options.category !== "all") {
       query = query.eq("category", options.category);
     }
 
+    // Status filter
     if (options.status) {
       query = query.eq("status", options.status);
     } else {
@@ -443,19 +448,38 @@ export const listCauses = cache(
       }
     }
 
+    // User filter
     if (options.userId) {
       query = query.eq("user_id", options.userId);
     }
 
-    if (options.limit) {
-      query = query.limit(options.limit);
+    // Search filter (case-insensitive partial match on title)
+    if (options.search && options.search.trim()) {
+      query = query.ilike("title", `%${options.search.trim()}%`);
     }
 
-    if (options.offset) {
-      query = query.range(
-        options.offset,
-        options.offset + (options.limit || 10) - 1,
-      );
+    // Sorting
+    switch (options.sortBy) {
+      case "latest":
+        query = query.order("created_at", { ascending: false });
+        break;
+      case "most-funded":
+        query = query.order("raised", { ascending: false });
+        break;
+      case "ending-soon":
+        query = query.order("end_date", { ascending: true, nullsFirst: false });
+        break;
+      case "recommended":
+      default:
+        query = query.order("created_at", { ascending: false });
+        break;
+    }
+
+    // Pagination — use .range() which handles both offset and limit
+    if (options.offset !== undefined && options.limit) {
+      query = query.range(options.offset, options.offset + options.limit - 1);
+    } else if (options.limit) {
+      query = query.limit(options.limit);
     }
 
     const { data, error } = await query;
@@ -467,13 +491,17 @@ export const listCauses = cache(
 
     const causes = (data as Cause[]) || [];
 
-    // Side effect removed from getter to avoid unnecessary POST/UPDATE requests
-    // on every page load. Expiry should be handled by a cleanup job.
-
+    // Client-side filtering check as a fallback if DB status isn't synced
+    // and excluding expired causes for non-owner views
     const isOwnerScoped = !!options.userId;
     const result = isOwnerScoped
       ? causes
-      : causes.filter((c) => c.status !== ("expired" as any));
+      : causes.filter((c) => {
+          if (c.status === "expired") return false;
+          const now = new Date();
+          if (c.end_date && new Date(c.end_date) < now) return false;
+          return true;
+        });
 
     return result;
   },
@@ -491,6 +519,13 @@ export async function countCauses(
     .from("causes")
     .select("id", { count: "exact", head: true });
 
+  // Filter out expired causes by default unless requested by owner
+  if (!options.userId) {
+    query = query.neq("status", "expired");
+    // Also filter by end_date if we want consistency with listCauses
+    query = query.or(`end_date.is.null,end_date.gt.${new Date().toISOString()}`);
+  }
+
   if (options.category && options.category !== "all") {
     query = query.eq("category", options.category);
   }
@@ -505,6 +540,11 @@ export async function countCauses(
 
   if (options.userId) {
     query = query.eq("user_id", options.userId);
+  }
+
+  // Search filter (must match listCauses)
+  if (options.search && options.search.trim()) {
+    query = query.ilike("title", `%${options.search.trim()}%`);
   }
 
   const { count, error } = await query;
@@ -571,6 +611,8 @@ export async function updateCauseStatus(
         goal: edit.goal,
         image: edit.image,
         days_active: edit.days_active,
+        start_date: edit.start_date || new Date().toISOString(),
+        end_date: edit.end_date,
         multimedia: edit.multimedia,
         video_links: edit.video_links,
         summary: edit.summary,

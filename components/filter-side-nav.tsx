@@ -11,48 +11,101 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import { useState, useEffect } from "react";
 
 interface FilterSideNavProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
+const categories = [
+  "education",
+  "health",
+  "community",
+  "environment",
+  "disaster",
+  "creative",
+  "business",
+];
+
+const categoryLabels: Record<string, string> = {
+  education: "Education",
+  health: "Healthcare",
+  community: "Community",
+  environment: "Environment",
+  disaster: "Disaster Relief",
+  creative: "Creative",
+  business: "Business",
+};
+
+const nigerianStates = [
+  "Abia", "Adamawa", "Akwa Ibom", "Anambra", "Bauchi", "Bayelsa",
+  "Benue", "Borno", "Cross River", "Delta", "Ebonyi", "Edo",
+  "Ekiti", "Enugu", "Federal Capital Territory (Abuja)", "Gombe",
+  "Imo", "Jigawa", "Kaduna", "Kano", "Katsina", "Kebbi",
+  "Kogi", "Kwara", "Lagos", "Nasarawa", "Niger", "Ogun",
+  "Ondo", "Osun", "Oyo", "Plateau", "Rivers", "Sokoto",
+  "Taraba", "Yobe", "Zamfara",
+];
+
 export function FilterSideNav({ isOpen, onClose }: FilterSideNavProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
 
-  const handleFilterChange = (key: string, value: string, checked: boolean) => {
-    const next = new URLSearchParams(searchParams.toString());
-    const currentValues = next.get(key)?.split(",") || [];
+  // Local state for selected category (single-select to match the existing category filter)
+  const [selectedCategory, setSelectedCategory] = useState<string>(
+    searchParams.get("category") || "all"
+  );
 
+  // Sync local state when URL changes
+  useEffect(() => {
+    setSelectedCategory(searchParams.get("category") || "all");
+  }, [searchParams]);
+
+  const handleCategoryToggle = (categoryId: string, checked: boolean) => {
     if (checked) {
-      if (!currentValues.includes(value)) {
-        currentValues.push(value);
-      }
+      setSelectedCategory(categoryId);
     } else {
-      const filteredValues = currentValues.filter((v) => v !== value);
-      if (filteredValues.length === 0) {
-        next.delete(key);
-      } else {
-        next.set(key, filteredValues.join(","));
-      }
-      // Update URL without navigation
-      const newUrl = `${pathname}?${next.toString()}`;
-      window.history.replaceState({}, "", newUrl);
-      return;
+      setSelectedCategory("all");
+    }
+  };
+
+  const handleApplyFilters = () => {
+    const next = new URLSearchParams(searchParams.toString());
+
+    // Reset to page 1
+    next.delete("page");
+
+    // Apply category
+    if (selectedCategory && selectedCategory !== "all") {
+      next.set("category", selectedCategory);
+    } else {
+      next.delete("category");
     }
 
-    next.set(key, currentValues.join(","));
-    // Update URL without navigation
-    const newUrl = `${pathname}?${next.toString()}`;
-    window.history.replaceState({}, "", newUrl);
+    // Remove the filter panel param
+    next.delete("filter");
+
+    const query = next.toString();
+    router.push(query ? `${pathname}?${query}` : pathname);
+    onClose();
   };
 
-  const isChecked = (key: string, value: string) => {
-    const values = searchParams.get(key)?.split(",") || [];
-    return values.includes(value);
+  const handleClearFilters = () => {
+    setSelectedCategory("all");
+    const next = new URLSearchParams();
+    // Keep non-filter params
+    const recommended = searchParams.get("recommended");
+    const search = searchParams.get("search");
+    if (recommended) next.set("recommended", recommended);
+    if (search) next.set("search", search);
+
+    const query = next.toString();
+    router.push(query ? `${pathname}?${query}` : pathname);
+    onClose();
   };
+
   return (
     <>
       {/* Backdrop */}
@@ -82,104 +135,52 @@ export function FilterSideNav({ isOpen, onClose }: FilterSideNavProps) {
 
           {/* Accordion Filters */}
           <div className="flex-1 overflow-y-auto p-6 space-y-4">
-            <Accordion type="single" collapsible>
-              {/* Campaign Type */}
+            <Accordion type="multiple" defaultValue={["campaign", "location"]}>
+              {/* Category Filter */}
               <AccordionItem value="campaign">
                 <AccordionTrigger className="flex items-center gap-2 text-base font-medium text-left">
                   <Layers className="h-4 w-4 text-primary shrink-0" />
-                  <span className="text-left">Cause Type</span>
+                  <span className="text-left">Category</span>
                 </AccordionTrigger>
                 <AccordionContent className="mt-2 space-y-2 pl-6 text-left">
-                  {[
-                    "Education",
-                    "Healthcare",
-                    "Community",
-                    "Environment",
-                    "Charity",
-                  ].map((type) => (
-                    <div key={type} className="flex items-center space-x-2">
+                  {categories.map((cat) => (
+                    <div key={cat} className="flex items-center space-x-2">
                       <Checkbox
-                        id={type}
-                        checked={isChecked("campaignType", type)}
+                        id={`cat-${cat}`}
+                        checked={selectedCategory === cat}
                         onCheckedChange={(checked) =>
-                          handleFilterChange(
-                            "campaignType",
-                            type,
-                            checked as boolean
-                          )
+                          handleCategoryToggle(cat, checked as boolean)
                         }
                       />
-                      <Label htmlFor={type} className="text-sm font-normal">
-                        {type}
+                      <Label htmlFor={`cat-${cat}`} className="text-sm font-normal capitalize">
+                        {categoryLabels[cat] || cat}
                       </Label>
                     </div>
                   ))}
                 </AccordionContent>
               </AccordionItem>
 
-              {/* Location */}
+              {/* Location — informational only for now */}
               <AccordionItem value="location">
                 <AccordionTrigger className="flex items-center gap-2 text-base font-medium text-left">
                   <MapPin className="h-4 w-4 text-primary shrink-0" />
                   <span className="text-left">Location</span>
                 </AccordionTrigger>
-                <AccordionContent className="mt-2 space-y-2 pl-6 text-left">
-                  {[
-                    "Abia",
-                    "Adamawa",
-                    "Akwa Ibom",
-                    "Anambra",
-                    "Bauchi",
-                    "Bayelsa",
-                    "Benue",
-                    "Borno",
-                    "Cross River",
-                    "Delta",
-                    "Ebonyi",
-                    "Edo",
-                    "Ekiti",
-                    "Enugu",
-                    "Federal Capital Territory (Abuja)",
-                    "Gombe",
-                    "Imo",
-                    "Jigawa",
-                    "Kaduna",
-                    "Kano",
-                    "Katsina",
-                    "Kebbi",
-                    "Kogi",
-                    "Kwara",
-                    "Lagos",
-                    "Nasarawa",
-                    "Niger",
-                    "Ogun",
-                    "Ondo",
-                    "Osun",
-                    "Oyo",
-                    "Plateau",
-                    "Rivers",
-                    "Sokoto",
-                    "Taraba",
-                    "Yobe",
-                    "Zamfara",
-                  ].map((state) => (
+                <AccordionContent className="mt-2 space-y-2 pl-6 text-left max-h-60 overflow-y-auto">
+                  {nigerianStates.map((state) => (
                     <div key={state} className="flex items-center space-x-2">
                       <Checkbox
-                        id={state}
-                        checked={isChecked("location", state)}
-                        onCheckedChange={(checked) =>
-                          handleFilterChange(
-                            "location",
-                            state,
-                            checked as boolean
-                          )
-                        }
+                        id={`loc-${state}`}
+                        disabled
                       />
-                      <Label htmlFor={state} className="text-sm font-normal">
+                      <Label htmlFor={`loc-${state}`} className="text-sm font-normal text-muted-foreground">
                         {state}
                       </Label>
                     </div>
                   ))}
+                  <p className="text-xs text-muted-foreground italic pt-2">
+                    Location filter coming soon
+                  </p>
                 </AccordionContent>
               </AccordionItem>
             </Accordion>
@@ -187,8 +188,11 @@ export function FilterSideNav({ isOpen, onClose }: FilterSideNavProps) {
 
           {/* Footer */}
           <div className="p-6 border-t space-y-3">
-            <Button onClick={onClose} className="w-full">
+            <Button onClick={handleApplyFilters} className="w-full">
               Apply Filters
+            </Button>
+            <Button onClick={handleClearFilters} variant="outline" className="w-full">
+              Clear All
             </Button>
           </div>
         </div>
