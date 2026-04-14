@@ -28,7 +28,7 @@ export default async function CausesPage({
   const params = await searchParams;
   const category = params.category || "all";
   const page = Number.parseInt(params.page || "1");
-  const pageSize = 9;
+  const pageSize = 8;
   const isFilterOpen = params.filter === "true";
 
   const userId = params.userId || null;

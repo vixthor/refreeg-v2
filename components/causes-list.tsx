@@ -1,26 +1,13 @@
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import { PaginationButton } from "@/components/pagination-button";
-import { listCauses } from "@/actions/cause-actions";
-import {
-  GraduationCap,
-  HeartPulse,
-  Leaf,
-  Users,
-  AlertTriangle,
-  PawPrint,
-  Sparkles,
-  Briefcase,
-} from "lucide-react";
-import { ExpandableCard } from "./ExpandableCard";
-
+import { listCauses, countCauses } from "@/actions/cause-actions";
+import { CauseCard } from "@/components/cause-card";
 
 interface CausesListProps {
   category: string;
   page: number;
   pageSize: number;
-  userId?: string | null;   // ✅ ADD THIS
-  action?: string | null;   // ✅ ADD THIS
+  userId?: string | null;
+  action?: string | null;
 }
 
 export async function CausesList({
@@ -30,78 +17,58 @@ export async function CausesList({
   userId,
   action,
 }: CausesListProps) {
-  const categoriesWithIcons = [
-    {
-      id: "education",
-      name: "Education",
-      icon: <GraduationCap className="mr-1 h-4 w-4" />,
-    },
-    {
-      id: "health",
-      name: "Healthcare",
-      icon: <HeartPulse className="mr-1 h-4 w-4" />,
-    },
-    {
-      id: "environment",
-      name: "Environment",
-      icon: <Leaf className="mr-1 h-4 w-4" />,
-    },
-    {
-      id: "community",
-      name: "Community",
-      icon: <Users className="mr-1 h-4 w-4" />,
-    },
-    {
-      id: "disaster",
-      name: "Disaster Relief",
-      icon: <AlertTriangle className="mr-1 h-4 w-4" />,
-    },
-    {
-      id: "animals",
-      name: "Animal Welfare",
-      icon: <PawPrint className="mr-1 h-4 w-4" />,
-    },
-    {
-      id: "creative",
-      name: "Creative",
-      icon: <Sparkles className="mr-1 h-4 w-4" />,
-    },
-    {
-      id: "business",
-      name: "Business",
-      icon: <Briefcase className="mr-1 h-4 w-4" />,
-    },
-  ];
-
-  const causes = await listCauses({
+  // Build filter options
+  const filterOptions: any = {
     category: category === "all" ? undefined : category,
     limit: pageSize,
     offset: (page - 1) * pageSize,
-  });
-  const filteredCauses = causes.filter((cause) => {
-    const matchesCategory =
-      category === "all" || cause.category === category;
+  };
 
-    const matchesUser = userId
-      ? cause.user_id === userId
-      : true;
+  if (userId) {
+    filterOptions.userId = userId;
+  }
 
-    return matchesCategory && matchesUser;
-  });
+  // Fetch causes and total count in parallel
+  const [causes, totalCount] = await Promise.all([
+    listCauses(filterOptions),
+    countCauses({
+      category: category === "all" ? undefined : category,
+      ...(userId ? { userId } : {}),
+    }),
+  ]);
 
-  const paginatedCauses = filteredCauses;
-  const totalCauses = filteredCauses.length;
-  const totalPages = Math.max(1, page);
+  // If user-specific, filter by userId (the server already does this, but just belt-and-suspenders)
+  const filteredCauses = userId
+    ? causes.filter((cause) => cause.user_id === userId)
+    : causes;
 
-  if (paginatedCauses.length === 0) {
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+
+  if (filteredCauses.length === 0) {
     return (
-      <div className="text-center py-10">
-        <h3 className="text-lg font-medium">
+      <div className="text-center py-16">
+        <div className="mx-auto w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-8 w-8 text-gray-300"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={1.5}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            />
+          </svg>
+        </div>
+        <h3 className="text-lg font-medium text-gray-800">
           {userId ? "No causes yet" : "No causes found"}
         </h3>
-        <p className="text-muted-foreground">
+        <p className="text-muted-foreground mt-1 max-w-md mx-auto">
           {userId
-            ? "This user hasn’t created any causes yet."
+            ? "This user hasn't created any causes yet."
             : "Try selecting a different category or check back later."}
         </p>
       </div>
@@ -109,20 +76,17 @@ export async function CausesList({
   }
 
   return (
-    <div className="space-y-6">
-      <ExpandableCard
-        items={paginatedCauses.map((cause) => ({
-          ...cause,
-          description: cause.description || "",
-          raised: cause.raised,
-          signatures: undefined,
-          action: action, // ✅ correct
-        }))}
-        type="cause"
-      />
+    <div className="space-y-8">
+      {/* Cause Cards Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {filteredCauses.map((cause) => (
+          <CauseCard key={cause.id} cause={cause} action={action} />
+        ))}
+      </div>
 
+      {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex justify-center pt-6">
+        <div className="flex justify-center pt-4">
           <PaginationButton currentPage={page} totalPages={totalPages} />
         </div>
       )}
