@@ -8,6 +8,7 @@ import {
   CarouselContent,
   CarouselItem,
   CarouselNext,
+  CarouselPagination,
   CarouselPrevious,
 } from "@/components/ui/carousel";
 
@@ -156,7 +157,7 @@ export default function FeaturedPetitionsCarousel({
         <Carousel
           setApi={setApi}
           opts={{ loop: true }}
-          className="w-full"
+          className="w-full px-14"
           onMouseEnter={stopAutoplay}
           onMouseLeave={startAutoplay}
         >
@@ -171,9 +172,11 @@ export default function FeaturedPetitionsCarousel({
             ))}
           </CarouselContent>
 
-          <div className="flex items-center justify-end gap-2 mb-4">
-            <CarouselPrevious className="static" />
-            <CarouselNext className="static" />
+          <CarouselPrevious className="left-0 top-[42%]" />
+          <CarouselNext className="right-0 top-[42%]" />
+
+          <div className="mb-4 flex justify-center">
+            <CarouselPagination />
           </div>
         </Carousel>
       </div>

@@ -8,6 +8,7 @@ import {
   CarouselContent,
   CarouselItem,
   CarouselNext,
+  CarouselPagination,
   CarouselPrevious,
 } from "@/components/ui/carousel";
 
@@ -143,24 +144,26 @@ export default function UrgentCausesCarousel({ causes }: { causes: Cause[] }) {
         <Carousel
           setApi={setApi}
           opts={{ loop: true }}
-          className="w-full"
+          className="w-full px-12"
           onMouseEnter={stopAutoplay}
           onMouseLeave={startAutoplay}
         >
-          <CarouselContent className="mt-6 mb-6 md:mr-4 md:ml-4">
+          <CarouselContent className="mt-6 mb-6 md:mr-3 md:ml-3">
             {causes.map((cause) => (
               <CarouselItem
                 key={cause.id}
-                className="md:pl-4 md:basis-[33.33%]"
+                className="md:pl-3 md:basis-[38%] lg:basis-[36%]"
               >
                 {renderCard(cause)}
               </CarouselItem>
             ))}
           </CarouselContent>
 
-          <div className="flex items-center justify-end gap-2 mb-4">
-            <CarouselPrevious className="static" />
-            <CarouselNext className="static" />
+          <CarouselPrevious className="left-0 top-[42%]" />
+          <CarouselNext className="right-0 top-[42%]" />
+
+          <div className="mb-4 flex justify-center">
+            <CarouselPagination />
           </div>
         </Carousel>
       </div>
