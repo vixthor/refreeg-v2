@@ -6,7 +6,7 @@ import CausesFilterRow from "@/components/causes-filter-row";
 import { H1, H5 } from "@/components/typograpy";
 
 import { Metadata } from "next";
-import { getProfile } from "@/actions/profile-actions"; // 🟦 import your profile fetcher
+import { getProfile } from "@/actions/profile-actions";
 
 export const metadata: Metadata = {
   title: "Explore Causes",
@@ -23,6 +23,8 @@ export default async function CausesPage({
     filter?: string;
     userId?: string;
     action?: string;
+    search?: string;
+    recommended?: string;
   };
 }) {
   const params = await searchParams;
@@ -33,11 +35,17 @@ export default async function CausesPage({
 
   const userId = params.userId || null;
   const action = params.action || null;
+  const search = params.search || "";
+  const sortBy = (params.recommended || "recommended") as
+    | "recommended"
+    | "latest"
+    | "most-funded"
+    | "ending-soon";
 
   let username: string | null = null;
 
   if (userId) {
-    const userProfile = await getProfile(userId); // fetch real profile
+    const userProfile = await getProfile(userId);
     username = userProfile?.full_name || userProfile?.username || null;
   }
 
@@ -55,7 +63,7 @@ export default async function CausesPage({
             <div className="space-y-2 text-center md:pt-10">
               <H1 className="font-bold tracking-tight text-secondary">
                 {username
-                  ? `Support ${username}'s Causes`       // ✨ real name!
+                  ? `Support ${username}'s Causes`
                   : "Discover Causes That Matter"}
               </H1>
 
@@ -81,8 +89,9 @@ export default async function CausesPage({
             {/* Causes List */}
             <div>
               <Suspense
+                key={`${category}-${page}-${search}-${sortBy}`}
                 fallback={
-                  <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                  <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                     {Array(pageSize).fill(null).map((_, i) => (
                       <div key={i} className="space-y-3">
                         <Skeleton className="h-[200px] w-full rounded-xl" />
@@ -101,6 +110,8 @@ export default async function CausesPage({
                   pageSize={pageSize}
                   userId={userId}
                   action={action}
+                  search={search}
+                  sortBy={sortBy}
                 />
               </Suspense>
             </div>

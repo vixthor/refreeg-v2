@@ -8,8 +8,8 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[];
 
-export type CauseStatus = "pending" | "approved" | "rejected";
-export type PetitionStatus = "pending" | "approved" | "rejected";
+export type CauseStatus = "pending" | "approved" | "rejected" | "expired";
+export type PetitionStatus = "pending" | "approved" | "rejected" | "expired";
 export type DonationStatus = "pending" | "completed" | "failed";
 export type SignatureStatus = "pending" | "signed" | "rejected";
 

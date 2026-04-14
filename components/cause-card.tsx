@@ -80,6 +80,8 @@ const defaultCategoryConfig = {
   bg: "bg-gray-50 border-gray-200",
 };
 
+import { calculateDaysLeft, isCauseExpired } from "@/utils/cause-utils";
+
 interface CauseCardProps {
   cause: Cause;
   action?: string | null;
@@ -94,7 +96,8 @@ export function CauseCard({ cause, action }: CauseCardProps) {
   const catConfig = categoryConfig[catKey] || defaultCategoryConfig;
   const CategoryIcon = catConfig.icon;
 
-  const daysLeft = Math.max(0, Number(cause.days_active || 0));
+  const daysLeft = calculateDaysLeft(cause);
+  const isExpired = isCauseExpired(cause);
 
   return (
     <Link href={`/causes/${cause.id}`} className="group block h-full">
@@ -118,18 +121,32 @@ export function CauseCard({ cause, action }: CauseCardProps) {
                 <span className="capitalize">{cause.category}</span>
               </Badge>
             </div>
-            {/* Days Left Overlay */}
-            {daysLeft > 0 && (
+            {/* Days Left / Expired Overlay */}
+            {isExpired ? (
               <div className="absolute top-3 right-3">
                 <Badge
                   variant="outline"
-                  className="bg-white/90 backdrop-blur-sm text-gray-700 border-white/50 text-xs font-medium px-2.5 py-1 rounded-full shadow-sm flex items-center gap-1"
+                  className="bg-red-500/90 backdrop-blur-sm text-white border-red-400/50 text-xs font-medium px-2.5 py-1 rounded-full shadow-sm flex items-center gap-1"
+                >
+                  <Clock className="h-3 w-3" />
+                  Ended
+                </Badge>
+              </div>
+            ) : daysLeft > 0 ? (
+              <div className="absolute top-3 right-3">
+                <Badge
+                  variant="outline"
+                  className={`backdrop-blur-sm text-xs font-medium px-2.5 py-1 rounded-full shadow-sm flex items-center gap-1 ${
+                    daysLeft <= 3
+                      ? "bg-amber-500/90 text-white border-amber-400/50"
+                      : "bg-white/90 text-gray-700 border-white/50"
+                  }`}
                 >
                   <Clock className="h-3 w-3" />
                   {daysLeft} {daysLeft === 1 ? "day" : "days"} left
                 </Badge>
               </div>
-            )}
+            ) : null}
           </div>
 
           {/* Content */}

@@ -3,12 +3,14 @@ import { listCauses } from "@/actions";
 import AnimatedHeader from "@/components/home/components/AnimatedHeader";
 import UrgentCausesCarousel from "./UrgentCausesCarousel";
 
+import { calculateDaysLeft, isCauseExpired } from "@/utils/cause-utils";
+
 // ✅ Optional: helper to normalize backend data
 function normalizeCause(cause: any) {
   return {
     ...cause,
     image: cause.image ?? undefined,
-    days_active: cause.days_active ?? undefined,
+    days_active: calculateDaysLeft(cause), // Return dynamic days left
     goal: cause.goal ?? 0,
     raised: cause.raised ?? 0,
   };
@@ -16,10 +18,11 @@ function normalizeCause(cause: any) {
 
 export async function TrendingCauses() {
   const allCauses = await listCauses();
+  const activeCauses = allCauses.filter(c => !isCauseExpired(c));
 
   const now = new Date();
 
-  const urgentCauses = allCauses.filter((cause) => {
+  const urgentCauses = activeCauses.filter((cause) => {
     const createdAt = new Date(cause.created_at);
 
     const hoursSinceCreated =
@@ -31,7 +34,7 @@ export async function TrendingCauses() {
     return hoursSinceCreated <= 24 && percentageRaised >= 1;
   });
 
-  const normalCauses = allCauses.filter(
+  const normalCauses = activeCauses.filter(
     (cause) => !urgentCauses.includes(cause)
   );
 
