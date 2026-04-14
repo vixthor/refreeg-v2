@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
@@ -12,32 +11,82 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Search as SearchIcon, SlidersHorizontal } from "lucide-react";
+import { Search as SearchIcon, SlidersHorizontal, X } from "lucide-react";
 import { FilterSideNav } from "@/components/filter-side-nav";
-
-type AudienceValue = "business" | "people" | "creator" | "all";
 
 interface CausesFilterRowProps {
   className?: string;
-  isFilterOpen?: boolean;
 }
 
-export default function CausesFilterRow({
-  className,
-  isFilterOpen: propIsFilterOpen,
-}: CausesFilterRowProps) {
+export default function CausesFilterRow({ className }: CausesFilterRowProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
-  const audience = (searchParams.get("audience") || "all") as AudienceValue;
   const search = searchParams.get("search") || "";
-  const recommended = searchParams.get("recommended") || "recommended";
+  const sortBy = searchParams.get("recommended") || "recommended";
+
+  // Local search state for debouncing
+  const [searchInput, setSearchInput] = useState(search);
+  const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     setIsFilterOpen(searchParams.get("filter") === "true");
   }, [searchParams]);
+
+  // Sync search input when URL changes externally
+  useEffect(() => {
+    setSearchInput(search);
+  }, [search]);
+
+  /**
+   * Push new params to the URL, always resetting to page 1.
+   */
+  const pushParams = useCallback(
+    (updates: Record<string, string | undefined>) => {
+      const next = new URLSearchParams(searchParams.toString());
+
+      // Always reset to page 1 when filters change
+      next.delete("page");
+
+      for (const [key, value] of Object.entries(updates)) {
+        if (value) {
+          next.set(key, value);
+        } else {
+          next.delete(key);
+        }
+      }
+
+      const query = next.toString();
+      router.push(query ? `${pathname}?${query}` : pathname);
+    },
+    [searchParams, router, pathname],
+  );
+
+  /**
+   * Debounced search — waits 400ms after last keystroke before navigating.
+   */
+  const handleSearchChange = (value: string) => {
+    setSearchInput(value);
+
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
+
+    debounceRef.current = setTimeout(() => {
+      pushParams({ search: value || undefined });
+    }, 400);
+  };
+
+  const clearSearch = () => {
+    setSearchInput("");
+    pushParams({ search: undefined });
+  };
+
+  const handleSortChange = (value: string) => {
+    pushParams({ recommended: value === "recommended" ? undefined : value });
+  };
 
   const handleFilterToggle = (open: boolean) => {
     setIsFilterOpen(open);
@@ -48,58 +97,18 @@ export default function CausesFilterRow({
     window.history.replaceState({}, "", newUrl);
   };
 
-  const params = useMemo(
-    () => new URLSearchParams(searchParams.toString()),
-    [searchParams]
-  );
-
-  const pushParams = (next: URLSearchParams) => {
-    const query = next.toString();
-    router.push(query ? `${pathname}?${query}` : pathname);
-  };
-
-  const handleSearchChange = (value: string) => {
-    const next = new URLSearchParams(params.toString());
-    if (value) next.set("search", value);
-    else next.delete("search");
-    pushParams(next);
-  };
-
-  const handleAudienceChange = (value: AudienceValue) => {
-    const next = new URLSearchParams(params.toString());
-    if (value && value !== "all") next.set("audience", value);
-    else next.delete("audience");
-    pushParams(next);
-  };
-
-  const handleRecommendedChange = (value: string) => {
-    const next = new URLSearchParams(params.toString());
-    if (value) next.set("recommended", value);
-    else next.delete("recommended");
-    pushParams(next);
-  };
-
-  useEffect(() => {
-    if (!searchParams.get("recommended")) {
-      const next = new URLSearchParams(params.toString());
-      next.set("recommended", "recommended");
-      pushParams(next);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   return (
     <>
       <div className={className}>
-        <div className="flex w-full flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div className="flex w-full flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           {/* Left: Filter + Search */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full">
+          <div className="flex items-center gap-2 flex-1">
             {/* Filter button */}
             <div className="flex-shrink-0">
               <Button
                 variant="outline"
                 size="sm"
-                className="rounded-full p-4"
+                className="rounded-full px-4 h-10"
                 onClick={() => handleFilterToggle(true)}
               >
                 <SlidersHorizontal className="mr-2 h-4 w-4" />
@@ -108,77 +117,36 @@ export default function CausesFilterRow({
             </div>
 
             {/* Search input */}
-            <div className="relative flex-1 w-full">
-              <SearchIcon className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <div className="relative flex-1">
+              <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                defaultValue={search}
-                placeholder="Search Causes"
-                className="pl-8 pr-4 w-full rounded-full"
+                value={searchInput}
+                placeholder="Search causes by title..."
+                className="pl-9 pr-9 w-full rounded-full h-10"
                 onChange={(e) => handleSearchChange(e.target.value)}
               />
-
-              {/* Tabs — shown inside searchbar on md+ only */}
-              <div className="hidden md:block absolute right-1 top-1/2 -translate-y-1/2">
-                <Tabs
-                  value={audience}
-                  onValueChange={(v) =>
-                    handleAudienceChange(v as AudienceValue)
-                  }
+              {searchInput && (
+                <button
+                  onClick={clearSearch}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  <TabsList className="h-7 rounded-md bg-muted shadow-sm">
-                    <TabsTrigger value="all" className="px-2 text-xs">
-                      All
-                    </TabsTrigger>
-                    <TabsTrigger value="people" className="px-2 text-xs">
-                      People
-                    </TabsTrigger>
-                    <TabsTrigger value="creator" className="px-2 text-xs">
-                      Creator
-                    </TabsTrigger>
-                    <TabsTrigger value="business" className="px-2 text-xs">
-                      Business
-                    </TabsTrigger>
-                  </TabsList>
-                </Tabs>
-              </div>
-            </div>
-
-            {/* Tabs standalone for mobile */}
-            <div className="block md:hidden w-full">
-              <Tabs
-                value={audience}
-                onValueChange={(v) => handleAudienceChange(v as AudienceValue)}
-                className="w-full mt-1"
-              >
-                <TabsList className="w-full flex justify-between rounded-md bg-muted shadow-sm">
-                  <TabsTrigger value="all" className="flex-1 text-xs">
-                    All
-                  </TabsTrigger>
-                  <TabsTrigger value="people" className="flex-1 text-xs">
-                    People
-                  </TabsTrigger>
-                  <TabsTrigger value="creator" className="flex-1 text-xs">
-                    Creator
-                  </TabsTrigger>
-                  <TabsTrigger value="business" className="flex-1 text-xs">
-                    Business
-                  </TabsTrigger>
-                </TabsList>
-              </Tabs>
+                  <X className="h-4 w-4" />
+                </button>
+              )}
             </div>
           </div>
 
-          {/* Right: Recommended select */}
+          {/* Right: Sort select */}
           <div className="w-full sm:w-auto">
-            <Select value={recommended} onValueChange={handleRecommendedChange}>
-              <SelectTrigger className="w-full sm:w-[160px]">
-                <SelectValue placeholder="Recommended" />
+            <Select value={sortBy} onValueChange={handleSortChange}>
+              <SelectTrigger className="w-full sm:w-[170px] rounded-full h-10">
+                <SelectValue placeholder="Sort by..." />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="recommended">Recommended</SelectItem>
                 <SelectItem value="latest">Latest</SelectItem>
-                <SelectItem value="most-funded">Most funded</SelectItem>
-                <SelectItem value="ending-soon">Ending soon</SelectItem>
+                <SelectItem value="most-funded">Most Funded</SelectItem>
+                <SelectItem value="ending-soon">Ending Soon</SelectItem>
               </SelectContent>
             </Select>
           </div>

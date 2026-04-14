@@ -8,6 +8,8 @@ interface CausesListProps {
   pageSize: number;
   userId?: string | null;
   action?: string | null;
+  search?: string;
+  sortBy?: "recommended" | "latest" | "most-funded" | "ending-soon";
 }
 
 export async function CausesList({
@@ -16,28 +18,36 @@ export async function CausesList({
   pageSize,
   userId,
   action,
+  search,
+  sortBy,
 }: CausesListProps) {
   // Build filter options
   const filterOptions: any = {
     category: category === "all" ? undefined : category,
     limit: pageSize,
     offset: (page - 1) * pageSize,
+    search: search || undefined,
+    sortBy: sortBy || "recommended",
   };
 
   if (userId) {
     filterOptions.userId = userId;
   }
 
+  // Count options must mirror filter options (without limit/offset)
+  const countOptions: any = {
+    category: category === "all" ? undefined : category,
+    search: search || undefined,
+    ...(userId ? { userId } : {}),
+  };
+
   // Fetch causes and total count in parallel
   const [causes, totalCount] = await Promise.all([
     listCauses(filterOptions),
-    countCauses({
-      category: category === "all" ? undefined : category,
-      ...(userId ? { userId } : {}),
-    }),
+    countCauses(countOptions),
   ]);
 
-  // If user-specific, filter by userId (the server already does this, but just belt-and-suspenders)
+  // If user-specific, filter by userId (belt-and-suspenders)
   const filteredCauses = userId
     ? causes.filter((cause) => cause.user_id === userId)
     : causes;
@@ -64,12 +74,18 @@ export async function CausesList({
           </svg>
         </div>
         <h3 className="text-lg font-medium text-gray-800">
-          {userId ? "No causes yet" : "No causes found"}
+          {search
+            ? "No matching causes"
+            : userId
+              ? "No causes yet"
+              : "No causes found"}
         </h3>
         <p className="text-muted-foreground mt-1 max-w-md mx-auto">
-          {userId
-            ? "This user hasn't created any causes yet."
-            : "Try selecting a different category or check back later."}
+          {search
+            ? `No causes match "${search}". Try a different search term.`
+            : userId
+              ? "This user hasn't created any causes yet."
+              : "Try selecting a different category or check back later."}
         </p>
       </div>
     );
@@ -77,6 +93,13 @@ export async function CausesList({
 
   return (
     <div className="space-y-8">
+      {/* Results count */}
+      {search && (
+        <p className="text-sm text-muted-foreground">
+          Showing {filteredCauses.length} of {totalCount} results for &ldquo;{search}&rdquo;
+        </p>
+      )}
+
       {/* Cause Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {filteredCauses.map((cause) => (
