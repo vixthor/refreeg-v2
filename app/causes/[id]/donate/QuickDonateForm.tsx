@@ -135,8 +135,8 @@ export default function QuickDonateForm({
               </CarouselContent>
               {images.length > 1 && (
                 <>
-                  <CarouselPrevious className="left-2 bg-white/80 border-slate-200 scale-75 hover:scale-100" />
-                  <CarouselNext className="right-2 bg-white/80 border-slate-200 scale-75 hover:scale-100" />
+                  <CarouselPrevious className="left-3 h-9 w-9 rounded-full border-white/15 bg-black/35 text-white shadow-lg backdrop-blur-md hover:bg-black/55 hover:text-white focus-visible:border-white/25 focus-visible:bg-black/55 focus-visible:text-white focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-0 disabled:border-white/10 disabled:bg-black/15 disabled:text-white/45" />
+                  <CarouselNext className="right-3 h-9 w-9 rounded-full border-white/15 bg-black/35 text-white shadow-lg backdrop-blur-md hover:bg-black/55 hover:text-white focus-visible:border-white/25 focus-visible:bg-black/55 focus-visible:text-white focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-0 disabled:border-white/10 disabled:bg-black/15 disabled:text-white/45" />
                 </>
               )}
             </Carousel>

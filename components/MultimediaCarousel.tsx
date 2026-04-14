@@ -1,5 +1,6 @@
 "use client";
 import React, { useState } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface MediaItem {
   type: "image" | "video";
@@ -176,103 +177,71 @@ export default function MultimediaCarousel({
     } else {
       // Image
       return (
-        <img
-          src={item.url}
-          alt={`${title} - Image ${idx + 1}`}
-          className="object-cover w-full h-full"
-        />
+        <div className="flex h-full w-full items-center justify-center bg-slate-950">
+          <img
+            src={item.url}
+            alt={`${title} - Image ${idx + 1}`}
+            className="h-full w-full object-contain"
+          />
+        </div>
       );
     }
   };
 
-  // SVG Arrow Icons with blue color
-  const ArrowLeft = () => (
-    <svg
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="M15 18L9 12L15 6"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-
-  const ArrowRight = () => (
-    <svg
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="M9 18L15 12L9 6"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-
   return (
-    <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-black">
-      {slides.map((item, idx) => (
-        <div
-          key={idx}
-          className={`absolute inset-0 transition-opacity duration-500 ${
-            idx === current ? "opacity-100 z-10" : "opacity-0 z-0"
-          }`}
-        >
-          {renderMediaItem(item, idx)}
-        </div>
-      ))}
-      {/* Navigation Buttons */}
-      {slides.length > 1 && (
-        <>
-          <button
-            onClick={prev}
-            className="absolute left-4 top-1/2 -translate-y-1/2 bg-blue-600/90 hover:bg-blue-700 backdrop-blur-sm text-white rounded-full w-12 h-12 shadow-lg z-20 transition-all duration-300 hover:scale-110 hover:shadow-xl border border-blue-400/30 flex items-center justify-center"
-            aria-label="Previous"
-            type="button"
+    <div className="rounded-[22px] border border-slate-200/80 bg-[linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)] p-2 shadow-[0_18px_45px_rgba(15,23,42,0.08)] sm:p-3">
+      <div className="relative aspect-[4/3] w-full overflow-hidden rounded-[18px] bg-black sm:aspect-[16/10] lg:aspect-[16/9]">
+        {slides.map((item, idx) => (
+          <div
+            key={idx}
+            className={`absolute inset-0 transition-opacity duration-500 ${
+              idx === current ? "opacity-100 z-10" : "opacity-0 z-0"
+            }`}
           >
-            <ArrowLeft />
-          </button>
-          <button
-            onClick={next}
-            className="absolute right-4 top-1/2 -translate-y-1/2 bg-blue-600/90 hover:bg-blue-700 backdrop-blur-sm text-white rounded-full w-12 h-12 shadow-lg z-20 transition-all duration-300 hover:scale-110 hover:shadow-xl border border-blue-400/30 flex items-center justify-center"
-            aria-label="Next"
-            type="button"
-          >
-            <ArrowRight />
-          </button>
-        </>
-      )}
-      {/* Indicators */}
-      {slides.length > 1 && (
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-20">
-          {slides.map((_, idx) => (
+            {renderMediaItem(item, idx)}
+          </div>
+        ))}
+        <div className="pointer-events-none absolute inset-0 rounded-[18px] ring-1 ring-inset ring-black/10" />
+        {/* Navigation Buttons */}
+        {slides.length > 1 && (
+          <>
             <button
-              key={idx}
-              onClick={() => goTo(idx)}
-              className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                idx === current
-                  ? "bg-blue-500 scale-125"
-                  : "bg-white/50 hover:bg-blue-400/70 hover:scale-110"
-              }`}
-              aria-label={`Go to slide ${idx + 1}`}
+              onClick={prev}
+              className="absolute left-4 top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-black/35 text-white shadow-[0_12px_28px_rgba(15,23,42,0.38)] backdrop-blur-md transition-all duration-200 hover:bg-black/55 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-0"
+              aria-label="Previous"
               type="button"
-            />
-          ))}
-        </div>
-      )}
+            >
+              <ChevronLeft className="h-5 w-5 stroke-[2.25]" />
+            </button>
+            <button
+              onClick={next}
+              className="absolute right-4 top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-black/35 text-white shadow-[0_12px_28px_rgba(15,23,42,0.38)] backdrop-blur-md transition-all duration-200 hover:bg-black/55 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-0"
+              aria-label="Next"
+              type="button"
+            >
+              <ChevronRight className="h-5 w-5 stroke-[2.25]" />
+            </button>
+          </>
+        )}
+        {/* Indicators */}
+        {slides.length > 1 && (
+          <div className="absolute bottom-4 left-1/2 z-20 flex -translate-x-1/2 gap-2 rounded-full bg-black/20 px-3 py-2 backdrop-blur-sm">
+            {slides.map((_, idx) => (
+              <button
+                key={idx}
+                onClick={() => goTo(idx)}
+                className={`h-2.5 rounded-full transition-all duration-300 ${
+                  idx === current
+                    ? "w-2.5 scale-125 bg-white"
+                    : "w-2.5 scale-100 bg-white/55 hover:bg-white/80"
+                }`}
+                aria-label={`Go to slide ${idx + 1}`}
+                type="button"
+              />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

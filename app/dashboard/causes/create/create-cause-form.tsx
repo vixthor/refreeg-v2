@@ -210,6 +210,7 @@ export default function CreateCauseForm() {
   const { isLoading, createCause } = useCause();
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
+  const [attemptedStep, setAttemptedStep] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     title: "",
@@ -353,22 +354,9 @@ export default function CreateCauseForm() {
       return;
     }
 
-    try {
-      // Compress if it's an image
-      let fileToUpload = file;
-      if (file.type.startsWith("image/")) {
-        const { compressImage } = await import("@/utils/image-compression");
-        fileToUpload = await compressImage(file, 1200, 0.7);
-      }
-
-      setFormData((prev) => ({ ...prev, coverImage: fileToUpload }));
-      if (errors.coverImage) {
-        setErrors((prev) => ({ ...prev, coverImage: undefined }));
-      }
-    } catch (error) {
-      console.error("Compression error:", error);
-      // Fallback to original
-      setFormData((prev) => ({ ...prev, coverImage: file }));
+    setFormData((prev) => ({ ...prev, coverImage: file }));
+    if (errors.coverImage) {
+      setErrors((prev) => ({ ...prev, coverImage: undefined }));
     }
   };
 
@@ -472,6 +460,7 @@ export default function CreateCauseForm() {
   };
 
   const nextStep = () => {
+    setAttemptedStep(currentStep);
     if (currentStep < 5 && validateStep(currentStep)) {
       setCurrentStep((prev) => prev + 1);
     }
@@ -565,6 +554,15 @@ export default function CreateCauseForm() {
         i === index ? { ...section, [field]: value } : section,
       ),
     }));
+
+    if (errors.sections?.[index]?.[field]) {
+      setErrors((prev) => ({
+        ...prev,
+        sections: prev.sections?.map((sectionError, i) =>
+          i === index ? { ...sectionError, [field]: undefined } : sectionError,
+        ),
+      }));
+    }
   };
 
   const renderStep = () => {
@@ -809,8 +807,18 @@ export default function CreateCauseForm() {
                           onChange={(e) =>
                             updateSection(index, "heading", e.target.value)
                           }
-                          className="h-11 premium-input border-brand/5 sm:h-12"
+                          className={cn(
+                            "h-11 premium-input border-brand/5 sm:h-12",
+                            errors.sections?.[index]?.heading &&
+                              "border-red-500 focus:border-red-500 focus:ring-red-100",
+                          )}
                         />
+                        {attemptedStep === 2 &&
+                          errors.sections?.[index]?.heading && (
+                          <p className="text-sm font-medium text-red-500">
+                            {errors.sections[index]?.heading}
+                          </p>
+                        )}
                       </div>
                       <div className="space-y-2">
                         <Label
@@ -826,8 +834,18 @@ export default function CreateCauseForm() {
                           onChange={(e) =>
                             updateSection(index, "description", e.target.value)
                           }
-                          className="min-h-[140px] premium-input border-brand/5 resize-none sm:min-h-[150px]"
+                          className={cn(
+                            "min-h-[140px] premium-input border-brand/5 resize-none sm:min-h-[150px]",
+                            errors.sections?.[index]?.description &&
+                              "border-red-500 focus:border-red-500 focus:ring-red-100",
+                          )}
                         />
+                        {attemptedStep === 2 &&
+                          errors.sections?.[index]?.description && (
+                          <p className="text-sm font-medium text-red-500">
+                            Something has to be written here.
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -1064,7 +1082,7 @@ export default function CreateCauseForm() {
                           }));
                         }}
                         placeholder="YouTube or Vimeo link"
-                        className="h-11 premium-input bg-white group-hover:border-brand/30 sm:h-12"
+                        className="h-11 premium-input bg-white sm:h-12"
                       />
                       <Button
                         type="button"
@@ -1093,7 +1111,7 @@ export default function CreateCauseForm() {
                       }))
                     }
                     variant="outline"
-                    className="h-11 w-full rounded-xl border-2 border-dashed border-gray-200 text-gray-500 transition-all hover:border-brand/30 hover:text-brand sm:h-12"
+                    className="h-11 w-full rounded-xl border-2 border-dashed border-gray-200 bg-transparent text-gray-500 transition-colors hover:border-brand/30 hover:bg-brand/5 hover:text-brand sm:h-12"
                   >
                     + Add Video Link
                   </Button>
@@ -1279,7 +1297,7 @@ export default function CreateCauseForm() {
             variant="ghost"
             onClick={prevStep}
             disabled={currentStep === 1}
-            className="order-2 h-11 w-full hover:bg-gray-50 sm:order-1 sm:w-auto"
+            className="order-2 h-11 w-full text-slate-700 hover:bg-gray-50 hover:text-slate-900 sm:order-1 sm:w-auto"
           >
             Back
           </Button>

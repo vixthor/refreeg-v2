@@ -110,11 +110,6 @@ const hiddenPrefixes = [
   "/docs/api",
 ];
 
-const elevatedBottomPrefixes = [
-  "/dashboard/causes/create",
-  "/dashboard/petitions/create",
-];
-
 const supportShortcuts: SupportShortcut[] = [
   {
     id: "crowdfund",
@@ -176,10 +171,9 @@ export default function AIAgentBot() {
   const deferredSearch = useDeferredValue(search);
 
   const hideBot = hiddenPrefixes.some((prefix) => pathname.startsWith(prefix));
-  const elevatedBottom = elevatedBottomPrefixes.some((prefix) =>
-    pathname.startsWith(prefix),
-  );
   const animateOnHome = pathname === "/";
+  const isCauseDetailPage =
+    pathname.startsWith("/causes/") && !pathname.includes("/donate");
   const launcherConfig = useMemo(() => getLauncherConfig(pathname), [pathname]);
 
   useEffect(() => {
@@ -259,18 +253,14 @@ export default function AIAgentBot() {
 
   if (hideBot) return null;
 
-  const shellStyle = {
-    bottom: elevatedBottom
-      ? "max(6rem, calc(env(safe-area-inset-bottom) + 0.75rem))"
-      : "calc(env(safe-area-inset-bottom) + 0.75rem)",
-  };
-
   return (
     <div
       className={cn(
-        "pointer-events-none fixed right-3 z-[120] flex max-w-[calc(100vw-1rem)] flex-col items-end sm:right-6 sm:max-w-[calc(100vw-1.5rem)]",
+        "pointer-events-none fixed right-3 z-[120] flex max-w-[calc(100vw-1rem)] flex-col items-end sm:bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] sm:right-6 sm:max-w-[calc(100vw-1.5rem)]",
+        isCauseDetailPage
+          ? "bottom-[calc(env(safe-area-inset-bottom)+4.75rem)]"
+          : "bottom-[calc(env(safe-area-inset-bottom)+0.75rem)]",
       )}
-      style={shellStyle}
     >
       {showNudge && !isOpen ? (
         <button
@@ -562,7 +552,7 @@ export default function AIAgentBot() {
         >
           <span
             className={cn(
-              "relative inline-flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full border border-white/90 bg-gradient-to-br from-blue-500 to-blue-700 text-white shadow-[0_18px_40px_-24px_rgba(15,23,42,0.55)] ring-1 ring-slate-950/8 transition-transform duration-300 group-hover:translate-y-[-3px] group-hover:scale-[1.03] [transform:translateZ(0)] sm:h-[52px] sm:w-[52px]",
+              "relative inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-white/90 bg-gradient-to-br from-blue-500 to-blue-700 text-white shadow-[0_18px_40px_-24px_rgba(15,23,42,0.55)] ring-1 ring-slate-950/8 transition-transform duration-300 group-hover:scale-[1.03] [transform:translateZ(0)] sm:h-[52px] sm:w-[52px]",
               animateOnHome && isOpen && "home-bot-float",
             )}
           >
@@ -570,7 +560,7 @@ export default function AIAgentBot() {
             <Bot className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={2.4} />
           </span>
 
-          <span className="pr-0.5">
+          <span className="hidden pr-0.5 sm:block">
             <span className="inline-flex rounded-full bg-blue-50 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.16em] text-blue-700 ring-1 ring-blue-100">
               Support
             </span>
