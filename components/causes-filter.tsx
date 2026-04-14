@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import Image from "next/image";
@@ -36,13 +36,23 @@ const categoryImages: Record<string, string> = {
 export function CausesFilter({ selectedCategory }: CausesFilterProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   const handleCategoryChange = (categoryId: string) => {
-    const params = new URLSearchParams();
+    // Preserve existing params (search, sort, etc.)
+    const params = new URLSearchParams(searchParams.toString());
+
+    // Reset to page 1 on category change
+    params.delete("page");
+
     if (categoryId !== "all") {
       params.set("category", categoryId);
+    } else {
+      params.delete("category");
     }
-    router.push(`${pathname}?${params.toString()}`);
+
+    const query = params.toString();
+    router.push(query ? `${pathname}?${query}` : pathname);
   };
 
   return (

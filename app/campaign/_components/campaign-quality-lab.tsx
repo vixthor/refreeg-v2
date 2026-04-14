@@ -20,6 +20,8 @@ import {
   Users,
   Bell,
   CheckCheck,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import type { Cause } from "@/types";
 import dynamic from "next/dynamic";
@@ -986,16 +988,29 @@ function DonateCard({
 }
 
 function CampaignHealthCard({
-  donorsPreview,
+  donors,
   causeId,
   currentUserId,
   isFollowing,
 }: {
-  donorsPreview: { id: string; name: string; amount: number }[];
+  donors: Donor[];
   causeId: string;
   currentUserId?: string;
   isFollowing?: boolean;
 }) {
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+  const totalPages = Math.ceil(donors.length / itemsPerPage);
+
+  const paginatedDonors = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return donors.slice(start, start + itemsPerPage).map((donor) => ({
+      id: donor.id,
+      name: donor.name || "Anonymous",
+      amount: donor.amount || 0,
+    }));
+  }, [donors, currentPage]);
+
   const [followed, setFollowed] = useState(isFollowing || false);
   const [followError, setFollowError] = useState<string | null>(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -1046,15 +1061,43 @@ function CampaignHealthCard({
         <Share2 className="h-4 w-4 text-slate-400" />
       </div>
       <div className="mt-3 grid gap-3 text-sm text-slate-600">
-        {donorsPreview.length > 0 ? (
-          donorsPreview.map((donor) => (
-            <div key={donor.id} className="flex items-center justify-between">
-              <span>{donor.name}</span>
-              <span className="text-emerald-600">
-                ₦{Number(donor.amount).toLocaleString()}
-              </span>
-            </div>
-          ))
+        {paginatedDonors.length > 0 ? (
+          <>
+            {paginatedDonors.map((donor) => (
+              <div key={donor.id} className="flex items-center justify-between">
+                <span className="truncate pr-2">{donor.name}</span>
+                <span className="shrink-0 font-medium text-emerald-600">
+                  ₦{Number(donor.amount).toLocaleString()}
+                </span>
+              </div>
+            ))}
+
+            {totalPages > 1 && (
+              <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-4">
+                <button
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider text-slate-500 hover:text-slate-900 disabled:opacity-30 disabled:hover:text-slate-500"
+                >
+                  <ChevronLeft className="h-3 w-3" />
+                  Prev
+                </button>
+                <span className="text-[11px] font-medium text-slate-400">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <button
+                  onClick={() =>
+                    setCurrentPage((p) => Math.min(totalPages, p + 1))
+                  }
+                  disabled={currentPage === totalPages}
+                  className="inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider text-slate-500 hover:text-slate-900 disabled:opacity-30 disabled:hover:text-slate-500"
+                >
+                  Next
+                  <ChevronRight className="h-3 w-3" />
+                </button>
+              </div>
+            )}
+          </>
         ) : (
           <div className="text-sm text-slate-500">Be the first to donate.</div>
         )}
@@ -1307,7 +1350,7 @@ export default function CampaignQualityLab({
             </div>
             {/* <PledgesCard cause={cause} profile={profile} /> */}
             <CampaignHealthCard
-              donorsPreview={donorsPreview}
+              donors={donors}
               causeId={cause.id}
               currentUserId={currentUserId}
               isFollowing={cause.isFollowing}

@@ -19,6 +19,8 @@ export interface Cause {
   updated_at: string;
   image?: string | null;
   days_active?: number | null;
+  start_date?: string | null;
+  end_date?: string | null;
   multimedia?: string[];
   video_links?: string[];
   sections?: { heading: string; description: string }[];
@@ -73,4 +75,6 @@ export interface CauseFilterOptions {
   userId?: string;
   limit?: number;
   offset?: number;
+  search?: string;
+  sortBy?: "recommended" | "latest" | "most-funded" | "ending-soon";
 }

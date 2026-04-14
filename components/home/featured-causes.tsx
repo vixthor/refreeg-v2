@@ -23,10 +23,13 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 
+import { calculateDaysLeft, isCauseExpired } from "@/utils/cause-utils";
+
 export async function FeaturedCauses() {
-  const featuredCauses = (await listCauses({ limit: 12, status: "approved" })).filter(
-    (c) => (c.days_active ?? 0) > 0,
-  );
+  const allCauses = await listCauses({ limit: 12, status: "approved" });
+
+  // Compute remaining days and filter out expired causes
+  const featuredCauses = allCauses.filter((c) => !isCauseExpired(c));
 
   if (!featuredCauses || featuredCauses.length === 0) {
     return (
@@ -82,6 +85,9 @@ export async function FeaturedCauses() {
               ? Math.min(Math.round((cause.raised / cause.goal) * 100), 100)
               : 0;
 
+            // Compute remaining days dynamically
+            const daysLeft = calculateDaysLeft(cause);
+
             return (
               <CarouselItem
                 key={cause.id}
@@ -112,8 +118,8 @@ export async function FeaturedCauses() {
                         <div className="flex justify-between items-center pt-2 text-xs">
                           <P>Raised</P>
                           <P>
-                            {percentFunded}% • {Number(cause.days_active || 0)}{" "}
-                            Days left
+                            {percentFunded}% • {daysLeft}{" "}
+                            {daysLeft === 1 ? "Day" : "Days"} left
                           </P>
                         </div>
                       </CardHeader>
