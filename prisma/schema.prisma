@@ -1,0 +1,191 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Profile {
+  id              String      @id @default(uuid())
+  email           String?     @unique
+  password        String?     // NextAuth
+  emailVerified   DateTime?   @map("email_verified") // NextAuth
+  fullName        String?     @map("full_name")
+  firstName       String?     @map("first_name")
+  lastName        String?     @map("last_name")
+  username        String?     @unique
+  phone           String?
+  profilePhoto    String?     @map("profile_photo")
+  accountNumber   String?     @map("account_number")
+  bankName        String?     @map("bank_name")
+  accountName     String?     @map("account_name")
+  subAccountCode  String?     @map("sub_account_code")
+  isBlocked       Boolean     @default(false) @map("is_blocked")
+  isVerified      Boolean?    @map("is_verified")
+  accountType     String?     @map("account_type")
+  bio             String?
+  gender          String?
+  location        String?
+  referralCode    String?     @unique @map("referral_code")
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+
+  causes          Cause[]
+  donations       Donation[]
+  roles           Role[]
+  referralsGiven  Referral[]  @relation("Referrer")
+  referralsReceived Referral[] @relation("Referee")
+  
+  accounts        Account[]   // NextAuth
+  sessions        Session[]   // NextAuth
+
+  wallet             UserWallet?
+  streak             UserStreak?
+  rewardTransactions RewardTransaction[]
+
+  @@map("profiles")
+}
+
+model Account {
+  id                String  @id @default(uuid())
+  userId            String  @map("user_id")
+  type              String
+  provider          String
+  providerAccountId String  @map("provider_account_id")
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              Profile @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  sessionToken String   @unique @map("session_token")
+  userId       String   @map("user_id")
+  expires      DateTime
+  user         Profile  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+model Cause {
+  id              String     @id @default(uuid())
+  userId          String     @map("user_id")
+  title           String
+  description     String
+  category        String
+  goal            Int
+  raised          Int        @default(0)
+  status          String     @default("pending")
+  rejectionReason String?    @map("rejection_reason")
+  image           String?
+  multimedia      String[]
+  videoLinks      String[]   @map("video_links")
+  daysActive      Int?       @map("days_active")
+  shared          Int        @default(0)
+  createdAt       DateTime   @default(now()) @map("created_at")
+  updatedAt       DateTime   @updatedAt @map("updated_at")
+
+  profile         Profile    @relation(fields: [userId], references: [id])
+  donations       Donation[]
+
+  @@map("causes")
+}
+
+model Donation {
+  id          String   @id @default(uuid())
+  causeId     String   @map("cause_id")
+  userId      String   @map("user_id")
+  amount      Float
+  status      String   @default("pending")
+  reference   String?
+  message     String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  cause       Cause    @relation(fields: [causeId], references: [id])
+  profile     Profile  @relation(fields: [userId], references: [id])
+
+  @@map("donations")
+}
+
+model Referral {
+  id            String   @id @default(uuid())
+  referrerId    String   @map("referrer_id")
+  refereeId     String?  @map("referee_id")
+  refereeEmail  String?  @map("referee_email")
+  registered    Boolean  @default(false)
+  reward        String?
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  referrer      Profile  @relation("Referrer", fields: [referrerId], references: [id])
+  referee       Profile? @relation("Referee", fields: [refereeId], references: [id])
+
+  @@unique([referrerId, refereeEmail])
+  @@map("referrals")
+}
+
+model Role {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  profiles  Profile[]
+  
+  @@map("roles")
+}
+
+model UserWallet {
+  id        String   @id @default(uuid())
+  userId    String   @unique @map("user_id")
+  balance   Float    @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  profile   Profile  @relation(fields: [userId], references: [id])
+
+  @@map("user_wallets")
+}
+
+model UserStreak {
+  id               String   @id @default(uuid())
+  userId           String   @unique @map("user_id")
+  weeklyStreak     Int      @default(0) @map("weekly_streak")
+  isMonthlyActive  Boolean  @default(false) @map("is_monthly_active")
+  lastActiveDate   DateTime @map("last_active_date")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  profile          Profile  @relation(fields: [userId], references: [id])
+
+  @@map("user_streaks")
+}
+
+model RewardTransaction {
+  id              String   @id @default(uuid())
+  userId          String   @map("user_id")
+  amount          Float
+  transactionType String   @map("transaction_type")
+  status          String   @default("pending")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  profile         Profile  @relation(fields: [userId], references: [id])
+
+  @@map("reward_transactions")
+}
