@@ -6,6 +6,7 @@ import { auth } from "@/lib/auth/auth";
  * These routes either use their own auth (API keys) or are intentionally public.
  */
 const PUBLIC_API_PREFIXES = [
+  "/api/auth", // NextAuth routes
   "/api/bot", // Developer API — authenticated via API keys
   "/api/webhooks", // Incoming webhooks (Paystack, etc.)
   "/api/payments", // Guest donation checkout + verification
