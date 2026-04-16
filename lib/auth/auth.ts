@@ -61,15 +61,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           
           // Dynamically import to avoid pulling 'fs' and 'nodemailer' into Edge runtime
           const { sendLoginNotificationEmail } = await import("@/services/mail")
-          
-          await sendLoginNotificationEmail({
+          // Fire and forget so we don't block the login request (which was causing 12s delays)
+          sendLoginNotificationEmail({
             email: user.email as string,
             userName: user.name as string,
             loginTime: new Date().toLocaleString(),
             device: getDeviceLabel(userAgent),
-          })
+          }).catch(e => console.error("Login notification email error:", e))
         } catch (e) {
-          console.error("Login notification email error:", e)
+          console.error("Login notification prep error:", e)
         }
       }
     }
