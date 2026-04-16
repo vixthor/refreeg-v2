@@ -359,12 +359,22 @@ export async function sendPetitionSubmissionAdminNotification(
 export async function sendLoginNotificationEmail(context: {
   device?: string;
   loginTime?: string;
+  email?: string;
+  userName?: string;
 }) {
-  const user = await getCurrentUser();
-  if (!user) {
-    return { success: false, error: "User not found" };
+  let profileEmail = context.email || "";
+  let profileName = context.userName || "User";
+
+  if (!profileEmail) {
+    const user = await getCurrentUser();
+    if (!user) {
+      return { success: false, error: "User not found" };
+    }
+    const profile = await getProfile(user.id);
+    profileEmail = profile?.email || "";
+    profileName = profile?.full_name || "User";
   }
-  const profile = await getProfile(user.id);
+
   const currentYear = new Date().getFullYear();
 
   // Resolve IP server-side from the request headers instead of
@@ -389,11 +399,11 @@ export async function sendLoginNotificationEmail(context: {
   }
 
   return sendMail({
-    to: profile?.email || "",
+    to: profileEmail,
     subject: "New Login Notification",
     templateName: "login-notification",
     context: {
-      userName: profile?.full_name || "User",
+      userName: profileName,
       loginTime: context.loginTime || new Date().toLocaleString(),
       device: context.device || "Unknown Device",
       ipAddress,
