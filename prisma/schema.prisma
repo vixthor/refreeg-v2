@@ -7,7 +7,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Profile {
+model User {
   id                    String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   email                 String?   @unique
   password              String?   // NextAuth
@@ -72,7 +72,7 @@ model Account {
   scope             String?
   id_token          String?
   session_state     String?
-  user              Profile @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
   @@map("accounts")
@@ -83,7 +83,7 @@ model Session {
   sessionToken String   @unique @map("session_token")
   userId       String   @map("user_id") @db.Uuid
   expires      DateTime
-  user         Profile  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("sessions")
 }

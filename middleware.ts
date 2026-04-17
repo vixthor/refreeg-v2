@@ -46,6 +46,17 @@ export default auth((req) => {
     signInUrl.searchParams.set("redirect", pathname);
     return NextResponse.redirect(signInUrl);
   }
+
+  // ── 3. Onboarding Redirect ────────────────────────────────────────
+  const isOnboardingCompleted = (req.auth?.user as any)?.onboardingCompleted;
+
+  if (
+    user &&
+    !isOnboardingCompleted &&
+    pathname.startsWith("/dashboard")
+  ) {
+    return NextResponse.redirect(new URL("/onboarding", req.url));
+  }
 });
 
 export const config = {

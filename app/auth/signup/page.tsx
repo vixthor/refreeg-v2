@@ -4,7 +4,6 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 
 import { useAuth } from "@/hooks/use-auth";
@@ -17,7 +16,6 @@ import { AuthTestimonials } from "@/components/ui/auth-testimonials";
 
 export default function SignUpPage() {
   const router = useRouter();
-  const supabase = createClient();
   const { signUp, signInWithGoogle } = useAuth();
 
   const [email, setEmail] = useState("");
