@@ -174,7 +174,7 @@ export async function recordSignupReward(userId: string, amount: number = 1) {
       select: { balance: true }
     });
 
-    const currentBalance = wallet?.balance || 0;
+    const currentBalance = Number(wallet?.balance || 0);
     const newBalance = currentBalance + amount;
 
     await prisma.userWallet.upsert({

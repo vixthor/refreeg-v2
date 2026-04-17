@@ -49,7 +49,7 @@ export async function POST(req: Request) {
       const baseUsername = pending.fullName.replace(/\s+/g, "").toLowerCase() || normalizedEmail.split("@")[0];
       const uniqueSuffix = Math.floor(1000 + Math.random() * 9000).toString();
       
-      const profile = await tx.profile.create({
+      const profile = await tx.user.create({
         data: {
           email: pending.email,
           password: pending.password,
@@ -62,7 +62,7 @@ export async function POST(req: Request) {
 
       // --- Referral Integration ---
       if (pending.referralCode) {
-        const referrer = await tx.profile.findUnique({
+        const referrer = await tx.user.findUnique({
           where: { referralCode: pending.referralCode },
           select: { id: true, total_points: true }
         });
@@ -80,7 +80,7 @@ export async function POST(req: Request) {
           });
 
           // 2. Grant the points to the referrer
-          await tx.profile.update({
+          await tx.user.update({
             where: { id: referrer.id },
             data: {
               total_points: { increment: 5 }
