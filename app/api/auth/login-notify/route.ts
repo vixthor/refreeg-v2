@@ -12,7 +12,7 @@ export async function POST(req: Request) {
     }
 
     // Fingerprinting Logic
-    const profile = await prisma.profile.findUnique({
+    const profile = await prisma.user.findUnique({
       where: { email },
       select: { lastLoginUserAgent: true }
     });
@@ -31,7 +31,7 @@ export async function POST(req: Request) {
     });
 
     // Update the last known agent in the database
-    await prisma.profile.update({
+    await prisma.user.update({
       where: { email },
       data: { lastLoginUserAgent: userAgent }
     });

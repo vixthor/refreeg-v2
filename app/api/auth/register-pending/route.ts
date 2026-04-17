@@ -16,7 +16,7 @@ export async function POST(req: Request) {
     }
 
     // 1. Check if user already exists in public.profiles
-    const existingUser = await prisma.profile.findUnique({
+    const existingUser = await prisma.user.findUnique({
       where: { email },
     });
 

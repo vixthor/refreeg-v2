@@ -1,22 +1,22 @@
-import NextAuth from "next-auth"
-import { PrismaAdapter } from "@auth/prisma-adapter"
-import Credentials from "next-auth/providers/credentials"
-import Google from "next-auth/providers/google"
-import { prisma } from "@/lib/prisma"
-import bcrypt from "bcryptjs"
-import { headers } from "next/headers"
+import NextAuth from "next-auth";
+import { PrismaAdapter } from "@auth/prisma-adapter";
+import Credentials from "next-auth/providers/credentials";
+import Google from "next-auth/providers/google";
+import { prisma } from "@/lib/prisma";
+import bcrypt from "bcryptjs";
+import { headers } from "next/headers";
 
 /**
  * Derive a human-readable device label from the browser's User-Agent.
  */
 function getDeviceLabel(userAgent: string | null): string {
-  if (!userAgent) return "Unknown Device"
-  if (/android/i.test(userAgent)) return "Android"
-  if (/iphone|ipad|ipod/i.test(userAgent)) return "iOS"
-  if (/mac os x/i.test(userAgent)) return "Mac"
-  if (/windows/i.test(userAgent)) return "Windows"
-  if (/linux/i.test(userAgent)) return "Linux"
-  return "Unknown Device"
+  if (!userAgent) return "Unknown Device";
+  if (/android/i.test(userAgent)) return "Android";
+  if (/iphone|ipad|ipod/i.test(userAgent)) return "iOS";
+  if (/mac os x/i.test(userAgent)) return "Mac";
+  if (/windows/i.test(userAgent)) return "Windows";
+  if (/linux/i.test(userAgent)) return "Linux";
+  return "Unknown Device";
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
@@ -26,6 +26,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      allowDangerousEmailAccountLinking: true,
+      authorization: {
+        params: {
+          prompt: "consent",
+          access_type: "offline",
+          response_type: "code",
+        },
+      },
     }),
     Credentials({
       id: "otp-login",
@@ -35,41 +43,51 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token: { label: "Token", type: "text" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.token) return null
+        if (!credentials?.email || !credentials?.token) return null;
 
-        const tokenStr = credentials.token as string
-        const secret = process.env.AUTH_SECRET || "fallback_secret"
-        
+        const tokenStr = credentials.token as string;
+        const secret = process.env.AUTH_SECRET || "fallback_secret";
+
         try {
           // Token format: base64(email):timestamp:hmac
-          const [b64Email, timestamp, hmac] = tokenStr.split(":")
-          if (!b64Email || !timestamp || !hmac) return null
-          
-          const email = Buffer.from(b64Email, "base64").toString("utf-8")
-          if (email !== credentials.email) return null
-          
+          const [b64Email, timestamp, hmac] = tokenStr.split(":");
+          if (!b64Email || !timestamp || !hmac) return null;
+
+          const email = Buffer.from(b64Email, "base64").toString("utf-8");
+          if (email !== credentials.email) return null;
+
           // Expire after 5 minutes
-          if (Date.now() - parseInt(timestamp) > 5 * 60 * 1000) return null
-          
-          const encoder = new TextEncoder()
+          if (Date.now() - parseInt(timestamp) > 5 * 60 * 1000) return null;
+
+          const encoder = new TextEncoder();
           const key = await crypto.subtle.importKey(
-            "raw", encoder.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
-          )
-          const signature = await crypto.subtle.sign("HMAC", key, encoder.encode(`${b64Email}:${timestamp}`))
-          const expectedHmac = Array.from(new Uint8Array(signature)).map(b => b.toString(16).padStart(2, '0')).join('')
-          
-          if (expectedHmac !== hmac) return null
+            "raw",
+            encoder.encode(secret),
+            { name: "HMAC", hash: "SHA-256" },
+            false,
+            ["sign"],
+          );
+          const signature = await crypto.subtle.sign(
+            "HMAC",
+            key,
+            encoder.encode(`${b64Email}:${timestamp}`),
+          );
+          const expectedHmac = Array.from(new Uint8Array(signature))
+            .map((b) => b.toString(16).padStart(2, "0"))
+            .join("");
 
-          const user = await prisma.profile.findUnique({
+          if (expectedHmac !== hmac) return null;
+
+          const user = await prisma.user.findUnique({
             where: { email },
-          })
+          });
 
-          if (!user) return null
+          if (!user) return null;
 
-          return { id: user.id, email: user.email, name: user.fullName }
+          return { id: user.id, email: user.email, name: user.fullName };
         } catch (error) {
-          console.error("Auto login token verification failed", error)
-          return null
+          console.error("Auto login token verification failed", error);
+          return null;
         }
       },
     }),
@@ -81,22 +99,22 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) return null
+        if (!credentials?.email || !credentials?.password) return null;
 
-        const user = await prisma.profile.findUnique({
+        const user = await prisma.user.findUnique({
           where: { email: credentials.email as string },
-        })
+        });
 
-        if (!user?.password) return null
+        if (!user?.password) return null;
 
         const valid = await bcrypt.compare(
           credentials.password as string,
-          user.password
-        )
+          user.password,
+        );
 
-        if (!valid) return null
+        if (!valid) return null;
 
-        return { id: user.id, email: user.email, name: user.fullName }
+        return { id: user.id, email: user.email, name: user.fullName };
       },
     }),
   ],
@@ -104,11 +122,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async signIn({ user }) {
       if (user.email) {
         try {
-          const reqHeaders = await headers()
-          const userAgent = reqHeaders.get("user-agent")
-          const protocol = process.env.NODE_ENV === "production" ? "https" : "http";
+          const reqHeaders = await headers();
+          const userAgent = reqHeaders.get("user-agent");
+          const protocol =
+            process.env.NODE_ENV === "production" ? "https" : "http";
           const host = reqHeaders.get("host") || "localhost:3000";
-          
+
           // Fire and forget so we don't block the login request
           fetch(`${protocol}://${host}/api/auth/login-notify`, {
             method: "POST",
@@ -119,30 +138,33 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               loginTime: new Date().toLocaleString(),
               device: getDeviceLabel(userAgent),
               userAgent: userAgent,
-            })
-          }).catch(e => console.error("Login notification API error:", e))
+            }),
+          }).catch((e) => console.error("Login notification API error:", e));
         } catch (e) {
-          console.error("Login notification prep error:", e)
+          console.error("Login notification prep error:", e);
         }
       }
-    }
+    },
   },
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.id = user.id
+        token.id = user.id;
+        // Onboarding status from the database
+        token.onboardingCompleted = (user as any).onboarding_completed;
       }
-      return token
+      return token;
     },
     async session({ session, token }) {
       if (token && session.user) {
-        session.user.id = token.id as string
+        session.user.id = token.id as string;
+        (session.user as any).onboardingCompleted = token.onboardingCompleted;
       }
-      return session
+      return session;
     },
   },
   pages: {
     signIn: "/auth/signin",
     newUser: "/onboarding",
   },
-})
+});

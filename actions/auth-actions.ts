@@ -22,7 +22,7 @@ export const getCurrentUser = cache(async () => {
     return null;
   }
 
-  return prisma.profile.findUnique({
+  return prisma.user.findUnique({
     where: { id: session.user.id },
   });
 });
@@ -34,7 +34,7 @@ export async function signUpAction(
   accountType?: "individual" | "organization" | null,
 ) {
   try {
-    const existing = await prisma.profile.findUnique({ where: { email } });
+    const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) {
       return {
         success: false,
@@ -45,7 +45,7 @@ export async function signUpAction(
     const hashedPassword = await bcrypt.hash(password, 12);
 
     // Create new profile record
-    const user = await prisma.profile.create({
+    const user = await prisma.user.create({
       data: {
         email,
         password: hashedPassword,

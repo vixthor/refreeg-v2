@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { useSession } from "next-auth/react";
 import { motion, AnimatePresence } from "framer-motion";
 import dynamic from "next/dynamic";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -61,65 +61,75 @@ export default function OnboardingPage() {
   });
 
   const router = useRouter();
-  const supabase = createClient();
+  const { data: session, status } = useSession();
 
   useEffect(() => {
     const checkUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      if (status === "loading") return;
 
-      if (!user) {
+      if (status === "unauthenticated" || !session?.user) {
         router.push("/auth/signin");
         return;
       }
 
+      const currentUser = session.user;
+
       // Check if user has already completed onboarding
-      const hasCompleted = await hasCompletedOnboarding(user.id);
+      const hasCompleted = await hasCompletedOnboarding(currentUser.id as string);
       if (hasCompleted) {
         router.push("/dashboard");
         return;
       }
 
-      setUser(user);
+      setUser(currentUser);
 
-      // DYNAMIC ONBOARDING LOGIC:
-      // 1. Determine which step to resume from based on existing database data
-      // 2. Fetch and prefill form data from database
-      // 3. Skip completed steps automatically
-      try {
-        const [currentStepFromDB, existingData] = await Promise.all([
-          getCurrentOnboardingStep(user.id),
-          getOnboardingData(user.id),
-        ]);
+      // Only fetch and set initial state if we haven't loaded yet
+      if (isLoading) {
+        try {
+          const [currentStepFromDB, existingData] = await Promise.all([
+            getCurrentOnboardingStep(currentUser.id as string),
+            getOnboardingData(currentUser.id as string),
+          ]);
 
-        // Set the current step based on database state
-        // This automatically skips completed steps
-        setCurrentStep(currentStepFromDB);
+          // Set the current step based on database state
+          // This automatically skips completed steps ONCE on initial load
+          setCurrentStep(currentStepFromDB);
 
-        // Prefill onboarding data with existing database data
-        // This ensures forms show previously entered data
-        setOnboardingData((prev) => ({
-          ...prev,
-          accountType:
-            existingData.accountType || user.user_metadata?.account_type || "",
-          gender: existingData.gender,
-          profile: {
-            ...prev.profile,
-            ...existingData.profile,
-          },
-        }));
+          // Handle Google OAuth name splitting if firstName/lastName are missing
+          let firstName = existingData.profile.firstName || "";
+          let lastName = existingData.profile.lastName || "";
+          
+          if (!firstName && !lastName && currentUser.name) {
+            const nameParts = currentUser.name.split(" ");
+            firstName = nameParts[0] || "";
+            lastName = nameParts.slice(1).join(" ") || "";
+          }
 
+          // Prefill onboarding data with existing database data or session data
+          setOnboardingData((prev) => ({
+            ...prev,
+            accountType: existingData.accountType || "",
+            gender: existingData.gender,
+            profile: {
+              ...prev.profile,
+              ...existingData.profile,
+              firstName: firstName,
+              lastName: lastName,
+              profilePhoto: existingData.profile.profilePhoto || currentUser.image || "",
+            },
+          }));
 
-      } catch (error) {
-        console.error("Error loading onboarding progress:", error);
-        // If there's an error, start from step 1
-        setCurrentStep(1);
+          setIsLoading(false);
+        } catch (error) {
+          console.error("Error loading onboarding progress:", error);
+          setCurrentStep(1);
+          setIsLoading(false);
+        }
       }
-
-      setIsLoading(false);
     };
 
     checkUser();
-  }, [router, supabase.auth]);
+  }, [router, session, status, isLoading]);
 
   // Additional protection: Reset to step 1 if user tries to access steps 4-5 without completing step 3
   useEffect(() => {
@@ -218,7 +228,7 @@ export default function OnboardingPage() {
           accountType: onboardingData.accountType || "individual",
           gender: onboardingData.gender || "",
         },
-        user.user_metadata?.avatar_url,
+        user.image,
       );
 
       // Don't clear onboarding data yet, just move to step 4
