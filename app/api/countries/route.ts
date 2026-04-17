@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
-import { ALL_COUNTRIES } from "@/app/utils/countryUtils";
+import { ALL_COUNTRIES } from "@/utils/countryUtils";
 
 export async function GET() {
   try {
