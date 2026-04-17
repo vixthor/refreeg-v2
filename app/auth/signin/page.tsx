@@ -1,7 +1,7 @@
 "use client";
 
-import type React from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/hooks/use-auth";
 import { Label } from "@/components/ui/label";
@@ -11,19 +11,36 @@ import { Icons } from "@/components/icons";
 import { AuthTestimonials } from "@/components/ui/auth-testimonials";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 
 export default function SignInPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [loadingType, setLoadingType] = useState<"manual" | "google" | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const { signIn, signInWithGoogle } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    // Prefetch common post-login routes
+    router.prefetch("/petitions");
+    router.prefetch("/dashboard");
+  }, [router]);
+
+  const handleGoogleSignIn = async () => {
+    try {
+      setLoadingType("google");
+      await signInWithGoogle();
+    } catch (error) {
+      console.error("Google Sign In Error:", error);
+      setLoadingType(null);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
+    setLoadingType("manual");
 
     toast({
       title: "Signing you in...",
@@ -34,7 +51,7 @@ export default function SignInPage() {
       await signIn(email, password);
     } catch (error) {
     } finally {
-      setIsLoading(false);
+      setLoadingType(null);
     }
   };
 
@@ -102,36 +119,44 @@ export default function SignInPage() {
             </div>
 
             <Button
-              className="group/btn relative block h-10 w-full rounded-md font-medium text-white shadow-[0px_1px_0px_0px_#ffffff40_inset,0px_-1px_0px_0px_#ffffff40_inset]"
+              className="group/btn relative h-10 w-full rounded-md font-medium text-white shadow-[0px_1px_0px_0px_#ffffff40_inset,0px_-1px_0px_0px_#ffffff40_inset] flex items-center justify-center gap-2"
               type="submit"
-              disabled={isLoading}
+              disabled={loadingType !== null}
               variant="default"
             >
-              Sign In
+              {loadingType === "manual" ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                "Sign In"
+              )}
               <BottomGradient />
             </Button>
 
             <div className="my-2 h-[1px] w-full bg-gradient-to-r from-transparent via-neutral-300 to-transparent" />
 
-            {/*
             <div className="flex flex-col space-y-4">
               <button
-                className="group/btn shadow-input relative flex h-10 w-full items-center justify-center space-x-2 rounded-md bg-gray-50 px-4 font-medium text-black"
+                className="group/btn shadow-input relative flex h-10 w-full items-center justify-center space-x-2 rounded-md bg-gray-50 px-4 font-medium text-black disabled:opacity-50"
                 type="button"
-                onClick={signInWithGoogle}
-                disabled={isLoading}
+                onClick={handleGoogleSignIn}
+                disabled={loadingType !== null}
               >
-                <Image
-                  src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
-                  alt="Google logo"
-                  width={18}
-                  height={18}
-                />
-                <span className="text-sm text-neutral-700">Google</span>
+                {loadingType === "google" ? (
+                  <Loader2 className="h-4 w-4 animate-spin text-neutral-700" />
+                ) : (
+                  <>
+                    <Image
+                      src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+                      alt="Google logo"
+                      width={18}
+                      height={18}
+                    />
+                    <span className="text-sm text-neutral-700">Google</span>
+                  </>
+                )}
                 <BottomGradient />
               </button>
             </div>
-            */}
 
             <div className="mt-6 text-center text-sm text-neutral-600">
               Don&apos;t have an account?{" "}
