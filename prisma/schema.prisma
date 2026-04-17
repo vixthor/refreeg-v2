@@ -50,6 +50,7 @@ model Profile {
   last_login_date       DateTime? @db.Date
   weekly_streak_count   Int?      @default(0) @db.SmallInt
   monthly_streak_count  Int?      @default(0) @db.SmallInt
+  lastLoginUserAgent    String?   @map("last_login_user_agent")
 
   accounts              Account[]
   sessions              Session[]
@@ -762,4 +763,17 @@ enum gender {
   male
   female
   undefined
+}
+
+model PendingRegistration {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email     String   @unique
+  password  String
+  fullName     String
+  referralCode String?  @map("referral_code")
+  otpCode      String
+  expiresAt    DateTime
+  createdAt    DateTime @default(now()) @db.Timestamptz(6)
+
+  @@map("pending_registrations")
 }

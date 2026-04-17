@@ -15,7 +15,7 @@ export function ClientLayout({ children }: ClientLayoutProps) {
   const pathname = usePathname();
   const [isRouteLoading, setIsRouteLoading] = useState(false);
 
-  const noLayoutRoutes = ["/auth/signin", "/auth/signup", "/onboarding", "/docs/api"];
+  const noLayoutRoutes = ["/auth/signin", "/auth/signup", "/onboarding", "/docs/api", "/auth/verify-otp"];
   const hideLayout = noLayoutRoutes.some((route) => pathname.startsWith(route));
 
   useEffect(() => {

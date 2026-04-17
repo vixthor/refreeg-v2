@@ -65,6 +65,25 @@ export async function sendMail({
   }
 }
 
+export async function sendOtpEmail(context: {
+  email: string;
+  userName: string;
+  otpCode: string;
+}) {
+  const currentYear = new Date().getFullYear();
+
+  return sendMail({
+    to: context.email,
+    subject: "Your RefreeG Verification Code",
+    templateName: "otp-verification",
+    context: {
+      userName: context.userName,
+      otpCode: context.otpCode,
+      currentYear,
+    },
+  });
+}
+
 export async function sendCauseUnderReviewEmail(context: {
   causeName: string;
   reviewTimeframe?: string;
