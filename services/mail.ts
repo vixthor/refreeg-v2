@@ -84,6 +84,23 @@ export async function sendOtpEmail(context: {
   });
 }
 
+export async function sendPasswordResetEmail(context: {
+  email: string;
+  resetUrl: string;
+}) {
+  const currentYear = new Date().getFullYear();
+
+  return sendMail({
+    to: context.email,
+    subject: "Reset Your RefreeG Password",
+    templateName: "password-reset",
+    context: {
+      resetUrl: context.resetUrl,
+      currentYear,
+    },
+  });
+}
+
 export async function sendCauseUnderReviewEmail(context: {
   causeName: string;
   reviewTimeframe?: string;

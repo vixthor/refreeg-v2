@@ -18,6 +18,8 @@ export function ClientLayout({ children }: ClientLayoutProps) {
   const noLayoutRoutes = [
     "/auth/signin",
     "/auth/signup",
+    "/auth/update-password",
+    "/auth/reset-password",
     "/onboarding",
     "/docs/api",
     "/auth/verify-otp",
