@@ -7,9 +7,11 @@ import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import {
   sendLoginNotificationEmail,
+  sendPasswordResetEmail,
   sendWelcomeEmailToUser,
 } from "@/services/mail";
 import { subscribeToConvertKit } from "@/services/convertkit";
+import crypto from "crypto";
 
 /**
  * Get the current user
@@ -75,11 +77,12 @@ export async function signUpAction(
     // You can handle initial wallets/rewards here using prisma later.
 
     return { success: true };
-  } catch (error: any) {
-    console.error("SignUp Action Error: ", error);
-    return { success: false, error: error.message };
+  } catch (error) {
+    console.error("Error creating user from session:", error);
+    return { success: false, error: "Database error" };
   }
 }
+
 
 /**
  * Track user login and update streaks
@@ -186,5 +189,69 @@ export async function recordSignupReward(userId: string, amount: number = 1) {
     return newReward;
   } catch (error) {
     console.error("Error in recordSignupReward:", error);
+  }
+}
+
+export async function requestPasswordResetAction(email: string) {
+  try {
+    const user = await prisma.user.findUnique({ where: { email } });
+    
+    if (!user) {
+      return { success: false, error: "No account found with this email address." };
+    }
+
+    // Generate a secure random token
+    const token = crypto.randomBytes(32).toString("hex");
+    const expires = new Date(Date.now() + 3600000); // 1 hour from now
+
+    // Store token in DB
+    await prisma.passwordResetToken.upsert({
+      where: { email },
+      update: { token, expires },
+      create: { email, token, expires },
+    });
+
+    // Use AUTH_URL from env, default to localhost if not set
+    const baseUrl = process.env.AUTH_URL?.replace("/api/auth", "") || "http://localhost:3000";
+    const resetUrl = `${baseUrl}/auth/update-password?token=${token}`;
+
+    await sendPasswordResetEmail({
+      email,
+      resetUrl,
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error("Password reset request error:", error);
+    return { success: false, error: "Failed to send reset link" };
+  }
+}
+
+export async function resetPasswordAction(token: string, password: string) {
+  try {
+    const resetToken = await prisma.passwordResetToken.findUnique({
+      where: { token },
+    });
+
+    if (!resetToken || resetToken.expires < new Date()) {
+      return { success: false, error: "Invalid or expired token" };
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 12);
+
+    await prisma.$transaction([
+      prisma.user.update({
+        where: { email: resetToken.email },
+        data: { password: hashedPassword },
+      }),
+      prisma.passwordResetToken.delete({
+        where: { id: resetToken.id },
+      }),
+    ]);
+
+    return { success: true };
+  } catch (error) {
+    console.error("Password reset error:", error);
+    return { success: false, error: "Failed to reset password" };
   }
 }

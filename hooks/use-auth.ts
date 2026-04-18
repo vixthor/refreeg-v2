@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "@/components/ui/use-toast";
 import { signIn as nextAuthSignIn, signOut as nextAuthSignOut } from "next-auth/react";
 import { useAuthContext } from "@/components/auth-provider";
-import { signUpAction } from "@/actions/auth-actions";
+import { signUpAction, requestPasswordResetAction, resetPasswordAction } from "@/actions/auth-actions";
 
 export function useAuth() {
   const { user, isLoading, isAuthenticated } = useAuthContext();
@@ -117,20 +117,52 @@ export function useAuth() {
   };
 
   const resetPassword = async (email: string) => {
-    // Requires independent email-link logic to be built for phase 2.10
-    toast({
-      title: "Notice",
-      description: "Password reset handling will be migrated soon.",
-    });
-    return true;
+    try {
+      const res = await requestPasswordResetAction(email);
+      if (!res.success) {
+        toast({
+          title: "Error",
+          description: res.error || "Failed to send reset link",
+          variant: "destructive",
+        });
+        return false;
+      }
+      return true;
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+      return false;
+    }
   };
 
-  const updatePassword = async (newPassword: string) => {
-    toast({
-      title: "Notice",
-      description: "Password updating will be migrated soon.",
-    });
-    return true;
+  const updatePassword = async (password: string, token: string) => {
+    try {
+      const res = await resetPasswordAction(token, password);
+      if (!res.success) {
+        toast({
+          title: "Error",
+          description: res.error || "Failed to reset password",
+          variant: "destructive",
+        });
+        return false;
+      }
+      toast({
+        title: "Success",
+        description: "Your password has been reset successfully.",
+      });
+      router.push("/auth/signin");
+      return true;
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+      return false;
+    }
   };
 
   return {
