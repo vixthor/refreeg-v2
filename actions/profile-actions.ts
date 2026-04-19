@@ -44,7 +44,7 @@ function mapPrismaToProfile(p: any): Profile {
 export async function getProfile(userId: string): Promise<Profile | null> {
   try {
     const profile = await prisma.user.findUnique({
-      where: { id: userId }
+      where: { id: userId },
     });
 
     if (!profile) return null;
@@ -80,7 +80,7 @@ export async function updateProfile(
         facebook_url: profileData.facebook_url || null,
         instagram_url: profileData.instagram_url || null,
         linkedin_url: profileData.linkedin_url || null,
-      }
+      },
     });
 
     revalidatePath("/dashboard/settings");
@@ -151,7 +151,7 @@ export async function updateBankDetails(
         bankName: bankData.bankName,
         accountName: bankData.accountName,
         subAccountCode: bankData.sub_account_code,
-      }
+      },
     });
 
     revalidatePath("/dashboard/settings");
@@ -171,7 +171,7 @@ export async function createOnboardingProfile(
 
   const existingProfile = await prisma.user.findUnique({
     where: { id: userId },
-    select: { profilePhoto: true }
+    select: { profilePhoto: true },
   });
 
   let profilePhotoUrl: string | null = existingProfile?.profilePhoto ?? null;
@@ -223,7 +223,7 @@ export async function createOnboardingProfile(
   try {
     const data = await prisma.user.update({
       where: { id: userId },
-      data: updateData
+      data: updateData,
     });
 
     revalidatePath("/dashboard");
@@ -248,7 +248,7 @@ export async function hasCompletedOnboarding(userId: string): Promise<boolean> {
         username: true,
         location: true,
         createdAt: true,
-      }
+      },
     });
 
     if (!profile) {
@@ -299,7 +299,7 @@ export async function getCurrentOnboardingStep(
         phone: true,
         email: true,
         profilePhoto: true,
-      }
+      },
     });
 
     if (!profile) {
@@ -360,7 +360,7 @@ export async function getOnboardingData(userId: string): Promise<{
         phone: true,
         email: true,
         profilePhoto: true,
-      }
+      },
     });
 
     if (!profile) {
@@ -416,8 +416,8 @@ export async function saveStep1Progress(
     await prisma.user.update({
       where: { id: userId },
       data: {
-        accountType: accountType
-      }
+        accountType: accountType,
+      },
     });
 
     revalidatePath("/onboarding");
@@ -435,8 +435,8 @@ export async function saveStep2Progress(
     await prisma.user.update({
       where: { id: userId },
       data: {
-        gender: gender
-      }
+        gender: gender,
+      },
     });
 
     revalidatePath("/onboarding");
@@ -446,11 +446,13 @@ export async function saveStep2Progress(
   }
 }
 
-export async function checkUsernameAvailability(username: string): Promise<boolean> {
+export async function checkUsernameAvailability(
+  username: string,
+): Promise<boolean> {
   try {
     const profile = await prisma.user.findUnique({
       where: { username },
-      select: { id: true }
+      select: { id: true },
     });
     return !profile; // Return true if profile does not exist (username is available)
   } catch (error) {
@@ -465,7 +467,7 @@ export async function isProfileComplete(
   try {
     const profile = await prisma.user.findUnique({
       where: { id: userId },
-      select: { fullName: true, profilePhoto: true }
+      select: { fullName: true, profilePhoto: true },
     });
 
     if (!profile) {
@@ -541,7 +543,7 @@ export async function getProfileByUsername(
 ): Promise<Profile | null> {
   try {
     const profile = await prisma.user.findUnique({
-      where: { username }
+      where: { username },
     });
 
     if (!profile) return null;
