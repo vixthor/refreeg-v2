@@ -1,0 +1,38 @@
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model cities {
+  id           BigInt?
+  name         String?
+  state_id     BigInt?
+  state_code   String?
+  state_name   String?
+  country_id   BigInt?
+  country_code String?
+  country_name String?
+  latitude     Float?
+  longitude    Float?
+  wikiDataId   String?
+
+  @@ignore
+}
+
+model countries {
+  id         BigInt   @id @default(autoincrement())
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  country    String?  @unique
+  latitude   Float?
+  longitude  Float?
+  name       String?
+}
+
+model state {
+  id           BigInt   @id @default(autoincrement())
+  created_at   DateTime @default(now()) @db.Timestamptz(6)
+  name         String?
+  country_id   BigInt?
+  country_code String?
+  country_name String?
+  state_code   String?
+  type         String?
+  latitude     Float?
+  longitude    Float?
+}
