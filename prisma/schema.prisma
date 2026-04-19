@@ -780,20 +780,7 @@ model PendingRegistration {
   @@map("pending_registrations")
 }
 
-/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model digital_store_image {
-  id         String   @db.Uuid
-  user_id    String   @db.Uuid
-  file_name  String
-  file_type  String
-  image_data Bytes
-  category   String
-  bucket     String?
-  path       String?
-  created_at DateTime @db.Timestamptz(6)
 
-  @@ignore
-}
 
 enum gender {
   male
