@@ -9,9 +9,6 @@ datasource db {
 
 model User {
   id                    String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  email                 String?   @unique
-  password              String?   // NextAuth
-  emailVerified         DateTime? @map("email_verified") // NextAuth
   phone                 String?
   accountNumber         String?   @map("account_number")
   bankName              String?   @map("bank_name")
@@ -36,6 +33,7 @@ model User {
   lastName              String?   @map("last_name")
   username              String?   @unique
   location              String?
+  email                 String?   @unique
   onboarding_completed  Boolean?  @default(false)
   fullName              String?   @map("full_name")
   total_points          Int?      @default(0)
@@ -50,8 +48,9 @@ model User {
   last_login_date       DateTime? @db.Date
   weekly_streak_count   Int?      @default(0) @db.SmallInt
   monthly_streak_count  Int?      @default(0) @db.SmallInt
+  emailVerified         DateTime? @map("email_verified")
+  password              String?
   lastLoginUserAgent    String?   @map("last_login_user_agent")
-
   accounts              Account[]
   sessions              Session[]
 
@@ -768,21 +767,36 @@ model subscriptions {
   @@index([user_id], map: "idx_subscriptions_user_id")
 }
 
+model PendingRegistration {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email        String   @unique
+  password     String
+  fullName     String
+  otpCode      String
+  expiresAt    DateTime
+  createdAt    DateTime @default(now()) @db.Timestamptz(6)
+  referralCode String?  @map("referral_code")
+
+  @@map("pending_registrations")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model digital_store_image {
+  id         String   @db.Uuid
+  user_id    String   @db.Uuid
+  file_name  String
+  file_type  String
+  image_data Bytes
+  category   String
+  bucket     String?
+  path       String?
+  created_at DateTime @db.Timestamptz(6)
+
+  @@ignore
+}
+
 enum gender {
   male
   female
   undefined
-}
-
-model PendingRegistration {
-  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  email     String   @unique
-  password  String
-  fullName     String
-  referralCode String?  @map("referral_code")
-  otpCode      String
-  expiresAt    DateTime
-  createdAt    DateTime @default(now()) @db.Timestamptz(6)
-
-  @@map("pending_registrations")
 }
