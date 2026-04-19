@@ -15,6 +15,7 @@ type Action =
   | "delete-user"
   | "approve-kyc"
   | "reject-kyc"
+  | "send-kyc-reminders"
   | "appoint-admin";
 
 export async function checkTableExists(tableName: string): Promise<boolean> {
