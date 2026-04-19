@@ -47,12 +47,17 @@ export default auth((req) => {
     return NextResponse.redirect(signInUrl);
   }
 
-  // ── 3. Onboarding Redirect ────────────────────────────────────────
+  // ── 3. Redirect authenticated users away from auth pages ──────────
+  if (user && pathname.startsWith("/auth")) {
+    return NextResponse.redirect(new URL("/dashboard", req.url));
+  }
+
+  // ── 4. Onboarding Redirect ────────────────────────────────────────
   const isOnboardingCompleted = (req.auth?.user as any)?.onboardingCompleted;
 
   if (
     user &&
-    !isOnboardingCompleted &&
+    isOnboardingCompleted === false &&
     pathname.startsWith("/dashboard")
   ) {
     return NextResponse.redirect(new URL("/onboarding", req.url));
