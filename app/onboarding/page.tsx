@@ -74,7 +74,15 @@ export default function OnboardingPage() {
 
       const currentUser = session.user;
 
-      // Check if user has already completed onboarding
+      // Check the flag from the JWT session first (most reliable and fastest)
+      const isCompletedInSession = (currentUser as any).onboardingCompleted;
+      
+      if (isCompletedInSession === true) {
+        router.push("/dashboard");
+        return;
+      }
+
+      // Check if user has already completed onboarding via DB
       const hasCompleted = await hasCompletedOnboarding(currentUser.id as string);
       if (hasCompleted) {
         router.push("/dashboard");

@@ -77,7 +77,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
           if (!user) return null;
 
-          return { id: user.id, email: user.email, name: user.fullName };
+          return { 
+            id: user.id, 
+            email: user.email, 
+            name: user.fullName,
+            onboarding_completed: user.onboarding_completed 
+          };
         } catch (error) {
           console.error("Auto login token verification failed", error);
           return null;
@@ -107,7 +112,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         if (!valid) return null;
 
-        return { id: user.id, email: user.email, name: user.fullName };
+        return { 
+          id: user.id, 
+          email: user.email, 
+          name: user.fullName,
+          onboarding_completed: user.onboarding_completed
+        };
       },
     }),
   ],
