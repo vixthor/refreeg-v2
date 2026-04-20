@@ -24,6 +24,7 @@ import ProgressNav from "./components/ProgressNav";
 import StepAddressDetails from "./StepAddressDetails";
 import Image from "next/image";
 import { sendIncompleteKycVerificationEmail } from "@/services/mail";
+import NavigationLoader from "@/components/NavigationLoader";
 
 const documentTypes = [
   "NIN",
@@ -54,35 +55,52 @@ export default function KycSetupPage() {
   });
   const { user } = useAuth();
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Auto-save KYC progress to localStorage or load from DB if rejected
   useEffect(() => {
     async function initFormData() {
-      // 1. Try to load from localStorage first (most recent draft)
-      const savedKycDraft = localStorage.getItem("kycDraft");
-      if (savedKycDraft) {
-        const parsedDraft = JSON.parse(savedKycDraft);
-        setFormData(parsedDraft.formData || formData);
-        setSelectedDoc(parsedDraft.selectedDoc || "");
-        setStep(parsedDraft.step || 0);
-        return;
+      if (!isMounted) return;
+
+      try {
+        // 1. Try to load from localStorage first (most recent draft)
+        const savedKycDraft = localStorage.getItem("kycDraft");
+        if (savedKycDraft) {
+          const parsedDraft = JSON.parse(savedKycDraft);
+          
+          // Basic schema validation
+          if (parsedDraft && typeof parsedDraft === 'object') {
+            if (parsedDraft.formData) setFormData(prev => ({ ...prev, ...parsedDraft.formData }));
+            if (parsedDraft.selectedDoc) setSelectedDoc(parsedDraft.selectedDoc);
+            if (typeof parsedDraft.step === 'number') setStep(parsedDraft.step);
+            return;
+          }
+        }
+      } catch (err) {
+        console.error("Failed to parse kycDraft from localStorage:", err);
+        localStorage.removeItem("kycDraft"); // Clear corrupted data
       }
 
       // 2. If no draft, check DB for last rejected submission
       if (user?.id) {
         try {
-          const { status, error: kycError } = await getVerificationStatus(
-            user.id,
-          );
+          const { status, error: kycError } = await getVerificationStatus(user.id);
+          
           if (status && status.status === "rejected") {
-            // Split DOB "YYYY-MM-DD" back into parts
-            const dobParts = (status.dob || "").split("-");
+            // Safely split DOB "YYYY-MM-DD" back into parts
+            const dobString = status.dob || "";
+            const dobParts = dobString.split("-");
             const year = dobParts[0] || "";
             const month = dobParts[1] ? parseInt(dobParts[1]).toString() : "";
             const day = dobParts[2] ? parseInt(dobParts[2]).toString() : "";
 
-            // Split full_name into first and last
-            const nameParts = (status.full_name || "").split(" ");
+            // Safely split full_name into first and last
+            const fullName = status.full_name || "";
+            const nameParts = fullName.trim().split(/\s+/);
             const firstName = nameParts[0] || "";
             const lastName = nameParts.slice(1).join(" ") || "";
 
@@ -108,7 +126,7 @@ export default function KycSetupPage() {
     }
 
     initFormData();
-  }, [user?.id]);
+  }, [user?.id, isMounted]);
 
   useEffect(() => {
     // Save KYC progress to localStorage
@@ -123,56 +141,61 @@ export default function KycSetupPage() {
 
   // Track inactivity and send reminder email after 24 hours
   useEffect(() => {
+    if (!isMounted || !user) return;
+
     let inactivityTimer: NodeJS.Timeout;
 
     const setupInactivityTracking = () => {
-      const hasKycDraft = localStorage.getItem("kycDraft");
-      const hasStartedFilling =
-        formData.firstName || formData.lastName || selectedDoc;
+      try {
+        const hasKycDraft = localStorage.getItem("kycDraft");
+        const hasStartedFilling = formData.firstName || formData.lastName || selectedDoc;
 
-      if (hasKycDraft || hasStartedFilling) {
-        // Reset timer on any form interaction
-        const resetTimer = () => {
-          clearTimeout(inactivityTimer);
-          inactivityTimer = setTimeout(sendReminder, 24 * 60 * 60 * 1000); // 24 hours
-        };
+        if (hasKycDraft || hasStartedFilling) {
+          // Reset timer on any form interaction
+          const resetTimer = () => {
+            clearTimeout(inactivityTimer);
+            inactivityTimer = setTimeout(sendReminder, 24 * 60 * 60 * 1000); // 24 hours
+          };
 
-        // Set up event listeners for form interactions
-        const events = ["input", "change", "click", "keydown"];
-        events.forEach((event) => {
-          document.addEventListener(event, resetTimer, { passive: true });
-        });
-
-        // Start the initial timer
-        resetTimer();
-
-        // Cleanup function
-        return () => {
-          clearTimeout(inactivityTimer);
+          // Set up event listeners for form interactions
+          const events = ["input", "change", "click", "keydown"];
           events.forEach((event) => {
-            document.removeEventListener(event, resetTimer);
+            document.addEventListener(event, resetTimer, { passive: true });
           });
-        };
+
+          // Start the initial timer
+          resetTimer();
+
+          // Cleanup function
+          return () => {
+            clearTimeout(inactivityTimer);
+            events.forEach((event) => {
+              document.removeEventListener(event, resetTimer);
+            });
+          };
+        }
+      } catch (err) {
+        console.error("Error setting up inactivity tracking:", err);
       }
     };
 
     const sendReminder = async () => {
-      // Check if KYC still isn't submitted
-      const currentKycDraft = localStorage.getItem("kycDraft");
-      if (currentKycDraft && user) {
-        try {
+      try {
+        // Check if KYC still isn't submitted
+        const currentKycDraft = localStorage.getItem("kycDraft");
+        if (currentKycDraft && user) {
           await sendIncompleteKycVerificationEmail({
             continueUrl: `${window.location.origin}/dashboard/settings/kyc`,
           });
-        } catch (error) {
-          console.error("Failed to send incomplete KYC email:", error);
         }
+      } catch (error) {
+        console.error("Failed to send incomplete KYC email reminder:", error);
       }
     };
 
     const cleanup = setupInactivityTracking();
     return cleanup;
-  }, [formData.firstName, formData.lastName, selectedDoc, user]);
+  }, [formData.firstName, formData.lastName, selectedDoc, user, isMounted]);
 
   // Clear KYC draft on successful completion
   const handleSuccessfulCompletion = () => {
@@ -273,6 +296,10 @@ export default function KycSetupPage() {
 
   // Only show ProgressNav for steps 0, 1, 2
   const showProgressNav = step <= 2;
+
+  if (!isMounted || !user) {
+    return <NavigationLoader />;
+  }
 
   return (
     <div className="flex w-full h-screen bg-white">

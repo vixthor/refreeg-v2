@@ -38,21 +38,38 @@ export class GlobalSupportBoundary extends React.Component<Props, State> {
   }
 
   private handleWindowError = (event: ErrorEvent) => {
+    const message = getErrorMessage(event.error || event.message);
+    console.error(`[Window Error] ${message}`, {
+      url: window.location.href,
+      timestamp: new Date().toISOString(),
+      error: event.error
+    });
     this.setState({
       hasError: true,
-      errorMessage: getErrorMessage(event.error || event.message),
+      errorMessage: message,
     });
   };
 
   private handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+    const message = getErrorMessage(event.reason);
+    console.error(`[Unhandled Rejection] ${message}`, {
+      url: window.location.href,
+      timestamp: new Date().toISOString(),
+      reason: event.reason
+    });
     this.setState({
       hasError: true,
-      errorMessage: getErrorMessage(event.reason),
+      errorMessage: message,
     });
   };
 
-  componentDidCatch(error: unknown) {
-    console.error(error);
+  componentDidCatch(error: unknown, errorInfo: React.ErrorInfo) {
+    console.error(`[React Error] ${getErrorMessage(error)}`, {
+      url: window.location.href,
+      timestamp: new Date().toISOString(),
+      componentStack: errorInfo.componentStack,
+      error
+    });
   }
 
   componentDidMount() {
