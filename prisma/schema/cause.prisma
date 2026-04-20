@@ -23,6 +23,15 @@ model Cause {
   start_date      DateTime? @db.Timestamptz(6)
   end_date        DateTime? @db.Timestamptz(6)
 
+  user            User     @relation(fields: [userId], references: [id])
+  sections        cause_sections[]
+  donations       Donation[]
+  follows         campaign_follows[]
+  edits           cause_edits[]
+  shares          cause_shares[]
+  comments        comments[]
+  crypto_donations crypto_donations[]
+
   @@index([daysActive], map: "idx_causes_days_active")
   @@index([status], map: "idx_causes_status")
   @@index([userId], map: "idx_causes_user_id")
@@ -44,6 +53,9 @@ model Donation {
   createdAt    DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
   tip_amount   Decimal?  @default(0) @db.Decimal
 
+  cause        Cause    @relation(fields: [causeId], references: [id])
+  user         User?    @relation(fields: [userId], references: [id])
+
   @@index([causeId], map: "idx_donations_cause_id")
   @@index([userId], map: "idx_donations_user_id")
   @@map("donations")
@@ -59,6 +71,9 @@ model campaign_follows {
   @@unique([cause_id, email])
   @@index([cause_id], map: "idx_campaign_follows_cause_id")
   @@index([email], map: "idx_campaign_follows_email")
+
+  cause        Cause    @relation(fields: [cause_id], references: [id])
+  user         User?    @relation(fields: [user_id], references: [id])
 }
 
 model cause_edit_sections {
@@ -67,6 +82,8 @@ model cause_edit_sections {
   heading       String
   description   String
   created_at    DateTime @default(now()) @db.Timestamptz(6)
+
+  cause_edit    cause_edits @relation(fields: [cause_edit_id], references: [id])
 }
 
 model cause_edits {
@@ -94,6 +111,10 @@ model cause_edits {
   @@index([original_cause_id], map: "idx_cause_edits_original_id")
   @@index([status], map: "idx_cause_edits_status")
   @@index([user_id], map: "idx_cause_edits_user_id")
+
+  cause         Cause    @relation(fields: [original_cause_id], references: [id])
+  user          User     @relation(fields: [user_id], references: [id])
+  sections      cause_edit_sections[]
 }
 
 model cause_sections {
@@ -102,6 +123,8 @@ model cause_sections {
   cause_id    String?  @db.Uuid
   heading     String?
   description String?
+
+  cause       Cause?    @relation(fields: [cause_id], references: [id])
 }
 
 model cause_shares {
@@ -112,6 +135,9 @@ model cause_shares {
 
   @@index([cause_id], map: "idx_cause_shares_cause_id")
   @@index([user_id], map: "idx_cause_shares_user_id")
+
+  cause       Cause     @relation(fields: [cause_id], references: [id])
+  user        User?     @relation(fields: [user_id], references: [id])
 }
 
 model comments {
@@ -127,6 +153,9 @@ model comments {
   @@index([cause_id], map: "idx_comments_cause_id")
   @@index([parent_id], map: "idx_comments_parent_id")
   @@index([user_id], map: "idx_comments_user_id")
+
+  cause       Cause     @relation(fields: [cause_id], references: [id])
+  user        User      @relation(fields: [user_id], references: [id])
 }
 
 model crypto_donations {
@@ -149,6 +178,9 @@ model crypto_donations {
   @@index([network], map: "idx_crypto_donations_network")
   @@index([tx_signature], map: "idx_crypto_donations_tx_signature")
   @@index([user_id], map: "idx_crypto_donations_user_id")
+
+  cause       Cause     @relation(fields: [cause_id], references: [id])
+  user        User?     @relation(fields: [user_id], references: [id])
 }
 
 model matching_donations {

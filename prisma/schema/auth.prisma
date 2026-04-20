@@ -45,6 +45,13 @@ model User {
   accounts              Account[]
   sessions              Session[]
   roles                 Role[] 
+  causes                Cause[]
+  donations             Donation[]
+  campaign_follows      campaign_follows[]
+  cause_edits           cause_edits[]
+  cause_shares          cause_shares[]
+  comments              comments[]
+  crypto_donations      crypto_donations[]
 
   @@index([isBlocked], map: "idx_profiles_is_blocked")
   @@map("profiles")
