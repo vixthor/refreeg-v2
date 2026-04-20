@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth/auth";
 import { revalidatePath } from "next/cache";
 import { getUserRole } from "@/lib/auth/admin-auth";
+export { getUserRole };
 
 export type UserRole = "admin" | "manager" | "user";
 
