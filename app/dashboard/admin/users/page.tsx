@@ -35,8 +35,7 @@ import {
   User,
 } from "lucide-react";
 import { format } from "date-fns";
-import { createClient } from "@/lib/supabase/server";
-import { cookies } from "next/headers";
+import { auth } from "@/lib/auth/auth";
 import { redirect } from "next/navigation";
 import { UserActions } from "./user-actions";
 import { UserSearch } from "@/components/search";
@@ -47,8 +46,6 @@ import Link from "next/link";
 import { ExportCSVButton } from "./components/export-csv-button";
 import { SendKycReminderButton } from "./components/send-kyc-reminder-button";
 
-import { getCachedUser } from "@/lib/supabase/cached-user";
-
 export default async function AdminUsersPage({
   searchParams,
 }: {
@@ -56,20 +53,17 @@ export default async function AdminUsersPage({
 }) {
   const params = await searchParams;
 
-  const [authResult, users, userRole] = await Promise.all([
-    getCachedUser(),
-    listUsersWithRoles(),
-    (async () => {
-      const { user } = await getCachedUser();
-      return user ? getUserRole(user.id) : null;
-    })(),
-  ]);
+  const session = await auth();
+  const userId = session?.user?.id;
 
-  const { user, error: authError } = authResult;
-
-  if (!user || authError) {
+  if (!userId) {
     redirect("/auth/signin");
   }
+
+  const [users, userRole] = await Promise.all([
+    listUsersWithRoles(),
+    getUserRole(userId),
+  ]);
 
   if (!userRole || (userRole !== "admin" && userRole !== "manager")) {
     return (

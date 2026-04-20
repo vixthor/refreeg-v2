@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth/auth";
 import { revalidatePath } from "next/cache";
 import { getUserRole } from "@/lib/auth/admin-auth";
+import { UserWithRole } from "@/types";
 export { getUserRole };
 
 export type UserRole = "admin" | "manager" | "user";
@@ -84,7 +85,7 @@ export async function setUserRole(
   return true;
 }
 
-export async function listUsersWithRoles() {
+export async function listUsersWithRoles(): Promise<UserWithRole[]> {
   const session = await auth();
 
   if (!session?.user?.id) {
@@ -155,12 +156,12 @@ export async function listUsersWithRoles() {
     return {
       id: user.id,
       email: user.email || "",
-      role: roleMap.get(user.id) || "user",
+      role: (roleMap.get(user.id) as UserRole) || "user",
       is_blocked: user.isBlocked || false,
       full_name: user.fullName,
       username: user.username,
-      created_at: user.createdAt,
-      kyc_status: kyc?.status || null,
+      created_at: user.createdAt.toISOString(),
+      kyc_status: (kyc?.status as UserWithRole["kyc_status"]) || null,
       kyc_verification_id: kyc?.id || null,
     };
   });

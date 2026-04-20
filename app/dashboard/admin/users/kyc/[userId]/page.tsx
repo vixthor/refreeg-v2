@@ -79,11 +79,13 @@ export default async function KycReviewPage({
         console.error("Error approving KYC:", error);
         throw new Error(error);
       }
-      redirect(`/dashboard/admin/users?kyc_alert=approved`);
     } catch (error) {
+      if ((error as any).digest?.startsWith("NEXT_REDIRECT")) throw error;
       console.error("Error in approveAction:", error);
       throw error;
     }
+
+    redirect(`/dashboard/admin/users?kyc_alert=approved`);
   }
 
   return (
