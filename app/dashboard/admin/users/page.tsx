@@ -56,13 +56,13 @@ export default async function AdminUsersPage({
 }) {
   const params = await searchParams;
 
-  const [ authResult, users, userRole ] = await Promise.all([
+  const [authResult, users, userRole] = await Promise.all([
     getCachedUser(),
     listUsersWithRoles(),
     (async () => {
       const { user } = await getCachedUser();
       return user ? getUserRole(user.id) : null;
-    })()
+    })(),
   ]);
 
   const { user, error: authError } = authResult;
@@ -88,12 +88,12 @@ export default async function AdminUsersPage({
     ? users.filter(
         (user) =>
           user.email.toLowerCase().includes(params.search!.toLowerCase()) ||
-          user.full_name?.toLowerCase().includes(params.search!.toLowerCase())
+          user.full_name?.toLowerCase().includes(params.search!.toLowerCase()),
       )
     : users;
 
   const kycAttentionUsers = filteredUsers.filter(
-    (u) => u.kyc_status === "pending"
+    (u) => u.kyc_status === "pending",
   );
 
   return (
@@ -232,7 +232,10 @@ export default async function AdminUsersPage({
                         </a>
                       </TableCell>
                       <TableCell className="text-right">
-                        <UserActions user={userItem} currentUserRole={userRole} />
+                        <UserActions
+                          user={userItem}
+                          currentUserRole={userRole}
+                        />
                       </TableCell>
                     </TableRow>
                   ))
