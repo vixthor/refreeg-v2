@@ -61,7 +61,7 @@ export default function OnboardingPage() {
   });
 
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const { data: session, status, update } = useSession();
 
   useEffect(() => {
     const checkUser = async () => {
@@ -85,6 +85,10 @@ export default function OnboardingPage() {
       // Check if user has already completed onboarding via DB
       const hasCompleted = await hasCompletedOnboarding(currentUser.id as string);
       if (hasCompleted) {
+        // If DB says completed but session says no, update the session to fix the loop
+        if (isCompletedInSession === false) {
+          await update({ onboardingCompleted: true });
+        }
         router.push("/dashboard");
         return;
       }
@@ -238,6 +242,9 @@ export default function OnboardingPage() {
         },
         user.image,
       );
+
+      // Update session immediately so middleware recognizes user as onboarded
+      await update({ onboardingCompleted: true });
 
       // Don't clear onboarding data yet, just move to step 4
       setCurrentStep(4); // Go to KYC step

@@ -4,7 +4,7 @@ import { SessionProvider, useSession } from "next-auth/react";
 import { ReactNode } from "react";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  return <SessionProvider>{children}</SessionProvider>;
+  return <SessionProvider refetchOnWindowFocus={false}>{children}</SessionProvider>;
 }
 
 export function useAuthContext() {

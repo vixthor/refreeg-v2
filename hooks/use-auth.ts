@@ -33,6 +33,7 @@ export function useAuth() {
         description: "You have successfully signed in.",
       });
 
+      router.refresh();
       router.push("/dashboard");
     } catch (error: any) {
       toast({
@@ -75,6 +76,7 @@ export function useAuth() {
           "Welcome! Let's set up your profile. Check your email for a welcome message.",
       });
 
+      router.refresh();
       router.push("/onboarding");
       return { success: true };
     } catch (error: any) {
