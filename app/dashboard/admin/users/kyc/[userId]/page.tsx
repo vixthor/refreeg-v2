@@ -153,8 +153,8 @@ export default async function KycReviewPage({
                   kyc.status === "approved"
                     ? "default"
                     : kyc.status === "pending"
-                    ? "secondary"
-                    : "destructive"
+                      ? "secondary"
+                      : "destructive"
                 }
               >
                 {kyc.status.charAt(0).toUpperCase() + kyc.status.slice(1)}
