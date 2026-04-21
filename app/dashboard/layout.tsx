@@ -1,18 +1,31 @@
-import type React from "react"
-import { redirect } from "next/navigation"
-import { getCurrentUser } from "@/actions"
-import ClientLayoutWrapper from "@/components/ClientLayoutWrapper"
+import type React from "react";
+import { redirect } from "next/navigation";
+import { getCachedUser } from "@/lib/supabase/cached-user";
+import { hasCompletedOnboarding } from "@/actions/profile-actions";
+import ClientLayoutWrapper from "@/components/ClientLayoutWrapper";
 
 export default async function DashboardLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
-  const user = await getCurrentUser()
+  const [authResult, completedOnboarding] = await Promise.all([
+    getCachedUser(),
+    (async () => {
+      const { user } = await getCachedUser();
+      return user ? hasCompletedOnboarding(user.id) : true; // default true if not yet authenticated
+    })()
+  ]);
 
-  if (!user) {
-    redirect("/auth/signin")
+  const { user, error: authError } = authResult;
+
+  if (!user || authError) {
+    redirect("/auth/signin");
   }
 
-  return <ClientLayoutWrapper>{children}</ClientLayoutWrapper>
+  if (!completedOnboarding) {
+    redirect("/onboarding");
+  }
+
+  return <ClientLayoutWrapper>{children}</ClientLayoutWrapper>;
 }

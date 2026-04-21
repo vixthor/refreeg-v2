@@ -1,41 +1,55 @@
-import { type NextRequest } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
-import { createClient } from "@/lib/supabase/server";
-import { NextResponse } from "next/server";
-import { isProfileComplete } from "@/actions/profile-actions";
+
+/**
+ * Public API route prefixes that do NOT require a Supabase user session.
+ * These routes either use their own auth (API keys) or are intentionally public.
+ */
+const PUBLIC_API_PREFIXES = [
+  "/api/bot",       // Developer API — authenticated via API keys
+  "/api/webhooks",  // Incoming webhooks (Paystack, etc.)
+  "/api/payments",  // Guest donation checkout + verification
+  "/api/cron",      // Scheduled jobs (CRON_SECRET)
+  "/api/cities",    // Public lookup data
+  "/api/countries", // Public lookup data
+  "/api/states",    // Public lookup data
+  "/api/mail",      // Donor-facing email endpoints (no auth required)
+];
 
 export async function middleware(request: NextRequest) {
-  const response = await updateSession(request);
+  const { pathname } = request.nextUrl;
 
-  // Check KYC verification and profile completion for cause creation
-  if (request.nextUrl.pathname.startsWith("/dashboard/causes/create")) {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+  // ── 1. Refresh session & get user (single getUser() call) ─────────
+  const { response, user } = await updateSession(request);
 
-    if (user) {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("is_verified, full_name, bio, profile_photo")
-        .eq("id", user.id)
-        .single();
+  // ── 2. Protect API routes ─────────────────────────────────────────
+  // Return 401 for authenticated API routes when no session exists.
+  // Public API routes (bot, webhooks, lookups, mail) are excluded.
+  if (pathname.startsWith("/api")) {
+    const isPublicApi = PUBLIC_API_PREFIXES.some((prefix) =>
+      pathname.startsWith(prefix)
+    );
 
-      // Check if KYC is verified
-      if (!profile?.is_verified) {
-        return NextResponse.redirect(
-          new URL("/dashboard/settings?error=kyc_required", request.url)
-        );
-      }
-
-      // Check if profile is complete (has full name, bio, and avatar)
-      const { isComplete } = await isProfileComplete(user.id);
-      if (!isComplete) {
-        return NextResponse.redirect(
-          new URL("/dashboard/settings?error=profile_incomplete", request.url)
-        );
-      }
+    if (!isPublicApi && !user) {
+      return NextResponse.json(
+        { error: "Authentication required" },
+        { status: 401 }
+      );
     }
+
+    // Authenticated or public — let the request through.
+
+    return response;
+  }
+
+  // ── 3. Redirect unauthenticated users away from protected pages ───
+  const isProtectedRoute =
+    pathname.startsWith("/dashboard") || pathname.startsWith("/onboarding");
+
+  if (isProtectedRoute && !user) {
+    const signInUrl = new URL("/auth/signin", request.url);
+    signInUrl.searchParams.set("redirect", pathname);
+    return NextResponse.redirect(signInUrl);
   }
 
   return response;

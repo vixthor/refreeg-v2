@@ -1,49 +1,67 @@
-import type { Metadata } from "next/types"
-import { Inter } from "next/font/google"
-import "./globals.css"
-import { Toaster } from "@/components/ui/toaster"
-import { Header } from "@/components/header"
-import { Providers } from "./providers"
-import { Footer } from "@/components/footer"
+import { Montserrat } from "next/font/google";
+import "./globals.css";
+import { Toaster } from "@/components/ui/toaster";
+import { Providers } from "./providers";
+import { ClientLayout } from "@/components/client-layout";
+import { Metadata } from "next";
 
-const inter = Inter({ subsets: ["latin"] })
+const montserrat = Montserrat({
+  subsets: ["latin"],
+  variable: "--font-montserrat",
+});
 
 export const metadata: Metadata = {
-  title: "Refreeg - Donation Platform",
-  description: "Support causes that matter to you",
-  generator: 'v0.dev',
-  other: {
-    'google-adsense-account': 'ca-pub-6133323682562865'
-  }
-}
+  metadataBase: new URL("https://refreeg.com"),
+  title: {
+    default: "RefreeG | Secure Crowdfunding & Petitions",
+    template: "%s | RefreeG",
+  },
+  description:
+    "RefreeG is a secure, blockchain-powered crowdfunding and petition platform.",
+  keywords: [
+    "crowdfunding",
+    "petitions",
+    "blockchain",
+    "social impact",
+    "charity",
+  ],
+  authors: [{ name: "RefreeG Team" }],
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: "https://refreeg.com",
+    siteName: "RefreeG",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "RefreeG",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "RefreeG | Secure Crowdfunding & Petitions",
+    description:
+      "Empowering social change through secure crowdfunding and global petitions.",
+    images: ["/og-image.png"],
+  },
+};
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode
-}>) {
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
+      <body className={`${montserrat.variable} font-montserrat antialiased`}>
         <Providers>
-          <div className="flex min-h-screen flex-col">
-            <Header />
-            <main className="flex-1">{children}</main>
-            <Footer />
-            {/* <footer className="border-t py-6">
-              <div className="container flex flex-col items-center justify-between gap-4 md:flex-row">
-                <p className="text-center text-sm text-muted-foreground md:text-left">
-                  &copy; {new Date().getFullYear()} Refreeg. All rights reserved.
-                </p>
-              </div>
-            </footer> */}
-          </div>
+          <ClientLayout>{children}</ClientLayout>
           <Toaster />
         </Providers>
       </body>
     </html>
-  )
+  );
 }
-
-
-

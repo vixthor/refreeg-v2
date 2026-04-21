@@ -7,20 +7,15 @@ export const quickLinks = [
   {
     key: 2,
     label: "About Us",
-    route: "/about-us/WhatWeDo",
-  },
-  {
-    key: 3,
-    label: "Who we are",
-    route: "/about-us/OurStory",
+    route: "/about-us/OurMission",
   },
 ];
 
 export const contactLinks = [
   {
     key: 1,
-    label: "Support@refreeg.com",
-    route: "mailto:Support@Refreeg.com",
+    label: "hello@refreeg.com",
+    route: "mailto:hello@Refreeg.com",
   },
   {
     key: 2,
@@ -38,17 +33,18 @@ export const legalLinks = [
   {
     key: 1,
     label: "Privacy Policy",
-    route: "https://www.refreeg.com/privacy-policy",
+    route: "/privacy",
   },
   {
     key: 2,
     label: "Terms of service",
-    route: "https://www.refreeg.com/terms-of-service",
+    route: "/terms",
   },
 ];
 
 export const socialLinks = {
   twitter: "https://x.com/RefreeG",
+  tiktok: "https://www.tiktok.com/@refreeg",
   instagram: "https://www.instagram.com/crowdfundwithrefreeg",
   linkedin: "https://www.linkedin.com/company/102040636",
   community: "http://t.me/+d67UCIer8c01ODhk",

@@ -1,83 +1,88 @@
+// DisconnectSolanaWalletButton.tsx
 "use client";
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Trash2Icon } from "lucide-react";
-import { ConfirmationModal } from "@/components/ConfirmationModal";
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
+import { useAuthContext } from "@/components/auth-provider";
 
 interface DisconnectSolanaWalletButtonProps {
   walletAddress: string;
-  onSuccess: () => void;
+  onSuccess?: () => void;
 }
 
 export function DisconnectSolanaWalletButton({
   walletAddress,
   onSuccess,
 }: DisconnectSolanaWalletButtonProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const supabase = createClient();
+  const [isDisconnecting, setIsDisconnecting] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuthContext();
 
-  const handleDisconnect = async () => {
-    setIsLoading(true);
+  const disconnectWallet = async () => {
+    setIsDisconnecting(true);
 
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const supabase = createClient();
 
-      if (!user) throw new Error("User not authenticated");
+      if (!user) {
+        throw new Error("You must be logged in");
+      }
 
-      const { error } = await supabase
+      const { error: updateError } = await supabase
         .from("profiles")
-        .update({ solana_wallet: null })
+        .update({
+          solana_wallet: null,
+        })
         .eq("id", user.id);
 
-      if (error) throw error;
+      if (updateError) {
+        console.error("Supabase update error:", updateError);
+        throw new Error("Failed to disconnect wallet");
+      }
+
+      // Disconnect from Phantom wallet
+      if (window.solana?.isPhantom) {
+        try {
+          await window.solana.disconnect();
+        } catch (err) {
+          console.error("Phantom disconnect error:", err);
+          // Continue even if Phantom disconnect fails
+        }
+      }
+
+      // Call the callback BEFORE showing toast or resetting state
+      if (onSuccess) {
+        await onSuccess();
+      }
 
       toast({
         title: "Success",
         description: "Wallet disconnected successfully",
       });
-      onSuccess();
-    } catch (error) {
-      console.error("Disconnection error:", error);
+    } catch (err) {
+      console.error("Wallet disconnection error:", err);
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to disconnect wallet";
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to disconnect wallet",
+        description: errorMessage,
       });
     } finally {
-      setIsLoading(false);
-      setIsOpen(false);
+      setIsDisconnecting(false);
     }
   };
 
   return (
-    <>
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={() => setIsOpen(true)}
-        className="text-red-500 hover:text-red-600 hover:bg-red-50"
-      >
-        <Trash2Icon className="h-4 w-4" />
-      </Button>
-
-      <ConfirmationModal
-        isOpen={isOpen}
-        onClose={() => setIsOpen(false)}
-        onConfirm={handleDisconnect}
-        title="Disconnect Wallet"
-        description={`Are you sure you want to disconnect wallet ${walletAddress.slice(
-          0,
-          6
-        )}...${walletAddress.slice(-4)}?`}
-        confirmText={isLoading ? "Disconnecting..." : "Disconnect"}
-      />
-    </>
+    <Button
+      onClick={disconnectWallet}
+      disabled={isDisconnecting}
+      variant="destructive"
+      size="sm"
+    >
+      {isDisconnecting ? "Disconnecting..." : "Disconnect"}
+    </Button>
   );
 }

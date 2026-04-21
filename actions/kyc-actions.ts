@@ -1,8 +1,19 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createClient as createSupabaseAdmin } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
 import { KycVerification, KycStatus } from "@/types/kyc-types";
+import { logAdminActivity } from "@/actions/database-actions";
+import { isAdminOrManager } from "./role-actions";
+import { getCurrentUser } from "./auth-actions";
+import {
+  sendKycSubmittedEmail,
+  sendKycApprovedEmail,
+  sendKycRejectedEmail,
+  sendKycSubmissionAdminNotification,
+  sendKycReminderEmail,
+} from "@/services/mail";
 
 export async function uploadKycDocument(
   userId: string,
@@ -17,12 +28,11 @@ export async function uploadKycDocument(
     state: string;
     postal: string;
     country: string;
-  }
+  },
 ): Promise<{ documentUrl: string; error: string | null }> {
   try {
     const supabase = await createClient();
 
-    // Check for existing KYC
     const { data: existingKyc } = await supabase
       .from("kyc_verifications")
       .select("*")
@@ -35,12 +45,11 @@ export async function uploadKycDocument(
       if (existingKyc.status === "approved") {
         return { documentUrl: "", error: "You are already verified." };
       }
-      // Update the existing record (for pending or rejected)
+
       const fileExt = file.name.split(".").pop();
       const fileName = `${userId}/${Date.now()}.${fileExt}`;
       const bucket = "kyc-documents";
 
-      // Validate file type
       const allowedTypes = ["image/jpeg", "image/png", "application/pdf"];
       if (!allowedTypes.includes(file.type)) {
         return {
@@ -49,8 +58,7 @@ export async function uploadKycDocument(
         };
       }
 
-      // Validate file size (max 5MB)
-      const maxSize = 5 * 1024 * 1024; // 5MB
+      const maxSize = 5 * 1024 * 1024;
       if (file.size > maxSize) {
         return {
           documentUrl: "",
@@ -58,7 +66,6 @@ export async function uploadKycDocument(
         };
       }
 
-      // Upload to Supabase Storage
       const { data, error: uploadError } = await supabase.storage
         .from(bucket)
         .upload(fileName, file, {
@@ -71,20 +78,32 @@ export async function uploadKycDocument(
         return { documentUrl: "", error: uploadError.message };
       }
 
-      // Get signed URL (valid for 1 hour)
-      const { data: signedUrlData } = await supabase.storage
+      const { data: urlData } = supabase.storage
         .from(bucket)
-        .createSignedUrl(fileName, 3600);
+        .getPublicUrl(fileName);
 
-      if (!signedUrlData?.signedUrl) {
-        return { documentUrl: "", error: "Failed to generate signed URL" };
+      if (!urlData?.publicUrl) {
+        return { documentUrl: "", error: "Failed to get public URL" };
       }
 
-      const { error: updateError } = await supabase
+      // Use Admin client for the update to ensure it bypasses any restrictive RLS 
+      // that might prevent users from updating rejected KYC records.
+      const supabaseAdmin = createSupabaseAdmin(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        {
+          auth: {
+            autoRefreshToken: false,
+            persistSession: false,
+          },
+        },
+      );
+
+      const { error: updateError } = await supabaseAdmin
         .from("kyc_verifications")
         .update({
           document_type: documentType,
-          document_url: signedUrlData.signedUrl,
+          document_url: fileName,
           status: "pending",
           verification_notes: "Resubmitted for review",
           full_name: personalData.fullName,
@@ -100,16 +119,44 @@ export async function uploadKycDocument(
         .eq("id", existingKyc.id);
 
       if (updateError) {
+        console.error("Error updating existing KYC:", updateError);
         return { documentUrl: "", error: updateError.message };
       }
-      return { documentUrl: signedUrlData.signedUrl, error: null };
+
+      revalidatePath("/dashboard/settings/kyc");
+      revalidatePath(`/dashboard/admin/users/kyc/${userId}`);
+
+      try {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("email")
+          .eq("id", userId)
+          .single();
+
+        if (profile?.email) {
+          await sendKycSubmittedEmail(profile.email, personalData.fullName);
+        }
+
+        const baseUrl =
+          process.env.NEXT_PUBLIC_APP_URL || "https://www.refreeg.com";
+        const kycReviewUrl = `${baseUrl}/dashboard/admin/users/kyc/${userId}`;
+        // Send notification in background - do not await
+        sendKycSubmissionAdminNotification(
+          profile?.email || "",
+          personalData.fullName,
+          userId,
+          kycReviewUrl,
+        ).catch((err) => console.error("Background notification error:", err));
+      } catch (emailError) {
+        console.error("Error sending KYC submission email:", emailError);
+      }
+
+      return { documentUrl: urlData.publicUrl, error: null };
     } else {
-      // Insert new record
       const fileExt = file.name.split(".").pop();
       const fileName = `${userId}/${Date.now()}.${fileExt}`;
       const bucket = "kyc-documents";
 
-      // Validate file type
       const allowedTypes = ["image/jpeg", "image/png", "application/pdf"];
       if (!allowedTypes.includes(file.type)) {
         return {
@@ -118,8 +165,7 @@ export async function uploadKycDocument(
         };
       }
 
-      // Validate file size (max 5MB)
-      const maxSize = 5 * 1024 * 1024; // 5MB
+      const maxSize = 5 * 1024 * 1024;
       if (file.size > maxSize) {
         return {
           documentUrl: "",
@@ -127,7 +173,6 @@ export async function uploadKycDocument(
         };
       }
 
-      // Upload to Supabase Storage
       const { data, error: uploadError } = await supabase.storage
         .from(bucket)
         .upload(fileName, file, {
@@ -140,13 +185,12 @@ export async function uploadKycDocument(
         return { documentUrl: "", error: uploadError.message };
       }
 
-      // Get signed URL (valid for 1 hour)
-      const { data: signedUrlData } = await supabase.storage
+      const { data: urlData } = supabase.storage
         .from(bucket)
-        .createSignedUrl(fileName, 3600);
+        .getPublicUrl(fileName);
 
-      if (!signedUrlData?.signedUrl) {
-        return { documentUrl: "", error: "Failed to generate signed URL" };
+      if (!urlData?.publicUrl) {
+        return { documentUrl: "", error: "Failed to get public URL" };
       }
 
       const { error: insertError } = await supabase
@@ -154,7 +198,7 @@ export async function uploadKycDocument(
         .insert({
           user_id: userId,
           document_type: documentType,
-          document_url: signedUrlData.signedUrl,
+          document_url: fileName,
           status: "pending",
           verification_notes: "Awaiting admin review",
           full_name: personalData.fullName,
@@ -170,7 +214,36 @@ export async function uploadKycDocument(
       if (insertError) {
         return { documentUrl: "", error: insertError.message };
       }
-      return { documentUrl: signedUrlData.signedUrl, error: null };
+
+      revalidatePath("/dashboard/settings/kyc");
+      revalidatePath(`/dashboard/admin/users/kyc/${userId}`);
+
+      try {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("email")
+          .eq("id", userId)
+          .single();
+
+        if (profile?.email) {
+          await sendKycSubmittedEmail(profile.email, personalData.fullName);
+        }
+
+        const baseUrl =
+          process.env.NEXT_PUBLIC_APP_URL || "https://www.refreeg.com";
+        const kycReviewUrl = `${baseUrl}/dashboard/admin/users/kyc/${userId}`;
+        // Send notification in background - do not await
+        sendKycSubmissionAdminNotification(
+          profile?.email || "",
+          personalData.fullName,
+          userId,
+          kycReviewUrl,
+        ).catch((err) => console.error("Background notification error:", err));
+      } catch (emailError) {
+        console.error("Error sending KYC submission email:", emailError);
+      }
+
+      return { documentUrl: urlData.publicUrl, error: null };
     }
   } catch (error) {
     console.error("Error in uploadKycDocument:", error);
@@ -179,21 +252,29 @@ export async function uploadKycDocument(
 }
 
 export async function getVerificationStatus(
-  userId: string
+  userId: string,
 ): Promise<{ status: KycVerification | null; error: string | null }> {
   try {
     const supabase = await createClient();
-    console.log("Fetching KYC for user:", userId);
     const { data, error } = await supabase
       .from("kyc_verifications")
       .select("*")
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
       .limit(1)
-      .maybeSingle(); // ✅ Handles 0 or 1 result gracefully
+      .maybeSingle();
 
     if (error) {
       throw error;
+    }
+
+    if (data?.document_url) {
+      const { data: publicData } = supabase.storage
+        .from("kyc-documents")
+        .getPublicUrl(data.document_url);
+      if (publicData?.publicUrl) {
+        (data as any).document_url = publicData.publicUrl;
+      }
     }
 
     return { status: data, error: null };
@@ -205,28 +286,42 @@ export async function getVerificationStatus(
         error instanceof Error
           ? error.message
           : typeof error === "string"
-          ? error
-          : JSON.stringify(error) || "Failed to get status",
+            ? error
+            : JSON.stringify(error) || "Failed to get status",
     };
   }
 }
 
-// Admin function to update verification status
 export async function updateVerificationStatus(
   verificationId: string,
   status: "approved" | "rejected",
-  notes?: string
+  notes?: string,
 ): Promise<{ error: string | null }> {
   try {
-    const supabase = await createClient();
-    console.log(
-      "[KYC] Updating status for verificationId:",
-      verificationId,
-      "to status:",
-      status
+    const user = await getCurrentUser();
+    if (!user) return { error: "Not authenticated" };
+
+    const isAuthorized = await isAdminOrManager(user.id);
+    if (!isAuthorized) return { error: "Unauthorized" };
+
+    if (
+      !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+      !process.env.SUPABASE_SERVICE_ROLE_KEY
+    ) {
+      return { error: "Server configuration error: Missing Supabase keys" };
+    }
+
+    const supabaseAdmin = createSupabaseAdmin(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY,
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+        },
+      },
     );
-    // Update KYC status
-    const { error: updateError } = await supabase
+    const { error: updateError } = await supabaseAdmin
       .from("kyc_verifications")
       .update({
         status: status,
@@ -242,25 +337,57 @@ export async function updateVerificationStatus(
       return { error: updateError.message || JSON.stringify(updateError) };
     }
 
-    // Get the user_id from the verification record
-    const { data: verification, error: fetchError } = await supabase
+    if (user) {
+      if (status === "approved") {
+        await logAdminActivity("approve-kyc", user.id);
+      } else if (status === "rejected") {
+        await logAdminActivity("reject-kyc", user.id);
+      }
+    }
+
+    const { data: verification, error: fetchError } = await supabaseAdmin
       .from("kyc_verifications")
-      .select("user_id")
+      .select("user_id, full_name")
       .eq("id", verificationId)
       .single();
 
     if (fetchError) {
       console.error(
         "[KYC] Error fetching verification record after update:",
-        fetchError
+        fetchError,
       );
       return { error: fetchError.message || JSON.stringify(fetchError) };
     }
 
     if (verification) {
+      try {
+        const { data: profile } = await supabaseAdmin
+          .from("profiles")
+          .select("email")
+          .eq("id", verification.user_id)
+          .single();
+
+        if (profile?.email) {
+          if (status === "approved") {
+            await sendKycApprovedEmail(
+              profile.email,
+              verification.full_name || "User",
+            );
+          } else if (status === "rejected") {
+            await sendKycRejectedEmail(
+              profile.email,
+              verification.full_name || "User",
+              notes ||
+                "Your KYC verification was rejected. Please review and resubmit.",
+            );
+          }
+        }
+      } catch (emailError) {
+        console.error("Error sending KYC status email:", emailError);
+      }
+
       if (status === "approved") {
-        // Update user profile to mark as verified
-        const { error: profileError } = await supabase
+        const { error: profileError } = await supabaseAdmin
           .from("profiles")
           .update({ is_verified: true })
           .eq("id", verification.user_id);
@@ -268,15 +395,14 @@ export async function updateVerificationStatus(
         if (profileError) {
           console.error(
             "[KYC] Error updating user profile to verified:",
-            profileError
+            profileError,
           );
           return {
             error: profileError.message || JSON.stringify(profileError),
           };
         }
       } else if (status === "rejected") {
-        // Remove verified status from user profile
-        const { error: profileError } = await supabase
+        const { error: profileError } = await supabaseAdmin
           .from("profiles")
           .update({ is_verified: false })
           .eq("id", verification.user_id);
@@ -284,7 +410,7 @@ export async function updateVerificationStatus(
         if (profileError) {
           console.error(
             "[KYC] Error updating user profile to unverified:",
-            profileError
+            profileError,
           );
           return {
             error: profileError.message || JSON.stringify(profileError),
@@ -294,7 +420,7 @@ export async function updateVerificationStatus(
     } else {
       console.error(
         "[KYC] No verification record found for id:",
-        verificationId
+        verificationId,
       );
       return { error: "No verification record found for this id." };
     }
@@ -309,6 +435,99 @@ export async function updateVerificationStatus(
         error instanceof Error
           ? error.message
           : JSON.stringify(error) || "Failed to update status",
+    };
+  }
+}
+
+/**
+ * Sends a KYC reminder email to all platform users who have not yet verified
+ * their identity and have no pending KYC submission.
+ * Restricted to admins and managers.
+ */
+export async function sendKycReminderToUnverifiedUsers(): Promise<{
+  sent: number;
+  failed: number;
+  skipped: number;
+  error: string | null;
+}> {
+  try {
+    const user = await getCurrentUser();
+    if (!user) return { sent: 0, failed: 0, skipped: 0, error: "Not authenticated" };
+
+    const authorized = await isAdminOrManager(user.id);
+    if (!authorized) return { sent: 0, failed: 0, skipped: 0, error: "Unauthorized" };
+
+    const supabaseAdmin = createSupabaseAdmin(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { auth: { persistSession: false } },
+    );
+
+    // Fetch all non-verified users who have a valid email address
+    const { data: unverifiedProfiles, error: profilesError } =
+      await supabaseAdmin
+        .from("profiles")
+        .select("id, email, full_name")
+        .eq("is_verified", false)
+        .not("email", "is", null);
+
+    if (profilesError) {
+      console.error("[KYC Reminder] Error fetching unverified profiles:", profilesError);
+      return { sent: 0, failed: 0, skipped: 0, error: profilesError.message };
+    }
+
+    if (!unverifiedProfiles || unverifiedProfiles.length === 0) {
+      return { sent: 0, failed: 0, skipped: 0, error: null };
+    }
+
+    // Fetch user IDs that already have a pending or approved KYC submission
+    // so we don't spam users who are already in the process
+    const { data: activeKyc } = await supabaseAdmin
+      .from("kyc_verifications")
+      .select("user_id")
+      .in("status", ["pending", "approved"]);
+
+    const activeUserIds = new Set(
+      (activeKyc ?? []).map((k: { user_id: string }) => k.user_id),
+    );
+
+    const eligibleUsers = unverifiedProfiles.filter(
+      (p) => p.email && !activeUserIds.has(p.id),
+    );
+
+    const skipped = unverifiedProfiles.length - eligibleUsers.length;
+
+    if (eligibleUsers.length === 0) {
+      return { sent: 0, failed: 0, skipped, error: null };
+    }
+
+    // Send reminder emails in parallel, collecting results
+    const results = await Promise.allSettled(
+      eligibleUsers.map((profile) =>
+        sendKycReminderEmail(
+          profile.email as string,
+          profile.full_name || "Refreegerian",
+        ),
+      ),
+    );
+
+    const sent = results.filter((r) => r.status === "fulfilled" && (r.value as any)?.success !== false).length;
+    const failed = results.length - sent;
+
+    console.log(
+      `[KYC Reminder] Emails dispatched — sent: ${sent}, failed: ${failed}, skipped (already in progress): ${skipped}`,
+    );
+
+    await logAdminActivity("send-kyc-reminders", user.id);
+
+    return { sent, failed, skipped, error: null };
+  } catch (error) {
+    console.error("[KYC Reminder] Unhandled error:", error);
+    return {
+      sent: 0,
+      failed: 0,
+      skipped: 0,
+      error: error instanceof Error ? error.message : "Unexpected error",
     };
   }
 }

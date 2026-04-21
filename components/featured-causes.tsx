@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { listCauses } from "@/actions";
+import { listCauses } from "@/actions/cause-actions";
 import { DonateButton } from "@/components/donate-button";
 import {
   GraduationCap,
@@ -19,6 +19,7 @@ import {
   AlertTriangle,
   PawPrint,
   Sparkles,
+  Briefcase,
 } from "lucide-react";
 
 // Mock data for featured causes
@@ -91,6 +92,11 @@ export async function FeaturedCauses() {
       name: "Creative",
       icon: <Sparkles className="mr-1 h-4 w-4" />,
     },
+    {
+      id: "business",
+      name: "Business",
+      icon: <Briefcase className="mr-1 h-4 w-4" />,
+    },
   ];
 
   if (!featuredCauses || featuredCauses.length === 0) {
@@ -129,7 +135,7 @@ export async function FeaturedCauses() {
       {featuredCauses.map((cause) => {
         // Find the category based on the cause's category id
         const category = categoriesWithIcons.find(
-          (cat) => cat.id === cause.category
+          (cat) => cat.id === cause.category,
         );
 
         return (

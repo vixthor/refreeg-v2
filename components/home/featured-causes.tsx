@@ -10,7 +10,7 @@ import { Progress } from "@/components/ui/progress";
 import { DonateButton } from "@/components/donate-button";
 import { H2, P, H4 } from "../typograpy";
 import { Button } from "../ui/button";
-import { listCauses } from "@/actions";
+import { listCauses } from "@/actions/cause-actions";
 import AnimatedCard from "./components/AnimatedCard";
 import AnimatedHeader from "@/components/home/components/AnimatedHeader";
 import { ArrowRight } from "lucide-react";
@@ -20,11 +20,17 @@ import {
   CarouselContent,
   CarouselItem,
   CarouselNext,
+  CarouselPagination,
   CarouselPrevious,
 } from "@/components/ui/carousel";
 
+import { calculateDaysLeft, isCauseExpired } from "@/utils/cause-utils";
+
 export async function FeaturedCauses() {
-  const featuredCauses = await listCauses();
+  const allCauses = await listCauses({ limit: 12, status: "approved" });
+
+  // Compute remaining days and filter out expired causes
+  const featuredCauses = allCauses.filter((c) => !isCauseExpired(c));
 
   if (!featuredCauses || featuredCauses.length === 0) {
     return (
@@ -47,7 +53,7 @@ export async function FeaturedCauses() {
             <line x1="15" y1="9" x2="15.01" y2="9" />
           </svg>
         </div>
-        <h3 className="text-lg font-semibold">No Causes Found</h3>
+        <h3 className="text-lg font-semibold">No Causes Yet</h3>
         <p className="text-sm text-muted-foreground mt-2">
           There are currently no causes available. Check back later for new
           opportunities to make a difference.
@@ -58,7 +64,7 @@ export async function FeaturedCauses() {
 
   return (
     <div className="space-y-10 relative py-12">
-      <Carousel className="w-full">
+      <Carousel className="w-full px-14">
         <div className="flex items-start justify-between w-full relative">
           <AnimatedHeader>
             <H2 className="text-black text-4xl font-bold font-['Montserrat'] leading-[48px] mb-2">
@@ -69,24 +75,27 @@ export async function FeaturedCauses() {
               opportunities.
             </P>
           </AnimatedHeader>
-          <div className="flex items-center gap-2 ml-4">
-            <CarouselPrevious className="static translate-y-0 translate-x-0" />
-            <CarouselNext className="static translate-y-0 translate-x-0" />
-          </div>
         </div>
-        <CarouselContent className="mt-6 mb-6 ml-4 mr-4">
+        <CarouselContent className="mt-6 mb-6 md:mr-4 md:ml-4">
           {featuredCauses.map((cause) => {
+            const percentFunded = cause.goal
+              ? Math.min(Math.round((cause.raised / cause.goal) * 100), 100)
+              : 0;
+
+            // Compute remaining days dynamically
+            const daysLeft = calculateDaysLeft(cause);
+
             return (
               <CarouselItem
                 key={cause.id}
-                className="pl-4 basis-[85%] sm:basis-[50%] md:basis-[33.33%]"
+                className="md:pl-4 basis-[88%] sm:basis-[68%] md:basis-[44%]"
               >
                 <Link
                   href={`/causes/${cause.id}`}
                   className="group block h-full"
                 >
                   <AnimatedCard>
-                    <Card className="overflow-hidden cursor-pointer transition hover:shadow-2xl shadow-lg h-full flex flex-col border border-gray-300 ">
+                    <Card className="overflow-hidden cursor-pointer transition hover:shadow-2xl shadow-lg h-[420px] flex flex-col border border-gray-300">
                       <div className="aspect-video w-full overflow-hidden">
                         <img
                           src={cause.image || "/placeholder.svg"}
@@ -94,10 +103,11 @@ export async function FeaturedCauses() {
                           className="object-cover w-full h-full"
                         />
                       </div>
-                      <CardHeader className="flex flex-col flex-1 p-4 ">
+
+                      <CardHeader className="flex flex-col flex-1 p-4">
                         <CardTitle>
-                          <H4>{cause.title}</H4>
-                          <P className="font-extralight">
+                          <H4 className="line-clamp-2">{cause.title}</H4>
+                          <P className="font-extralight truncate">
                             {cause.profiles?.full_name || "Unknown"}
                           </P>
                         </CardTitle>
@@ -105,18 +115,17 @@ export async function FeaturedCauses() {
                         <div className="flex justify-between items-center pt-2 text-xs">
                           <P>Raised</P>
                           <P>
-                            {cause.goal > 0
-                              ? Math.round((cause.raised / cause.goal) * 100)
-                              : 0}
-                            {cause.days_active} days active
+                            {percentFunded}% • {daysLeft}{" "}
+                            {daysLeft === 1 ? "Day" : "Days"} left
                           </P>
                         </div>
                       </CardHeader>
+
                       <div className="mt-auto w-full">
                         <CardContent>
                           <div className="space-y-2">
                             <Progress
-                              value={(cause.raised / cause.goal) * 100}
+                              value={percentFunded}
                               className="h-2 bg-muted"
                             />
                           </div>
@@ -130,7 +139,11 @@ export async function FeaturedCauses() {
                               </P>
                             </span>
                             <span>
-                              <DonateButton />
+                              <DonateButton
+                                type="cause"
+                                id={cause.id}
+                                disableLink
+                              />
                             </span>
                           </div>
                         </CardFooter>
@@ -142,9 +155,15 @@ export async function FeaturedCauses() {
             );
           })}
         </CarouselContent>
+        <CarouselPrevious className="left-0 top-[50%] -translate-y-1/2" />
+        <CarouselNext className="right-0 top-[50%] -translate-y-1/2" />
+        <div className="flex justify-center">
+          <CarouselPagination />
+        </div>
       </Carousel>
+
       {/* View All Causes Button */}
-      <div className="flex justify-center mt-6">
+      {/* <div className="flex justify-center mt-6">
         <Link href="/causes">
           <Button
             variant="outline"
@@ -154,7 +173,7 @@ export async function FeaturedCauses() {
             View More <ArrowRight />
           </Button>
         </Link>
-      </div>
+      </div> */}
     </div>
   );
 }

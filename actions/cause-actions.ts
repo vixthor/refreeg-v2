@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createClient as createSupabaseAdmin } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
 import type {
   Cause,
@@ -10,11 +11,21 @@ import type {
 } from "@/types";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "./auth-actions";
+import { isAdminOrManager } from "./role-actions";
+import {
+  sendCauseSubmissionAdminNotification,
+  sendCauseRejectedEmailForUser,
+} from "@/services/mail";
+import { cache } from "react";
+
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
  * Get a cause by ID
  */
 export async function getCause(causeId: string): Promise<CauseWithUser | null> {
+  if (!UUID_REGEX.test(causeId)) return null;
   const supabase = await createClient();
   const user = await getCurrentUser();
   const { data, error } = await supabase
@@ -25,21 +36,27 @@ export async function getCause(causeId: string): Promise<CauseWithUser | null> {
       profiles!inner (
         full_name,
         email,
-        sub_account_code
+        username,
+        sub_account_code,
+        profile_photo
       ),
       cause_sections (
         id,
         heading,
         description
       )
-    `
+    `,
     )
     .eq("id", causeId)
+    .order("id", { foreignTable: "cause_sections", ascending: true })
     .single();
+
+  const isAdmin = user?.id ? await isAdminOrManager(user.id) : false;
 
   if (
     (data?.status === "pending" || data?.status === "rejected") &&
-    user?.id !== data?.user_id
+    user?.id !== data?.user_id &&
+    !isAdmin
   ) {
     redirect("/");
     return null;
@@ -52,18 +69,42 @@ export async function getCause(causeId: string): Promise<CauseWithUser | null> {
     throw error;
   }
 
-  // Transform the response to match our CauseWithUser type
+  // Check if current user is following this cause
+  let isFollowing = false;
+  if (user?.id) {
+    const { data: followData } = await supabase
+      .from("campaign_follows")
+      .select("id")
+      .eq("cause_id", causeId)
+      .eq("user_id", user.id)
+      .maybeSingle();
+    isFollowing = !!followData;
+  }
+
   const cause = {
     ...data,
     user: {
       name: data.profiles?.full_name || "Anonymous",
       email: data.profiles?.email || "",
+      username: data.profiles?.username || null,
       sub_account_code: data.profiles?.sub_account_code || "",
+      profile_photo: data.profiles?.profile_photo || null,
     },
     sections: data.cause_sections || [],
+    multimedia: data.multimedia || [],
+    video_links: data.video_links || [],
+    trust_score: data.trust_score || {
+      impact: "B+",
+      readability: "A",
+      transparency: "High",
+    },
+    verified_status: data.verified_status || "pending",
+    summary: data.summary || null,
+    location: data.location || null,
+    faqs: data.faqs || [],
+    isFollowing,
   } as unknown as CauseWithUser;
 
-  // Remove the nested objects that we've flattened
   delete (cause as any).profiles;
   delete (cause as any).cause_sections;
 
@@ -76,22 +117,17 @@ export async function getCause(causeId: string): Promise<CauseWithUser | null> {
 async function uploadImageToSupabase(
   file: File,
   userId: string,
-  type: "cover" | "additional"
+  type: "cover" | "additional",
 ): Promise<string> {
   const supabase = await createClient();
 
-  // Generate a unique filename and sanitize it by removing special characters
   const sanitizedOriginalName = file.name.replace(/[^\w\s.-]/g, "_");
   const fileName = `${userId}-${Date.now()}-${type}-${sanitizedOriginalName}`;
 
-  // Choose the appropriate storage bucket based on the file type
   const bucket = file.type.startsWith("video/")
     ? "cause-videos"
     : "profile-photos";
 
-  console.log("bucket", bucket);
-
-  // Upload the file to Supabase Storage
   const { data: uploadData, error: uploadError } = await supabase.storage
     .from(bucket)
     .upload(fileName, file, {
@@ -104,7 +140,6 @@ async function uploadImageToSupabase(
     throw uploadError;
   }
 
-  // Get the public URL
   const { data: urlData } = supabase.storage
     .from(bucket)
     .getPublicUrl(fileName);
@@ -116,26 +151,21 @@ async function uploadImageToSupabase(
  */
 export async function createCause(
   userId: string,
-  causeData: CauseFormData
+  causeData: CauseFormData,
 ): Promise<Cause> {
   const supabase = await createClient();
 
-  // Upload cover image if provided
   let coverImageUrl = null;
   if (causeData.coverImage) {
     coverImageUrl = await uploadImageToSupabase(
       causeData.coverImage,
       userId,
-      "cover"
+      "cover",
     );
   }
 
-  console.log("Uploaded");
-
-  // Calculate days_active from start and end dates
   let daysActive = null;
   if (causeData.startDate && causeData.endDate) {
-    // Ensure we have valid Date objects
     const startDate =
       causeData.startDate instanceof Date
         ? causeData.startDate
@@ -145,17 +175,15 @@ export async function createCause(
         ? causeData.endDate
         : new Date(causeData.endDate);
 
-    // Validate that the dates are valid
     if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
       throw new Error("Invalid date format provided");
     }
 
     daysActive = Math.ceil(
-      (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
+      (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
     );
   }
 
-  // Upload multimedia files if they exist
   let multimediaUrls: string[] = [];
   if (
     causeData.multimedia &&
@@ -164,9 +192,10 @@ export async function createCause(
   ) {
     try {
       multimediaUrls = await Promise.all(
-        causeData.multimedia.map((file) =>
-          uploadImageToSupabase(file, userId, "additional")
-        )
+        causeData.multimedia.map(async (file) => {
+          if (typeof file === "string") return file;
+          return await uploadImageToSupabase(file, userId, "additional");
+        }),
       );
     } catch (error) {
       console.error("Error uploading multimedia:", error);
@@ -174,32 +203,33 @@ export async function createCause(
     }
   }
 
-  // Start a transaction
   const { data: cause, error: causeError } = await supabase
     .from("causes")
     .insert({
       user_id: userId,
       title: causeData.title,
-      // description: causeData.description,
       category: causeData.category,
       goal:
         typeof causeData.goal === "string"
           ? Number.parseFloat(causeData.goal)
           : causeData.goal,
-      status: "pending", // All causes start as pending
-      image: coverImageUrl, // Store the cover image URL
-      days_active: daysActive, // Store the calculated days active
-      multimedia: multimediaUrls, // Store multimedia URLs as JSON array
+      status: "pending",
+      image: coverImageUrl,
+      days_active: daysActive,
+      start_date: causeData.startDate ? (causeData.startDate instanceof Date ? causeData.startDate.toISOString() : causeData.startDate) : null,
+      end_date: causeData.endDate ? (causeData.endDate instanceof Date ? causeData.endDate.toISOString() : causeData.endDate) : null,
+      multimedia: multimediaUrls,
+      video_links: causeData.video_links || [],
+      summary: causeData.summary || null,
+      location: causeData.location || null,
     })
     .select()
     .single();
-  console.log(cause);
   if (causeError) {
     console.error("Error creating cause:", causeError);
     throw causeError;
   }
 
-  // Insert sections if they exist
   if (causeData.sections && causeData.sections.length > 0) {
     const sections = causeData.sections.map((section) => ({
       cause_id: cause.id,
@@ -217,28 +247,65 @@ export async function createCause(
     }
   }
 
+  try {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("full_name, email")
+      .eq("id", userId)
+      .single();
+
+    if (profile?.email) {
+      const baseUrl =
+        process.env.NEXT_PUBLIC_APP_URL || "https://www.refreeg.com";
+      const reviewUrl = `${baseUrl}/dashboard/admin/causes?tab=pending`;
+
+      // Send notification in background - do not await
+      sendCauseSubmissionAdminNotification(
+        profile.full_name || "User",
+        profile.email,
+        causeData.title,
+        reviewUrl,
+      ).catch((err) => console.error("Background notification error:", err));
+    }
+  } catch (error) {
+    console.error("Error sending cause admin notification:", error);
+  }
+
   revalidatePath("/dashboard/causes");
   return cause as Cause;
 }
 
 /**
- * Update a cause
+ * Submit a cause edit request (goes into cause_edits table)
  */
 export async function updateCause(
   causeId: string,
   userId: string,
-  causeData: Partial<CauseFormData>
-): Promise<Cause> {
+  causeData: Partial<CauseFormData>,
+): Promise<any> {
   const supabase = await createClient();
+
+  // Check for existing pending edit for this cause
+  const { data: existingEdit, error: checkError } = await supabase
+    .from("cause_edits")
+    .select("id")
+    .eq("original_cause_id", causeId)
+    .eq("status", "pending")
+    .limit(1)
+    .maybeSingle();
+
+  if (existingEdit) {
+    throw new Error(
+      "You already have a pending edit for this cause. Please wait for it to be reviewed before making another change.",
+    );
+  }
 
   let coverImageUrl = causeData.coverImage
     ? await uploadImageToSupabase(causeData.coverImage, userId, "cover")
-    : causeData.image;
+    : causeData.image || null;
 
-  // Calculate days_active from start and end dates
   let daysActive = null;
   if (causeData.startDate && causeData.endDate) {
-    // Ensure we have valid Date objects
     const startDate =
       causeData.startDate instanceof Date
         ? causeData.startDate
@@ -248,175 +315,203 @@ export async function updateCause(
         ? causeData.endDate
         : new Date(causeData.endDate);
 
-    // Validate that the dates are valid
     if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
       throw new Error("Invalid date format provided");
     }
 
     daysActive = Math.ceil(
-      (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
+      (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
     );
   }
 
-  // Prepare the update data
-  const updateData: any = {
-    title: causeData.title,
-    // description: causeData.description,
-    category: causeData.category,
-    goal: causeData.goal,
-    status: "pending",
-    image: coverImageUrl,
-    days_active: daysActive,
-    updated_at: new Date().toISOString(),
-  };
-
-  // Convert goal to number if it's a string
-  if (typeof updateData.goal === "string") {
-    updateData.goal = Number.parseFloat(updateData.goal);
-  }
-
-  const { data, error } = await supabase
-    .from("causes")
-    .update(updateData)
-    .eq("id", causeId)
-    .eq("user_id", userId) // Ensure the user owns this cause
-    .select()
-    .single();
-
-  if (error) {
-    console.error("Error updating cause:", error);
-    throw error;
-  }
-
-  // Handle sections update
-  if (causeData.sections) {
-    // First delete existing sections
-    const { error: deleteError } = await supabase
-      .from("cause_sections")
-      .delete()
-      .eq("cause_id", causeId);
-
-    if (deleteError) {
-      console.error("Error deleting existing sections:", deleteError);
-      throw deleteError;
-    }
-
-    // Then insert new sections if they exist
-    if (causeData.sections.length > 0) {
-      const sections = causeData.sections.map((section) => ({
-        cause_id: causeId,
-        heading: section.heading,
-        description: section.description,
-      }));
-
-      const { error: sectionsError } = await supabase
-        .from("cause_sections")
-        .insert(sections);
-
-      if (sectionsError) {
-        console.error("Error creating new sections:", sectionsError);
-        throw sectionsError;
-      }
-    }
-  }
-
-  // Handle multimedia update
-  let updatedMultimediaUrls: string[] = [];
+  let multimediaUrls: string[] = [];
   if (
     causeData.multimedia &&
     Array.isArray(causeData.multimedia) &&
     causeData.multimedia.length > 0
   ) {
     try {
-      updatedMultimediaUrls = await Promise.all(
-        causeData.multimedia.map((file) =>
-          uploadImageToSupabase(file, userId, "additional")
-        )
+      multimediaUrls = await Promise.all(
+        causeData.multimedia.map(async (item) => {
+          if (typeof item === "string") return item; // Keep existing URL
+          return await uploadImageToSupabase(item, userId, "additional");
+        }),
       );
     } catch (error) {
       console.error("Error uploading multimedia:", error);
       throw error;
     }
   }
-  if (updatedMultimediaUrls.length > 0) {
-    updateData.multimedia = updatedMultimediaUrls;
-  }
 
-  const { data: updatedCause, error: updateError } = await supabase
-    .from("causes")
-    .update(updateData)
-    .eq("id", causeId)
-    .eq("user_id", userId) // Ensure the user owns this cause
+  const editData: any = {
+    original_cause_id: causeId,
+    user_id: userId,
+    title: causeData.title,
+    category: causeData.category,
+    goal:
+      typeof causeData.goal === "string"
+        ? Number.parseFloat(causeData.goal)
+        : causeData.goal,
+    image: coverImageUrl,
+    days_active: daysActive,
+    start_date: causeData.startDate ? (causeData.startDate instanceof Date ? causeData.startDate.toISOString() : causeData.startDate) : null,
+    end_date: causeData.endDate ? (causeData.endDate instanceof Date ? causeData.endDate.toISOString() : causeData.endDate) : null,
+    multimedia: multimediaUrls.length > 0 ? multimediaUrls : [],
+    video_links: causeData.video_links || [],
+    summary: causeData.summary || null,
+    location: causeData.location || null,
+    status: "pending",
+  };
+
+  const { data, error } = await supabase
+    .from("cause_edits")
+    .insert(editData)
     .select()
     .single();
 
-  if (updateError) {
-    console.error("Error updating cause:", updateError);
-    throw updateError;
+  if (error) {
+    console.error("Error saving cause edit:", error);
+    throw error;
+  }
+
+  if (causeData.sections && causeData.sections.length > 0) {
+    const sections = causeData.sections.map((section) => ({
+      cause_edit_id: data.id,
+      heading: section.heading,
+      description: section.description,
+    }));
+
+    const { error: sectionsError } = await supabase
+      .from("cause_edit_sections")
+      .insert(sections);
+
+    if (sectionsError) {
+      console.error("Error creating cause edit sections:", sectionsError);
+      throw sectionsError;
+    }
+  }
+
+  try {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("full_name, email")
+      .eq("id", userId)
+      .single();
+
+    if (profile?.email) {
+      const baseUrl =
+        process.env.NEXT_PUBLIC_APP_URL || "https://www.refreeg.com";
+      const reviewUrl = `${baseUrl}/dashboard/admin/causes`;
+
+      // Send notification in background - do not await
+      sendCauseSubmissionAdminNotification(
+        profile.full_name || "User",
+        profile.email,
+        causeData.title || "Cause Edit",
+        reviewUrl,
+      ).catch((err) => console.error("Background notification error:", err));
+    }
+  } catch (error) {
+    console.error("Error sending cause edit admin notification:", error);
   }
 
   revalidatePath("/dashboard/causes");
-  return updatedCause as Cause;
+  return data;
 }
 
 /**
  * List causes with filtering options
  */
-export async function listCauses(
-  options: CauseFilterOptions = {}
-): Promise<Cause[]> {
-  const supabase = await createClient();
+/**
+ * Get causes with filtering options.
+ * Using React cache to deduplicate requests in the same render pass.
+ */
+export const listCauses = cache(
+  async (options: CauseFilterOptions = {}): Promise<Cause[]> => {
+    const supabase = await createClient();
 
-  let query = supabase
-    .from("causes")
-    .select("*,profiles(full_name,email)")
-    .order("created_at", { ascending: false });
+    let query = supabase
+      .from("causes")
+      .select("*,profiles(full_name,email,profile_photo)");
 
-  // Apply filters
-  if (options.category && options.category !== "all") {
-    query = query.eq("category", options.category);
-  }
-
-  if (options.status) {
-    query = query.eq("status", options.status);
-  } else {
-    // Default to approved causes for public listing
-    if (!options.userId) {
-      query = query.eq("status", "approved");
+    // Category filter
+    if (options.category && options.category !== "all") {
+      query = query.eq("category", options.category);
     }
-  }
 
-  if (options.userId) {
-    query = query.eq("user_id", options.userId);
-  }
+    // Status filter
+    if (options.status) {
+      query = query.eq("status", options.status);
+    } else {
+      if (!options.userId) {
+        query = query.eq("status", "approved");
+      }
+    }
 
-  // Apply pagination
-  if (options.limit) {
-    query = query.limit(options.limit);
-  }
+    // User filter
+    if (options.userId) {
+      query = query.eq("user_id", options.userId);
+    }
 
-  if (options.offset) {
-    query = query.range(
-      options.offset,
-      options.offset + (options.limit || 10) - 1
-    );
-  }
+    // Search filter (case-insensitive partial match on title)
+    if (options.search && options.search.trim()) {
+      query = query.ilike("title", `%${options.search.trim()}%`);
+    }
 
-  const { data, error } = await query;
+    // Sorting
+    switch (options.sortBy) {
+      case "latest":
+        query = query.order("created_at", { ascending: false });
+        break;
+      case "most-funded":
+        query = query.order("raised", { ascending: false });
+        break;
+      case "ending-soon":
+        query = query.order("end_date", { ascending: true, nullsFirst: false });
+        break;
+      case "recommended":
+      default:
+        query = query.order("created_at", { ascending: false });
+        break;
+    }
 
-  if (error) {
-    console.error("Error listing causes:", error);
-    throw error;
-  }
+    // Pagination — use .range() which handles both offset and limit
+    if (options.offset !== undefined && options.limit) {
+      query = query.range(options.offset, options.offset + options.limit - 1);
+    } else if (options.limit) {
+      query = query.limit(options.limit);
+    }
 
-  return data as Cause[];
-}
+    const { data, error } = await query;
+
+    if (error) {
+      console.error("Error listing causes:", error);
+      throw error;
+    }
+
+    const causes = (data as Cause[]) || [];
+
+    // Client-side filtering check as a fallback if DB status isn't synced
+    // and excluding expired causes for non-owner views
+    const isOwnerScoped = !!options.userId;
+    const result = isOwnerScoped
+      ? causes
+      : causes.filter((c) => {
+          if (c.status === "expired") return false;
+          const now = new Date();
+          if (c.end_date && new Date(c.end_date) < now) return false;
+          return true;
+        });
+
+    return result;
+  },
+);
 
 /**
  * Count causes with filtering options
  */
 export async function countCauses(
-  options: CauseFilterOptions = {}
+  options: CauseFilterOptions = {},
 ): Promise<number> {
   const supabase = await createClient();
 
@@ -424,7 +519,13 @@ export async function countCauses(
     .from("causes")
     .select("id", { count: "exact", head: true });
 
-  // Apply filters
+  // Filter out expired causes by default unless requested by owner
+  if (!options.userId) {
+    query = query.neq("status", "expired");
+    // Also filter by end_date if we want consistency with listCauses
+    query = query.or(`end_date.is.null,end_date.gt.${new Date().toISOString()}`);
+  }
+
   if (options.category && options.category !== "all") {
     query = query.eq("category", options.category);
   }
@@ -432,7 +533,6 @@ export async function countCauses(
   if (options.status) {
     query = query.eq("status", options.status);
   } else {
-    // Default to approved causes for public listing
     if (!options.userId) {
       query = query.eq("status", "approved");
     }
@@ -440,6 +540,11 @@ export async function countCauses(
 
   if (options.userId) {
     query = query.eq("user_id", options.userId);
+  }
+
+  // Search filter (must match listCauses)
+  if (options.search && options.search.trim()) {
+    query = query.ilike("title", `%${options.search.trim()}%`);
   }
 
   const { count, error } = await query;
@@ -458,56 +563,205 @@ export async function countCauses(
 export async function updateCauseStatus(
   causeId: string,
   status: "approved" | "rejected",
-  rejectionReason?: string
+  rejectionReason?: string,
 ): Promise<Cause> {
-  const supabase = await createClient();
+  const user = await getCurrentUser();
+  if (!user) throw new Error("Not authenticated");
 
-  const updateData: any = {
-    status,
-    updated_at: new Date().toISOString(),
-  };
+  const isAuthorized = await isAdminOrManager(user.id);
+  if (!isAuthorized) throw new Error("Unauthorized");
 
-  if (status === "rejected" && rejectionReason) {
-    updateData.rejection_reason = rejectionReason;
+  if (
+    !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    !process.env.SUPABASE_SERVICE_ROLE_KEY
+  ) {
+    throw new Error("Server configuration error: Missing Supabase keys");
   }
 
-  // If approving, we need to get the original days_active and set updated_at to now
+  const supabaseAdmin = createSupabaseAdmin(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    },
+  );
+
   if (status === "approved") {
-    // Get the cause to access the original days_active
-    const { data: causeData, error: fetchError } = await supabase
-      .from("causes")
-      .select("days_active")
-      .eq("id", causeId)
+    const { data: edit, error: editError } = await supabaseAdmin
+      .from("cause_edits")
+      .select("*")
+      .eq("original_cause_id", causeId)
+      .eq("status", "pending")
+      .order("created_at", { ascending: false })
+      .limit(1)
       .single();
 
-    if (fetchError) {
-      console.error("Error fetching cause for approval:", fetchError);
-      throw fetchError;
+    if (editError && editError.code !== "PGRST116") {
+      console.error("Error fetching cause edit for approval:", editError);
+      throw editError;
     }
 
-    // Set the updated_at to now so the cron job can start counting from this moment
-    updateData.updated_at = new Date().toISOString();
+    if (edit) {
+      const updateData: any = {
+        title: edit.title,
+        category: edit.category,
+        goal: edit.goal,
+        image: edit.image,
+        days_active: edit.days_active,
+        start_date: edit.start_date || new Date().toISOString(),
+        end_date: edit.end_date,
+        multimedia: edit.multimedia,
+        video_links: edit.video_links,
+        summary: edit.summary,
+        location: edit.location,
+        status: "approved",
+        updated_at: new Date().toISOString(),
+      };
 
-    // Keep the original days_active value - the cron job will decrement it
-    if (causeData.days_active) {
-      updateData.days_active = causeData.days_active;
+      const { data: updated, error: updateError } = await supabaseAdmin
+        .from("causes")
+        .update(updateData)
+        .eq("id", causeId)
+        .select()
+        .single();
+
+      if (updateError) {
+        console.error("Error updating cause with approved edit:", updateError);
+        throw updateError;
+      }
+
+      const { data: editSections } = await supabaseAdmin
+        .from("cause_edit_sections")
+        .select("heading, description")
+        .eq("cause_edit_id", edit.id);
+
+      if (editSections && editSections.length > 0) {
+        await supabaseAdmin
+          .from("cause_sections")
+          .delete()
+          .eq("cause_id", causeId);
+
+        const newSections = editSections.map((section: any) => ({
+          cause_id: causeId,
+          heading: section.heading,
+          description: section.description,
+        }));
+
+        await supabaseAdmin.from("cause_sections").insert(newSections);
+      }
+
+      await supabaseAdmin.from("cause_edits").delete().eq("id", edit.id);
+
+      revalidatePath("/dashboard/admin/causes");
+      return updated as Cause;
+    } else {
+      const { data: updated, error: updateError } = await supabaseAdmin
+        .from("causes")
+        .update({
+          status: "approved",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", causeId)
+        .select()
+        .single();
+
+      if (updateError) {
+        console.error("Error approving cause:", updateError);
+        throw updateError;
+      }
+
+      revalidatePath("/dashboard/admin/causes");
+      return updated as Cause;
     }
   }
 
+  if (status === "rejected") {
+    const { data: edit, error: editError } = await supabaseAdmin
+      .from("cause_edits")
+      .select("*")
+      .eq("original_cause_id", causeId)
+      .eq("status", "pending")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .single();
+
+    if (edit && !editError) {
+      await supabaseAdmin
+        .from("cause_edits")
+        .update({ status: "rejected", rejection_reason: rejectionReason })
+        .eq("id", edit.id);
+    }
+
+    const { data, error } = await supabaseAdmin
+      .from("causes")
+      .update({
+        status: "rejected",
+        rejection_reason: rejectionReason,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", causeId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Error updating cause status:", error);
+      throw error;
+    }
+
+    // Notify the cause creator about the rejection
+    try {
+      await sendCauseRejectedEmailForUser(data.user_id, {
+        causeName: data.title,
+        rejectionReason,
+        dashboardUrl:
+          "https://www.refreeg.com/dashboard/causes?status=rejected",
+      });
+    } catch (emailError) {
+      console.error("Error sending cause rejection email:", emailError);
+    }
+
+    revalidatePath("/dashboard/admin/causes");
+    return data as Cause;
+  }
+
+  throw new Error(`Invalid status value: ${status}`);
+}
+
+/**
+ * Get all pending cause edits for admin review
+ */
+export async function getCauseEdits(): Promise<any[]> {
+  const supabase = await createClient();
+
   const { data, error } = await supabase
-    .from("causes")
-    .update(updateData)
-    .eq("id", causeId)
-    .select()
-    .single();
+    .from("cause_edits")
+    .select(
+      `
+      *,
+      profiles!inner (
+        full_name,
+        email,
+        profile_photo
+      ),
+      cause_edit_sections (
+        id,
+        heading,
+        description
+      )
+    `,
+    )
+    .eq("status", "pending")
+    .order("created_at", { ascending: false });
 
   if (error) {
-    console.error("Error updating cause status:", error);
+    console.error("Error fetching cause edits:", error);
     throw error;
   }
 
-  revalidatePath("/dashboard/admin/causes");
-  return data as Cause;
+  return data || [];
 }
 
 /**
@@ -532,7 +786,7 @@ export async function getUserCauses(userId: string): Promise<Cause[]> {
 
 export async function getUserCausesWithStatus(
   userId: string,
-  status?: string
+  status?: string,
 ): Promise<Cause[]> {
   const supabase = await createClient();
 
@@ -542,7 +796,6 @@ export async function getUserCausesWithStatus(
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
 
-  // Only apply status filter if status is provided and not empty
   if (status && status !== "all") {
     query = query.eq("status", status);
   }
@@ -568,13 +821,53 @@ export async function deleteCause(causeId: string): Promise<void> {
   }
 }
 
+export async function updateCauseTrustMetrics(
+  causeId: string,
+  metrics: {
+    trust_score?: {
+      impact: string;
+      readability: string;
+      transparency: string;
+    };
+    verified_status?: string;
+  },
+): Promise<void> {
+  const supabase = await createClient();
+  const user = await getCurrentUser();
+
+  const isAdmin = user?.id ? await isAdminOrManager(user.id) : false;
+
+  if (!isAdmin) {
+    throw new Error("Unauthorized: Only admins can update trust metrics");
+  }
+
+  const { error } = await supabase
+    .from("causes")
+    .update({
+      trust_score: metrics.trust_score,
+      verified_status: metrics.verified_status,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", causeId);
+
+  if (error) {
+    console.error("Error updating trust metrics:", error);
+    throw error;
+  }
+
+  revalidatePath("/dashboard/admin/causes");
+  revalidatePath(`/causes/${causeId}`);
+}
+
 /**
  * Save a cause share to the database
  */
-export async function saveCauseShare(causeId: string): Promise<void> {
+export async function saveCauseShare(
+  causeId: string,
+  userId?: string,
+): Promise<void> {
   const supabase = await createClient();
 
-  // Start a transaction
   const { error: shareError, data: causeData } = await supabase
     .from("causes")
     .select("shared")
@@ -596,5 +889,82 @@ export async function saveCauseShare(causeId: string): Promise<void> {
     throw causeError;
   }
 
+  // Record event for reward tracking if userId provided
+  if (userId) {
+    try {
+      const { recordEvent } = await import("@/actions/event-reward-actions");
+      await recordEvent({
+        type: "share",
+        userId,
+        metadata: {
+          cause_id: causeId,
+        },
+      });
+    } catch (eventError) {
+      console.error("Error recording share event:", eventError);
+      // Don't throw - event tracking shouldn't break the main action
+    }
+  }
+
   return mine;
+}
+
+/**
+ * Record a cause share with user tracking
+ */
+export async function shareCause(
+  causeId: string,
+  userId: string,
+): Promise<void> {
+  // Record the share
+  await saveCauseShare(causeId, userId);
+}
+
+/**
+ * Follow a campaign — requires authentication
+ * Returns { error: 'unauthenticated' } if no session so the UI can show a login modal
+ */
+export async function followCampaign(
+  causeId: string,
+): Promise<{ data: null; error: string } | { data: any; error: null }> {
+  const supabase = await createClient();
+  const user = await getCurrentUser();
+
+  if (!user) {
+    return { data: null, error: "unauthenticated" };
+  }
+
+  // Get email from profile
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("email")
+    .eq("id", user.id)
+    .single();
+
+  if (!profile?.email) {
+    return { data: null, error: "No email found for your account." };
+  }
+
+  const { data, error } = await supabase
+    .from("campaign_follows")
+    .upsert(
+      {
+        cause_id: causeId,
+        user_id: user.id,
+        email: profile.email,
+      },
+      { onConflict: "cause_id,email", ignoreDuplicates: true },
+    )
+    .select();
+
+  if (error && error.code !== "23505") {
+    // ignore unique constraint violation (already following)
+    return { data: null, error: error.message };
+  }
+
+  // data will be empty if ignoreDuplicates triggered
+  return {
+    data: data && data.length > 0 ? data[0] : { already_following: true },
+    error: null,
+  };
 }

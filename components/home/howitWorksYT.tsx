@@ -11,13 +11,12 @@ export default function HowitWorksYT() {
   const isInView = useInView(ref, { once: true, margin: "-100px" });
 
   return (
-    <section ref={ref} className="bg-[#002D62] py-12 rounded-md mt-12">
-      {/* Pill */}
+    <section ref={ref} className="bg-[#002D62] py-12 mt-12">
       <motion.div
         initial={{ opacity: 0, y: 40 }}
         animate={isInView ? { opacity: 1, y: 0 } : {}}
         transition={{ duration: 0.7, ease: "easeOut" }}
-        className="flex gap-2 items-center justify-center bg-blue-700 px-6 py-2 w-fit mx-auto rounded-full mb-6"
+        className="flex gap-2 items-center justify-center bg-[#0070E0] px-6 py-2 w-fit mx-auto rounded-full mb-6"
       >
         <FaStairs className="text-white" size={18} />
         <P className="text-white text-sm font-semibold">
@@ -25,7 +24,6 @@ export default function HowitWorksYT() {
         </P>
       </motion.div>
 
-      {/* Heading */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={isInView ? { opacity: 1, y: 0 } : {}}
@@ -37,7 +35,6 @@ export default function HowitWorksYT() {
         </H2>
       </motion.div>
 
-      {/* Video */}
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={isInView ? { opacity: 1, scale: 1 } : {}}

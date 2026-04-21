@@ -2,6 +2,7 @@
 
 import type React from "react";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,6 +15,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { motion, AnimatePresence } from "framer-motion";
+import { PremiumFormContainer } from "@/components/ui/premium/premium-form-container";
+import { FormStepper } from "@/components/ui/premium/form-stepper";
 import {
   Select,
   SelectContent,
@@ -21,7 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Calendar } from "@/components/ui/calendar";
+import dynamic from "next/dynamic";
 import {
   Popover,
   PopoverContent,
@@ -31,17 +35,63 @@ import { Icons } from "@/components/icons";
 import { useAuth } from "@/hooks/use-auth";
 import { useCause } from "@/hooks/use-cause";
 import { Progress } from "@/components/ui/progress";
-import { ImageUpload } from "@/components/ui/image-upload";
+import { Skeleton } from "@/components/ui/skeleton";
+
+const Calendar = dynamic(
+  () => import("@/components/ui/calendar").then((mod) => mod.Calendar),
+  {
+    loading: () => <Skeleton className="h-[300px] w-full" />,
+    ssr: false,
+  },
+);
+
+const ImageUpload = dynamic(
+  () => import("@/components/ui/image-upload").then((mod) => mod.ImageUpload),
+  {
+    loading: () => <Skeleton className="h-40 w-full" />,
+  },
+);
+
+const SelectedMediaCarousel = dynamic(
+  () =>
+    import("@/components/ui/premium/selected-media-carousel").then(
+      (mod) => mod.SelectedMediaCarousel,
+    ),
+  {
+    loading: () => <Skeleton className="h-[200px] w-full" />,
+    ssr: false,
+  },
+);
+
+const MultimediaCarousel = dynamic(
+  () => import("@/components/MultimediaCarousel"),
+  {
+    loading: () => <Skeleton className="h-64 w-full" />,
+  },
+);
 import { categories } from "@/lib/categories";
-import { sendCauseUnderReviewEmail } from "@/services/mail";
-import { format, addDays, isAfter, isBefore, differenceInDays } from "date-fns";
+import {
+  sendCauseUnderReviewEmail,
+  sendIncompleteCauseSetupEmail,
+} from "@/services/mail";
+import {
+  format,
+  addDays,
+  isAfter,
+  isBefore,
+  differenceInDays,
+  startOfDay,
+} from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const currencies = [{ id: "NGN", name: "Naira (₦)" }];
+const MAX_DURATION_DAYS = 180;
 
 type FormData = {
   title: string;
+  summary: string;
+  location: string;
   category: string;
   goal: string;
   currency: string;
@@ -50,10 +100,13 @@ type FormData = {
   startDate: Date | undefined;
   endDate: Date | undefined;
   multimedia: File[];
+  videoLinks: string[];
 };
 
 type FormErrors = {
   title?: string;
+  summary?: string;
+  location?: string;
   category?: string;
   goal?: string;
   coverImage?: string;
@@ -65,6 +118,8 @@ type FormErrors = {
 
 type CauseFormData = {
   title: string;
+  summary: string;
+  location: string;
   category: string;
   goal: string;
   currency: string;
@@ -73,6 +128,7 @@ type CauseFormData = {
   startDate: Date | undefined;
   endDate: Date | undefined;
   multimedia: File[];
+  video_links: string[];
 };
 
 const validateForm = (formData: FormData): FormErrors => {
@@ -86,6 +142,14 @@ const validateForm = (formData: FormData): FormErrors => {
 
   if (!formData.category) {
     errors.category = "Category is required";
+  }
+
+  if (formData.summary && formData.summary.length > 200) {
+    errors.summary = "Summary must be less than 200 characters";
+  }
+
+  if (formData.location && formData.location.length > 100) {
+    errors.location = "Location must be less than 100 characters";
   }
 
   if (!formData.goal) {
@@ -106,15 +170,14 @@ const validateForm = (formData: FormData): FormErrors => {
     errors.endDate = "End date is required";
   } else if (formData.startDate && formData.endDate) {
     const daysDiff = differenceInDays(formData.endDate, formData.startDate);
-    if (daysDiff > 60) {
-      errors.endDate = "Cause duration cannot exceed 60 days";
+    if (daysDiff > MAX_DURATION_DAYS) {
+      errors.endDate = `Cause duration cannot exceed ${MAX_DURATION_DAYS} days`;
     }
     if (daysDiff < 1) {
       errors.endDate = "End date must be after start date";
     }
   }
 
-  // Validate sections
   if (formData.sections && formData.sections.length > 0) {
     const sectionErrorsArray = formData.sections.map((section) => {
       const sectionErrors: { heading?: string; description?: string } = {};
@@ -125,14 +188,12 @@ const validateForm = (formData: FormData): FormErrors => {
       return sectionErrors;
     });
 
-    // Only add sections errors if there are actual errors
     if (sectionErrorsArray.some((err) => Object.keys(err).length > 0)) {
       errors.sections = sectionErrorsArray;
     }
   }
 
-  // Check total multimedia size
-  const MAX_TOTAL_SIZE = 100 * 1024 * 1024; // 100MB in bytes
+  const MAX_TOTAL_SIZE = 100 * 1024 * 1024;
   const totalSize =
     formData.multimedia && formData.multimedia.length > 0
       ? formData.multimedia.reduce((acc, file) => acc + file.size, 0)
@@ -147,22 +208,28 @@ const validateForm = (formData: FormData): FormErrors => {
 export default function CreateCauseForm() {
   const { user } = useAuth();
   const { isLoading, createCause } = useCause();
+  const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
+  const [attemptedStep, setAttemptedStep] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     title: "",
+    summary: "",
+    location: "",
     category: "",
     goal: "",
     currency: "NGN",
     coverImage: null,
     sections: [{ heading: "", description: "" }],
-    startDate: undefined,
-    endDate: undefined,
+    startDate: startOfDay(new Date()),
+    endDate: addDays(startOfDay(new Date()), 30),
     multimedia: [],
+    videoLinks: [],
   });
   const [errors, setErrors] = useState<FormErrors>({});
+  const [videoLinkInput, setVideoLinkInput] = useState("");
+  const [videoLinkError, setVideoLinkError] = useState<string | null>(null);
 
-  // Auto-save draft to localStorage
   useEffect(() => {
     const savedDraft = localStorage.getItem("causeDraft");
     if (savedDraft) {
@@ -177,27 +244,78 @@ export default function CreateCauseForm() {
           ? new Date(parsedDraft.endDate)
           : undefined,
         multimedia: [],
+        videoLinks: parsedDraft.videoLinks || [],
       }));
     }
   }, []);
 
   useEffect(() => {
-    // Don't save files to localStorage, and properly serialize dates
-    const { coverImage, multimedia, ...dataToSave } = formData;
-    const serializedData = {
-      ...dataToSave,
-      startDate: dataToSave.startDate
-        ? dataToSave.startDate.toISOString()
-        : null,
-      endDate: dataToSave.endDate ? dataToSave.endDate.toISOString() : null,
-    };
-    localStorage.setItem("causeDraft", JSON.stringify(serializedData));
+    const timer = setTimeout(() => {
+      const { coverImage, multimedia, ...dataToSave } = formData;
+      const serializedData = {
+        ...dataToSave,
+        startDate: dataToSave.startDate
+          ? dataToSave.startDate.toISOString()
+          : null,
+        endDate: dataToSave.endDate ? dataToSave.endDate.toISOString() : null,
+      };
+      localStorage.setItem("causeDraft", JSON.stringify(serializedData));
+    }, 1000);
+
+    return () => clearTimeout(timer);
   }, [formData]);
+
+  useEffect(() => {
+    let inactivityTimer: NodeJS.Timeout;
+
+    const setupInactivityTracking = () => {
+      const hasDraft = localStorage.getItem("causeDraft");
+      const hasStartedFilling =
+        formData.title || formData.category || formData.goal;
+
+      if (hasDraft || hasStartedFilling) {
+        const resetTimer = () => {
+          clearTimeout(inactivityTimer);
+          inactivityTimer = setTimeout(sendReminder, 24 * 60 * 60 * 1000);
+        };
+
+        const events = ["input", "change", "click", "keydown"];
+        events.forEach((event) => {
+          document.addEventListener(event, resetTimer, { passive: true });
+        });
+
+        resetTimer();
+
+        return () => {
+          clearTimeout(inactivityTimer);
+          events.forEach((event) => {
+            document.removeEventListener(event, resetTimer);
+          });
+        };
+      }
+    };
+
+    const sendReminder = async () => {
+      const currentDraft = localStorage.getItem("causeDraft");
+      if (currentDraft && user) {
+        try {
+          await sendIncompleteCauseSetupEmail({
+            continueUrl: `${window.location.origin}/dashboard/causes/create`,
+          });
+        } catch (error) {
+          console.error("Failed to send incomplete cause email:", error);
+        }
+      }
+    };
+
+    const cleanup = setupInactivityTracking();
+    return cleanup;
+  }, [formData.title ? true : false, formData.category ? true : false, formData.goal ? true : false, user]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    // Clear error when user starts typing
+
     if (errors[name as keyof FormErrors]) {
       setErrors((prev) => ({ ...prev, [name]: undefined }));
     }
@@ -205,7 +323,7 @@ export default function CreateCauseForm() {
 
   const handleSelectChange = (name: string, value: string) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
-    // Clear error when user makes a selection
+
     if (errors[name as keyof FormErrors]) {
       setErrors((prev) => ({ ...prev, [name]: undefined }));
     }
@@ -213,20 +331,21 @@ export default function CreateCauseForm() {
 
   const handleDateChange = (
     date: Date | undefined,
-    field: "startDate" | "endDate"
+    field: "startDate" | "endDate",
   ) => {
     setFormData((prev) => ({ ...prev, [field]: date }));
-    // Clear error when user selects a date
+
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: undefined }));
     }
   };
 
-  const handleImageUpload = (files: File[]) => {
-    const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB in bytes
+  const handleImageUpload = async (files: File[]) => {
     const file = files[0];
+    if (!file) return;
 
-    if (file && file.size > MAX_FILE_SIZE) {
+    const MAX_FILE_SIZE = 100 * 1024 * 1024;
+    if (file.size > MAX_FILE_SIZE) {
       setErrors((prev) => ({
         ...prev,
         coverImage: "Cover image must be less than 100MB",
@@ -240,31 +359,64 @@ export default function CreateCauseForm() {
     }
   };
 
-  const handleMultimediaUpload = (files: File[]) => {
-    const MAX_TOTAL_SIZE = 100 * 1024 * 1024; // 100MB in bytes
-    const currentSize =
-      formData.multimedia && formData.multimedia.length > 0
-        ? formData.multimedia.reduce((acc, file) => acc + file.size, 0)
-        : 0;
-    const newFilesSize = files.reduce((acc, file) => acc + file.size, 0);
+  const handleMultimediaUpload = async (files: File[]) => {
+    const MAX_FILES = 5;
+    const MAX_TOTAL_SIZE = 100 * 1024 * 1024;
 
-    if (currentSize + newFilesSize > MAX_TOTAL_SIZE) {
+    const currentFilesCount = formData.multimedia?.length || 0;
+    if (currentFilesCount + files.length > MAX_FILES) {
       setErrors((prev) => ({
         ...prev,
-        multimedia: "Total multimedia size must be less than 100MB",
+        multimedia: `You can only upload a total of ${MAX_FILES} files`,
       }));
       return;
     }
 
-    setFormData((prev) => ({
-      ...prev,
-      multimedia: Array.isArray(prev.multimedia)
-        ? [...prev.multimedia, ...files]
-        : [...files],
-    }));
+    try {
+      const { compressImage } = await import("@/utils/image-compression");
+      
+      const processedFiles = await Promise.all(
+        files.map(async (file) => {
+          if (file.type.startsWith("image/")) {
+            return await compressImage(file, 1000, 0.7);
+          }
+          return file;
+        })
+      );
 
-    if (errors.multimedia) {
-      setErrors((prev) => ({ ...prev, multimedia: undefined }));
+      const currentSize =
+        formData.multimedia && formData.multimedia.length > 0
+          ? formData.multimedia.reduce((acc, file) => acc + file.size, 0)
+          : 0;
+      const newFilesSize = processedFiles.reduce((acc, file) => acc + file.size, 0);
+
+      if (currentSize + newFilesSize > MAX_TOTAL_SIZE) {
+        setErrors((prev) => ({
+          ...prev,
+          multimedia: "Total multimedia size must be less than 100MB",
+        }));
+        return;
+      }
+
+      setFormData((prev) => ({
+        ...prev,
+        multimedia: Array.isArray(prev.multimedia)
+          ? [...prev.multimedia, ...processedFiles]
+          : [...processedFiles],
+      }));
+
+      if (errors.multimedia) {
+        setErrors((prev) => ({ ...prev, multimedia: undefined }));
+      }
+    } catch (error) {
+      console.error("Multimedia compression error:", error);
+      // Fallback to original files
+      setFormData((prev) => ({
+        ...prev,
+        multimedia: Array.isArray(prev.multimedia)
+          ? [...prev.multimedia, ...files]
+          : [...files],
+      }));
     }
   };
 
@@ -287,17 +439,15 @@ export default function CreateCauseForm() {
           !currentErrors.title && !currentErrors.category && !currentErrors.goal
         );
       case 2:
-        // Check for section errors
         if (currentErrors.sections) {
-          // If there are section errors, check if any sections have errors
           return !currentErrors.sections.some(
-            (err) => err.heading || err.description
+            (err) => err.heading || err.description,
           );
         }
-        // If there are no section errors in the currentErrors object, validate directly
+
         return formData.sections.every(
           (section) =>
-            section.heading.trim() !== "" && section.description.trim() !== ""
+            section.heading.trim() !== "" && section.description.trim() !== "",
         );
       case 3:
         return !currentErrors.startDate && !currentErrors.endDate;
@@ -309,6 +459,7 @@ export default function CreateCauseForm() {
   };
 
   const nextStep = () => {
+    setAttemptedStep(currentStep);
     if (currentStep < 5 && validateStep(currentStep)) {
       setCurrentStep((prev) => prev + 1);
     }
@@ -318,7 +469,6 @@ export default function CreateCauseForm() {
     e.preventDefault();
 
     if (!user) return;
-    // Only allow submit on last step
 
     if (currentStep < 5) {
       nextStep();
@@ -328,25 +478,24 @@ export default function CreateCauseForm() {
     setSubmitting(true);
     const validationErrors = validateForm(formData);
 
-    // Check if there are any validation errors
     const hasErrors = Object.keys(validationErrors).some((key) => {
       if (key === "sections" && validationErrors.sections) {
-        // For sections, check if any section has actual errors
         return validationErrors.sections.some(
-          (section) => Object.keys(section).length > 0
+          (section) => Object.keys(section).length > 0,
         );
       }
       return validationErrors[key as keyof FormErrors] !== undefined;
     });
 
     if (hasErrors) {
-      console.log("Found validation errors:", validationErrors);
       setErrors(validationErrors);
       setSubmitting(false);
       return;
     }
     const causeData: CauseFormData = {
       title: formData.title,
+      summary: formData.summary,
+      location: formData.location,
       category: formData.category,
       goal: formData.goal,
       currency: formData.currency,
@@ -355,14 +504,18 @@ export default function CreateCauseForm() {
       startDate: formData.startDate,
       endDate: formData.endDate,
       multimedia: formData.multimedia,
+      video_links: formData.videoLinks,
     };
     try {
       await sendCauseUnderReviewEmail({
         causeName: causeData.title,
         reviewTimeframe: "3-5 business days",
+        dashboardUrl: `${window.location.origin}/dashboard/causes`,
       });
       await createCause(user.id, causeData);
       localStorage.removeItem("causeDraft");
+
+      router.push("/dashboard/causes");
     } catch (error) {
       console.error("Error submitting cause:", error);
     } finally {
@@ -391,95 +544,202 @@ export default function CreateCauseForm() {
   const updateSection = (
     index: number,
     field: "heading" | "description",
-    value: string
+    value: string,
   ) => {
     setFormData((prev) => ({
       ...prev,
       sections: prev.sections.map((section, i) =>
-        i === index ? { ...section, [field]: value } : section
+        i === index ? { ...section, [field]: value } : section,
       ),
     }));
+
+    if (errors.sections?.[index]?.[field]) {
+      setErrors((prev) => ({
+        ...prev,
+        sections: prev.sections?.map((sectionError, i) =>
+          i === index ? { ...sectionError, [field]: undefined } : sectionError,
+        ),
+      }));
+    }
   };
 
   const renderStep = () => {
     switch (currentStep) {
       case 1:
         return (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="title">Cause Title</Label>
-              <Input
-                id="title"
-                name="title"
-                placeholder="Enter a clear, specific title"
-                value={formData.title}
-                onChange={handleChange}
-                className={errors.title ? "border-red-500" : ""}
-              />
-              {errors.title && (
-                <p className="text-sm text-red-500">{errors.title}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="category">Category</Label>
-              <Select
-                value={formData.category}
-                onValueChange={(value) => handleSelectChange("category", value)}
-              >
-                <SelectTrigger
-                  className={errors.category ? "border-red-500" : ""}
-                >
-                  <SelectValue placeholder="Select a category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map((category) => (
-                    <SelectItem key={category.id} value={category.id}>
-                      {category.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {errors.category && (
-                <p className="text-sm text-red-500">{errors.category}</p>
-              )}
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 sm:space-y-8">
+            <div className="space-y-5 sm:space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="goal">Funding Goal</Label>
+                <Label
+                  htmlFor="title"
+                  className="text-sm font-semibold text-gray-700 sm:text-base"
+                >
+                  Cause Title
+                </Label>
                 <Input
-                  id="goal"
-                  name="goal"
-                  type="number"
-                  placeholder="Enter amount"
-                  value={formData.goal}
+                  id="title"
+                  name="title"
+                  placeholder="e.g., Clean Water for Owerri Community"
+                  value={formData.title}
                   onChange={handleChange}
-                  className={errors.goal ? "border-red-500" : ""}
+                  className={cn(
+                    "h-11 text-base premium-input sm:h-12 sm:text-lg",
+                    errors.title ? "border-red-500" : "",
+                  )}
                 />
-                {errors.goal && (
-                  <p className="text-sm text-red-500">{errors.goal}</p>
+                {errors.title && (
+                  <p className="text-sm text-red-500 font-medium">
+                    {errors.title}
+                  </p>
                 )}
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="currency">Currency</Label>
-                <Select
-                  value={formData.currency}
-                  onValueChange={(value) =>
-                    handleSelectChange("currency", value)
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select currency" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {currencies.map((currency) => (
-                      <SelectItem key={currency.id} value={currency.id}>
-                        {currency.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="summary"
+                    className="text-sm font-semibold text-gray-700 sm:text-base"
+                  >
+                    Short Summary <span className="text-gray-400 font-normal">(optional)</span>
+                  </Label>
+                  <Input
+                    id="summary"
+                    name="summary"
+                    placeholder="One-line description shown on the cause hero"
+                    value={formData.summary}
+                    onChange={handleChange}
+                    maxLength={200}
+                    className={cn(
+                      "h-11 premium-input sm:h-12",
+                      errors.summary ? "border-red-500" : ""
+                    )}
+                  />
+                  {errors.summary && (
+                    <p className="text-sm text-red-500 font-medium">
+                      {errors.summary}
+                    </p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="location"
+                    className="text-sm font-semibold text-gray-700 sm:text-base"
+                  >
+                    Location <span className="text-gray-400 font-normal">(optional)</span>
+                  </Label>
+                  <Input
+                    id="location"
+                    name="location"
+                    placeholder="e.g., Lagos, Nigeria"
+                    value={formData.location}
+                    onChange={handleChange}
+                    className={cn(
+                      "h-11 premium-input sm:h-12",
+                      errors.location ? "border-red-500" : ""
+                    )}
+                  />
+                  {errors.location && (
+                    <p className="text-sm text-red-500 font-medium">
+                      {errors.location}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-5 md:grid-cols-2 md:gap-6">
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="category"
+                    className="text-sm font-semibold text-gray-700 sm:text-base"
+                  >
+                    Category
+                  </Label>
+                  <Select
+                    value={formData.category}
+                    onValueChange={(value) =>
+                      handleSelectChange("category", value)
+                    }
+                  >
+                    <SelectTrigger
+                      className={cn(
+                        "h-11 premium-input sm:h-12",
+                        errors.category ? "border-red-500" : "",
+                      )}
+                    >
+                      <SelectValue placeholder="What's this about?" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories.map((category) => (
+                        <SelectItem key={category.id} value={category.id}>
+                          {category.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {errors.category && (
+                    <p className="text-sm text-red-500 font-medium">
+                      {errors.category}
+                    </p>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 lg:grid-cols-3">
+                  <div className="space-y-2 sm:col-span-2">
+                    <Label
+                      htmlFor="goal"
+                      className="text-sm font-semibold text-gray-700 sm:text-base"
+                    >
+                      Funding Goal
+                    </Label>
+                    <div className="relative">
+                      <Input
+                        id="goal"
+                        name="goal"
+                        type="number"
+                        placeholder="0.00"
+                        value={formData.goal}
+                        onChange={handleChange}
+                        className={cn(
+                          "h-11 pl-11 premium-input text-base font-mono sm:h-12 sm:pl-12 sm:text-lg",
+                          errors.goal ? "border-red-500" : "",
+                        )}
+                      />
+                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 font-bold sm:left-4">
+                        ₦
+                      </span>
+                    </div>
+                    {errors.goal && (
+                      <p className="text-sm text-red-500 font-medium">
+                        {errors.goal}
+                      </p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label
+                      htmlFor="currency"
+                      className="text-sm font-semibold text-gray-700 sm:text-base"
+                    >
+                      Currency
+                    </Label>
+                    <Select
+                      value={formData.currency}
+                      onValueChange={(value) =>
+                        handleSelectChange("currency", value)
+                      }
+                    >
+                      <SelectTrigger className="h-11 premium-input font-bold sm:h-12">
+                        <SelectValue placeholder="NGN" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {currencies.map((currency) => (
+                          <SelectItem key={currency.id} value={currency.id}>
+                            {currency.id}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -487,109 +747,147 @@ export default function CreateCauseForm() {
 
       case 2:
         return (
-          <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <h3 className="text-lg font-medium">Additional Sections</h3>
-              <Button type="button" onClick={addSection} variant="outline">
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 sm:space-y-8">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+              <div className="space-y-1">
+                <h3 className="text-xl font-bold text-gradient">
+                  Tell Your Story
+                </h3>
+                <p className="text-sm text-gray-500">
+                  Add sections to provide more context and depth to your cause.
+                </p>
+              </div>
+              <Button
+                type="button"
+                onClick={addSection}
+                variant="outline"
+                className="h-11 w-full rounded-full border-brand/20 text-brand hover:bg-brand/5 sm:w-auto"
+              >
                 Add Section
               </Button>
             </div>
-            {formData.sections.map((section, index) => (
-              <Card key={index} className="p-4">
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <h4 className="text-sm font-medium">Section {index + 1}</h4>
-                    {index > 0 && (
-                      <Button
-                        type="button"
-                        onClick={() => removeSection(index)}
-                        variant="ghost"
-                        size="sm"
-                      >
-                        Remove
-                      </Button>
-                    )}
+
+            <div className="space-y-4 sm:space-y-6">
+              {formData.sections.map((section, index) => (
+                <Card
+                  key={index}
+                  className="relative overflow-hidden border-brand/10 shadow-sm bg-white/50 backdrop-blur-sm"
+                >
+                  <div className="space-y-4 p-4 sm:p-6">
+                    <div className="-mx-4 -mt-4 mb-2 flex items-center justify-between border-b border-brand/10 bg-brand/5 p-4 sm:-mx-6 sm:-mt-6">
+                      <span className="text-xs font-bold uppercase tracking-wider text-brand">
+                        Section {index + 1}
+                      </span>
+                      {index > 0 && (
+                        <Button
+                          type="button"
+                          onClick={() => removeSection(index)}
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 text-red-500 hover:text-red-600 hover:bg-red-50 rounded-full"
+                        >
+                          Delete
+                        </Button>
+                      )}
+                    </div>
+                    <div className="space-y-4 pt-1 sm:pt-2">
+                      <div className="space-y-2">
+                        <Label
+                          htmlFor={`section-heading-${index}`}
+                          className="font-semibold text-gray-600"
+                        >
+                          Heading
+                        </Label>
+                        <Input
+                          id={`section-heading-${index}`}
+                          placeholder="e.g., The Challenge"
+                          value={section.heading}
+                          onChange={(e) =>
+                            updateSection(index, "heading", e.target.value)
+                          }
+                          className={cn(
+                            "h-11 premium-input border-brand/5 sm:h-12",
+                            errors.sections?.[index]?.heading &&
+                              "border-red-500 focus:border-red-500 focus:ring-red-100",
+                          )}
+                        />
+                        {attemptedStep === 2 &&
+                          errors.sections?.[index]?.heading && (
+                          <p className="text-sm font-medium text-red-500">
+                            {errors.sections[index]?.heading}
+                          </p>
+                        )}
+                      </div>
+                      <div className="space-y-2">
+                        <Label
+                          htmlFor={`section-description-${index}`}
+                          className="font-semibold text-gray-600"
+                        >
+                          Story Content
+                        </Label>
+                        <Textarea
+                          id={`section-description-${index}`}
+                          placeholder="Provide details about this specific part of your project..."
+                          value={section.description}
+                          onChange={(e) =>
+                            updateSection(index, "description", e.target.value)
+                          }
+                          className={cn(
+                            "min-h-[140px] premium-input border-brand/5 resize-none sm:min-h-[150px]",
+                            errors.sections?.[index]?.description &&
+                              "border-red-500 focus:border-red-500 focus:ring-red-100",
+                          )}
+                        />
+                        {attemptedStep === 2 &&
+                          errors.sections?.[index]?.description && (
+                          <p className="text-sm font-medium text-red-500">
+                            Something has to be written here.
+                          </p>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor={`section-heading-${index}`}>
-                      Sub-heading
-                    </Label>
-                    <Input
-                      id={`section-heading-${index}`}
-                      value={section.heading}
-                      onChange={(e) =>
-                        updateSection(index, "heading", e.target.value)
-                      }
-                      placeholder="Enter sub-heading"
-                      className={
-                        errors.sections && errors.sections[index]?.heading
-                          ? "border-red-500"
-                          : ""
-                      }
-                    />
-                    {errors.sections && errors.sections[index]?.heading && (
-                      <p className="text-sm text-red-500">
-                        {errors.sections[index]?.heading}
-                      </p>
-                    )}
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor={`section-description-${index}`}>
-                      Sub-description
-                    </Label>
-                    <Textarea
-                      id={`section-description-${index}`}
-                      value={section.description}
-                      onChange={(e) =>
-                        updateSection(index, "description", e.target.value)
-                      }
-                      placeholder="Enter sub-description"
-                      className={
-                        errors.sections && errors.sections[index]?.description
-                          ? "border-red-500"
-                          : ""
-                      }
-                    />
-                    {errors.sections && errors.sections[index]?.description && (
-                      <p className="text-sm text-red-500">
-                        {errors.sections[index]?.description}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </Card>
-            ))}
+                </Card>
+              ))}
+            </div>
           </div>
         );
 
       case 3:
         return (
-          <div className="space-y-6">
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 sm:space-y-8">
             <div className="space-y-2">
-              <h3 className="text-lg font-medium">Cause Duration</h3>
-              <p className="text-sm text-muted-foreground">
-                Select when your cause should start and end. Maximum duration is
-                60 days.
+              <h3 className="text-xl font-bold text-gradient">
+                Set the Timeline
+              </h3>
+              <p className="text-sm text-gray-500">
+                Choose when your campaign starts and ends. Max duration is 180
+                days.
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label>Start Date</Label>
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-2 md:gap-8">
+              <div className="space-y-4">
+                <Label htmlFor="start-date" className="mb-2 block text-sm font-semibold text-gray-700 sm:text-base">
+                  Start Date
+                </Label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
+                      id="start-date"
                       variant="outline"
                       className={cn(
-                        "w-full justify-start text-left font-normal",
+                        "h-12 w-full justify-start rounded-2xl border-brand/10 text-left font-normal premium-input sm:h-14",
                         !formData.startDate && "text-muted-foreground",
-                        errors.startDate && "border-red-500"
+                        errors.startDate && "border-red-500",
                       )}
                     >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {formData.startDate
-                        ? format(formData.startDate, "PPP")
-                        : "Pick a start date"}
+                      <CalendarIcon className="mr-3 h-4 w-4 text-brand sm:h-5 sm:w-5" />
+                      {formData.startDate ? (
+                        format(formData.startDate, "PPP")
+                      ) : (
+                        <span>Pick a date</span>
+                      )}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
@@ -597,32 +895,39 @@ export default function CreateCauseForm() {
                       mode="single"
                       selected={formData.startDate}
                       onSelect={(date) => handleDateChange(date, "startDate")}
-                      disabled={(date) => isBefore(date, new Date())}
+                      disabled={(date) => isBefore(date, startOfDay(new Date()))}
                       initialFocus
                     />
                   </PopoverContent>
                 </Popover>
                 {errors.startDate && (
-                  <p className="text-sm text-red-500">{errors.startDate}</p>
+                  <p className="text-sm text-red-500 font-medium">
+                    {errors.startDate}
+                  </p>
                 )}
               </div>
 
-              <div className="space-y-2">
-                <Label>End Date</Label>
+              <div className="space-y-4">
+                <Label htmlFor="end-date" className="mb-2 block text-sm font-semibold text-gray-700 sm:text-base">
+                  End Date
+                </Label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
+                      id="end-date"
                       variant="outline"
                       className={cn(
-                        "w-full justify-start text-left font-normal",
+                        "h-12 w-full justify-start rounded-2xl border-brand/10 text-left font-normal premium-input sm:h-14",
                         !formData.endDate && "text-muted-foreground",
-                        errors.endDate && "border-red-500"
+                        errors.endDate && "border-red-500",
                       )}
                     >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {formData.endDate
-                        ? format(formData.endDate, "PPP")
-                        : "Pick an end date"}
+                      <CalendarIcon className="mr-3 h-4 w-4 text-brand sm:h-5 sm:w-5" />
+                      {formData.endDate ? (
+                        format(formData.endDate, "PPP")
+                      ) : (
+                        <span>Pick a date</span>
+                      )}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
@@ -631,35 +936,39 @@ export default function CreateCauseForm() {
                       selected={formData.endDate}
                       onSelect={(date) => handleDateChange(date, "endDate")}
                       disabled={(date) => {
-                        const isPast = isBefore(date, new Date());
-                        const isBeforeStart = formData.startDate
-                          ? isBefore(date, formData.startDate)
-                          : false;
-                        const isOver60Days = formData.startDate
-                          ? differenceInDays(date, formData.startDate) > 60
-                          : false;
-                        return isPast || isBeforeStart || isOver60Days;
+                        const today = startOfDay(new Date());
+                        const start = formData.startDate || today;
+                        const maxEnd = addDays(start, MAX_DURATION_DAYS);
+                        return isBefore(date, start) || isAfter(date, maxEnd);
                       }}
                       initialFocus
                     />
                   </PopoverContent>
                 </Popover>
                 {errors.endDate && (
-                  <p className="text-sm text-red-500">{errors.endDate}</p>
+                  <p className="text-sm text-red-500 font-medium">
+                    {errors.endDate}
+                  </p>
                 )}
               </div>
             </div>
 
             {formData.startDate && formData.endDate && (
-              <div className="p-4 bg-muted rounded-lg">
-                <p className="text-sm">
-                  <span className="font-medium">Duration:</span>{" "}
-                  {differenceInDays(formData.endDate, formData.startDate)} days
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {format(formData.startDate, "PPP")} -{" "}
-                  {format(formData.endDate, "PPP")}
-                </p>
+              <div className="flex items-start gap-3 rounded-xl border border-brand/10 bg-brand/5 p-4">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand/10 text-brand">
+                  <CalendarIcon className="w-5 h-5" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-brand">
+                    Duration:{" "}
+                    {differenceInDays(formData.endDate, formData.startDate)}{" "}
+                    Days
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Running from {format(formData.startDate, "PPP")} to{" "}
+                    {format(formData.endDate, "PPP")}
+                  </p>
+                </div>
               </div>
             )}
           </div>
@@ -667,240 +976,273 @@ export default function CreateCauseForm() {
 
       case 4:
         return (
-          <div className="space-y-4">
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 sm:space-y-8">
             <div className="space-y-2">
-              <Label>Cover Image</Label>
-              <ImageUpload
-                onUpload={(files) => handleImageUpload(files)}
-                maxFiles={1}
-                accept="image/*"
-              />
-              {errors.coverImage && (
-                <p className="text-sm text-red-500">{errors.coverImage}</p>
-              )}
-              {formData.coverImage && (
-                <div className="mt-2">
-                  <img
-                    src={URL.createObjectURL(formData.coverImage)}
-                    alt="Cover preview"
-                    className="h-32 w-full object-cover rounded-md"
-                  />
-                </div>
-              )}
+              <h3 className="text-xl font-bold text-gradient">Visual Impact</h3>
+              <p className="text-sm text-gray-500">
+                High-quality visuals significantly increase support. Add a cover
+                and gallery items.
+              </p>
             </div>
 
-            <div className="mt-8 space-y-4">
-              <div className="space-y-2">
-                <Label>Additional Multimedia</Label>
-                <p className="text-sm text-muted-foreground">
-                  Enhance your cause with images and videos. Total size must not
-                  exceed 100MB.
-                </p>
-                <ImageUpload
-                  onUpload={(files) => handleMultimediaUpload(files)}
-                  maxFiles={10}
-                  accept="image/*,video/*"
-                  //   multiple={true}
-                />
-                {errors.multimedia && (
-                  <p className="text-sm text-red-500">{errors.multimedia}</p>
-                )}
+            <div className="space-y-5 sm:space-y-6">
+              <div className="space-y-4">
+                <Label className="block text-sm font-semibold text-gray-700 sm:text-base">
+                  Cover Image
+                </Label>
+                <div className="glass-panel rounded-2xl border-brand/10 p-4 transition-all hover:border-brand/30 sm:p-6">
+                  <ImageUpload
+                    onUpload={(files) => handleImageUpload(files)}
+                    maxFiles={1}
+                  />
+                  {formData.coverImage && (
+                    <div className="mt-4 relative group aspect-video rounded-xl overflow-hidden shadow-sm border border-brand/10">
+                      <img
+                        src={URL.createObjectURL(formData.coverImage)}
+                        alt="Cover Preview"
+                        className="object-cover w-full h-full transition-transform duration-300 group-hover:scale-105"
+                      />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="sm"
+                          onClick={() =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              coverImage: null,
+                            }))
+                          }
+                          className="rounded-full h-10 w-10 p-0"
+                        >
+                          <Icons.trash className="h-5 w-5" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                  {errors.coverImage && (
+                    <p className="mt-2 text-sm text-red-500 font-medium">
+                      {errors.coverImage}
+                    </p>
+                  )}
+                </div>
               </div>
 
-              {formData.multimedia &&
-                Array.isArray(formData.multimedia) &&
-                formData.multimedia.length > 0 && (
-                  <div className="space-y-4">
-                    <h4 className="text-sm font-medium">
-                      Uploaded Files ({formData.multimedia.length})
-                    </h4>
-                    <p className="text-xs text-muted-foreground">
-                      Total Size:{" "}
-                      {(
-                        (formData.multimedia && formData.multimedia.length > 0
-                          ? formData.multimedia.reduce(
-                              (acc, file) => acc + file.size,
-                              0
-                            )
-                          : 0) /
-                        (1024 * 1024)
-                      ).toFixed(2)}
-                      MB of 100MB
+              <div className="space-y-4">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <Label className="block text-sm font-semibold text-gray-700 sm:text-base">
+                    Multimedia Gallery
+                  </Label>
+                  <span className="w-fit rounded-full border border-brand/10 bg-brand/5 px-2 py-1 text-xs font-medium text-brand">
+                    Max 5 files
+                  </span>
+                </div>
+                <div className="glass-panel rounded-2xl border-brand/10 p-4 sm:p-6">
+                  <ImageUpload
+                    onUpload={(files) => handleMultimediaUpload(files)}
+                    maxFiles={5 - (formData.multimedia?.length || 0)}
+                    description="Upload up to 5 files"
+                  />
+                  {errors.multimedia && (
+                    <p className="mt-2 text-sm text-red-500 font-medium">
+                      {errors.multimedia}
                     </p>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                      {formData.multimedia.map((file, index) => (
-                        <div key={index} className="relative group">
-                          {file.type.startsWith("image/") ? (
-                            <img
-                              src={URL.createObjectURL(file)}
-                              alt={`Multimedia ${index + 1}`}
-                              className="h-32 w-full object-cover rounded-md"
-                            />
-                          ) : (
-                            <div className="h-32 w-full bg-muted rounded-md flex items-center justify-center">
-                              <div className="text-center">
-                                <svg
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  className="h-8 w-8 mx-auto mb-2"
-                                  fill="none"
-                                  viewBox="0 0 24 24"
-                                  stroke="currentColor"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
-                                  />
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                                  />
-                                </svg>
-                                <p className="text-xs truncate max-w-[90%] mx-auto">
-                                  {file.name}
-                                </p>
-                                <p className="text-xs text-muted-foreground">
-                                  {(file.size / (1024 * 1024)).toFixed(2)}MB
-                                </p>
-                              </div>
-                            </div>
-                          )}
-                          <Button
-                            type="button"
-                            variant="destructive"
-                            size="sm"
-                            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={() => removeMultimedia(index)}
-                          >
-                            Remove
-                          </Button>
-                        </div>
-                      ))}
+                  )}
+                  {formData.multimedia && formData.multimedia.length > 0 && (
+                    <div className="mt-6">
+                      <SelectedMediaCarousel
+                        files={formData.multimedia}
+                        onRemove={removeMultimedia}
+                      />
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <Label className="block text-sm font-semibold text-gray-700 sm:text-base">
+                  Video Links (Optional)
+                </Label>
+                <div className="space-y-3">
+                  {formData.videoLinks.map((link, index) => (
+                    <div
+                      key={index}
+                      className="group flex flex-col gap-2 animate-in slide-in-from-left-2 sm:flex-row"
+                    >
+                      <Input
+                        value={link}
+                        onChange={(e) => {
+                          const newLinks = [...formData.videoLinks];
+                          newLinks[index] = e.target.value;
+                          setFormData((prev) => ({
+                            ...prev,
+                            videoLinks: newLinks,
+                          }));
+                        }}
+                        placeholder="YouTube or Vimeo link"
+                        className="h-11 premium-input bg-white sm:h-12"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={() => {
+                          const newLinks = formData.videoLinks.filter(
+                            (_, i) => i !== index,
+                          );
+                          setFormData((prev) => ({
+                            ...prev,
+                            videoLinks: newLinks,
+                          }));
+                        }}
+                        className="h-11 rounded-lg text-red-500 hover:bg-red-50 sm:h-12"
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  ))}
+                  <Button
+                    type="button"
+                    onClick={() =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        videoLinks: [...prev.videoLinks, ""],
+                      }))
+                    }
+                    variant="outline"
+                    className="h-11 w-full rounded-xl border-2 border-dashed border-gray-200 bg-transparent text-gray-500 transition-colors hover:border-brand/30 hover:bg-brand/5 hover:text-brand sm:h-12"
+                  >
+                    + Add Video Link
+                  </Button>
+                </div>
+              </div>
             </div>
           </div>
         );
 
       case 5:
         return (
-          <div className="space-y-6">
-            <div className="space-y-2">
-              <h3 className="text-lg font-semibold">{formData.title}</h3>
-              <p className="text-sm text-muted-foreground">
-                {categories.find((c) => c.id === formData.category)?.name}
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 sm:space-y-8">
+            <div className="space-y-2 border-b border-gray-100 pb-5 sm:pb-6">
+              <h3 className="text-xl font-bold text-gradient sm:text-2xl">
+                Review & Launch
+              </h3>
+              <p className="text-gray-500">
+                Take a moment to review your cause. You can go back to any step
+                to make changes.
               </p>
             </div>
-            <div className="space-y-2">
-              {formData.sections.map((section, index) => (
-                <div key={index} className="space-y-2">
-                  <h5 className="font-medium">{section.heading}</h5>
-                  <p className="text-sm text-muted-foreground">
-                    {section.description}
-                  </p>
+
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 lg:gap-8">
+              <div className="space-y-6 lg:col-span-2 lg:space-y-8">
+                {/* Visual Preview */}
+                <div className="glass-panel overflow-hidden rounded-3xl">
+                  <MultimediaCarousel
+                    media={[
+                      ...(formData.multimedia?.map((file) =>
+                        URL.createObjectURL(file),
+                      ) || []),
+                      ...(formData.videoLinks || []),
+                    ]}
+                    coverImage={
+                      formData.coverImage
+                        ? URL.createObjectURL(formData.coverImage)
+                        : undefined
+                    }
+                    title={formData.title}
+                  />
                 </div>
-              ))}
-            </div>
 
-            <div className="space-y-2">
-              <h4 className="font-medium">Funding Goal</h4>
-              <p className="text-sm">
-                {formData.currency} {formData.goal}
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <h4 className="font-medium">Duration</h4>
-              {formData.startDate && formData.endDate && (
-                <p className="text-sm">
-                  {differenceInDays(formData.endDate, formData.startDate)} days:{" "}
-                  {format(formData.startDate, "PPP")} -{" "}
-                  {format(formData.endDate, "PPP")}
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <h4 className="font-medium">Media</h4>
-              <div className="grid grid-cols-2 gap-4">
-                {formData.coverImage && (
+                {/* Content Review */}
+                <div className="space-y-5 sm:space-y-6">
                   <div>
-                    <p className="text-sm font-medium mb-2">Cover Image</p>
-                    <img
-                      src={URL.createObjectURL(formData.coverImage)}
-                      alt="Cover preview"
-                      className="h-48 w-full object-cover rounded-md"
-                    />
-                  </div>
-                )}
-                {formData.multimedia &&
-                  Array.isArray(formData.multimedia) &&
-                  formData.multimedia.length > 0 && (
-                    <div>
-                      <p className="text-sm font-medium mb-2">
-                        Additional Media ({formData.multimedia.length})
-                      </p>
-                      <div className="bg-muted h-48 rounded-md flex items-center justify-center">
-                        <div className="text-center">
-                          <p className="text-sm">
-                            {
-                              formData.multimedia.filter((f) =>
-                                f.type.startsWith("image/")
-                              ).length
-                            }{" "}
-                            images,{" "}
-                            {
-                              formData.multimedia.filter((f) =>
-                                f.type.startsWith("video/")
-                              ).length
-                            }{" "}
-                            videos
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Total size:{" "}
-                            {(
-                              (formData.multimedia &&
-                              formData.multimedia.length > 0
-                                ? formData.multimedia.reduce(
-                                    (acc, file) => acc + file.size,
-                                    0
-                                  )
-                                : 0) /
-                              (1024 * 1024)
-                            ).toFixed(2)}
-                            MB
-                          </p>
-                        </div>
+                    <h4 className="text-xl font-bold mb-2">{formData.title}</h4>
+                    {(formData.summary || formData.location) && (
+                      <div className="flex flex-wrap gap-4 mb-4">
+                        {formData.location && (
+                          <div className="flex items-center gap-1.5 text-sm font-medium text-brand bg-brand/5 px-2.5 py-1 rounded-full border border-brand/10">
+                            <Icons.mapPin className="w-3.5 h-3.5" />
+                            {formData.location}
+                          </div>
+                        )}
+                        {formData.category && (
+                          <div className="flex items-center gap-1.5 text-sm font-medium text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full border border-blue-100">
+                            {categories.find((c) => c.id === formData.category)?.name}
+                          </div>
+                        )}
                       </div>
+                    )}
+                    {formData.summary && (
+                      <p className="text-gray-500 italic mb-4 border-l-4 border-brand/20 pl-4 py-1">
+                        "{formData.summary}"
+                      </p>
+                    )}
+                    {formData.sections[0]?.heading && (
+                      <h5 className="text-lg font-semibold text-gray-800 mb-2">
+                        {formData.sections[0].heading}
+                      </h5>
+                    )}
+                    <p className="text-gray-600 leading-relaxed whitespace-pre-line">
+                      {formData.sections[0]?.description}
+                    </p>
+                  </div>
+
+                  {formData.sections.slice(1).map((section, index) => (
+                    <div key={index} className="space-y-2">
+                      <h5 className="text-lg font-semibold text-gray-800">
+                        {section.heading}
+                      </h5>
+                      <p className="text-gray-600 leading-relaxed whitespace-pre-line">
+                        {section.description}
+                      </p>
                     </div>
-                  )}
+                  ))}
+                </div>
+              </div>
+
+              {/* Sidebar Info */}
+              <div className="space-y-6">
+                <div className="glass-panel space-y-5 rounded-3xl border-brand/10 p-5 sm:p-6 lg:sticky lg:top-6">
+                  <div className="space-y-1">
+                    <p className="text-xs font-bold uppercase tracking-wider text-gray-400">
+                      Target Goal
+                    </p>
+                    <p className="text-3xl font-black text-brand">
+                      {formData.currency}{" "}
+                      {Number(formData.goal).toLocaleString()}
+                    </p>
+                  </div>
+
+                  <div className="space-y-1 border-t border-gray-100 pt-4">
+                    <p className="text-xs font-bold uppercase tracking-wider text-gray-400">
+                      Category
+                    </p>
+                    <p className="text-lg font-semibold text-gray-800">
+                      {categories.find((c) => c.id === formData.category)?.name}
+                    </p>
+                  </div>
+
+                  <div className="space-y-1 border-t border-gray-100 pt-4">
+                    <p className="text-xs font-bold uppercase tracking-wider text-gray-400">
+                      Duration
+                    </p>
+                    <div className="flex items-center gap-2 text-gray-700">
+                      <CalendarIcon className="w-4 h-4 text-brand" />
+                      <span className="font-medium">
+                        {formData.startDate && formData.endDate
+                          ? `${differenceInDays(formData.endDate, formData.startDate)} Days`
+                          : "Not set"}
+                      </span>
+                    </div>
+                    {formData.startDate && formData.endDate && (
+                      <p className="text-xs text-gray-400 mt-1">
+                        {format(formData.startDate, "MMM d")} -{" "}
+                        {format(formData.endDate, "MMM d, yyyy")}
+                      </p>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
-
-            {formData.multimedia &&
-              Array.isArray(formData.multimedia) &&
-              formData.multimedia.length > 0 && (
-                <div className="space-y-2">
-                  <h4 className="font-medium">Multimedia Files</h4>
-                  <div className="grid grid-cols-2 gap-4">
-                    {formData.multimedia.map((file, index) => (
-                      <div key={index} className="flex flex-col">
-                        <p className="text-sm font-medium">{file.name}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {file.type.startsWith("image/")
-                            ? "Image file"
-                            : "Video file"}{" "}
-                          - {Math.round(file.size / 1024)} KB
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
           </div>
         );
 
@@ -909,46 +1251,83 @@ export default function CreateCauseForm() {
     }
   };
 
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Create a New Cause</CardTitle>
-        <CardDescription>
-          Fill out the form below to create a new fundraising cause. All causes
-          require approval before going live.
-        </CardDescription>
-        <Progress value={(currentStep / 5) * 100} className="mt-4" />
-      </CardHeader>
-      <form onSubmit={handleSubmit} className="space-y-8" autoComplete="off">
-        <CardContent className="space-y-4">{renderStep()}</CardContent>
+  const steps = ["Basic Info", "Story", "Timeline", "Media", "Review"];
 
-        <CardFooter className="flex justify-between">
+  return (
+    <PremiumFormContainer
+      title="Launch Your Impact"
+      description="Create a compelling cause and start raising funds for what matters most."
+    >
+      <FormStepper steps={steps} currentStep={currentStep} />
+
+      <form
+        className="space-y-6 sm:space-y-8"
+        autoComplete="off"
+        onKeyDown={(e) => {
+          if (
+            currentStep === 5 &&
+            e.key === "Enter" &&
+            e.target instanceof HTMLElement &&
+            e.target.tagName !== "TEXTAREA" &&
+            e.target.tagName !== "BUTTON"
+          ) {
+            e.preventDefault();
+          }
+        }}
+      >
+        <div className="min-h-[320px] sm:min-h-[400px]">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentStep}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              {renderStep()}
+            </motion.div>
+          </AnimatePresence>
+        </div>
+
+        <div className="sticky bottom-0 z-10 -mx-4 flex flex-col gap-3 border-t border-gray-100 bg-white/95 px-4 pb-1 pt-4 backdrop-blur sm:static sm:mx-0 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:bg-transparent sm:px-0 sm:pb-0 sm:pt-8 sm:backdrop-blur-0">
           <Button
             type="button"
-            variant="outline"
+            variant="ghost"
             onClick={prevStep}
             disabled={currentStep === 1}
+            className="order-2 h-11 w-full text-slate-700 hover:bg-gray-50 hover:text-slate-900 sm:order-1 sm:w-auto"
           >
             Back
           </Button>
-          {currentStep < 5 ? (
-            <Button type="button" onClick={nextStep}>
-              Next
-            </Button>
-          ) : (
-            <Button type="submit" disabled={isLoading || submitting}>
-              {isLoading || submitting ? (
-                <>
-                  <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
-                  Submitting...
-                </>
-              ) : (
-                "Submit Cause"
-              )}
-            </Button>
-          )}
-        </CardFooter>
+          <div className="order-1 flex w-full gap-3 sm:order-2 sm:w-auto sm:gap-4">
+            {currentStep < 5 ? (
+              <Button
+                type="button"
+                onClick={nextStep}
+                className="h-11 flex-1 bg-brand text-white hover:bg-brand/90 sm:h-10 sm:flex-none sm:px-8"
+              >
+                Continue
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                disabled={isLoading || submitting}
+                onClick={handleSubmit}
+                className="h-11 flex-1 bg-brand text-white hover:bg-brand/90 sm:h-10 sm:flex-none sm:px-8"
+              >
+                {isLoading || submitting ? (
+                  <>
+                    <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+                    Launching...
+                  </>
+                ) : (
+                  "Launch Cause"
+                )}
+              </Button>
+            )}
+          </div>
+        </div>
       </form>
-    </Card>
+    </PremiumFormContainer>
   );
 }

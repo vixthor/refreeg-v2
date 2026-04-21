@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { getCurrentUser } from "@/actions/auth-actions";
 import { Progress } from "@/components/ui/progress";
 import { Edit, Eye, MoreHorizontal, Trash } from "lucide-react";
 import {
@@ -18,7 +19,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { deleteCause, getUserCausesWithStatus } from "@/actions";
+import { deleteCause, getUserCausesWithStatus } from "@/actions/cause-actions";
 import { CauseDropdown } from "./cause-dropdown";
 
 // Mock data for user's causes
@@ -130,8 +131,8 @@ export async function MyCausesList({ status, userId }: MyCausesListProps) {
                     cause.status === "approved"
                       ? "default"
                       : cause.status === "pending"
-                      ? "secondary"
-                      : "destructive"
+                        ? "secondary"
+                        : "destructive"
                   }
                 >
                   {cause.status}

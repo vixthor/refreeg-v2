@@ -6,7 +6,7 @@ import { H1, P } from "@/components/typograpy";
 import { Button } from "../ui/button";
 import Link from "next/link";
 import { motion, useAnimation } from "framer-motion";
-import { useAnimateInView } from "@/hooks/use-animate-In-view"; // your hook
+import { useAnimateInView } from "@/hooks/use-animate-In-view";
 
 const HERO_IMAGES = ["/hero1.png", "/hero2.jpg", "/hero3.png", "/hero4.png"];
 const SLIDER_SPEED = 50;
@@ -32,18 +32,16 @@ const MobileSlider = () => {
 
   if (isInView) {
     (async () => {
-      // All images appear together
       await Promise.all(
         imageControls.map((c) =>
           c.start({
             opacity: 1,
             y: 0,
             transition: { duration: SLIDE_UP_DURATION, ease: "easeOut" },
-          })
-        )
+          }),
+        ),
       );
 
-      // Slider movement for mobile
       const totalWidth = HERO_IMAGES.length * (200 + IMAGE_GAP);
       sliderControls.start({
         x: -totalWidth,
@@ -89,7 +87,6 @@ const DesktopSlider = () => {
 
   if (isInView) {
     (async () => {
-      // Sequential appearance
       for (let control of imageControls) {
         await control.start({
           opacity: 1,
@@ -98,7 +95,6 @@ const DesktopSlider = () => {
         });
       }
 
-      // Slider movement for desktop
       const totalWidth = HERO_IMAGES.length * (325 + IMAGE_GAP);
       sliderControls.start({
         x: -totalWidth,
@@ -143,26 +139,35 @@ const Hero = () => {
       className="w-full bg-background flex flex-col items-center justify-center mb-10"
       id="home"
     >
-      {/* TEXT */}
       <div className="flex flex-col gap-4 max-w-[925px] w-full justify-center items-center text-center">
-        <motion.div className="flex gap-2 items-center" {...slideUp(0.1)}>
+        <motion.div
+          className="flex flex-row flex-wrap items-center gap-2 py-2 px-3"
+          {...slideUp(0.1)}
+        >
           <Image src="/Users.svg" alt="Users icon" width={20} height={20} />
-          <P>Join thousands already fundraising on RefreeG</P>
+          <p className="whitespace-nowrap text-xs md:text-sm ">
+            Join thousands already fundraising on RefreeG
+          </p>
         </motion.div>
+
         <motion.div {...slideUp(0.2)}>
           <H1 className="font-bold">
-            Empower Communities, Build a Better World
+            Support Fundraisers for People, Causes, and Communities.
           </H1>
         </motion.div>
         <motion.div {...slideUp(0.3)}>
           <P className="font-light">
-            Support causes that foster socioeconomic growth through transparent
-            and secure crowdfunding
+            RefreeG helps you donate securely and support fundraising for
+            trusted individuals, communities, and nonprofits.
           </P>
         </motion.div>
         <div className="flex gap-4">
           <motion.div {...slideFrom(-20, 0.4)}>
-            <Button asChild className="px-3.5 py-2 bg-blue-700 text-white">
+            <Button
+              asChild
+              className="px-3.5 py-2 text-white"
+              variant="secondary"
+            >
               <Link href="/causes">Explore Causes</Link>
             </Button>
           </motion.div>
@@ -171,7 +176,7 @@ const Hero = () => {
               asChild
               className="px-3.5 py-2 bg-white text-[#003366] border border-[#003366] hover:bg-white hover:text-[#003366]"
             >
-              <Link href="/auth/signin">
+              <Link href="/dashboard/causes/create">
                 <span className="flex items-center gap-2">
                   Join the change
                   <Image
@@ -187,14 +192,12 @@ const Hero = () => {
         </div>
       </div>
 
-      {/* SLIDER */}
       <div className="relative w-full bg-white overflow-hidden py-12">
         <div className="relative z-10 w-full overflow-hidden">
-          {/* Mobile version */}
           <div className="block md:hidden">
             <MobileSlider />
           </div>
-          {/* Desktop version */}
+
           <div className="hidden md:block">
             <DesktopSlider />
           </div>
