@@ -1,5 +1,6 @@
 import {
   ArrowRight,
+  Building,
   ChevronLeft,
   ChevronRight,
   Command,
@@ -7,7 +8,7 @@ import {
   HelpCircle,
   Laptop,
   Loader2,
-  type LightbulbIcon as LucideProps,
+  LightbulbIcon,
   Moon,
   Plus,
   Settings,
@@ -16,10 +17,13 @@ import {
   User,
   X,
   Upload,
+  Check,
+  MapPin,
   type LucideIcon,
-} from "lucide-react"
+  type LucideProps,
+} from "lucide-react";
 
-export type Icon = LucideIcon
+export type Icon = LucideIcon;
 
 export const Icons = {
   logo: Command,
@@ -33,11 +37,14 @@ export const Icons = {
   arrowRight: ArrowRight,
   help: HelpCircle,
   user: User,
+  building: Building,
   creditCard: CreditCard,
   laptop: Laptop,
   moon: Moon,
   sun: SunMedium,
   upload: Upload,
+  mail: Check,
+  mapPin: MapPin,
   gitHub: ({ ...props }: LucideProps) => (
     <svg
       aria-hidden="true"
@@ -72,5 +79,4 @@ export const Icons = {
       />
     </svg>
   ),
-}
-
+};

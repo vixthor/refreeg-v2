@@ -44,27 +44,34 @@ import { CopyEmail } from "@/components/copy-email";
 import type { UserWithRole } from "@/types";
 import { getUserRole, listUsersWithRoles } from "@/actions/role-actions";
 import Link from "next/link";
+import { ExportCSVButton } from "./components/export-csv-button";
+import { SendKycReminderButton } from "./components/send-kyc-reminder-button";
+
+import { getCachedUser } from "@/lib/supabase/cached-user";
 
 export default async function AdminUsersPage({
   searchParams,
 }: {
-  searchParams: { search?: string };
+  searchParams: Promise<{ search?: string }> | { search?: string };
 }) {
-  const supabase = await createClient();
   const params = await searchParams;
 
-  const {
-    data: { user: currentuser },
-  } = await supabase.auth.getUser();
+  const [ authResult, users, userRole ] = await Promise.all([
+    getCachedUser(),
+    listUsersWithRoles(),
+    (async () => {
+      const { user } = await getCachedUser();
+      return user ? getUserRole(user.id) : null;
+    })()
+  ]);
 
-  if (!currentuser) {
-    redirect("/signin");
+  const { user, error: authError } = authResult;
+
+  if (!user || authError) {
+    redirect("/auth/signin");
   }
 
-  // Check if user is admin or manager
-  const user = await getUserRole(currentuser.id);
-
-  if (!user || (user !== "admin" && user !== "manager")) {
+  if (!userRole || (userRole !== "admin" && userRole !== "manager")) {
     return (
       <Card>
         <CardHeader>
@@ -77,11 +84,6 @@ export default async function AdminUsersPage({
     );
   }
 
-  // Fetch users using server action
-  const users = await listUsersWithRoles();
-
-  // Filter users based on search query if provided
-
   const filteredUsers = params.search
     ? users.filter(
         (user) =>
@@ -89,6 +91,10 @@ export default async function AdminUsersPage({
           user.full_name?.toLowerCase().includes(params.search!.toLowerCase())
       )
     : users;
+
+  const kycAttentionUsers = filteredUsers.filter(
+    (u) => u.kyc_status === "pending"
+  );
 
   return (
     <div className="space-y-6">
@@ -99,11 +105,39 @@ export default async function AdminUsersPage({
         </p>
       </div>
 
+      {kycAttentionUsers.length > 0 && (
+        <div className="rounded-md bg-yellow-50 border border-yellow-300 p-4 flex items-center gap-4">
+          <Shield className="h-6 w-6 text-yellow-600" />
+          <div className="flex-1">
+            <span className="font-medium text-yellow-800">
+              {kycAttentionUsers.length} KYC submission
+              {kycAttentionUsers.length > 1 ? "s" : ""} require review
+            </span>
+            <span className="block text-yellow-700 text-sm">
+              There {kycAttentionUsers.length === 1 ? "is" : "are"}{" "}
+              {kycAttentionUsers.length} user
+              {kycAttentionUsers.length > 1 ? "s" : ""} with new or edited KYC
+              submissions awaiting your attention.
+            </span>
+          </div>
+          <Link
+            href={`/dashboard/admin/users/kyc/${kycAttentionUsers[0].id}`}
+            className="ml-4 px-3 py-1 rounded bg-yellow-200 text-yellow-900 font-medium hover:bg-yellow-300 transition"
+          >
+            Review Now
+          </Link>
+        </div>
+      )}
+
       <Card>
         <CardHeader>
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <CardTitle>Users</CardTitle>
-            <UserSearch defaultValue={params.search} />
+            <div className="flex items-center gap-2">
+              <SendKycReminderButton />
+              <ExportCSVButton />
+              <UserSearch defaultValue={params.search} />
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -135,7 +169,7 @@ export default async function AdminUsersPage({
                       <TableCell>
                         <div className="flex flex-col">
                           <Link
-                            href={`/profile/${userItem.id}`}
+                            href={`/${userItem.username || userItem.id}`}
                             className="font-medium hover:underline"
                           >
                             {userItem.full_name || "Unnamed User"}
@@ -177,13 +211,11 @@ export default async function AdminUsersPage({
                         {format(new Date(userItem.created_at), "MMM d, yyyy")}
                       </TableCell>
                       <TableCell>
-                        {/* KYC Shield Icon with color and dot overlay */}
                         <a
                           href={`/dashboard/admin/users/kyc/${userItem.id}`}
                           className="inline-block relative group"
                           title="Review KYC"
                         >
-                          {/* Shield color logic */}
                           {userItem.kyc_status === "approved" ? (
                             <Shield className="h-6 w-6 text-green-500" />
                           ) : userItem.kyc_status === "rejected" ? (
@@ -193,14 +225,14 @@ export default async function AdminUsersPage({
                           ) : (
                             <Shield className="h-6 w-6 text-gray-400" />
                           )}
-                          {/* Red dot overlay if pending */}
+
                           {userItem.kyc_status === "pending" && (
                             <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500 border-2 border-white" />
                           )}
                         </a>
                       </TableCell>
                       <TableCell className="text-right">
-                        <UserActions user={userItem} currentUserRole={user} />
+                        <UserActions user={userItem} currentUserRole={userRole} />
                       </TableCell>
                     </TableRow>
                   ))

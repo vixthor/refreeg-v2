@@ -3,12 +3,10 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import type { UserRole, UserWithRole } from "@/types";
+import { logAdminActivity } from "@/actions/database-actions";
 
 const DEFAULT_ADMIN_EMAIL = "kingraj1344@gmail.com";
 
-/**
- * Get all role information for a user in a single query
- */
 export async function getUserRoleInfo(userId: string): Promise<{
   isAdmin: boolean;
   isManager: boolean;
@@ -39,25 +37,16 @@ export async function getUserRoleInfo(userId: string): Promise<{
   };
 }
 
-/**
- * Check if a user is an admin
- */
 export async function isAdmin(userId: string): Promise<boolean> {
   const { isAdmin } = await getUserRoleInfo(userId);
   return isAdmin;
 }
 
-/**
- * Check if a user is a manager
- */
 export async function isManager(userId: string): Promise<boolean> {
   const { isManager } = await getUserRoleInfo(userId);
   return isManager;
 }
 
-/**
- * Check if a user is an admin or manager
- */
 export async function isAdminOrManager(userId: string): Promise<boolean> {
   const supabase = await createClient();
 
@@ -75,24 +64,17 @@ export async function isAdminOrManager(userId: string): Promise<boolean> {
   return data?.role === "admin" || data?.role === "manager";
 }
 
-/**
- * Get a user's role
- */
 export async function getUserRole(userId: string): Promise<UserRole> {
   const { role } = await getUserRoleInfo(userId);
   return role;
 }
 
-/**
- * Set a user's role
- */
 export async function setUserRole(
   userId: string,
-  role: UserRole
+  role: UserRole,
 ): Promise<boolean> {
   const supabase = await createClient();
 
-  // Get the current user's ID
   const {
     data: { user },
     error: userError,
@@ -103,7 +85,6 @@ export async function setUserRole(
     return false;
   }
 
-  // Check if the current user is an admin by checking their role directly
   const { data: currentUserRole } = await supabase
     .from("roles")
     .select("role")
@@ -115,7 +96,6 @@ export async function setUserRole(
     return false;
   }
 
-  // Check if the user already has a role
   const { data: existingRole } = await supabase
     .from("roles")
     .select("id")
@@ -125,7 +105,6 @@ export async function setUserRole(
   let result;
 
   if (existingRole) {
-    // Update existing role
     result = await supabase
       .from("roles")
       .update({
@@ -134,7 +113,6 @@ export async function setUserRole(
       })
       .eq("user_id", userId);
   } else {
-    // Insert new role
     result = await supabase.from("roles").insert({
       user_id: userId,
       role,
@@ -148,17 +126,21 @@ export async function setUserRole(
     return false;
   }
 
+  if (role === "manager") {
+    await logAdminActivity("appoint-manager", user.id);
+  } else if (role === "user") {
+    await logAdminActivity("remove-manager", user.id);
+  } else if (role === "admin") {
+    await logAdminActivity("appoint-admin", user.id);
+  }
+
   revalidatePath("/dashboard/admin/users");
   return true;
 }
 
-/**
- * List all users with their roles and latest KYC status
- */
 export async function listUsersWithRoles(): Promise<UserWithRole[]> {
   const supabase = await createClient();
 
-  // Get the current user
   const {
     data: { user },
     error: userError,
@@ -191,9 +173,10 @@ export async function listUsersWithRoles(): Promise<UserWithRole[]> {
       id,
       full_name,
       email,
+      username,
       is_blocked,
       created_at
-    `
+    `,
     )
     .order("created_at", { ascending: false });
 
@@ -257,6 +240,7 @@ export async function listUsersWithRoles(): Promise<UserWithRole[]> {
         role: userRole,
         is_blocked: profile.is_blocked || false,
         full_name: profile.full_name || null,
+        username: profile.username || null,
         created_at: profile.created_at,
         kyc_status: kycData?.status || null,
         kyc_verification_id: kycData?.id || null,
@@ -305,7 +289,7 @@ export async function getAllUsers(): Promise<UserWithRole[]> {
   const supabase = await createClient();
 
   const { data: profiles, error: profilesError } = await supabase.from(
-    "profiles"
+    "profiles",
   ).select(`
       id,
       full_name,
@@ -331,4 +315,50 @@ export async function getAllUsers(): Promise<UserWithRole[]> {
     full_name: profile.full_name || null,
     created_at: profile.created_at,
   }));
+}
+
+/**
+ * Get all admin email addresses (excluding managers)
+ */
+export async function getAdminEmails(): Promise<string[]> {
+  const supabase = await createClient();
+
+  try {
+    // Get all roles that are admin
+    const { data: roles, error: rolesError } = await supabase
+      .from("roles")
+      .select("user_id")
+      .eq("role", "admin");
+
+    if (rolesError) {
+      console.error("Error fetching admin roles:", rolesError);
+      return [];
+    }
+
+    if (!roles || roles.length === 0) {
+      return [];
+    }
+
+    // Get email addresses for these users
+    const userIds = roles.map((role) => role.user_id);
+    const { data: profiles, error: profilesError } = await supabase
+      .from("profiles")
+      .select("email")
+      .in("id", userIds);
+
+    if (profilesError) {
+      console.error("Error fetching admin emails:", profilesError);
+      return [];
+    }
+
+    // Filter out null/empty emails and return array
+    return (
+      profiles
+        ?.map((profile) => profile.email)
+        .filter((email): email is string => !!email) || []
+    );
+  } catch (error) {
+    console.error("Error in getAdminEmails:", error);
+    return [];
+  }
 }

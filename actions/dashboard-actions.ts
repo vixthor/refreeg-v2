@@ -1,212 +1,523 @@
-import { createClient } from "@/lib/supabase/server"
-import { formatCurrency } from "@/lib/utils"
+import { createClient } from "@/lib/supabase/server";
+import { formatCurrency } from "@/lib/utils";
 
 export async function getDashboardStats(userId: string) {
-    const supabase = await createClient()
+  const supabase = await createClient();
+  const { data: causes, error: causesError } = await supabase
+    .from("causes")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("status", "approved");
 
-    // Get total raised from donations
-    const { data: donations, error: donationsError } = await supabase
-        .from("donations")
-        .select("amount")
-        .eq("user_id", userId)
-
-    if (donationsError) {
-        console.error("Error fetching donations:", donationsError)
-        return {
-            totalRaised: 0,
-            totalDonors: 0,
-            activeCauses: 0,
-        }
-    }
-
-    const totalRaised = donations.reduce((sum, donation) => sum + donation.amount, 0)
-
-    // Get total donors
-    const { data: donors, error: donorsError } = await supabase
-        .from("donations")
-        .select("user_id", { count: "exact" })
-        .eq("user_id", userId)
-        .order("user_id")
-
-    if (donorsError) {
-        console.error("Error fetching donors:", donorsError)
-        return {
-            totalRaised,
-            totalDonors: 0,
-            activeCauses: 0,
-        }
-    }
-
-    // Get active causes
-    const { data: causes, error: causesError } = await supabase
-        .from("causes")
-        .select("id")
-        .eq("user_id", userId)
-        .eq("status", "approved")
-
-    if (causesError) {
-        console.error("Error fetching causes:", causesError)
-        return {
-            totalRaised,
-            totalDonors: donors?.length || 0,
-            activeCauses: 0,
-        }
-    }
-
+  if (causesError) {
+    console.error("Error fetching causes:", causesError);
     return {
-        totalRaised: formatCurrency(totalRaised),
-        totalDonors: donors?.length || 0,
-        activeCauses: causes?.length || 0,
-    }
+      totalRaised: formatCurrency(0),
+      totalDonors: 0,
+      activeCauses: 0,
+    };
+  }
+
+  const causeIds = (causes || []).map((c) => c.id);
+  if (causeIds.length === 0) {
+    return {
+      totalRaised: formatCurrency(0),
+      totalDonors: 0,
+      activeCauses: 0,
+    };
+  }
+
+  const { data: donations, error: donationsError } = await supabase
+    .from("donations")
+    .select("amount, user_id, cause_id")
+    .in("cause_id", causeIds);
+
+  if (donationsError) {
+    console.error("Error fetching cause donations:", donationsError);
+    return {
+      totalRaised: formatCurrency(0),
+      totalDonors: 0,
+      activeCauses: causes?.length || 0,
+    };
+  }
+
+  const totalRaised = (donations || []).reduce(
+    (sum, donation) => sum + Number(donation.amount || 0),
+    0
+  );
+  const totalDonors = new Set(
+    (donations || []).map((d) => d.user_id).filter(Boolean)
+  ).size;
+
+  return {
+    totalRaised: formatCurrency(totalRaised),
+    totalDonors,
+    activeCauses: causes?.length || 0,
+  };
 }
 
 export async function getDonationTrends(userId: string) {
-    const supabase = await createClient()
+  const supabase = await createClient();
 
-    // Get donations for the last 6 months
-    const sixMonthsAgo = new Date()
-    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6)
+  const sixMonthsAgo = new Date();
+  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
 
-    const { data: donations, error } = await supabase
-        .from("donations")
-        .select("amount, created_at")
-        .eq("user_id", userId)
-        .gte("created_at", sixMonthsAgo.toISOString())
-        .order("created_at", { ascending: true })
+  const { data: causes, error: causesError } = await supabase
+    .from("causes")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("status", "approved");
 
-    if (error) {
-        console.error("Error fetching donation trends:", error)
-        return []
+  if (causesError) {
+    console.error("Error fetching causes for donation trends:", causesError);
+    return [];
+  }
+
+  const causeIds = (causes || []).map((cause) => cause.id);
+
+  if (causeIds.length === 0) {
+    return [];
+  }
+
+  const { data: donations, error } = await supabase
+    .from("donations")
+    .select("amount, created_at")
+    .in("cause_id", causeIds)
+    .gte("created_at", sixMonthsAgo.toISOString())
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    console.error("Error fetching donation trends:", error);
+    return [];
+  }
+
+  const monthlyDonations = donations.reduce((acc, donation) => {
+    const date = new Date(donation.created_at);
+    const month = date.toLocaleString("default", {
+      month: "short",
+      year: "numeric",
+    });
+
+    if (!acc[month]) {
+      acc[month] = 0;
     }
+    acc[month] += donation.amount;
+    return acc;
+  }, {} as Record<string, number>);
 
-    // Group donations by month
-    const monthlyDonations = donations.reduce((acc, donation) => {
-        const date = new Date(donation.created_at)
-        const month = date.toLocaleString("default", { month: "short", year: "numeric" })
-
-        if (!acc[month]) {
-            acc[month] = 0
-        }
-        acc[month] += donation.amount
-        return acc
-    }, {} as Record<string, number>)
-
-    // Convert to array format for chart
-    return Object.entries(monthlyDonations).map(([month, amount]) => ({
-        month,
-        amount,
-    }))
+  return Object.entries(monthlyDonations).map(([month, amount]) => ({
+    month,
+    amount,
+  }));
 }
 
 export async function getUserCauses(userId: string, status?: string) {
-    const supabase = await createClient()
+  const supabase = await createClient();
 
-    let query = supabase
-        .from("causes")
-        .select("*")
-        .eq("user_id", userId)
+  let query = supabase.from("causes").select("*").eq("user_id", userId);
 
-    if (status && status !== "all") {
-        query = query.eq("status", status)
-    }
+  if (status && status !== "all") {
+    query = query.eq("status", status);
+  }
 
-    const { data: causes, error } = await query.order("created_at", { ascending: false })
+  const { data: causes, error } = await query.order("created_at", {
+    ascending: false,
+  });
 
-    if (error) {
-        console.error("Error fetching user causes:", error)
-        return []
-    }
+  if (error) {
+    console.error("Error fetching user causes:", error);
+    return [];
+  }
 
-    return causes
+  return causes;
 }
 
+/**
+ * Fetch the user's causes with `raised` computed live from the donations table,
+ * so it is never stale regardless of whether increment_cause_raised was called.
+ */
+export async function getUserCausesWithStats(userId: string) {
+  const supabase = await createClient();
+
+  const { data: causes, error: causesError } = await supabase
+    .from("causes")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
+
+  if (causesError) {
+    console.error("Error fetching user causes:", causesError);
+    return [];
+  }
+
+  if (!causes || causes.length === 0) return [];
+
+  const causeIds = causes.map((c) => c.id);
+
+  const { data: donations, error: donationsError } = await supabase
+    .from("donations")
+    .select("cause_id, amount")
+    .in("cause_id", causeIds);
+
+  if (donationsError) {
+    console.error("Error fetching cause donations:", donationsError);
+    // Return causes with whatever raised value is stored in the DB
+    return causes;
+  }
+
+  // Sum donations per cause in JS
+  const raisedByCause: Record<string, number> = {};
+  for (const d of donations || []) {
+    raisedByCause[d.cause_id] =
+      (raisedByCause[d.cause_id] || 0) + Number(d.amount || 0);
+  }
+
+  return causes.map((cause) => ({
+    ...cause,
+    raised: raisedByCause[cause.id] || 0,
+  }));
+}
+
+/**
+ * Fetch the user's petitions with signature counts in a single batch query.
+ */
+export async function getUserPetitionsWithStats(userId: string) {
+  const supabase = await createClient();
+
+  const { data: petitions, error: petitionsError } = await supabase
+    .from("petitions")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
+
+  if (petitionsError) {
+    console.error("Error fetching user petitions:", petitionsError);
+    return [];
+  }
+
+  if (!petitions || petitions.length === 0) return [];
+
+  const petitionIds = petitions.map((p) => p.id);
+
+  const { data: signatures, error: signaturesError } = await supabase
+    .from("signatures")
+    .select("petition_id")
+    .in("petition_id", petitionIds);
+
+  if (signaturesError) {
+    console.error("Error fetching petition signatures:", signaturesError);
+    return petitions.map((p) => ({ ...p, signatures: 0 }));
+  }
+
+  // Count signatures per petition in JS
+  const countByPetition: Record<string, number> = {};
+  for (const s of signatures || []) {
+    countByPetition[s.petition_id] =
+      (countByPetition[s.petition_id] || 0) + 1;
+  }
+
+  return petitions.map((petition) => ({
+    ...petition,
+    signatures: countByPetition[petition.id] || 0,
+  }));
+}
+
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export async function getCauseAnalytics(causeId: string) {
-    const supabase = await createClient()
+  if (!UUID_REGEX.test(causeId)) return null;
+  const supabase = await createClient();
 
-    // Get total donations and donors for the cause
-    const { data: donations, error: donationsError } = await supabase
-        .from("donations")
-        .select("amount, created_at,message, user_id")
-        .eq("cause_id", causeId)
+  const { data: donations, error: donationsError } = await supabase
+    .from("donations")
+    .select("amount, created_at,message, user_id")
+    .eq("cause_id", causeId);
 
-    if (donationsError) {
-        console.error("Error fetching cause donations:", donationsError)
-        return null
-    }
+  if (donationsError) {
+    console.error("Error fetching cause donations:", donationsError);
+    return null;
+  }
 
-    // Calculate total donations and unique donors
-    const totalDonations = donations.reduce((sum, donation) => sum + donation.amount, 0)
-    const uniqueDonors = new Set(donations.map(d => d.user_id)).size
-    const averageDonation = uniqueDonors > 0 ? totalDonations / uniqueDonors : 0
+  const totalDonations = donations.reduce(
+    (sum, donation) => sum + donation.amount,
+    0
+  );
+  const uniqueDonors = new Set(donations.map((d) => d.user_id)).size;
+  const averageDonation = uniqueDonors > 0 ? totalDonations / uniqueDonors : 0;
 
-    // Get cause details for completion percentage
-    const { data: cause, error: causeError } = await supabase
-        .from("causes")
-        .select("goal,shared, created_at")
-        .eq("id", causeId)
-        .single()
+  const { data: cause, error: causeError } = await supabase
+    .from("causes")
+    .select("goal,shared, created_at")
+    .eq("id", causeId)
+    .single();
 
-    if (causeError) {
-        console.error("Error fetching cause details:", causeError)
-        return null
-    }
+  if (causeError) {
+    console.error("Error fetching cause details:", causeError);
+    return null;
+  }
 
-    const completionPercentage = cause.goal > 0
-        ? (totalDonations / cause.goal) * 100
-        : 0
+  const completionPercentage =
+    cause.goal > 0 ? (totalDonations / cause.goal) * 100 : 0;
 
-    // Calculate days active
-    const daysActive = Math.ceil(
-        (new Date().getTime() - new Date(cause.created_at).getTime()) / (1000 * 60 * 60 * 24)
-    )
+  const daysActive = Math.ceil(
+    (new Date().getTime() - new Date(cause.created_at).getTime()) /
+      (1000 * 60 * 60 * 24)
+  );
 
-    // Get daily donations for the last 30 days
-    const thirtyDaysAgo = new Date()
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    const dailyDonations = donations
-        .filter(d => new Date(d.created_at) >= thirtyDaysAgo)
-        .reduce((acc, donation) => {
-            const date = new Date(donation.created_at).toISOString().split('T')[0]
-            if (!acc[date]) {
-                acc[date] = 0
-            }
-            acc[date] += donation.amount
-            return acc
-        }, {} as Record<string, number>)
+  const dailyDonations = donations
+    .filter((d) => new Date(d.created_at) >= thirtyDaysAgo)
+    .reduce((acc, donation) => {
+      const date = new Date(donation.created_at).toISOString().split("T")[0];
+      if (!acc[date]) {
+        acc[date] = 0;
+      }
+      acc[date] += donation.amount;
+      return acc;
+    }, {} as Record<string, number>);
 
-    // Convert daily donations to array format
-    const dailyDonationsArray = Object.entries(dailyDonations).map(([date, amount]) => ({
-        date,
-        amount
-    }))
+  const dailyDonationsArray = Object.entries(dailyDonations).map(
+    ([date, amount]) => ({
+      date,
+      amount,
+    })
+  );
 
-    // Get engagement metrics
-    const engagement = {
-        shares: cause.shared, // TODO: Implement actual share tracking
-        comments: donations.filter(d => d.message && d.message.trim() !== '').length, // Count donations with non-empty messages as comments
-        views: 0, // TODO: Implement actual view tracking
-        conversionRate: cause.shared > 0 ? (uniqueDonors / cause.shared) * 100 : 0, // Calculate conversion rate based on shares to donors ratio
-    }
+  const engagement = {
+    shares: cause.shared,
+    comments: donations.filter((d) => d.message && d.message.trim() !== "")
+      .length,
+    views: 0,
+    conversionRate: cause.shared > 0 ? (uniqueDonors / cause.shared) * 100 : 0,
+  };
 
+  return {
+    overview: {
+      totalDonations,
+      totalDonors: uniqueDonors,
+      averageDonation,
+      completionPercentage,
+      daysActive,
+    },
+    donations: {
+      daily: dailyDonationsArray,
+    },
+    engagement,
+    comments: donations
+      .filter((d) => d.message && d.message.trim() !== "")
+      .map((d) => ({
+        message: d.message,
+        date: d.created_at,
+        donorId: d.user_id,
+      })),
+  };
+}
+
+export async function getPetitionDashboardStats(userId: string) {
+  const supabase = await createClient();
+  const { data: petitions, error: petitionsError } = await supabase
+    .from("petitions")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("status", "approved");
+
+  if (petitionsError) {
+    console.error("Error fetching petitions:", petitionsError);
     return {
-        overview: {
-            totalDonations,
-            totalDonors: uniqueDonors,
-            averageDonation,
-            completionPercentage,
-            daysActive,
-        },
-        donations: {
-            daily: dailyDonationsArray,
-        },
-        engagement,
-        comments: donations
-            .filter(d => d.message && d.message.trim() !== '')
-            .map(d => ({
-                message: d.message,
-                date: d.created_at,
-                donorId: d.user_id
-            }))
+      totalRaised: formatCurrency(0),
+      totalDonors: 0,
+      activePetitions: 0,
+    };
+  }
+
+  const petitionIds = (petitions || []).map((p) => p.id);
+  if (petitionIds.length === 0) {
+    return {
+      totalRaised: formatCurrency(0),
+      totalDonors: 0,
+      activePetitions: 0,
+    };
+  }
+
+  const { data: signatures, error: signaturesError } = await supabase
+    .from("signatures")
+    .select("amount, user_id, petition_id")
+    .in("petition_id", petitionIds);
+
+  if (signaturesError) {
+    console.error("Error fetching petition signatures:", signaturesError);
+    return {
+      totalRaised: formatCurrency(0),
+      totalDonors: 0,
+      activePetitions: petitions?.length || 0,
+    };
+  }
+
+  const totalRaised = (signatures || []).reduce(
+    (sum, signature) => sum + Number(signature.amount || 0),
+    0
+  );
+  const totalDonors = new Set(
+    (signatures || []).map((s) => s.user_id).filter(Boolean)
+  ).size;
+
+  return {
+    totalRaised: formatCurrency(totalRaised),
+    totalDonors,
+    activePetitions: petitions?.length || 0,
+  };
+}
+
+export async function getPetitionSignatureTrends(userId: string) {
+  const supabase = await createClient();
+
+  const sixMonthsAgo = new Date();
+  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+  const { data: signatures, error } = await supabase
+    .from("signatures")
+    .select("amount, created_at")
+    .eq("user_id", userId)
+    .gte("created_at", sixMonthsAgo.toISOString())
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    console.error("Error fetching signature trends:", error);
+    return [];
+  }
+
+  const monthlySignatures = signatures.reduce((acc, signature) => {
+    const date = new Date(signature.created_at);
+    const month = date.toLocaleString("default", {
+      month: "short",
+      year: "numeric",
+    });
+
+    if (!acc[month]) {
+      acc[month] = 0;
     }
-} 
+    acc[month] += signature.amount;
+    return acc;
+  }, {} as Record<string, number>);
+
+  return Object.entries(monthlySignatures).map(([month, amount]) => ({
+    month,
+    amount,
+  }));
+}
+
+export async function getUserPetitions(userId: string, status?: string) {
+  const supabase = await createClient();
+
+  let query = supabase.from("petitions").select("*").eq("user_id", userId);
+
+  if (status && status !== "all") {
+    query = query.eq("status", status);
+  }
+
+  const { data: petitions, error } = await query.order("created_at", {
+    ascending: false,
+  });
+
+  if (error) {
+    console.error("Error fetching user petitions:", error);
+    return [];
+  }
+
+  return petitions;
+}
+
+export async function getPetitionAnalytics(petitionId: string) {
+  const supabase = await createClient();
+
+  const { data: signatures, error: signaturesError } = await supabase
+    .from("signatures")
+    .select("amount, created_at,message, user_id")
+    .eq("petition_id", petitionId);
+
+  if (signaturesError) {
+    console.error("Error fetching petition signatures:", signaturesError);
+    return null;
+  }
+
+  const totalSignatures = signatures.reduce(
+    (sum, signature) => sum + signature.amount,
+    0
+  );
+  const uniqueSigners = new Set(signatures.map((s) => s.user_id)).size;
+  const averageSignature =
+    uniqueSigners > 0 ? totalSignatures / uniqueSigners : 0;
+
+  const { data: petition, error: petitionError } = await supabase
+    .from("petitions")
+    .select("goal,shared, created_at")
+    .eq("id", petitionId)
+    .single();
+
+  if (petitionError) {
+    console.error("Error fetching petition details:", petitionError);
+    return null;
+  }
+
+  const completionPercentage =
+    petition.goal > 0 ? (totalSignatures / petition.goal) * 100 : 0;
+
+  const daysActive = Math.ceil(
+    (new Date().getTime() - new Date(petition.created_at).getTime()) /
+      (1000 * 60 * 60 * 24)
+  );
+
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+  const dailySignatures = signatures
+    .filter((d) => new Date(d.created_at) >= thirtyDaysAgo)
+    .reduce((acc, signature) => {
+      const date = new Date(signature.created_at).toISOString().split("T")[0];
+      if (!acc[date]) {
+        acc[date] = 0;
+      }
+      acc[date] += signature.amount;
+      return acc;
+    }, {} as Record<string, number>);
+
+  const dailySignaturesArray = Object.entries(dailySignatures).map(
+    ([date, amount]) => ({
+      date,
+      amount,
+    })
+  );
+
+  const engagement = {
+    shares: petition.shared,
+    comments: signatures.filter((s) => s.message && s.message.trim() !== "")
+      .length,
+    views: 0,
+    conversionRate:
+      petition.shared > 0 ? (uniqueSigners / petition.shared) * 100 : 0,
+  };
+
+  return {
+    overview: {
+      totalSignatures,
+      totalSigners: uniqueSigners,
+      averageSignature,
+      completionPercentage,
+      daysActive,
+    },
+    signatures: {
+      daily: dailySignaturesArray,
+    },
+    engagement,
+    comments: signatures
+      .filter((d) => d.message && d.message.trim() !== "")
+      .map((d) => ({
+        message: d.message,
+        date: d.created_at,
+        donorId: d.user_id,
+      })),
+  };
+}

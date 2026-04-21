@@ -13,6 +13,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Camera, Upload, Eye } from "lucide-react";
 import { Icons } from "@/components/icons";
@@ -20,6 +27,24 @@ import { SocialMedia } from "@/components/social-media";
 import type { ProfileFormData } from "@/types";
 import { useProfile } from "@/hooks/use-profile";
 import Link from "next/link";
+import { compressImage } from "@/utils/image-compression";
+
+type AccountType =
+  | "individual"
+  | "creator"
+  | "non-profit"
+  | "organization"
+  | "community"
+  | "developer";
+
+const ACCOUNT_TYPE_OPTIONS: { value: AccountType; label: string }[] = [
+  { value: "individual", label: "Individual" },
+  { value: "creator", label: "Creator" },
+  { value: "non-profit", label: "Non-profit" },
+  { value: "organization", label: "Organisation" },
+  { value: "community", label: "Community" },
+  { value: "developer", label: "Developer" },
+];
 
 interface ProfileFormProps {
   profile: {
@@ -28,7 +53,8 @@ interface ProfileFormProps {
     phone: string | null;
     profile_photo: string | null;
     bio: string | null;
-    account_type?: "individual" | "organization" | null;
+    username?: string | null;
+    account_type?: AccountType | null;
     twitter_url?: string | null;
     facebook_url?: string | null;
     instagram_url?: string | null;
@@ -42,13 +68,18 @@ interface ProfileFormProps {
 
 export function ProfileForm({ profile, user }: ProfileFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formErrors, setFormErrors] = useState<{ phone?: string }>({});
+  const [formErrors, setFormErrors] = useState<{
+    phone?: string;
+    full_name?: string;
+    username?: string;
+  }>({});
   const [formData, setFormData] = useState({
     full_name: profile?.full_name || "",
     email: profile?.email || user?.email || "",
-    account_type: profile?.account_type || "",
+    account_type: (profile?.account_type || "individual") as AccountType,
     phone: profile?.phone || "",
     bio: profile?.bio || "",
+    username: profile?.username || "",
     twitter_url: profile?.twitter_url || "",
     facebook_url: profile?.facebook_url || "",
     instagram_url: profile?.instagram_url || "",
@@ -63,26 +94,22 @@ export function ProfileForm({ profile, user }: ProfileFormProps) {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { updateProfile, updateProfilePhoto, isUploading } = useProfile(
-    user?.id
+    user?.id,
   );
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleAccountTypeChange = (value: AccountType) => {
+    setFormData((prev) => ({ ...prev, account_type: value }));
   };
 
   const handleSocialMediaChange = (platform: string, value: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      [`${platform}_url`]: value,
-    }));
-
-    // Validate the URL
+    setFormData((prev) => ({ ...prev, [`${platform}_url`]: value }));
     try {
       if (value && !/^https?:\/\//i.test(value)) {
         setSocialErrors((prev) => ({ ...prev, [platform]: true }));
@@ -102,25 +129,17 @@ export function ProfileForm({ profile, user }: ProfileFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Check if any social media URLs are invalid
     const hasErrors = Object.values(socialErrors).some((error) => error);
-    if (hasErrors) {
+    if (hasErrors) return;
+
+    if (formData.phone && !isValidNigerianPhone(formData.phone)) {
+      setFormErrors({
+        phone: "Enter a valid Nigerian phone number (e.g. 08012345678)",
+      });
       return;
     }
 
-    const phoneIsValid = isValidNigerianPhone(formData.phone);
-
-    // Check phone number
-    if (!phoneIsValid) {
-      setFormErrors({ phone: "Enter a valid Nigerian phone number (e.g. 08012345678)" });
-      setIsSubmitting(false);
-      return;
-    }
-
-    // Clear previous errors
     setFormErrors({});
-
-
     setIsSubmitting(true);
 
     const updatedProfile: ProfileFormData = {
@@ -128,6 +147,8 @@ export function ProfileForm({ profile, user }: ProfileFormProps) {
       email: formData.email,
       phone: formData.phone,
       bio: formData.bio,
+      username: formData.username,
+      account_type: formData.account_type,
       twitter_url: formData.twitter_url,
       facebook_url: formData.facebook_url,
       instagram_url: formData.instagram_url,
@@ -138,14 +159,18 @@ export function ProfileForm({ profile, user }: ProfileFormProps) {
     setIsSubmitting(false);
   };
 
-  const handlePhotoClick = () => {
-    fileInputRef.current?.click();
-  };
+  const handlePhotoClick = () => fileInputRef.current?.click();
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      await updateProfilePhoto(file);
+      try {
+        const compressedFile = await compressImage(file, 800, 0.7);
+        await updateProfilePhoto(compressedFile);
+      } catch (error) {
+        console.error("Compression failed, uploading original:", error);
+        await updateProfilePhoto(file);
+      }
     }
   };
 
@@ -168,27 +193,35 @@ export function ProfileForm({ profile, user }: ProfileFormProps) {
       : "U";
   };
 
-  const formatAccountType = (type: string) => {
-    return type === "individual" ? "Individual" : "Organization";
-  };
+  const username = formData.username;
+
+  const hasSocialErrors = [
+    ["twitter_url", "twitter"],
+    ["facebook_url", "facebook"],
+    ["instagram_url", "instagram"],
+    ["linkedin_url", "linkedin"],
+  ].some(
+    ([urlKey, errorKey]) =>
+      !!formData[urlKey as keyof typeof formData] &&
+      socialErrors[errorKey as keyof typeof socialErrors],
+  );
 
   return (
     <Card>
       <CardHeader>
-        <div className="flex justify-between items-start">
+        <div className="flex justify-between items-start md:flex-row flex-col gap-2">
           <div>
             <CardTitle>Profile</CardTitle>
             <CardDescription>Update your personal information.</CardDescription>
           </div>
-          <Button asChild variant="outline" size="sm">
-            <Link
-              href={`/profile/${user.id}`}
-              className="flex items-center gap-2"
-            >
-              <Eye className="h-4 w-4" />
-              View Public Profile
-            </Link>
-          </Button>
+          {username && (
+            <Button asChild variant="outline" size="sm">
+              <Link href={`/${username}`} className="flex items-center gap-2">
+                <Eye className="h-4 w-4" />
+                View Public Profile
+              </Link>
+            </Button>
+          )}
         </div>
       </CardHeader>
       <form onSubmit={handleSubmit}>
@@ -255,6 +288,22 @@ export function ProfileForm({ profile, user }: ProfileFormProps) {
             />
           </div>
 
+          {/* Username */}
+          <div className="space-y-2">
+            <Label htmlFor="username">Username</Label>
+            <Input
+              id="username"
+              name="username"
+              placeholder="Your username"
+              value={formData.username}
+              onChange={handleChange}
+            />
+            <p className="text-xs text-muted-foreground">
+              This will be used in your profile URL: refreeg.com/
+              {formData.username || "username"}
+            </p>
+          </div>
+
           {/* Email */}
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
@@ -271,18 +320,26 @@ export function ProfileForm({ profile, user }: ProfileFormProps) {
             </p>
           </div>
 
-          {/* Account Type */}
+          {/* Account Type - now a Select dropdown */}
           <div className="space-y-2">
             <Label htmlFor="account_type">Account Type</Label>
-            <Input
-              id="account_type"
-              name="account_type"
-              value={formatAccountType(formData.account_type)}
-              disabled
-              className="bg-muted"
-            />
+            <Select
+              value={formData.account_type}
+              onValueChange={handleAccountTypeChange}
+            >
+              <SelectTrigger id="account_type">
+                <SelectValue placeholder="Select account type" />
+              </SelectTrigger>
+              <SelectContent>
+                {ACCOUNT_TYPE_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <p className="text-xs text-muted-foreground">
-              Your account type cannot be changed.
+              Choose the account type that best describes you.
             </p>
           </div>
 
@@ -292,22 +349,13 @@ export function ProfileForm({ profile, user }: ProfileFormProps) {
             <Input
               id="phone"
               name="phone"
-              placeholder="Your phone number"
               value={formData.phone}
-              inputMode="numeric"
-              onChange={(e) => {
-                const onlyNumbers = e.target.value.replace(/\D/g, "");
-                setFormData({ ...formData, phone: onlyNumbers });
-
-                // Clear phone error while typing
-                if (formErrors.phone) {
-                  setFormErrors((prev) => ({ ...prev, phone: undefined }));
-                }
-              }}
+              disabled
+              className="bg-muted cursor-not-allowed"
             />
-            {formErrors.phone && (
-              <p className="text-sm text-red-500">{formErrors.phone}</p>
-            )}
+            <p className="text-xs text-muted-foreground">
+              Phone number cannot be changed.
+            </p>
           </div>
 
           {/* Bio */}
@@ -331,9 +379,9 @@ export function ProfileForm({ profile, user }: ProfileFormProps) {
           <div className="space-y-4">
             <h3 className="text-lg font-medium">Social Media</h3>
             <p className="text-sm text-muted-foreground">
-              Add links to your social media profiles (must start with http:// or https://)
+              Add links to your social media profiles (must start with http://
+              or https://)
             </p>
-
             <SocialMedia
               mode="edit"
               twitter={formData.twitter_url}
@@ -345,7 +393,7 @@ export function ProfileForm({ profile, user }: ProfileFormProps) {
           </div>
         </CardContent>
         <CardFooter>
-          <Button type="submit" disabled={isSubmitting || Object.values(socialErrors).some(error => error)}>
+          <Button type="submit" disabled={isSubmitting || hasSocialErrors}>
             {isSubmitting ? (
               <>
                 <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />

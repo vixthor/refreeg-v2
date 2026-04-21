@@ -1,114 +1,249 @@
-"use server"
+"use server";
 
-import { createClient } from "@/lib/supabase/server"
-import { revalidatePath } from "next/cache"
-import type { Donation, DonationWithCause, DonationFormData } from "@/types"
+import { createClient } from "@/lib/supabase/server";
+import { revalidatePath } from "next/cache";
+import type { Donation, DonationWithCause, DonationFormData } from "@/types";
+import { recordEvent } from "@/actions/event-reward-actions";
+import { sendDonationReceivedEmail } from "@/services/mail";
 
-/**
- * Create a new donation
- */
 export async function createDonation(
   causeId: string,
   userId: string | null,
   donationData: DonationFormData,
+  tipAmount: number = 0
 ): Promise<Donation> {
-  const supabase = await createClient()
+  const supabase = await createClient();
 
+  const donationAmount =
+    typeof donationData.amount === "string"
+      ? Number.parseFloat(donationData.amount)
+      : donationData.amount;
+
+  const finalTipAmount =
+    tipAmount > 0 ? tipAmount : donationData.tip_amount || 0;
 
   const { data, error } = await supabase
     .from("donations")
     .insert({
       cause_id: causeId,
       ...(userId ? { user_id: userId } : {}),
-      amount: typeof donationData.amount === "string" ? Number.parseFloat(donationData.amount) : donationData.amount,
-      name: String(donationData.isAnonymous).toLocaleLowerCase() === "true" ? "Anonymous" : donationData.name,
+      amount: donationAmount,
+      tip_amount: finalTipAmount,
+      name:
+        String(donationData.isAnonymous).toLocaleLowerCase() === "true"
+          ? "Anonymous"
+          : donationData.name,
       email: donationData.email,
       message: donationData.message || null,
       is_anonymous: donationData.isAnonymous,
-      status: "completed", // For now, all donations are immediately completed
+      status: "completed",
     })
     .select()
-    .single()
+    .single();
 
   if (error) {
-    console.error("Error creating donation:", error)
-    throw error
+    console.error("Error creating donation:", error);
+    throw error;
   }
 
-  revalidatePath(`/causes/${causeId}`)
-  revalidatePath('/causes')
-  revalidatePath('/')
+  // Record event for reward tracking (only if user is logged in)
   if (userId) {
-    revalidatePath("/dashboard/donations")
+    try {
+      await recordEvent({
+        type: "donation",
+        userId,
+        amount: donationAmount,
+        metadata: {
+          cause_id: causeId,
+          donation_id: data.id,
+          is_anonymous: donationData.isAnonymous,
+        },
+      });
+    } catch (eventError) {
+      console.error("Error recording donation event:", eventError);
+      // Don't throw - event tracking shouldn't break the main action
+    }
   }
 
-  return data as Donation
+  // Auto-fulfill any pending pledge from the same donor for this cause
+  if (donationData.email) {
+    try {
+      await supabase
+        .from("pledges")
+        .update({ status: "fulfilled" })
+        .eq("cause_id", causeId)
+        .eq("email", donationData.email)
+        .eq("status", "pending");
+    } catch (pledgeError) {
+      console.error("Error fulfilling pledge:", pledgeError);
+      // Non-fatal — don't break the donation flow
+    }
+  }
+
+  // Milestone notifications for followers (50% and 100%)
+  try {
+    const { data: cause, error: causeError } = await supabase
+      .from("causes")
+      .select("title, raised, goal")
+      .eq("id", causeId)
+      .single();
+
+    if (cause && !causeError) {
+      const raisedAfter = Number(cause.raised);
+      const raisedBefore = raisedAfter - donationAmount;
+      const goal = Number(cause.goal);
+
+      if (goal > 0) {
+        const percentBefore = (raisedBefore / goal) * 100;
+        const percentAfter = (raisedAfter / goal) * 100;
+
+        let milestoneReached: 50 | 100 | null = null;
+        if (percentBefore < 50 && percentAfter >= 50 && percentAfter < 100) {
+          milestoneReached = 50;
+        } else if (percentBefore < 100 && percentAfter >= 100) {
+          milestoneReached = 100;
+        }
+
+        if (milestoneReached) {
+          // Fetch followers
+          const { data: followers } = await supabase
+            .from("campaign_follows")
+            .select("email")
+            .eq("cause_id", causeId);
+
+          if (followers && followers.length > 0) {
+            const followerEmails = followers.map((f) => f.email);
+            const appUrl =
+              process.env.NEXT_PUBLIC_APP_URL || "https://www.refreeg.com";
+
+            // Call the follower-update API bridge (fire and forget)
+            fetch(`${appUrl}/api/mail/follower-update`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                type: "milestone",
+                data: {
+                  followers: followerEmails,
+                  causeTitle: cause.title,
+                  causeUrl: `${appUrl}/causes/${causeId}`,
+                  milestone: milestoneReached,
+                },
+              }),
+            }).catch((err) =>
+              console.error("Error calling follower-update API:", err)
+            );
+          }
+        }
+      }
+    }
+  } catch (milestoneError) {
+    console.error("Error in milestone detection:", milestoneError);
+  }
+
+  // Notify the campaign owner about the new donation
+  try {
+    const { data: causeWithOwner } = await supabase
+      .from("causes")
+      .select("title, raised, goal, user_id, profiles(full_name, email)")
+      .eq("id", causeId)
+      .single();
+
+    if (causeWithOwner) {
+      const ownerProfile = causeWithOwner.profiles as any;
+      const ownerEmail = ownerProfile?.email;
+      const ownerName = ownerProfile?.full_name || "Campaign Owner";
+
+      if (ownerEmail) {
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.refreeg.com";
+        const donorName =
+          String(donationData.isAnonymous).toLowerCase() === "true"
+            ? "An anonymous donor"
+            : donationData.name || "A donor";
+
+        sendDonationReceivedEmail({
+          to: ownerEmail,
+          ownerName,
+          donorName,
+          causeTitle: causeWithOwner.title,
+          amount: donationAmount,
+          causeUrl: `${appUrl}/causes/${causeId}`,
+          amountRaised: Number(causeWithOwner.raised),
+          goalAmount: Number(causeWithOwner.goal),
+        }).catch((err) => console.error("Error sending donation received email:", err));
+      }
+    }
+  } catch (ownerEmailError) {
+    console.error("Error fetching cause owner for donation email:", ownerEmailError);
+  }
+
+  revalidatePath(`/causes/${causeId}`);
+  revalidatePath("/causes");
+  revalidatePath("/");
+  if (userId) {
+    revalidatePath("/dashboard/donations");
+  }
+
+  return data as Donation;
 }
 
-/**
- * List donations for a cause
- */
-export async function listDonationsForCause(causeId: string): Promise<Donation[]> {
-  const supabase = await createClient()
 
+export async function listDonationsForCause(
+  causeId: string
+): Promise<Donation[]> {
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("donations")
     .select("*")
     .eq("cause_id", causeId)
-    .order("created_at", { ascending: false })
+    .order("created_at", { ascending: false });
 
   if (error) {
-    console.error("Error listing donations:", error)
-    throw error
+    console.error("Error listing donations:", error);
+    throw error;
   }
 
-  return data as Donation[]
+  return data as Donation[];
 }
 
-/**
- * List donations for a user
- */
 export async function listUserDonations(
   userId: string,
-  timeframe: "all" | "recent" = "all",
+  timeframe: "all" | "recent" = "all"
 ): Promise<DonationWithCause[]> {
-  const supabase = await createClient()
-
+  const supabase = await createClient();
 
   let query = supabase
     .from("donations")
-    .select(`
+    .select(
+      `
       *,
       causes:cause_id (
         title,
         category
       )
-    `)
+    `
+    )
     .eq("user_id", userId)
-    .order("created_at", { ascending: false })
+    .order("created_at", { ascending: false });
 
   if (timeframe === "recent") {
-    // Get donations from the last 30 days
-    const thirtyDaysAgo = new Date()
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
-    query = query.gte("created_at", thirtyDaysAgo.toISOString())
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    query = query.gte("created_at", thirtyDaysAgo.toISOString());
   }
 
-  const { data, error } = await query
+  const { data, error } = await query;
 
   if (error) {
-    console.error("Error listing user donations:", error)
-    throw error
+    console.error("Error listing user donations:", error);
+    throw error;
   }
 
-  // Transform the response to match our DonationWithCause type
   return data.map((item) => ({
     ...item,
     cause: {
       title: item.causes?.title || "Unknown Cause",
       category: item.causes?.category || "Unknown",
     },
-  })) as DonationWithCause[]
+  })) as DonationWithCause[];
 }
-

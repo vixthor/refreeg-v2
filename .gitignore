@@ -5,7 +5,9 @@
 
 # next.js
 /.next/
+/.qodo/
 /out/
+/.qodo/
 
 # production
 /build
@@ -25,3 +27,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+.env*.local
+
+#docs
+/.trae
+
+/.agent

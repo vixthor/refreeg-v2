@@ -1,9 +1,11 @@
+// ConnectSolanaWalletButton.tsx
 "use client";
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
+import { useAuthContext } from "@/components/auth-provider";
 
 interface ConnectSolanaWalletButtonProps {
   onConnected?: (address: string) => void;
@@ -16,8 +18,8 @@ export function ConnectSolanaWalletButton({
 }: ConnectSolanaWalletButtonProps) {
   const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const supabase = createClient();
   const { toast } = useToast();
+  const { user } = useAuthContext();
 
   const installPhantom = () => {
     window.open("https://phantom.app/", "_blank");
@@ -49,9 +51,7 @@ export function ConnectSolanaWalletButton({
       const response = await window.solana.connect();
       const publicKey = response.publicKey.toString();
 
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const supabase = createClient();
 
       if (!user) {
         throw new Error("You must be logged in to connect a wallet");
@@ -69,13 +69,15 @@ export function ConnectSolanaWalletButton({
         throw new Error("Failed to save wallet address");
       }
 
-      onConnected?.(publicKey);
+      // Call the callback BEFORE showing toast or resetting state
+      if (onConnected) {
+        await onConnected(publicKey);
+      }
 
       toast({
         title: "Success",
         description: "Solana wallet connected successfully",
       });
-      return { address: publicKey };
     } catch (err) {
       console.error("Wallet connection error:", err);
       const errorMessage =
@@ -86,7 +88,6 @@ export function ConnectSolanaWalletButton({
         title: "Error",
         description: errorMessage,
       });
-      throw new Error(errorMessage);
     } finally {
       setIsConnecting(false);
     }

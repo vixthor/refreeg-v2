@@ -19,19 +19,25 @@ export default function StepProgress({
         return p + 10;
       });
     }, 200);
+
     return () => clearInterval(interval);
   }, [onComplete]);
 
   return (
-    <div className="flex flex-col items-center space-y-6">
-      <span className="self-stretch text-center justify-start text-black text-2xl font-bold font-montserrat">
-        Checking Your Documents...
-      </span>
-      <span className="self-stretch text-center justify-start text-black/60 text-base font-medium font-ontserrat leading-snug">
-        We're reviewing your identity to keep Refreeg safe and secure for
-        everyone.
-      </span>
-      <Progress value={progress} className="w-full" />
+    <div className="h-screen w-screen overflow-hidden flex items-center justify-center">
+      <div className="flex flex-col items-center gap-6 w-full max-w-md px-6">
+        <h2 className="text-center text-2xl font-bold">
+          Checking your documents
+        </h2>
+
+        <p className="text-center text-muted-foreground">
+          Making sure everything is in order
+        </p>
+
+        <div className="w-full">
+          <Progress value={progress} className="transition-all duration-300" />
+        </div>
+      </div>
     </div>
   );
 }

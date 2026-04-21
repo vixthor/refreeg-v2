@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -18,11 +18,13 @@ import StepPersonalDetails from "./StepPersonalDetails";
 import StepDocumentUpload from "./StepDocumentUpload";
 import StepProgress from "./StepProgress";
 import StepSuccess from "./StepSuccess";
-import { uploadKycDocument } from "@/actions/kyc-actions";
+import { uploadKycDocument, getVerificationStatus } from "@/actions/kyc-actions";
 import { useAuth } from "@/hooks/use-auth";
 import ProgressNav from "./components/ProgressNav";
 import StepAddressDetails from "./StepAddressDetails";
 import Image from "next/image";
+import { sendIncompleteKycVerificationEmail } from "@/services/mail";
+import NavigationLoader from "@/components/NavigationLoader";
 
 const documentTypes = [
   "NIN",
@@ -53,6 +55,152 @@ export default function KycSetupPage() {
   });
   const { user } = useAuth();
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // Auto-save KYC progress to localStorage or load from DB if rejected
+  useEffect(() => {
+    async function initFormData() {
+      if (!isMounted) return;
+
+      try {
+        // 1. Try to load from localStorage first (most recent draft)
+        const savedKycDraft = localStorage.getItem("kycDraft");
+        if (savedKycDraft) {
+          const parsedDraft = JSON.parse(savedKycDraft);
+          
+          // Basic schema validation
+          if (parsedDraft && typeof parsedDraft === 'object') {
+            if (parsedDraft.formData) setFormData(prev => ({ ...prev, ...parsedDraft.formData }));
+            if (parsedDraft.selectedDoc) setSelectedDoc(parsedDraft.selectedDoc);
+            if (typeof parsedDraft.step === 'number') setStep(parsedDraft.step);
+            return;
+          }
+        }
+      } catch (err) {
+        console.error("Failed to parse kycDraft from localStorage:", err);
+        localStorage.removeItem("kycDraft"); // Clear corrupted data
+      }
+
+      // 2. If no draft, check DB for last rejected submission
+      if (user?.id) {
+        try {
+          const { status, error: kycError } = await getVerificationStatus(user.id);
+          
+          if (status && status.status === "rejected") {
+            // Safely split DOB "YYYY-MM-DD" back into parts
+            const dobString = status.dob || "";
+            const dobParts = dobString.split("-");
+            const year = dobParts[0] || "";
+            const month = dobParts[1] ? parseInt(dobParts[1]).toString() : "";
+            const day = dobParts[2] ? parseInt(dobParts[2]).toString() : "";
+
+            // Safely split full_name into first and last
+            const fullName = status.full_name || "";
+            const nameParts = fullName.trim().split(/\s+/);
+            const firstName = nameParts[0] || "";
+            const lastName = nameParts.slice(1).join(" ") || "";
+
+            setFormData({
+              firstName,
+              lastName,
+              dobDay: day,
+              dobMonth: month,
+              dobYear: year,
+              phone: status.phone || "",
+              address: status.address || "",
+              city: status.city || "",
+              state: status.state || "",
+              postal: status.postal || "",
+              country: status.country || "",
+            });
+            setSelectedDoc(status.document_type || "");
+          }
+        } catch (err) {
+          console.error("Failed to fetch existing KYC for pre-filling:", err);
+        }
+      }
+    }
+
+    initFormData();
+  }, [user?.id, isMounted]);
+
+  useEffect(() => {
+    // Save KYC progress to localStorage
+    const kycDraft = {
+      formData,
+      selectedDoc,
+      step,
+      timestamp: new Date().toISOString(),
+    };
+    localStorage.setItem("kycDraft", JSON.stringify(kycDraft));
+  }, [formData, selectedDoc, step]);
+
+  // Track inactivity and send reminder email after 24 hours
+  useEffect(() => {
+    if (!isMounted || !user) return;
+
+    let inactivityTimer: NodeJS.Timeout;
+
+    const setupInactivityTracking = () => {
+      try {
+        const hasKycDraft = localStorage.getItem("kycDraft");
+        const hasStartedFilling = formData.firstName || formData.lastName || selectedDoc;
+
+        if (hasKycDraft || hasStartedFilling) {
+          // Reset timer on any form interaction
+          const resetTimer = () => {
+            clearTimeout(inactivityTimer);
+            inactivityTimer = setTimeout(sendReminder, 24 * 60 * 60 * 1000); // 24 hours
+          };
+
+          // Set up event listeners for form interactions
+          const events = ["input", "change", "click", "keydown"];
+          events.forEach((event) => {
+            document.addEventListener(event, resetTimer, { passive: true });
+          });
+
+          // Start the initial timer
+          resetTimer();
+
+          // Cleanup function
+          return () => {
+            clearTimeout(inactivityTimer);
+            events.forEach((event) => {
+              document.removeEventListener(event, resetTimer);
+            });
+          };
+        }
+      } catch (err) {
+        console.error("Error setting up inactivity tracking:", err);
+      }
+    };
+
+    const sendReminder = async () => {
+      try {
+        // Check if KYC still isn't submitted
+        const currentKycDraft = localStorage.getItem("kycDraft");
+        if (currentKycDraft && user) {
+          await sendIncompleteKycVerificationEmail({
+            continueUrl: `${window.location.origin}/dashboard/settings/kyc`,
+          });
+        }
+      } catch (error) {
+        console.error("Failed to send incomplete KYC email reminder:", error);
+      }
+    };
+
+    const cleanup = setupInactivityTracking();
+    return cleanup;
+  }, [formData.firstName, formData.lastName, selectedDoc, user, isMounted]);
+
+  // Clear KYC draft on successful completion
+  const handleSuccessfulCompletion = () => {
+    localStorage.removeItem("kycDraft");
+  };
 
   // Validation for identity details
   const validateIdentityDetails = () => {
@@ -114,7 +262,7 @@ export default function KycSetupPage() {
       formData.dobYear && formData.dobMonth && formData.dobDay
         ? `${formData.dobYear}-${String(formData.dobMonth).padStart(
             2,
-            "0"
+            "0",
           )}-${String(formData.dobDay).padStart(2, "0")}`
         : "";
     try {
@@ -131,13 +279,14 @@ export default function KycSetupPage() {
           state: formData.state,
           postal: formData.postal,
           country: formData.country,
-        }
+        },
       );
       if (uploadError) {
         setUploadError(uploadError);
         setStep(4);
         return;
       }
+      handleSuccessfulCompletion();
       setStep(4);
     } catch (err: any) {
       setUploadError(err.message || "Failed to submit KYC");
@@ -147,18 +296,21 @@ export default function KycSetupPage() {
 
   // Only show ProgressNav for steps 0, 1, 2
   const showProgressNav = step <= 2;
-  // Only pass completed steps for 3 steps
-  const completedSteps = Array.from({ length: Math.min(step, 3) }, (_, i) => i);
+
+  if (!isMounted || !user) {
+    return <NavigationLoader />;
+  }
 
   return (
-    <div className="px-10 w-full flex flex-col md:flex-row min-h-screen">
+    <div className="flex w-full h-screen bg-white">
+      {/* Sidebar */}
       {showProgressNav && (
-        <div className="w-full md:w-[340px] flex-shrink-0">
-          <ProgressNav currentStep={step} completedSteps={completedSteps} />
+        <div className="w-[380px] border-r hidden md:block">
+          <ProgressNav currentStep={step} />
         </div>
       )}
-      <div className="flex-1 flex items-start ">
-        <Card className="w-full border-none shadow-none flex flex-col">
+      <div className="flex-1 flex items-start md:px-10">
+        <Card className="w-full h-full border-none shadow-none flex flex-col">
           <CardHeader>
             <CardTitle className="text-neutral-950 text-4xl font-bold font-montserrat">
               {step === 0 && "Upload a proof of your identity"}
@@ -216,11 +368,29 @@ export default function KycSetupPage() {
           </CardContent>
 
           {/* BOTTOM RIGHT BUTTONS - sticky to bottom of card */}
-          <div className="mt-auto flex justify-end px-6 pb-8 gap-4 sticky bottom-0 bg-white z-10 border-t border-neutral-100">
-            {step > 0 && step < 4 && (
+          <div className="mt-auto flex justify-end px-6 pb-8 gap-4 bg-white z-10 border-t border-neutral-100">
+            {/* REMOVE THIS TEST BUTTON IN PRODUCTION */}
+            {/* <Button 
+              type="button" 
+              variant="outline"
+              onClick={async () => {
+                try {
+                  await sendIncompleteKycVerificationEmail({
+                    continueUrl: `${window.location.origin}/kyc`
+                  });
+                  alert("Test KYC email sent successfully!");
+                } catch (error) {
+                  alert("Failed to send test KYC email");
+                }
+              }}
+            >
+              Test KYC Email
+            </Button> */}
+
+            {step > 0 && step < 3 && (
               <Button
                 variant="outline"
-                className="w-64 h-16 px-10 font-montserrat text-md flex items-center gap-2"
+                className="w-full h-12 text-sm px-6 md:w-64 md:h-16 md:px-10 md:text-md font-montserrat flex items-center gap-2"
                 onClick={() => setStep(step - 1)}
               >
                 <ArrowLeft className="w-4 h-4" />
@@ -229,7 +399,7 @@ export default function KycSetupPage() {
             )}
             {step === 0 && (
               <Button
-                className="w-64 h-16 px-10 bg-primaryShades-700 text-white font-semibold font-montserrat text-md flex items-center gap-2"
+                className="w-full h-12 text-sm px-6 md:w-64 md:h-16 md:px-10 md:text-md bg-primaryShades-700 text-white font-semibold font-montserrat flex items-center gap-2"
                 onClick={() => validateIdentityDetails() && setStep(1)}
               >
                 Next <ArrowRight className="w-4 h-4" />
@@ -237,7 +407,7 @@ export default function KycSetupPage() {
             )}
             {step === 1 && (
               <Button
-                className="w-64 h-16 px-10 bg-primaryShades-700 text-white font-semibold font-montserrat text-md flex items-center gap-2"
+                className="w-full h-12 text-sm px-6 md:w-64 md:h-16 md:px-10 md:text-md bg-primaryShades-700 text-white font-semibold font-montserrat flex items-center gap-2"
                 onClick={() => validateAddressDetails() && setStep(2)}
               >
                 Next <ArrowRight className="w-4 h-4" />
@@ -245,7 +415,7 @@ export default function KycSetupPage() {
             )}
             {step === 2 && (
               <Button
-                className="w-64 h-16 px-10 bg-primaryShades-700 text-white font-semibold font-montserrat text-md flex items-center gap-2"
+                className="w-full h-12 text-sm px-6 md:w-64 md:h-16 md:px-10 md:text-md bg-primaryShades-700 text-white font-semibold font-montserrat flex items-center gap-2"
                 onClick={() => validateDocument() && setStep(3)}
               >
                 Next <ArrowRight className="w-4 h-4" />

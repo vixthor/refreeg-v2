@@ -1,0 +1,8 @@
+onlyBuiltDependencies:
+  - '@heroui/shared-utils'
+  - bufferutil
+  - sharp
+  - utf-8-validate
+
+packages:
+  - 'sdks/javascript'

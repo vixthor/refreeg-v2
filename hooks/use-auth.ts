@@ -1,16 +1,21 @@
-// Helper to extract a simple device/OS string from user agent
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { createClient } from "@/lib/supabase/client"
-import { useRouter } from "next/navigation"
-import { toast } from "@/components/ui/use-toast"
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "@/components/ui/use-toast";
+import {
+  sendLoginNotificationEmail,
+  sendWelcomeEmailToUser,
+} from "@/services/mail";
+import { subscribeToConvertKit } from "@/services/convertkit";
 
-import { getCurrentUser } from "@/actions/auth-actions"
-import { updateProfile } from "@/actions"
-import { sendLoginNotificationEmail } from "@/services/mail"
-// Helper to extract a simple device/OS string from user agent
-function getDeviceInfo() {
+import { useAuthContext } from "@/components/auth-provider";
+
+/**
+ * Derive a human-readable device label from the browser's User-Agent.
+ * Kept client-side because the UA is only available in the browser context.
+ */
+function getDeviceLabel(): string {
   if (typeof window === "undefined") return "Unknown Device";
   const ua = window.navigator.userAgent;
   if (/android/i.test(ua)) return "Android";
@@ -20,107 +25,57 @@ function getDeviceInfo() {
   if (/Linux/.test(ua)) return "Linux";
   return "Other";
 }
+
 export function useAuth() {
-  const [user, setUser] = useState<any>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const router = useRouter()
-  const supabase = createClient()
-
-  useEffect(() => {
-    const getUser = async () => {
-      try {
-        const currentUser = await getCurrentUser()
-        setUser(currentUser)
-      } catch (error) {
-        console.error("Error getting current user:", error)
-        setUser(null)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    getUser()
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (session) {
-        const { data: { user }, error } = await supabase.auth.getUser()
-        if (!error && user) {
-          setUser(user)
-        } else {
-          setUser(null)
-        }
-      } else {
-        setUser(null)
-      }
-      setIsLoading(false)
-    })
-
-    return () => {
-      subscription.unsubscribe()
-    }
-  }, [supabase.auth])
+  const { user, isLoading, supabase } = useAuthContext();
+  const router = useRouter();
 
   const signIn = async (email: string, password: string) => {
     try {
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
-      })
+      });
 
       if (error) {
         toast({
           title: "Error signing in",
           description: error.message,
           variant: "destructive",
-        })
-        return
+        });
+        return;
       }
 
-
-
-      // Get device and IP address (best effort, client-side)
-      const device = getDeviceInfo();
-      let ipAddress = "Unknown IP";
-      try {
-        const res = await fetch("https://api.ipify.org?format=json");
-        if (res.ok) {
-          const data = await res.json();
-          ipAddress = data.ip || ipAddress;
-        }
-      } catch (e) {
-        // Ignore IP fetch errors
-      }
-
-      // Send login notification email (fire and forget)
+      // Fire-and-forget login notification email.
+      // IP is resolved server-side via x-forwarded-for (no more api.ipify.org).
+      // Device label comes from the browser's User-Agent.
       sendLoginNotificationEmail({
         loginTime: new Date().toLocaleString(),
-        device,
-        ipAddress,
-      })
-        .catch((e) => console.error("Login notification email error:", e));
+        device: getDeviceLabel(),
+      }).catch((e) => console.error("Login notification email error:", e));
 
       toast({
         title: "Welcome back!",
         description: "You have successfully signed in.",
-      })
+      });
 
-      router.push("/")
+      // Navigate to dashboard — the dashboard layout handles the
+      // onboarding redirect if the user hasn't completed it yet.
+      router.push("/dashboard");
     } catch (error: any) {
       toast({
         title: "Error signing in",
         description: error.message,
         variant: "destructive",
-      })
+      });
     }
-  }
+  };
 
   const signUp = async (
     email: string,
     password: string,
     fullName: string,
-    accountType: "individual" | "organization"
+    accountType?: "individual" | "organization" | null,
   ) => {
     try {
       const { data, error } = await supabase.auth.signUp({
@@ -129,65 +84,175 @@ export function useAuth() {
         options: {
           data: {
             full_name: fullName,
-          }
-        }
-      })
+            account_type: accountType,
+          },
+        },
+      });
 
       if (error) {
         toast({
           title: "Error signing up",
           description: error.message,
-          variant: "destructive"
-        })
-        return
+          variant: "destructive",
+        });
+        return;
       }
 
-      // Create profile for the new user
-      if (data.user) {
-        const { error: profileError } = await supabase
-          .from("profiles")
-          .insert({
-            id: data.user.id,
-            email: data.user.email,
-            full_name: fullName,
-            account_type: accountType,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          })
-
-        if (profileError) {
-          console.error("Error creating profile:", profileError)
-          toast({
-            title: "Error creating profile",
-            description: "Your account was created but there was an error setting up your profile.",
-            variant: "destructive"
-          })
+      // Initialize wallet (bonus handled separately)
+      if (data?.user?.id) {
+        try {
+          const { initializeUserWallet } = await import("@/actions/auth-actions");
+          await initializeUserWallet(data.user.id, 0);
+        } catch (walletError) {
+          console.error("Error initializing user wallet:", walletError);
+          // Don't fail signup if wallet initialization fails
         }
+      }
+
+      // Track first login for daily reward
+      if (data?.user?.id) {
+        try {
+          const { trackLogin, recordSignupReward } = await import("@/actions/auth-actions");
+          await trackLogin(data.user.id);
+          await recordSignupReward(data.user.id, 1);
+          toast({
+            title: "Rewards credited",
+            description: "Signup bonus (1 EIZA) and daily login bonus (0.5 EIZA) have been added.",
+          });
+        } catch (loginError) {
+          console.error("Error tracking signup login:", loginError);
+          // Don't fail signup if login tracking fails
+        }
+      }
+
+      try {
+        const profileSetupUrl = `${window.location.origin}/dashboard/settings`;
+        await sendWelcomeEmailToUser(email, fullName, profileSetupUrl);
+      } catch (emailError) {
+        console.error("Error sending welcome email:", emailError);
+      }
+
+      try {
+        const firstName = fullName.split(" ")[0];
+
+        await subscribeToConvertKit({
+          email,
+          first_name: firstName,
+          fields: {
+            account_type: accountType || "not_selected",
+            signup_date: new Date().toISOString(),
+          },
+        });
+      } catch (convertkitError) {
+        console.error("Error subscribing to ConvertKit:", convertkitError);
       }
 
       toast({
         title: "Account created successfully",
-        description: "You can now sign in with your credentials.",
-      })
+        description:
+          "Welcome! Let's set up your profile. Check your email for a welcome message.",
+      });
 
-      router.push("/")
+      router.push("/onboarding");
+
+      return { data, error };
     } catch (error: any) {
       toast({
         title: "Error signing up",
         description: error.message,
         variant: "destructive",
-      })
+      });
     }
-  }
+  };
+
+  const signInWithGoogle = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+
+      if (error) {
+        toast({
+          title: "Error signing in with Google",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error signing in with Google",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
 
   const signOut = async () => {
-    await supabase.auth.signOut()
-    router.push("/")
-    toast({
-      title: "Signed out",
-      description: "You have been signed out successfully.",
-    })
-  }
+    try {
+      const { error } = await supabase.auth.signOut();
+
+      if (error) {
+        throw error;
+      }
+
+      router.replace("/");
+    } catch (error: any) {
+      console.error("Error signing out:", error);
+      toast({
+        title: "Error signing out",
+        description:
+          error?.message || "There was an error signing out. Please try again.",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
+  const resetPassword = async (email: string) => {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/callback?type=recovery`,
+      });
+
+      if (error) {
+        toast({
+          title: "Error sending reset email",
+          description: error.message,
+          variant: "destructive",
+        });
+        throw error;
+      }
+
+      return true;
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
+  const updatePassword = async (newPassword: string) => {
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      return true;
+    } catch (error: any) {
+      throw error;
+    }
+  };
 
   return {
     user,
@@ -195,5 +260,8 @@ export function useAuth() {
     signIn,
     signUp,
     signOut,
-  }
+    signInWithGoogle,
+    resetPassword,
+    updatePassword,
+  };
 }

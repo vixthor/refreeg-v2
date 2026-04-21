@@ -4,28 +4,30 @@ import { cookies } from 'next/headers'
 export async function createClient() {
   const cookieStore = await cookies()
 
-  // Create a server's supabase client with newly configured cookie,
-  // which could be used to maintain user's session
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+      // Disable automatic refresh on the server to avoid refresh-token
+      // rotation races ("refresh_token_already_used") when multiple
+      // server requests attempt to refresh the same token concurrently.
+      auth: {
+        autoRefreshToken: false,
+      },
       cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value
+        getAll() {
+          return cookieStore.getAll()
         },
-        set(name: string, value: string, options: CookieOptions) {
+        setAll(cookiesToSet) {
           try {
-            cookieStore.set({ name, value, ...options })
-          } catch (error) {
-            // Handle cookie errors
-          }
-        },
-        remove(name: string, options: CookieOptions) {
-          try {
-            cookieStore.set({ name, value: '', ...options })
-          } catch (error) {
-            // Handle cookie errors
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            )
+          } catch {
+            // The `setAll` method is called from a Server Component where
+            // cookies cannot be set. This is expected when the middleware
+            // has already refreshed the session — the cookies will have
+            // been set there instead.
           }
         },
       },
