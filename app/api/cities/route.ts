@@ -13,13 +13,16 @@ export async function GET(request: Request) {
       );
     }
 
-    // 1. Find the state first
+    // 1. Fetch the state and its cities in a single query
     const state = await prisma.state.findFirst({
       where: {
-        name: stateName,
+        name: { equals: stateName, mode: "insensitive" },
       },
       select: {
-        id: true,
+        cities: {
+          select: { name: true },
+          orderBy: { name: "asc" },
+        },
       },
     });
 
@@ -30,20 +33,7 @@ export async function GET(request: Request) {
       );
     }
 
-    // 2. Fetch cities using stateId
-    const cities: { name: string }[] = await prisma.city.findMany({
-      where: {
-        stateId: state.id,
-      },
-      select: {
-        name: true,
-      },
-      orderBy: {
-        name: "asc",
-      },
-    });
-
-    return NextResponse.json(cities.map((c) => c.name));
+    return NextResponse.json(state.cities.map((c) => c.name));
   } catch (error) {
     console.error("Cities API error:", error);
 
