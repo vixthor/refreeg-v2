@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { auth } from "@/lib/auth/auth";
 import { redirect } from "next/navigation";
 import { hasBankDetails } from "@/actions/profile-actions";
 import CreateCauseForm from "./create-cause-form";
@@ -8,16 +8,13 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
 export default async function CreateCausePage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const session = await auth();
 
-  if (!user) {
+  if (!session?.user) {
     redirect("/auth/signin");
   }
 
-  const hasBankInfo = await hasBankDetails(user.id);
+  const hasBankInfo = await hasBankDetails(session.user.id as string);
 
   return (
     <div className="">

@@ -6,7 +6,7 @@ import { ApiErrorCode } from "@/utils/api-bot/response-utils";
 const supabaseAdmin = createClient<Database>(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+) as any;
 
 export async function resolveBankDetails(
   userId: string,

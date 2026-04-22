@@ -24,6 +24,6 @@ export function useWallet(userId: string | undefined) {
   return {
     hasWallet: hasWallet ?? false,
     isLoading,
-    error: error as string | null,
+    error: error instanceof Error ? error.message : (error as string | null),
   };
 }
