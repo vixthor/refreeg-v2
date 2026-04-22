@@ -29,9 +29,8 @@ import {
   Sparkles,
 } from "lucide-react";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
-import { createClient as createSupabaseAdmin } from "@supabase/supabase-js";
-import { getCachedUser } from "@/lib/supabase/cached-user";
+import { auth } from "@/lib/auth/auth";
+import { prisma } from "@/lib/prisma";
 import { ApiCausesFilter } from "@/components/dashboard/ApiCausesFilter";
 import { redirect } from "next/navigation";
 import {
@@ -70,6 +69,14 @@ export default async function DashboardPage({
 }: {
   searchParams?: Promise<{ search?: string; mode?: string }>;
 }) {
+  const session = await auth();
+
+  if (!session?.user) {
+    redirect("/auth/signin");
+  }
+
+  const user = session.user;
+
   const params = ((await searchParams) || {}) as {
     search?: string;
     mode?: string;
@@ -78,7 +85,6 @@ export default async function DashboardPage({
   const modeFilter = params.mode || "all";
 
   const [
-    authResult,
     stats,
     petitionStats,
     donationTrends,
@@ -86,66 +92,17 @@ export default async function DashboardPage({
     userPetitions,
     apiCampaignsResult,
   ] = await Promise.all([
-    getCachedUser(),
-    (async () => {
-      const { user } = await getCachedUser();
-      return user ? getDashboardStats(user.id) : null;
-    })(),
-    (async () => {
-      const { user } = await getCachedUser();
-      return user ? getPetitionDashboardStats(user.id) : null;
-    })(),
-    (async () => {
-      const { user } = await getCachedUser();
-      return user ? getDonationTrends(user.id) : [];
-    })(),
-    (async () => {
-      const { user } = await getCachedUser();
-      return user ? getUserCausesWithStats(user.id) : [];
-    })(),
-    (async () => {
-      const { user } = await getCachedUser();
-      return user ? getUserPetitionsWithStats(user.id) : [];
-    })(),
+    getDashboardStats(user.id as string),
+    getPetitionDashboardStats(user.id as string),
+    getDonationTrends(user.id as string),
+    getUserCausesWithStats(user.id as string),
+    getUserPetitionsWithStats(user.id as string),
     (async () => {
       try {
-        const supabase = await createClient();
-        const canUseServiceRole =
-          !!process.env.NEXT_PUBLIC_SUPABASE_URL &&
-          !!process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-        const dbClient = canUseServiceRole
-          ? createSupabaseAdmin(
-              process.env.NEXT_PUBLIC_SUPABASE_URL!,
-              process.env.SUPABASE_SERVICE_ROLE_KEY!,
-              {
-                auth: {
-                  autoRefreshToken: false,
-                  persistSession: false,
-                },
-              },
-            )
-          : (supabase as any);
-
-        const { data: causeData, error: causeError } = await (dbClient as any)
-          .from("api_campaigns")
-          .select("*")
-          .order("created_at", { ascending: false })
-          .limit(50);
-
-        if (causeError) return { error: causeError.message };
-
-        const apiCauses = ((causeData || []) as any[]).map((row) => ({
-          id: row.id,
-          developer_id: row.developer_id,
-          title: row.title || row.name || "Untitled cause",
-          status: row.status || "unknown",
-          created_at: row.created_at,
-          api_key_id: row.api_key_id ?? null,
-          mode: row.mode,
-          goal_amount: row.goal_amount,
-          raised_amount: row.raised_amount,
-        }));
+        const apiCauses = await prisma.api_campaigns.findMany({
+          orderBy: { created_at: "desc" },
+          take: 50,
+        });
 
         const apiKeyIds = [
           ...new Set(
@@ -157,14 +114,17 @@ export default async function DashboardPage({
 
         let apiKeys: ApiKeyRow[] = [];
         if (apiKeyIds.length > 0) {
-          const { data: keyData, error: keyError } = await (dbClient as any)
-            .from("api_keys")
-            .select("id, name, key_prefix, mode")
-            .in("id", apiKeyIds);
-
-          if (!keyError) {
-            apiKeys = (keyData || []) as ApiKeyRow[];
-          }
+          apiKeys = await prisma.api_keys.findMany({
+            where: {
+              id: { in: apiKeyIds },
+            },
+            select: {
+              id: true,
+              name: true,
+              key_prefix: true,
+              mode: true,
+            },
+          }) as unknown as ApiKeyRow[];
         }
 
         return { apiCauses, apiKeys };
@@ -176,13 +136,7 @@ export default async function DashboardPage({
     })(),
   ]);
 
-  const { user, error: authError } = authResult;
-
-  if (!user || authError) {
-    redirect("/auth/signin");
-  }
-
-  const profile = await getProfile(user.id);
+  const profile = await getProfile(user.id as string);
 
   const apiCauses =
     "apiCauses" in apiCampaignsResult ? (apiCampaignsResult as any).apiCauses : [];
@@ -230,12 +184,12 @@ export default async function DashboardPage({
 
   const firstName =
     profile?.full_name?.split(" ")?.[0] ||
-    user.user_metadata?.full_name?.split(" ")?.[0] ||
+    user.name?.split(" ")?.[0] ||
     user.email?.split("@")?.[0] ||
     "there";
   const avatarUrl =
     profile?.profile_photo ||
-    (user.user_metadata?.avatar_url as string | undefined);
+    (user.image as string | undefined);
   const initials =
     firstName
       ?.split(" ")

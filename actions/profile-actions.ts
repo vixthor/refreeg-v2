@@ -9,6 +9,7 @@ import type {
   BankDetailsFormData,
   OnboardingProfileData,
 } from "@/types";
+import { KycStatus, KycVerification } from "@/types/kyc-types";
 
 // Helper function to map Prisma Profile to the expected Profile type
 function mapPrismaToProfile(p: any): Profile {
@@ -58,6 +59,12 @@ export async function getProfile(userId: string): Promise<Profile | null> {
 
 export async function hasBankDetails(userId: string): Promise<boolean> {
   const profile = await getProfile(userId);
+  console.log("hasBankDetails check for user:", userId);
+  console.log("Profile data found:", {
+    exists: !!profile,
+    account_number: profile?.account_number,
+    bank_name: profile?.bank_name,
+  });
   return !!(profile && profile.account_number && profile.bank_name);
 }
 
@@ -494,48 +501,51 @@ export async function isProfileComplete(
   }
 }
 
-export async function hasKycVerification(userId: string) {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("kyc_verifications")
-    .select("*")
-    .eq("user_id", userId)
-    .single();
+export async function hasKycVerification(userId: string): Promise<KycVerification | null> {
+  try {
+    const data = await prisma.kyc_verifications.findFirst({
+      where: { user_id: userId }
+    });
 
-  if (error && error.code !== "PGRST116") throw error;
-  if (!data) return null;
+    if (!data) return null;
 
-  if (data.document_url) {
-    const { data: urlData } = supabase.storage
-      .from("kyc-documents")
-      .getPublicUrl(data.document_url);
-    if (urlData?.publicUrl) {
-      (data as any).document_url = urlData.publicUrl;
+    if (data.document_url) {
+      const supabase = await createClient();
+      const { data: urlData } = supabase.storage
+        .from("kyc-documents")
+        .getPublicUrl(data.document_url);
+      if (urlData?.publicUrl) {
+        (data as any).document_url = urlData.publicUrl;
+      }
     }
-  }
 
-  return data;
+    return data as unknown as KycVerification;
+  } catch (error) {
+    console.error("Error in hasKycVerification:", error);
+    return null;
+  }
 }
 
 export async function updateKycStatus(
   verificationId: string,
-  status: "approved" | "rejected",
+  status: KycStatus,
   notes?: string,
 ) {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("kyc_verifications")
-    .update({
-      status,
-      verification_notes: notes ?? null,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", verificationId)
-    .select()
-    .single();
+  try {
+    const data = await prisma.kyc_verifications.update({
+      where: { id: verificationId },
+      data: {
+        status,
+        verification_notes: notes ?? null,
+        updated_at: new Date(),
+      },
+    });
 
-  if (error) throw error;
-  return data;
+    return data;
+  } catch (error) {
+    console.error("Error in updateKycStatus:", error);
+    throw error;
+  }
 }
 
 export async function getProfileByUsername(

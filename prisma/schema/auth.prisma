@@ -15,6 +15,7 @@ model User {
   facebook_url          String?
   instagram_url         String?
   linkedin_url          String?
+  crypto_wallets        Json?
   accountType           String?   @map("account_type")
   isVerified            Boolean?  @default(false) @map("is_verified")
   gender                String?

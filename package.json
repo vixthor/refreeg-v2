@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@ai-sdk/deepseek": "^2.0.29",
     "@auth/prisma-adapter": "^2.11.2",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
@@ -51,6 +52,7 @@
     "@tanstack/react-query": "^5.71.5",
     "@types/firebase": "^2.4.32",
     "@types/nodemailer": "^6.4.17",
+    "ai": "^6.0.168",
     "autoprefixer": "^10.4.20",
     "axios": "^1.8.4",
     "bcryptjs": "^3.0.3",

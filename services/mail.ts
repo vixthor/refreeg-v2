@@ -5,6 +5,7 @@ import nodemailer from "nodemailer";
 import fs from "fs";
 import path from "path";
 import Handlebars from "handlebars";
+import type { TemplateDelegate } from "handlebars";
 import { headers } from "next/headers";
 import { getCurrentUser } from "@/actions/auth-actions";
 import { getProfile } from "@/actions/profile-actions";
@@ -21,7 +22,7 @@ const transporter = nodemailer.createTransport({
 
 const TEMPLATE_DIR = path.join(process.cwd(), "services", "templates");
 
-function loadTemplate(templateName: string): HandlebarsTemplateDelegate {
+function loadTemplate(templateName: string): TemplateDelegate {
   const templatePath = path.join(TEMPLATE_DIR, `${templateName}.html`);
   const templateSource = fs.readFileSync(templatePath, "utf-8");
   return Handlebars.compile(templateSource);
@@ -31,7 +32,7 @@ interface SendMailOptions {
   to: string;
   subject: string;
   templateName: string;
-  context: Record<string, any>;
+  context: Record<string, unknown>;
   from?: string;
   cc?: string[];
   bcc?: string[];
@@ -383,7 +384,7 @@ export async function sendPetitionSubmissionAdminNotification(
       sent: successful,
       failed,
     };
-  } catch (error: any) {
+  } catch (error) {
     return {
       success: false,
       error:
@@ -874,7 +875,7 @@ export async function sendDonationReceivedEmail({
   const showProgress =
     typeof amountRaised === "number" && typeof goalAmount === "number" && goalAmount > 0;
   const percent = showProgress
-    ? Math.min(Math.round((amountRaised! / goalAmount!) * 100), 100)
+    ? Math.min(Math.round(((amountRaised ?? 0) / (goalAmount ?? 1)) * 100), 100)
     : 0;
 
   return sendMail({

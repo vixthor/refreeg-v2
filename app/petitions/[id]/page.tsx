@@ -9,7 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import { SignatureForm } from "@/components/signature-form";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getPetition } from "@/actions/petition-actions";
-import { getCachedUser } from "@/lib/supabase/cached-user";
+import { auth } from "@/lib/auth/auth";
 import { getProfile, getProfileByUsername } from "@/actions/profile-actions";
 import {
   listSignaturesForPetition,
@@ -119,16 +119,18 @@ export async function generateMetadata({
 export default async function PetitionDetailPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
 
   // Primary parallel fetch
-  const [petition, initialSigners, { user }] = await Promise.all([
+  const [petition, initialSigners, session] = await Promise.all([
     getPetition(id),
     listSignaturesForPetition(id),
-    getCachedUser(),
+    auth(),
   ]);
+
+  const user = session?.user;
 
   if (!petition) {
     notFound();
@@ -148,8 +150,8 @@ export default async function PetitionDetailPage({
           return [];
         }
       })(),
-      user ? getProfile(user.id) : Promise.resolve(undefined),
-      user ? checkUserSignature(petition.id, user.id) : Promise.resolve(false),
+      user ? getProfile(user.id as string) : Promise.resolve(undefined),
+      user ? checkUserSignature(petition.id, user.id as string) : Promise.resolve(false),
       getProfile(petition.user_id),
     ]);
 
