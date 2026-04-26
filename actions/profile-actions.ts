@@ -548,6 +548,39 @@ export async function updateKycStatus(
   }
 }
 
+export async function getSolanaWallet(userId: string): Promise<string | null> {
+  try {
+    const profile = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { solana_wallet: true },
+    });
+
+    return profile?.solana_wallet ?? null;
+  } catch (error) {
+    console.error("Error fetching Solana wallet:", error);
+    return null;
+  }
+}
+
+export async function updateSolanaWallet(
+  userId: string,
+  walletAddress: string | null,
+): Promise<string | null> {
+  try {
+    const profile = await prisma.user.update({
+      where: { id: userId },
+      data: { solana_wallet: walletAddress },
+      select: { solana_wallet: true },
+    });
+
+    revalidatePath("/dashboard/settings");
+    return profile.solana_wallet ?? null;
+  } catch (error) {
+    console.error("Error updating Solana wallet:", error);
+    throw error;
+  }
+}
+
 export async function getProfileByUsername(
   username: string,
 ): Promise<Profile | null> {
