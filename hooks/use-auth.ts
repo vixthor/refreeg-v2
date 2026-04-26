@@ -90,7 +90,7 @@ export function useAuth() {
 
   const signInWithGoogle = async () => {
     try {
-      const res = await nextAuthSignIn("google", {
+      await nextAuthSignIn("google", {
         callbackUrl: `${window.location.origin}/auth/callback`,
       });
     } catch (error: any) {
