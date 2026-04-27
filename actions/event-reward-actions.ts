@@ -279,6 +279,17 @@ export async function updateUserStreaks(userId: string) {
         userId,
         metadata: { streak: weeklyStreak },
       });
+      // Emit SSE event
+      try {
+        const { eventBus } = await import("@/lib/event-bus");
+        eventBus.emit("weekly_streak", {
+          type: "weekly_streak",
+          data: updatedStreak,
+          timestamp: new Date().toISOString(),
+        });
+      } catch (e) {
+        console.error("Error emitting weekly_streak SSE:", e);
+      }
     }
 
     if (hasMonthlyMilestone) {
@@ -287,6 +298,17 @@ export async function updateUserStreaks(userId: string) {
         userId,
         metadata: { month: today.getMonth() + 1, year },
       });
+      // Emit SSE event
+      try {
+        const { eventBus } = await import("@/lib/event-bus");
+        eventBus.emit("monthly_active", {
+          type: "monthly_active",
+          data: updatedStreak,
+          timestamp: new Date().toISOString(),
+        });
+      } catch (e) {
+        console.error("Error emitting monthly_active SSE:", e);
+      }
     }
 
     revalidatePath("/dashboard");
