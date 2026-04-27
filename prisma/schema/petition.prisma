@@ -21,6 +21,10 @@ model petitions {
   @@index([status], map: "idx_petitions_status")
   @@index([user_id], map: "idx_petitions_user_id")
   @@index([video_links], map: "idx_petitions_video_links", type: Gin)
+
+  user              User                @relation(fields: [user_id], references: [id])
+  petition_sections petition_sections[]
+  petition_comments petition_comments[]
 }
 
 model petition_comments {
@@ -35,6 +39,9 @@ model petition_comments {
   @@index([created_at(sort: Desc)], map: "idx_petition_comments_created")
   @@index([parent_id], map: "idx_petition_comments_parent")
   @@index([petition_id], map: "idx_petition_comments_petition")
+
+  user     User      @relation(fields: [user_id], references: [id])
+  petition petitions @relation(fields: [petition_id], references: [id])
 }
 
 model petition_edit_sections {
@@ -43,6 +50,8 @@ model petition_edit_sections {
   heading          String
   description      String
   created_at       DateTime @default(now()) @db.Timestamptz(6)
+
+  petition_edit petition_edits @relation(fields: [petition_edit_id], references: [id])
 }
 
 model petition_edits {
@@ -66,6 +75,9 @@ model petition_edits {
   @@index([original_petition_id], map: "idx_petition_edits_original_id")
   @@index([status], map: "idx_petition_edits_status")
   @@index([user_id], map: "idx_petition_edits_user_id")
+
+  user                   User                     @relation(fields: [user_id], references: [id])
+  petition_edit_sections petition_edit_sections[]
 }
 
 model petition_sections {
@@ -76,6 +88,8 @@ model petition_sections {
   created_at  DateTime @default(now()) @db.Timestamptz(6)
 
   @@index([petition_id], map: "idx_petition_sections_petition_id")
+
+  petition petitions @relation(fields: [petition_id], references: [id])
 }
 
 model signatures {
