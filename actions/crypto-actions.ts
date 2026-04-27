@@ -104,6 +104,18 @@ export async function createCryptoDonation(data: CreateCryptoDonationParams) {
       }
     }
 
+    // Emit SSE event
+    try {
+      const { eventBus } = await import("@/lib/event-bus");
+      eventBus.emit("donation", {
+        type: "donation",
+        data: result,
+        timestamp: new Date().toISOString(),
+      });
+    } catch (e) {
+      console.error("Error emitting crypto donation SSE:", e);
+    }
+
     revalidatePath(`/causes/${data.cause_id}`);
     revalidatePath("/causes");
     revalidatePath("/");

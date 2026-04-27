@@ -817,6 +817,21 @@ export async function saveCauseShare(
       } catch (eventError) {
         console.error("Error recording share event:", eventError);
       }
+
+      // Emit SSE event
+      try {
+        const { eventBus } = await import("@/lib/event-bus");
+        eventBus.emit("share", {
+          type: "share",
+          data: {
+            cause_id: causeId,
+            user_id: userId,
+          },
+          timestamp: new Date().toISOString(),
+        });
+      } catch (e) {
+        console.error("Error emitting share SSE:", e);
+      }
     }
   } catch (error) {
     console.error("Error saving cause share:", error);

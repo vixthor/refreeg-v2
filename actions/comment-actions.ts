@@ -52,6 +52,18 @@ export async function createComment(
     // Don't throw - event tracking shouldn't break the main action
   }
 
+  // Emit SSE event
+  try {
+    const { eventBus } = await import("@/lib/event-bus");
+    eventBus.emit("comment", {
+      type: "comment",
+      data: comment,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (e) {
+    console.error("Error emitting comment SSE:", e);
+  }
+
   return {
     ...comment,
     created_at: comment.created_at.toISOString(),

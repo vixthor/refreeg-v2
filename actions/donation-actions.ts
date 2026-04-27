@@ -69,6 +69,18 @@ export async function createDonation(
     }
   }
 
+  // Emit SSE event
+  try {
+    const { eventBus } = await import("@/lib/event-bus");
+    eventBus.emit("donation", {
+      type: "donation",
+      data: mapPrismaToDonation(data),
+      timestamp: new Date().toISOString(),
+    });
+  } catch (e) {
+    console.error("Error emitting fiat donation SSE:", e);
+  }
+
   // Auto-fulfill any pending pledge from the same donor for this cause
   if (donationData.email) {
     try {
