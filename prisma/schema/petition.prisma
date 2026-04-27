@@ -25,6 +25,7 @@ model petitions {
   user              User                @relation(fields: [user_id], references: [id])
   petition_sections petition_sections[]
   petition_comments petition_comments[]
+  signatures        signatures[]
 }
 
 model petition_comments {
@@ -104,6 +105,8 @@ model signatures {
   status       String   @default("completed")
   receipt_url  String?
   created_at   DateTime @default(now()) @db.Timestamptz(6)
+
+  petition     petitions @relation(fields: [petition_id], references: [id])
 
   @@index([created_at(sort: Desc)], map: "idx_signatures_created_at")
   @@index([petition_id], map: "idx_signatures_petition_id")

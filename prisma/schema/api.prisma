@@ -108,6 +108,8 @@ model api_webhook_logs {
   attempts      Int      @default(1)
   created_at    DateTime @default(now()) @db.Timestamptz(6)
 
+  webhook       api_webhooks @relation(fields: [webhook_id], references: [id])
+
   @@index([webhook_id], map: "idx_api_webhook_logs_webhook_id")
 }
 
@@ -122,4 +124,6 @@ model api_webhooks {
   updated_at DateTime @default(now()) @db.Timestamptz(6)
 
   @@index([user_id], map: "idx_api_webhooks_user_id")
+
+  api_webhook_logs api_webhook_logs[]
 }
