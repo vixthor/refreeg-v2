@@ -53,6 +53,9 @@ model User {
   cause_shares          cause_shares[]
   comments              comments[]
   crypto_donations      crypto_donations[]
+  petition_comments     petition_comments[]
+  petitions             petitions[]
+  petition_edits        petition_edits[]
 
   @@index([isBlocked], map: "idx_profiles_is_blocked")
   @@map("profiles")

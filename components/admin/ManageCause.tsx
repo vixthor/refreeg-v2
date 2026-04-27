@@ -28,7 +28,7 @@ import { Icons } from "@/components/icons";
 import { useAuth } from "@/hooks/use-auth";
 import { useAdmin } from "@/hooks/use-admin";
 import { getCause, updateCauseTrustMetrics } from "@/actions/cause-actions";
-import type { Cause, CauseSection, CauseStatus, CauseWithUser } from "@/types";
+import type { Cause, CauseStatus, CauseWithUser } from "@/types";
 import Image from "next/image";
 import { useQueryState } from "nuqs";
 import { format } from "date-fns";
@@ -325,8 +325,8 @@ export default function ManageCauses() {
                                   : "destructive"
                           }
                         >
-                          {item.status.charAt(0).toUpperCase() +
-                            item.status.slice(1)}
+                          {(item.status ?? "").charAt(0).toUpperCase() +
+                            (item.status ?? "").slice(1)}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -354,7 +354,7 @@ export default function ManageCauses() {
                                   onClick={() =>
                                     openRejectDialog(
                                       item.type === "edit"
-                                        ? item.original_cause_id
+                                        ? (item as any).original_cause_id
                                         : item.id,
                                       item.title,
                                     )
@@ -366,7 +366,7 @@ export default function ManageCauses() {
                                   onClick={() =>
                                     handleApprove(
                                       item.type === "edit"
-                                        ? item.original_cause_id
+                                        ? (item as any).original_cause_id
                                         : item.id,
                                     )
                                   }
