@@ -581,6 +581,55 @@ export async function updateSolanaWallet(
   }
 }
 
+export async function getPolygonWallet(userId: string): Promise<string | null> {
+  try {
+    const profile = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { crypto_wallets: true },
+    });
+
+    const wallets = profile?.crypto_wallets as { ethereum?: string } | null;
+    return wallets?.ethereum ?? null;
+  } catch (error) {
+    console.error("Error fetching Polygon wallet:", error);
+    return null;
+  }
+}
+
+export async function updatePolygonWallet(
+  userId: string,
+  walletAddress: string | null,
+): Promise<string | null> {
+  try {
+    // We need to fetch existing crypto_wallets to preserve other keys if they exist
+    const profile = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { crypto_wallets: true },
+    });
+    
+    const currentWallets = profile?.crypto_wallets as Record<string, any> || {};
+    
+    if (walletAddress === null) {
+      delete currentWallets.ethereum;
+    } else {
+      currentWallets.ethereum = walletAddress;
+    }
+
+    const updatedProfile = await prisma.user.update({
+      where: { id: userId },
+      data: { crypto_wallets: currentWallets },
+      select: { crypto_wallets: true },
+    });
+
+    revalidatePath("/dashboard/settings");
+    const updatedWallets = updatedProfile.crypto_wallets as { ethereum?: string } | null;
+    return updatedWallets?.ethereum ?? null;
+  } catch (error) {
+    console.error("Error updating Polygon wallet:", error);
+    throw error;
+  }
+}
+
 export async function getProfileByUsername(
   username: string,
 ): Promise<Profile | null> {
