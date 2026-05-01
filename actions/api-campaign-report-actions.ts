@@ -20,10 +20,10 @@ type ReportWithCampaign = {
   api_key_id: string | null;
   resolution_notes: string | null;
   resolved_at: Date | null;
-  api_campaigns: {
+  api_campaign: {
     id: string;
     title: string;
-    user_id: string;
+    developer_id: string;
   } | null;
 };
 
@@ -56,11 +56,11 @@ export async function getApiCampaignReports() {
       api_key_id: true,
       resolution_notes: true,
       resolved_at: true,
-      api_campaigns: {
+      api_campaign: {
         select: {
           id: true,
           title: true,
-          user_id: true,
+          developer_id: true,
         },
       },
     },
@@ -110,7 +110,7 @@ export async function getDeveloperCampaignReports() {
       api_key_id: true,
       resolution_notes: true,
       resolved_at: true,
-      api_campaigns: {
+      api_campaign: {
         select: {
           id: true,
           title: true,
