@@ -4,7 +4,8 @@
 [![React](https://img.shields.io/badge/React-19-blue)](https://reactjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)](https://www.typescriptlang.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4.17-38B2AC)](https://tailwindcss.com/)
-[![Supabase](https://img.shields.io/badge/Supabase-latest-3ECF8E)](https://supabase.com/)
+[![Prisma](https://img.shields.io/badge/Prisma-latest-2D3748)](https://prisma.io/)
+[![NextAuth](https://img.shields.io/badge/NextAuth-5-purple)](https://next-auth.js.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 ## Empower Communities, Build a Better World
@@ -43,10 +44,10 @@ RefreeG is a blockchain-powered crowdfunding platform designed to empower commun
 
 ### Backend & Database
 
-- **Backend-as-a-Service**: [Supabase](https://supabase.com/) - Open-source Firebase alternative
-- **Authentication**: Supabase Auth with email/password and social logins
-- **Database**: PostgreSQL via Supabase
-- **API**: Next.js API routes with Supabase client
+- **ORM & Database**: [Prisma](https://prisma.io/) with PostgreSQL (Self-hosted ready via AWS RDS)
+- **Authentication**: [NextAuth.js (Auth.js)](https://next-auth.js.org/) with Prisma Adapter (Credentials, OTP, Google OAuth)
+- **File Storage**: [Supabase Storage](https://supabase.com/docs/guides/storage)
+- **API**: Next.js Server Actions and API routes
 
 ### Payments & Blockchain
 
@@ -72,7 +73,8 @@ Before running this project, make sure you have the following installed:
 
 - [Node.js](https://nodejs.org/) (version 18 or higher)
 - [pnpm](https://pnpm.io/) (recommended) or npm
-- A Supabase account and project
+- A PostgreSQL Database
+- A Supabase account and project (for Storage buckets only)
 - Paystack account for fiat payments
 - MetaMask or compatible crypto wallet for crypto donations
 
@@ -97,9 +99,12 @@ Before running this project, make sure you have the following installed:
    Create a `.env.local` file in the root directory and add the following:
 
    ```env
+   DATABASE_URL="postgresql://user:password@localhost:5432/refreeg"
+   AUTH_SECRET="your_nextauth_secret"
+   GOOGLE_CLIENT_ID="your_google_id"
+   GOOGLE_CLIENT_SECRET="your_google_secret"
    NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-   SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
    PAYSTACK_SECRET_KEY=your_paystack_secret_key
    NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY=your_paystack_public_key
    ETHEREUM_RPC_URL=your_ethereum_rpc_url
@@ -109,16 +114,19 @@ Before running this project, make sure you have the following installed:
    NEXT_PUBLIC_SITE_URL=http://localhost:3000
    ```
 
-4. **Set up Supabase**:
+4. **Set up Database & ORM**:
+
+   - Create a local PostgreSQL database or connect to your AWS RDS instance.
+   - Run Prisma migrations:
+     ```bash
+     npx prisma generate
+     npx prisma db push
+     ```
+
+5. **Set up Supabase (Storage Only)**:
 
    - Create a new project on [Supabase](https://supabase.com/)
-   - Run the migrations in the `supabase/migrations/` directory
-   - Configure authentication providers if needed
-
-5. **Run database migrations** (if using Supabase CLI):
-   ```bash
-   npx supabase db push
-   ```
+   - Create the necessary public storage buckets (e.g., `profile-photos`)
 
 ## 🚀 Usage
 
@@ -154,14 +162,16 @@ refreeg-v2/
 │   ├── home/             # Homepage components
 │   └── ...
 ├── lib/                  # Utility functions and configurations
-│   ├── supabase/         # Supabase client and utilities
+│   ├── auth/             # NextAuth configuration and logic
+│   ├── prisma.ts         # Prisma client instance
+│   ├── supabase/         # Supabase client (Storage only)
 │   ├── utils.ts          # General utilities
 │   └── ...
+├── prisma/               # Prisma schema definitions and migrations
 ├── services/             # External service integrations
 │   ├── paystack.ts       # Paystack payment service
 │   ├── mail.ts           # Email service
 │   └── ...
-├── supabase/             # Database migrations and config
 ├── public/               # Static assets
 ├── styles/               # Global styles
 └── types/                # TypeScript type definitions
