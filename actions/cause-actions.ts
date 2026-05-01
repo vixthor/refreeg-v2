@@ -1,7 +1,6 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import type {
   Cause,
@@ -121,38 +120,36 @@ export async function getCause(causeId: string): Promise<CauseWithUser | null> {
 }
 
 /**
- * Upload an image to Supabase storage
+ * Upload a file to S3 storage
  */
-async function uploadImageToSupabase(
+async function uploadFileToS3(
   file: File,
   userId: string,
+  causeId: string,
   type: "cover" | "additional",
 ): Promise<string> {
-  const supabase = await createClient();
-
-  const sanitizedOriginalName = file.name.replace(/[^\w\s.-]/g, "_");
-  const fileName = `${userId}-${Date.now()}-${type}-${sanitizedOriginalName}`;
-
-  const bucket = file.type.startsWith("video/")
-    ? "cause-videos"
-    : "profile-photos";
-
-  const { data: uploadData, error: uploadError } = await supabase.storage
-    .from(bucket)
-    .upload(fileName, file, {
-      cacheControl: "3600",
-      upsert: true,
+  const ext = file.name.split('.').pop() || 'file';
+  const uniqueId = Math.random().toString(36).substring(2, 15);
+  const isVideo = file.type.startsWith("video/");
+  
+  try {
+    const { uploadToS3, generateS3Key } = await import("@/lib/s3/s3-utils");
+    
+    const s3Key = generateS3Key({
+      entityType: "causes",
+      userId,
+      entityId: causeId,
+      mediaType: isVideo ? "videos" : "images",
+      filename: `${uniqueId}_${type}.${ext}`,
     });
 
-  if (uploadError) {
-    console.error("Error uploading image:", uploadError);
-    throw uploadError;
+    const buffer = Buffer.from(await file.arrayBuffer());
+    await uploadToS3(buffer, s3Key, file.type);
+    return s3Key;
+  } catch (error: any) {
+    console.error("Error uploading file to S3:", error);
+    throw error;
   }
-
-  const { data: urlData } = supabase.storage
-    .from(bucket)
-    .getPublicUrl(fileName);
-  return urlData.publicUrl;
 }
 
 /**
@@ -162,11 +159,13 @@ export async function createCause(
   userId: string,
   causeData: CauseFormData,
 ): Promise<Cause> {
+  const causeId = crypto.randomUUID();
   let coverImageUrl = null;
   if (causeData.coverImage) {
-    coverImageUrl = await uploadImageToSupabase(
+    coverImageUrl = await uploadFileToS3(
       causeData.coverImage,
       userId,
+      causeId,
       "cover",
     );
   }
@@ -201,7 +200,7 @@ export async function createCause(
       multimediaUrls = await Promise.all(
         causeData.multimedia.map(async (file) => {
           if (typeof file === "string") return file;
-          return await uploadImageToSupabase(file, userId, "additional");
+          return await uploadFileToS3(file, userId, causeId, "additional");
         }),
       );
     } catch (error) {
@@ -214,6 +213,7 @@ export async function createCause(
     const cause = await prisma.$transaction(async (tx: any) => {
       const newCause = await tx.cause.create({
         data: {
+          id: causeId,
           userId: userId,
           title: causeData.title,
           category: causeData.category,
@@ -299,7 +299,7 @@ export async function updateCause(
   }
 
   let coverImageUrl = causeData.coverImage
-    ? await uploadImageToSupabase(causeData.coverImage, userId, "cover")
+    ? await uploadFileToS3(causeData.coverImage as File, userId, causeId, "cover")
     : causeData.image || null;
 
   let daysActive = null;
@@ -332,7 +332,7 @@ export async function updateCause(
       multimediaUrls = await Promise.all(
         causeData.multimedia.map(async (item) => {
           if (typeof item === "string") return item; // Keep existing URL
-          return await uploadImageToSupabase(item, userId, "additional");
+          return await uploadFileToS3(item as File, userId, causeId, "additional");
         }),
       );
     } catch (error) {

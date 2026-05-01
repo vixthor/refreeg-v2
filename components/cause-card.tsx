@@ -81,6 +81,7 @@ const defaultCategoryConfig = {
 };
 
 import { calculateDaysLeft, isCauseExpired } from "@/utils/cause-utils";
+import { getMediaUrl } from "@/lib/utils/media";
 
 interface CauseCardProps {
   cause: Cause;
@@ -106,7 +107,7 @@ export function CauseCard({ cause, action }: CauseCardProps) {
           {/* Image Section */}
           <div className="aspect-[16/10] w-full overflow-hidden relative">
             <img
-              src={cause.image || "/placeholder.svg"}
+              src={getMediaUrl(cause.image) || "/placeholder.svg"}
               alt={cause.title}
               loading="lazy"
               className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-105"
@@ -159,7 +160,7 @@ export function CauseCard({ cause, action }: CauseCardProps) {
                 {/* Creator avatar + name */}
                 {cause.profiles?.profile_photo ? (
                   <img
-                    src={cause.profiles.profile_photo}
+                    src={getMediaUrl(cause.profiles.profile_photo)}
                     alt={cause.profiles.full_name || "Creator"}
                     className="h-5 w-5 rounded-full object-cover ring-1 ring-gray-200"
                   />

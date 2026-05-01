@@ -21,6 +21,7 @@ import { HandHeart, ShieldAlert, FilePenLine } from "lucide-react";
 import { Instagram, Facebook, Linkedin } from "lucide-react";
 import { FaXTwitter } from "react-icons/fa6";
 import { motion } from "framer-motion";
+import { getMediaUrl } from "@/lib/utils/media";
 
 type ProfileProps = {
   profile: any;
@@ -87,7 +88,7 @@ export default function PublicProfile({
   };
 
   const defaultProfileImage = "/default-avatar.jpg";
-  const profileImage = profile.profile_photo || defaultProfileImage;
+  const profileImage = getMediaUrl(profile.profile_photo) || defaultProfileImage;
   const displayName = profile.full_name || "Anonymous";
   const username = profile.username || "";
   const firstName = displayName.split(" ")[0] || "this user";

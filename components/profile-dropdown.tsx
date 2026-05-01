@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { Settings, CreditCard, FileText, LogOut, User } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { getMediaUrl } from "@/lib/utils/media";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -101,7 +102,7 @@ export default function ProfileDropdown({
                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 via-blue-500 to-blue-400 p-0.5">
                   <div className="w-full h-full rounded-full overflow-hidden bg-white">
                     <Image
-                      src={data.avatar}
+                      src={getMediaUrl(data.avatar)}
                       alt={data.name}
                       width={28}
                       height={28}

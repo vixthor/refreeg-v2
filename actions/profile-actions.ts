@@ -2,7 +2,6 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { createClient } from "@/lib/supabase/server";
 import type {
   Profile,
   ProfileFormData,
@@ -105,45 +104,32 @@ export async function updateProfilePhoto(
   userId: string,
   photoFile: File,
 ): Promise<string> {
-  const supabase = await createClient();
+  const ext = photoFile.name.split('.').pop() || 'jpg';
+  const uniqueId = Math.random().toString(36).substring(2, 15);
+  try {
+    const { uploadToS3, generateS3Key } = await import("@/lib/s3/s3-utils");
+    const s3Key = generateS3Key({
+      entityType: "profiles",
+      userId,
+      entityId: userId,
+      mediaType: "images",
+      filename: `${uniqueId}.${ext}`,
+    });
+    const buffer = Buffer.from(await photoFile.arrayBuffer());
+    await uploadToS3(buffer, s3Key, photoFile.type);
 
-  const fileName = `${userId}-${Date.now()}-${photoFile.name}`;
-  const { data: uploadData, error: uploadError } = await supabase.storage
-    .from("profile-photos")
-    .upload(fileName, photoFile, {
-      cacheControl: "3600",
-      upsert: true,
+    await prisma.user.update({
+      where: { id: userId },
+      data: { profilePhoto: s3Key },
     });
 
-  if (uploadError) {
-    console.error("Error uploading profile photo:", uploadError);
-    throw uploadError;
-  }
-
-  const { data: urlData } = supabase.storage
-    .from("profile-photos")
-    .getPublicUrl(fileName);
-
-  const publicUrl = urlData.publicUrl;
-
-  const { data, error } = await supabase
-    .from("profiles")
-    .upsert({
-      id: userId,
-      profile_photo: publicUrl,
-      updated_at: new Date().toISOString(),
-    })
-    .select()
-    .single();
-
-  if (error) {
-    console.error("Error updating profile with photo URL:", error);
+    revalidatePath("/dashboard/settings");
+    revalidatePath("/");
+    return s3Key;
+  } catch (error: any) {
+    console.error("Error updating profile photo:", error);
     throw error;
   }
-
-  revalidatePath("/dashboard/settings");
-  revalidatePath("/");
-  return publicUrl;
 }
 
 export async function updateBankDetails(
@@ -174,8 +160,6 @@ export async function createOnboardingProfile(
   profileData: OnboardingProfileData,
   oauthAvatarUrl?: string | null,
 ): Promise<any> {
-  const supabase = await createClient(); // Keep for storage only
-
   const existingProfile = await prisma.user.findUnique({
     where: { id: userId },
     select: { profilePhoto: true },
@@ -184,25 +168,24 @@ export async function createOnboardingProfile(
   let profilePhotoUrl: string | null = existingProfile?.profilePhoto ?? null;
 
   if (profileData.profilePhoto) {
-    const fileName = `${userId}-${Date.now()}-${profileData.profilePhoto.name}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from("profile-photos")
-      .upload(fileName, profileData.profilePhoto, {
-        cacheControl: "3600",
-        upsert: true,
+    const ext = profileData.profilePhoto.name.split('.').pop() || 'jpg';
+    const uniqueId = Math.random().toString(36).substring(2, 15);
+    try {
+      const { uploadToS3, generateS3Key } = await import("@/lib/s3/s3-utils");
+      const s3Key = generateS3Key({
+        entityType: "profiles",
+        userId,
+        entityId: userId,
+        mediaType: "images",
+        filename: `${uniqueId}.${ext}`,
       });
-
-    if (uploadError) {
+      const buffer = Buffer.from(await profileData.profilePhoto.arrayBuffer());
+      await uploadToS3(buffer, s3Key, profileData.profilePhoto.type);
+      profilePhotoUrl = s3Key;
+    } catch (uploadError) {
       console.error("Error uploading profile photo:", uploadError);
       throw new Error("Failed to upload profile photo");
     }
-
-    const { data: urlData } = supabase.storage
-      .from("profile-photos")
-      .getPublicUrl(fileName);
-
-    profilePhotoUrl = urlData.publicUrl;
   } else if (!profilePhotoUrl && oauthAvatarUrl) {
     profilePhotoUrl = oauthAvatarUrl;
   }
@@ -509,14 +492,8 @@ export async function hasKycVerification(userId: string): Promise<KycVerificatio
 
     if (!data) return null;
 
-    if (data.document_url) {
-      const supabase = await createClient();
-      const { data: urlData } = supabase.storage
-        .from("kyc-documents")
-        .getPublicUrl(data.document_url);
-      if (urlData?.publicUrl) {
-        (data as any).document_url = urlData.publicUrl;
-      }
+    if (data.document_url && !data.document_url.startsWith('http')) {
+      (data as any).document_url = `/api/s3/image?key=${data.document_url}`;
     }
 
     return data as unknown as KycVerification;

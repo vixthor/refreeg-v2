@@ -27,6 +27,7 @@ import { useRouter } from "next/navigation";
 import type { Profile } from "@/types";
 import Image from "next/image";
 import NavigationLoader from "@/components/NavigationLoader";
+import { getMediaUrl } from "@/lib/utils/media";
 
 interface KycTabProps {
   profile: Profile;
@@ -243,7 +244,7 @@ export function KycTab({ profile, user }: KycTabProps) {
                         📄
                       </span>
                       <a
-                        href={kycData.document_url}
+                        href={getMediaUrl(kycData.document_url)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-blue-600 underline"
@@ -257,7 +258,7 @@ export function KycTab({ profile, user }: KycTabProps) {
                       onClick={() => setPreviewOpen(true)}
                     >
                       <Image
-                        src={kycData.document_url}
+                        src={getMediaUrl(kycData.document_url)}
                         alt="KYC Document"
                         width={400}
                         height={300}
@@ -285,7 +286,7 @@ export function KycTab({ profile, user }: KycTabProps) {
                     onClick={(e) => e.stopPropagation()}
                   >
                     <Image
-                      src={kycData.document_url}
+                      src={getMediaUrl(kycData.document_url)}
                       alt="Full size document"
                       fill
                       className="object-contain rounded-lg bg-black"

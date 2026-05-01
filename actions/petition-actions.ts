@@ -1,7 +1,6 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import type {
   Petition,
@@ -71,48 +70,47 @@ export async function getPetition(
   } as unknown as PetitionWithUser;
 }
 
-// Keep Supabase Storage for file uploads
-async function uploadImageToSupabase(
+async function uploadFileToS3(
   file: File,
   userId: string,
+  petitionId: string,
   type: "cover" | "additional",
 ): Promise<string> {
-  const supabase = await createClient();
-
-  const sanitizedOriginalName = file.name.replace(/[^\w\s.-]/g, "_");
-  const fileName = `${userId}-${Date.now()}-${type}-${sanitizedOriginalName}`;
-
-  const bucket = file.type.startsWith("video/")
-    ? "petition-videos"
-    : "profile-photos";
-
-  const { data: uploadData, error: uploadError } = await supabase.storage
-    .from(bucket)
-    .upload(fileName, file, {
-      cacheControl: "3600",
-      upsert: true,
+  const ext = file.name.split('.').pop() || 'file';
+  const uniqueId = Math.random().toString(36).substring(2, 15);
+  const isVideo = file.type.startsWith("video/");
+  
+  try {
+    const { uploadToS3, generateS3Key } = await import("@/lib/s3/s3-utils");
+    
+    const s3Key = generateS3Key({
+      entityType: "petitions",
+      userId,
+      entityId: petitionId,
+      mediaType: isVideo ? "videos" : "images",
+      filename: `${uniqueId}_${type}.${ext}`,
     });
 
-  if (uploadError) {
-    console.error("Error uploading image:", uploadError);
-    throw uploadError;
+    const buffer = Buffer.from(await file.arrayBuffer());
+    await uploadToS3(buffer, s3Key, file.type);
+    return s3Key;
+  } catch (error: any) {
+    console.error("Error uploading file to S3:", error);
+    throw error;
   }
-
-  const { data: urlData } = supabase.storage
-    .from(bucket)
-    .getPublicUrl(fileName);
-  return urlData.publicUrl;
 }
 
 export async function createPetition(
   userId: string,
   petitionData: PetitionFormData,
 ): Promise<Petition> {
+  const petitionId = crypto.randomUUID();
   let coverImageUrl = null;
   if (petitionData.coverImage) {
-    coverImageUrl = await uploadImageToSupabase(
+    coverImageUrl = await uploadFileToS3(
       petitionData.coverImage,
       userId,
+      petitionId,
       "cover",
     );
   }
@@ -146,7 +144,7 @@ export async function createPetition(
     try {
       multimediaUrls = await Promise.all(
         petitionData.multimedia.map((file) =>
-          uploadImageToSupabase(file, userId, "additional"),
+          uploadFileToS3(file, userId, petitionId, "additional"),
         ),
       );
     } catch (error) {
@@ -157,6 +155,7 @@ export async function createPetition(
 
   const petition = await prisma.petitions.create({
     data: {
+      id: petitionId,
       user_id: userId,
       title: petitionData.title,
       category: petitionData.category,
@@ -222,7 +221,7 @@ export async function updatePetition(
   petitionData: Partial<PetitionFormData>,
 ): Promise<Petition> {
   let coverImageUrl = petitionData.coverImage
-    ? await uploadImageToSupabase(petitionData.coverImage, userId, "cover")
+    ? await uploadFileToS3(petitionData.coverImage as File, userId, petitionId, "cover")
     : petitionData.image;
 
   let daysActive = null;
@@ -254,7 +253,7 @@ export async function updatePetition(
     try {
       multimediaUrls = await Promise.all(
         petitionData.multimedia.map((file) =>
-          uploadImageToSupabase(file, userId, "additional"),
+          uploadFileToS3(file as File, userId, petitionId, "additional"),
         ),
       );
     } catch (error) {

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { getMediaUrl } from "@/lib/utils/media";
 
 import {
   Carousel,
@@ -74,7 +75,7 @@ export default function UrgentCausesCarousel({ causes }: { causes: any[] }) {
 
                     <div className="aspect-video w-full overflow-hidden rounded-t-lg">
                       <img
-                        src={cause.image || "/placeholder.svg"}
+                        src={getMediaUrl(cause.image) || "/placeholder.svg"}
                         alt={cause.title}
                         loading="lazy"
                         className="object-cover w-full h-full"

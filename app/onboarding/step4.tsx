@@ -14,6 +14,7 @@ import { useRouter } from "next/navigation";
 import { Shield, ArrowRight, ArrowLeft } from "lucide-react";
 import Image from "next/image";
 import { getProfile } from "@/actions/profile-actions";
+import { getMediaUrl } from "@/lib/utils/media";
 
 interface Step4Props {
   user: any;
@@ -95,7 +96,7 @@ export default function Step4({
                 <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-blue-200">
                   <Image
                     src={
-                      profile?.profile_photo || user?.user_metadata?.avatar_url
+                      getMediaUrl(profile?.profile_photo || user?.user_metadata?.avatar_url)
                     }
                     alt="Your profile"
                     width={96}

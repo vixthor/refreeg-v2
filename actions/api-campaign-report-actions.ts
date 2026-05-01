@@ -114,13 +114,14 @@ export async function getDeveloperCampaignReports() {
         select: {
           id: true,
           title: true,
+          developer_id: true,
         },
       },
     },
     orderBy: { created_at: "desc" },
   });
 
-  return reports;
+  return reports as ReportWithCampaign[];
 }
 
 /**

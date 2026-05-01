@@ -25,6 +25,7 @@ RefreeG is a blockchain-powered crowdfunding platform designed to empower commun
 - **User Dashboards**: Manage your donations, petitions, and profiles with personalized dashboards.
 - **Real-Time Tracking**: Monitor donation progress and fund allocation in real-time.
 - **KYC Integration**: Secure user verification for donors and recipients.
+- **AI Agent Assistance**: Smart AI agent to guide users, help with onboarding, and answer platform queries.
 - **Responsive Design**: Optimized for desktop, tablet, and mobile devices.
 - **Multi-Language Support**: Built with internationalization in mind.
 - **Community Engagement**: Share causes, leave comments, and build a network of changemakers.
@@ -44,9 +45,9 @@ RefreeG is a blockchain-powered crowdfunding platform designed to empower commun
 
 ### Backend & Database
 
-- **ORM & Database**: [Prisma](https://prisma.io/) with PostgreSQL (Self-hosted ready via AWS RDS)
+- **ORM & Database**: [Prisma](https://prisma.io/) with PostgreSQL (Self-hosted on AWS EC2)
 - **Authentication**: [NextAuth.js (Auth.js)](https://next-auth.js.org/) with Prisma Adapter (Credentials, OTP, Google OAuth)
-- **File Storage**: [Supabase Storage](https://supabase.com/docs/guides/storage)
+- **File Storage**: [AWS S3](https://aws.amazon.com/s3/) (Private Buckets with Pre-signed URLs)
 - **API**: Next.js Server Actions and API routes
 
 ### Payments & Blockchain
@@ -73,8 +74,8 @@ Before running this project, make sure you have the following installed:
 
 - [Node.js](https://nodejs.org/) (version 18 or higher)
 - [pnpm](https://pnpm.io/) (recommended) or npm
-- A PostgreSQL Database
-- A Supabase account and project (for Storage buckets only)
+- A PostgreSQL Database (Local or AWS EC2)
+- AWS Account with S3 bucket and IAM permissions
 - Paystack account for fiat payments
 - MetaMask or compatible crypto wallet for crypto donations
 
@@ -103,8 +104,11 @@ Before running this project, make sure you have the following installed:
    AUTH_SECRET="your_nextauth_secret"
    GOOGLE_CLIENT_ID="your_google_id"
    GOOGLE_CLIENT_SECRET="your_google_secret"
-   NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+   AWS_REGION="your_aws_region"
+   AWS_S3_BUCKET="your_s3_bucket_name"
+   # If not using EC2 IAM Role, also provide:
+   # AWS_ACCESS_KEY_ID="your_aws_access_key"
+   # AWS_SECRET_ACCESS_KEY="your_aws_secret_key"
    PAYSTACK_SECRET_KEY=your_paystack_secret_key
    NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY=your_paystack_public_key
    ETHEREUM_RPC_URL=your_ethereum_rpc_url
@@ -116,17 +120,19 @@ Before running this project, make sure you have the following installed:
 
 4. **Set up Database & ORM**:
 
-   - Create a local PostgreSQL database or connect to your AWS RDS instance.
+   - Create a local PostgreSQL database or connect to your AWS EC2 instance.
    - Run Prisma migrations:
      ```bash
      npx prisma generate
      npx prisma db push
      ```
 
-5. **Set up Supabase (Storage Only)**:
+5. **Set up AWS S3**:
 
-   - Create a new project on [Supabase](https://supabase.com/)
-   - Create the necessary public storage buckets (e.g., `profile-photos`)
+   - Create a new private S3 bucket on AWS
+   - Ensure the bucket has Block Public Access turned ON
+   - If deploying to EC2, attach an IAM Role to the instance with `s3:GetObject` and `s3:PutObject` permissions
+   - Alternatively, add your AWS Access Keys to the `.env.local` file
 
 ## 🚀 Usage
 
@@ -164,7 +170,7 @@ refreeg-v2/
 ├── lib/                  # Utility functions and configurations
 │   ├── auth/             # NextAuth configuration and logic
 │   ├── prisma.ts         # Prisma client instance
-│   ├── supabase/         # Supabase client (Storage only)
+│   ├── s3/               # AWS S3 client and proxy utilities
 │   ├── utils.ts          # General utilities
 │   └── ...
 ├── prisma/               # Prisma schema definitions and migrations
@@ -209,7 +215,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🙏 Acknowledgments
 
-- Special thanks to Supabase, Paystack, and the blockchain communities for their amazing tools
+- Special thanks to AWS, Paystack, and the blockchain communities for their amazing tools
 - Inspired by the need for transparent, impactful crowdfunding in Africa
 
 ---
