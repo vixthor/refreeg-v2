@@ -4,6 +4,8 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { getMediaUrl } from "@/lib/utils/media";
+
 
 // Component for empty states
 export function EmptyState({
@@ -56,11 +58,12 @@ export function CauseCard({ cause }: { cause: any }) {
       <Link href={`/causes/${cause.id}`}>
         <div className="aspect-video relative bg-gray-100">
           <Image
-            src={cause.image || "/placeholder-cause.jpg"}
+            src={getMediaUrl(cause.image) || "/placeholder-cause.jpg"}
             alt={cause.title}
             fill
             className="object-cover"
           />
+
         </div>
         <div className="p-4 space-y-3">
           <div className="flex items-center gap-2">
@@ -133,11 +136,12 @@ export function PetitionCard({ petition }: { petition: any }) {
       <Link href={`/petitions/${petition.id}`}>
         <div className="aspect-video relative bg-gray-100">
           <Image
-            src={petition.image || "/placeholder-petition.jpg"}
+            src={getMediaUrl(petition.image) || "/placeholder-petition.jpg"}
             alt={petition.title}
             fill
             className="object-cover"
           />
+
         </div>
         <div className="p-4 space-y-3">
           <div className="flex items-center gap-2">

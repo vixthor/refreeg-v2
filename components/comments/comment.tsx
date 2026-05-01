@@ -9,6 +9,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Pencil, Trash2 } from "lucide-react";
 import { EditCommentForm } from "./edit-comment-form";
+import { getMediaUrl } from "@/lib/utils/media";
+
 
 interface CommentProps {
   comment: Comment;
@@ -128,7 +130,8 @@ export function CommentComponent({
           >
             {comment.user.profile_photo ? (
               <Image
-                src={comment.user.profile_photo}
+                src={getMediaUrl(comment.user.profile_photo)}
+
                 alt={comment.user.full_name || "User"}
                 width={40}
                 height={40}

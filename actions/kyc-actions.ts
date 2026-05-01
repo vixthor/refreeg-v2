@@ -1,7 +1,6 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { KycVerification, KycStatus } from "@/types/kyc-types";
 import { logAdminActivity } from "@/actions/database-actions";
@@ -43,8 +42,6 @@ export async function uploadKycDocument(
       }
 
       const fileExt = file.name.split(".").pop();
-      const fileName = `${userId}/${Date.now()}.${fileExt}`;
-      const bucket = "kyc-documents";
 
       const allowedTypes = ["image/jpeg", "image/png", "application/pdf"];
       if (!allowedTypes.includes(file.type)) {
@@ -62,26 +59,23 @@ export async function uploadKycDocument(
         };
       }
 
-      // Use Supabase for storage upload only
-      const supabase = await createClient();
-      const { data, error: uploadError } = await supabase.storage
-        .from(bucket)
-        .upload(fileName, file, {
-          cacheControl: "3600",
-          upsert: false,
+      // Use S3 for storage upload
+      let fileName = "";
+      try {
+        const { uploadToS3, generateS3Key } = await import("@/lib/s3/s3-utils");
+        const s3Key = generateS3Key({
+          entityType: "kyc",
+          userId,
+          entityId: existingKyc.id,
+          mediaType: "documents",
+          filename: `${userId}_${Date.now()}.${fileExt}`,
         });
-
-      if (uploadError) {
+        const buffer = Buffer.from(await file.arrayBuffer());
+        await uploadToS3(buffer, s3Key, file.type);
+        fileName = s3Key;
+      } catch (uploadError: any) {
         console.error("Error uploading document:", uploadError);
         return { documentUrl: "", error: uploadError.message };
-      }
-
-      const { data: urlData } = supabase.storage
-        .from(bucket)
-        .getPublicUrl(fileName);
-
-      if (!urlData?.publicUrl) {
-        return { documentUrl: "", error: "Failed to get public URL" };
       }
 
       // Update existing KYC record using Prisma
@@ -131,11 +125,9 @@ export async function uploadKycDocument(
         console.error("Error sending KYC submission email:", emailError);
       }
 
-      return { documentUrl: urlData.publicUrl, error: null };
+      return { documentUrl: fileName, error: null };
     } else {
       const fileExt = file.name.split(".").pop();
-      const fileName = `${userId}/${Date.now()}.${fileExt}`;
-      const bucket = "kyc-documents";
 
       const allowedTypes = ["image/jpeg", "image/png", "application/pdf"];
       if (!allowedTypes.includes(file.type)) {
@@ -153,31 +145,30 @@ export async function uploadKycDocument(
         };
       }
 
-      // Use Supabase for storage upload only
-      const supabase = await createClient();
-      const { data, error: uploadError } = await supabase.storage
-        .from(bucket)
-        .upload(fileName, file, {
-          cacheControl: "3600",
-          upsert: false,
+      const kycId = crypto.randomUUID();
+      // Use S3 for storage upload
+      let fileName = "";
+      try {
+        const { uploadToS3, generateS3Key } = await import("@/lib/s3/s3-utils");
+        const s3Key = generateS3Key({
+          entityType: "kyc",
+          userId,
+          entityId: kycId,
+          mediaType: "documents",
+          filename: `${userId}_${Date.now()}.${fileExt}`,
         });
-
-      if (uploadError) {
+        const buffer = Buffer.from(await file.arrayBuffer());
+        await uploadToS3(buffer, s3Key, file.type);
+        fileName = s3Key;
+      } catch (uploadError: any) {
         console.error("Error uploading document:", uploadError);
         return { documentUrl: "", error: uploadError.message };
       }
-
-      const { data: urlData } = supabase.storage
-        .from(bucket)
-        .getPublicUrl(fileName);
-
-      if (!urlData?.publicUrl) {
-        return { documentUrl: "", error: "Failed to get public URL" };
-      }
-
+      
       // Insert new KYC record using Prisma
       await prisma.kyc_verifications.create({
         data: {
+          id: kycId,
           user_id: userId,
           document_type: documentType,
           document_url: fileName,
@@ -221,7 +212,7 @@ export async function uploadKycDocument(
         console.error("Error sending KYC submission email:", emailError);
       }
 
-      return { documentUrl: urlData.publicUrl, error: null };
+      return { documentUrl: fileName, error: null };
     }
   } catch (error) {
     console.error("Error in uploadKycDocument:", error);
@@ -239,13 +230,9 @@ export async function getVerificationStatus(
     });
 
     if (data?.document_url) {
-      // Use Supabase only for generating the public URL
-      const supabase = await createClient();
-      const { data: publicData } = supabase.storage
-        .from("kyc-documents")
-        .getPublicUrl(data.document_url);
-      if (publicData?.publicUrl) {
-        (data as any).document_url = publicData.publicUrl;
+      // Use S3 proxy for generating the URL
+      if (!data.document_url.startsWith("http")) {
+        (data as any).document_url = `/api/s3/image?key=${encodeURIComponent(data.document_url)}`;
       }
     }
 

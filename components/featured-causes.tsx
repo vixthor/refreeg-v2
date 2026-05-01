@@ -11,6 +11,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { listCauses } from "@/actions/cause-actions";
 import { DonateButton } from "@/components/donate-button";
+import { getMediaUrl } from "@/lib/utils/media";
 import {
   GraduationCap,
   HeartPulse,
@@ -143,7 +144,7 @@ export async function FeaturedCauses() {
             <Card className="overflow-hidden cursor-pointer transition hover:shadow-lg h-full flex flex-col">
               <div className="aspect-video w-full overflow-hidden">
                 <img
-                  src={cause.image || "/placeholder.svg"}
+                  src={getMediaUrl(cause.image) || "/placeholder.svg"}
                   alt={cause.title}
                   className="object-cover w-full h-full"
                 />

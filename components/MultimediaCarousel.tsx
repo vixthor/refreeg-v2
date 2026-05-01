@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { getMediaUrl } from "@/lib/utils/media";
 
 interface MediaItem {
   type: "image" | "video";
@@ -78,13 +79,13 @@ export default function MultimediaCarousel({
         url.match(/(youtube\.com|youtu\.be|tiktok\.com|drive\.google\.com)/i)
           ? "video"
           : "image",
-      url,
+      url: getMediaUrl(url),
     }));
   };
 
   const mediaItems = processMedia();
   const slides = coverImage
-    ? [{ type: "image" as const, url: coverImage }, ...mediaItems]
+    ? [{ type: "image" as const, url: getMediaUrl(coverImage) }, ...mediaItems]
     : mediaItems;
 
   const goTo = (idx: number) => setCurrent(idx);

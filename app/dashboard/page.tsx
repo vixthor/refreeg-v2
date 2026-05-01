@@ -41,6 +41,7 @@ import {
   getUserPetitionsWithStats,
 } from "@/actions/dashboard-actions";
 import { getProfile } from "@/actions/profile-actions";
+import { getMediaUrl } from "@/lib/utils/media";
 
 import { Metadata } from "next";
 
@@ -219,7 +220,7 @@ export default async function DashboardPage({
             <div className="mt-4 flex items-center gap-3 sm:mt-5 sm:gap-5">
               <Avatar className="h-20 w-20 rounded-[26px] border-4 border-white/95 bg-blue-50 shadow-[0_24px_50px_-28px_rgba(37,99,235,0.65)] sm:h-28 sm:w-28 sm:rounded-[32px] sm:border-[5px]">
                 <AvatarImage
-                  src={avatarUrl}
+                  src={getMediaUrl(avatarUrl)}
                   alt={user.email || firstName}
                   className="object-cover object-center"
                 />

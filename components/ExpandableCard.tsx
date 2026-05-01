@@ -8,6 +8,8 @@ import { Progress } from "@/components/ui/progress";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
+import { getMediaUrl } from "@/lib/utils/media";
+
 // TYPES
 interface ExpandableCardItem {
   id: string;
@@ -102,7 +104,7 @@ export function ExpandableCard({ items, type }: ExpandableCardProps) {
               className="w-full max-w-[500px] h-full md:h-fit md:max-h-[90%] flex flex-col bg-white sm:rounded-3xl overflow-hidden shadow-2xl"
             >
               <img
-                src={active.image || "/placeholder-cause.jpg"}
+                src={getMediaUrl(active.image) || "/placeholder-cause.jpg"}
                 alt={active.title}
                 className="w-full h-80 object-cover"
               />
@@ -178,9 +180,10 @@ export function ExpandableCard({ items, type }: ExpandableCardProps) {
             {/* Mobile */}
             <div className="flex sm:hidden p-4 gap-4">
               <img
-                src={item.image || "/placeholder-cause.jpg"}
+                src={getMediaUrl(item.image) || "/placeholder-cause.jpg"}
                 className="h-20 w-20 rounded-lg object-cover"
               />
+
 
               <div className="flex-1 flex flex-col gap-2">
                 <h3 className="line-clamp-1">{item.title}</h3>
@@ -208,9 +211,10 @@ export function ExpandableCard({ items, type }: ExpandableCardProps) {
             {/* Desktop */}
             <div className="hidden sm:flex flex-col p-4 gap-4">
               <img
-                src={item.image || "/placeholder-cause.jpg"}
+                src={getMediaUrl(item.image) || "/placeholder-cause.jpg"}
                 className="h-48 w-full rounded-lg object-cover"
               />
+
 
               <h3 className="text-center">{item.title}</h3>
 

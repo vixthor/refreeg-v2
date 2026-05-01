@@ -16,6 +16,7 @@ import {
 } from "@/actions/kyc-actions";
 import { getProfile } from "@/actions/profile-actions";
 import NavigationLoader from "@/components/NavigationLoader";
+import { getMediaUrl } from "@/lib/utils/media";
 
 export default function KycReviewPage() {
   const router = useRouter();
@@ -124,12 +125,12 @@ export default function KycReviewPage() {
               <br />
               {kyc.document_url ? (
                 <a
-                  href={kyc.document_url}
+                  href={getMediaUrl(kyc.document_url)}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
                   <img
-                    src={kyc.document_url}
+                    src={getMediaUrl(kyc.document_url)}
                     alt="KYC Document"
                     className="max-w-xs max-h-48 border rounded"
                   />

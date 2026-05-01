@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { getMediaUrl } from "@/lib/utils/media";
 
 import {
   Carousel,
@@ -73,7 +74,7 @@ export default function FeaturedPetitionsCarousel({ petitions }: { petitions: an
                   
                   <div className="aspect-video w-full overflow-hidden">
                     <img
-                      src={petition.image || "/placeholder.svg"}
+                      src={getMediaUrl(petition.image) || "/placeholder.svg"}
                       alt={petition.title}
                       loading="lazy"
                       className="object-cover w-full h-full"

@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { motion } from "framer-motion";
+import { getMediaUrl } from "@/lib/utils/media";
 import {
   Upload,
   MailIcon,
@@ -278,7 +279,7 @@ export default function Step3({
                   >
                     {profilePhotoUrl ? (
                       <Image
-                        src={profilePhotoUrl}
+                        src={getMediaUrl(profilePhotoUrl)}
                         alt="Profile preview"
                         width={80}
                         height={80}

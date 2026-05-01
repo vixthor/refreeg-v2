@@ -14,6 +14,7 @@ import { listCauses } from "@/actions/cause-actions";
 import AnimatedCard from "./components/AnimatedCard";
 import AnimatedHeader from "@/components/home/components/AnimatedHeader";
 import { ArrowRight } from "lucide-react";
+import { getMediaUrl } from "@/lib/utils/media";
 
 import {
   Carousel,
@@ -98,7 +99,7 @@ export async function FeaturedCauses() {
                     <Card className="overflow-hidden cursor-pointer transition hover:shadow-2xl shadow-lg h-[420px] flex flex-col border border-gray-300">
                       <div className="aspect-video w-full overflow-hidden">
                         <img
-                          src={cause.image || "/placeholder.svg"}
+                          src={getMediaUrl(cause.image) || "/placeholder.svg"}
                           alt={cause.title}
                           className="object-cover w-full h-full"
                         />

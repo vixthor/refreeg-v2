@@ -12,6 +12,7 @@ import { Progress } from "@/components/ui/progress";
 import { DonateButton } from "@/components/donate-button";
 import { H4, P } from "./typograpy";
 import AnimatedCard from "./home/components/AnimatedCard";
+import { getMediaUrl } from "@/lib/utils/media";
 
 interface PetitionCardProps {
   petition: {
@@ -35,7 +36,7 @@ export function PetitionCard({ petition }: PetitionCardProps) {
         <Card className="overflow-hidden cursor-pointer transition h-[420px] flex flex-col border border-gray-300">
           <div className="aspect-video w-full overflow-hidden">
             <img
-              src={petition.image || "/placeholder.svg"}
+              src={getMediaUrl(petition.image) || "/placeholder.svg"}
               alt={petition.title}
               loading="lazy"
               className="object-cover w-full h-full"
