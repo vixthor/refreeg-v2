@@ -1,8 +1,8 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
+import { createClient } from "@/lib/supabase/server";
 import type {
   Profile,
   ProfileFormData,

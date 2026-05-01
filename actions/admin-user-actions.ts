@@ -202,16 +202,7 @@ export async function getUserDetailsForAdmin(userId: string) {
       roles: {
         select: { role: true },
       },
-      kyc_verifications: {
-        take: 1,
-        orderBy: { created_at: "desc" },
-        select: {
-          id: true,
-          status: true,
-          document_type: true,
-          created_at: true,
-        },
-      },
+
       causes: {
         take: 5,
         orderBy: { createdAt: "desc" },
@@ -240,5 +231,21 @@ export async function getUserDetailsForAdmin(userId: string) {
     },
   });
 
-  return user;
+  if (!user) return null;
+
+  const kyc = await prisma.kyc_verifications.findFirst({
+    where: { user_id: userId },
+    orderBy: { created_at: "desc" },
+    select: {
+      id: true,
+      status: true,
+      document_type: true,
+      created_at: true,
+    },
+  });
+
+  return {
+    ...user,
+    kyc_verifications: kyc ? [kyc] : [],
+  };
 }
