@@ -5,6 +5,8 @@ model Country {
   longitude Float?
 
   states    State[]
+
+  @@map("countries")
 }
 
 model State {
@@ -14,6 +16,8 @@ model State {
   country      Country  @relation(fields: [countryId], references: [id])
 
   cities       City[]
+
+  @@map("state")
 }
 
 model City {
@@ -24,4 +28,6 @@ model City {
 
   latitude   Float?
   longitude  Float?
+
+  @@map("cities")
 }
