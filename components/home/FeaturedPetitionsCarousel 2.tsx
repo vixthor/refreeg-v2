@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { getMediaUrl } from "@/lib/utils/media";
+import { getMediaUrl } from "@/lib/s3/media";
 
 import {
   Carousel,
@@ -25,7 +25,11 @@ import { DonateButton } from "@/components/donate-button";
 import { H4, P } from "../typograpy";
 import AnimatedCard from "./components/AnimatedCard";
 
-export default function FeaturedPetitionsCarousel({ petitions }: { petitions: any[] }) {
+export default function FeaturedPetitionsCarousel({
+  petitions,
+}: {
+  petitions: any[];
+}) {
   const [api, setApi] = useState<any>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -71,7 +75,6 @@ export default function FeaturedPetitionsCarousel({ petitions }: { petitions: an
             >
               <AnimatedCard>
                 <Card className="overflow-hidden cursor-pointer transition h-[420px] flex flex-col border border-gray-300">
-                  
                   <div className="aspect-video w-full overflow-hidden">
                     <img
                       src={getMediaUrl(petition.image) || "/placeholder.svg"}
@@ -83,9 +86,7 @@ export default function FeaturedPetitionsCarousel({ petitions }: { petitions: an
 
                   <CardHeader className="flex flex-col flex-1 p-4">
                     <CardTitle>
-                      <H4 className="line-clamp-2">
-                        {petition.title}
-                      </H4>
+                      <H4 className="line-clamp-2">{petition.title}</H4>
 
                       <P className="font-extralight">
                         {petition.profiles?.full_name || "Unknown"}
@@ -115,9 +116,7 @@ export default function FeaturedPetitionsCarousel({ petitions }: { petitions: an
                     <CardFooter>
                       <div className="w-full flex justify-between">
                         <span className="flex flex-col">
-                          <H4>
-                            {petition.totalAmount.toLocaleString()}
-                          </H4>
+                          <H4>{petition.totalAmount.toLocaleString()}</H4>
 
                           <P className="font-light">
                             Signed of {petition.goal?.toLocaleString()}

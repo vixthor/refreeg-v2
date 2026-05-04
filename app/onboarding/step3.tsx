@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { getMediaUrl, isProxyMediaUrl } from "@/lib/utils/media";
+import { getMediaUrl, isProxyMediaUrl } from "@/lib/s3/media";
 import {
   Upload,
   MailIcon,
@@ -57,7 +57,7 @@ export default function Step3({
   const [profilePhotoUrl, setProfilePhotoUrl] = useState<string | null>(
     onboardingData.profile?.profilePhoto ||
       user?.user_metadata?.avatar_url ||
-      null
+      null,
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isConsentChecked, setIsConsentChecked] = useState(false);
@@ -113,7 +113,10 @@ export default function Step3({
           setErrors((prev) => ({ ...prev, username: "" }));
         } else {
           setIsUsernameAvailable(false); // Username is taken
-          setErrors((prev) => ({ ...prev, username: "Username is already taken" }));
+          setErrors((prev) => ({
+            ...prev,
+            username: "Username is already taken",
+          }));
         }
       } catch (error) {
         console.error("Error checking username:", error);
@@ -284,7 +287,9 @@ export default function Step3({
                         width={80}
                         height={80}
                         className="w-full h-full object-cover rounded-full"
-                        unoptimized={isProxyMediaUrl(getMediaUrl(profilePhotoUrl))}
+                        unoptimized={isProxyMediaUrl(
+                          getMediaUrl(profilePhotoUrl),
+                        )}
                       />
                     ) : (
                       <Upload className="w-8 h-8 text-gray-400" />

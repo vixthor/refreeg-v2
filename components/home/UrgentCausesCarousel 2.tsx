@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { getMediaUrl } from "@/lib/utils/media";
+import { getMediaUrl } from "@/lib/s3/media";
 
 import {
   Carousel,
@@ -60,9 +60,7 @@ export default function UrgentCausesCarousel({ causes }: { causes: any[] }) {
       <CarouselContent className="mt-6 mb-6 md:mr-4 md:ml-4">
         {causes.map((cause: any) => {
           const percentRaised =
-            cause.goal > 0
-              ? Math.round((cause.raised / cause.goal) * 100)
-              : 0;
+            cause.goal > 0 ? Math.round((cause.raised / cause.goal) * 100) : 0;
 
           return (
             <CarouselItem
@@ -72,7 +70,6 @@ export default function UrgentCausesCarousel({ causes }: { causes: any[] }) {
               <Link href={`/causes/${cause.id}`} className="group block h-full">
                 <AnimatedCard>
                   <Card className="overflow-hidden cursor-pointer transition h-full flex flex-col border border-gray-300">
-
                     <div className="aspect-video w-full overflow-hidden rounded-t-lg">
                       <img
                         src={getMediaUrl(cause.image) || "/placeholder.svg"}
@@ -124,7 +121,6 @@ export default function UrgentCausesCarousel({ causes }: { causes: any[] }) {
                         </div>
                       </CardFooter>
                     </div>
-
                   </Card>
                 </AnimatedCard>
               </Link>

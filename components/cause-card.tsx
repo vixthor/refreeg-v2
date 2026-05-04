@@ -82,7 +82,7 @@ const defaultCategoryConfig = {
 };
 
 import { calculateDaysLeft, isCauseExpired } from "@/utils/cause-utils";
-import { getMediaUrl, isProxyMediaUrl } from "@/lib/utils/media";
+import { getMediaUrl, isProxyMediaUrl } from "@/lib/s3/media";
 
 interface CauseCardProps {
   cause: Cause;
@@ -168,7 +168,9 @@ export function CauseCard({ cause, action }: CauseCardProps) {
                     width={20}
                     height={20}
                     className="rounded-full object-cover ring-1 ring-gray-200"
-                    unoptimized={isProxyMediaUrl(getMediaUrl(cause.profiles.profile_photo))}
+                    unoptimized={isProxyMediaUrl(
+                      getMediaUrl(cause.profiles.profile_photo),
+                    )}
                   />
                 ) : (
                   <div className="h-5 w-5 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-[10px] font-bold ring-1 ring-gray-200">
@@ -206,14 +208,9 @@ export function CauseCard({ cause, action }: CauseCardProps) {
                 <span className="font-medium text-foreground">
                   {percentFunded}% funded
                 </span>
-                <span>
-                  ₦{cause.raised?.toLocaleString()} raised
-                </span>
+                <span>₦{cause.raised?.toLocaleString()} raised</span>
               </div>
-              <Progress
-                value={percentFunded}
-                className="h-2 bg-gray-100"
-              />
+              <Progress value={percentFunded} className="h-2 bg-gray-100" />
             </CardContent>
 
             <CardFooter className="px-4 pt-2 pb-4 border-t border-gray-100">

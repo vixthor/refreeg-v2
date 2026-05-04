@@ -23,7 +23,7 @@ import {
   Flag,
   FileText,
 } from "lucide-react";
-import { getMediaUrl } from "@/lib/utils/media";
+import { getMediaUrl } from "@/lib/s3/media";
 
 export function UserNav() {
   const { user, signOut } = useAuth();
@@ -73,7 +73,10 @@ export function UserNav() {
           >
             <Avatar className="h-9 w-9">
               <AvatarImage
-                src={getMediaUrl(profile?.profile_photo) || (user.user_metadata?.avatar_url as string)}
+                src={
+                  getMediaUrl(profile?.profile_photo) ||
+                  (user.user_metadata?.avatar_url as string)
+                }
                 alt={user.email || ""}
               />
               <AvatarFallback>{initials}</AvatarFallback>

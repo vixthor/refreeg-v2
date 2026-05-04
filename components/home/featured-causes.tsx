@@ -15,7 +15,7 @@ import { listCauses } from "@/actions/cause-actions";
 import AnimatedCard from "./components/AnimatedCard";
 import AnimatedHeader from "@/components/home/components/AnimatedHeader";
 import { ArrowRight } from "lucide-react";
-import { getMediaUrl, isProxyMediaUrl } from "@/lib/utils/media";
+import { getMediaUrl, isProxyMediaUrl } from "@/lib/s3/media";
 
 import {
   Carousel,
@@ -105,7 +105,9 @@ export async function FeaturedCauses() {
                           fill
                           sizes="(max-width: 768px) 88vw, (max-width: 1200px) 44vw, 33vw"
                           className="object-cover"
-                          unoptimized={isProxyMediaUrl(getMediaUrl(cause.image))}
+                          unoptimized={isProxyMediaUrl(
+                            getMediaUrl(cause.image),
+                          )}
                         />
                       </div>
 
