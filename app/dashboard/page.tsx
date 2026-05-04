@@ -41,7 +41,7 @@ import {
   getUserPetitionsWithStats,
 } from "@/actions/dashboard-actions";
 import { getProfile } from "@/actions/profile-actions";
-import { getMediaUrl } from "@/lib/utils/media";
+import { getMediaUrl } from "@/lib/s3/media";
 
 import { Metadata } from "next";
 
@@ -115,7 +115,7 @@ export default async function DashboardPage({
 
         let apiKeys: ApiKeyRow[] = [];
         if (apiKeyIds.length > 0) {
-          apiKeys = await prisma.api_keys.findMany({
+          apiKeys = (await prisma.api_keys.findMany({
             where: {
               id: { in: apiKeyIds },
             },
@@ -125,7 +125,7 @@ export default async function DashboardPage({
               key_prefix: true,
               mode: true,
             },
-          }) as unknown as ApiKeyRow[];
+          })) as unknown as ApiKeyRow[];
         }
 
         return { apiCauses, apiKeys };
@@ -140,7 +140,9 @@ export default async function DashboardPage({
   const profile = await getProfile(user.id as string);
 
   const apiCauses =
-    "apiCauses" in apiCampaignsResult ? (apiCampaignsResult as any).apiCauses : [];
+    "apiCauses" in apiCampaignsResult
+      ? (apiCampaignsResult as any).apiCauses
+      : [];
   const apiKeys =
     "apiKeys" in apiCampaignsResult ? (apiCampaignsResult as any).apiKeys : [];
   const apiCausesUnavailable = "error" in apiCampaignsResult;
@@ -189,8 +191,7 @@ export default async function DashboardPage({
     user.email?.split("@")?.[0] ||
     "there";
   const avatarUrl =
-    profile?.profile_photo ||
-    (user.image as string | undefined);
+    profile?.profile_photo || (user.image as string | undefined);
   const initials =
     firstName
       ?.split(" ")
@@ -240,12 +241,18 @@ export default async function DashboardPage({
             </p>
 
             <div className="mt-5 grid gap-2 sm:mt-6 sm:flex sm:flex-wrap sm:gap-3">
-              <Link href="/dashboard/causes/create" className="w-full sm:w-auto">
+              <Link
+                href="/dashboard/causes/create"
+                className="w-full sm:w-auto"
+              >
                 <Badge className="flex w-full items-center justify-center rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:border-blue-600 hover:bg-blue-600 hover:text-white">
                   Create cause
                 </Badge>
               </Link>
-              <Link href="/dashboard/petitions/create" className="w-full sm:w-auto">
+              <Link
+                href="/dashboard/petitions/create"
+                className="w-full sm:w-auto"
+              >
                 <Badge
                   variant="secondary"
                   className="flex w-full items-center justify-center rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:border-blue-600 hover:bg-blue-600 hover:text-white"
@@ -412,61 +419,64 @@ export default async function DashboardPage({
                 ) : (
                   <div className="overflow-hidden rounded-[24px] border border-slate-200 bg-white">
                     <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="bg-slate-50/80 hover:bg-slate-50/80">
-                          <TableHead>API</TableHead>
-                          <TableHead>Developer ID</TableHead>
-                          <TableHead>Mode</TableHead>
-                          <TableHead>Cause</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Created</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {filteredRows.map((row: any) => (
-                          <TableRow key={row.id} className="hover:bg-slate-50/70">
-                            <TableCell className="font-medium text-slate-950">
-                              {row.apiName}
-                            </TableCell>
-                            <TableCell className="text-xs text-slate-500">
-                              {row.developerId}
-                            </TableCell>
-                            <TableCell>
-                              {row.apiMode === "test" ? (
-                                <Badge
-                                  variant="outline"
-                                  className="border-amber-200 bg-amber-50 font-semibold capitalize text-amber-700"
-                                >
-                                  Test
-                                </Badge>
-                              ) : (
-                                <Badge
-                                  variant="outline"
-                                  className="border-emerald-200 bg-emerald-50 font-semibold capitalize text-emerald-700"
-                                >
-                                  Live
-                                </Badge>
-                              )}
-                            </TableCell>
-                            <TableCell className="max-w-[260px] truncate text-slate-700">
-                              {row.title}
-                            </TableCell>
-                            <TableCell>
-                              <Badge
-                                variant="outline"
-                                className="capitalize text-slate-600"
-                              >
-                                {row.status}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="text-xs text-slate-500">
-                              {new Date(row.created_at).toLocaleDateString()}
-                            </TableCell>
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="bg-slate-50/80 hover:bg-slate-50/80">
+                            <TableHead>API</TableHead>
+                            <TableHead>Developer ID</TableHead>
+                            <TableHead>Mode</TableHead>
+                            <TableHead>Cause</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Created</TableHead>
                           </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+                        </TableHeader>
+                        <TableBody>
+                          {filteredRows.map((row: any) => (
+                            <TableRow
+                              key={row.id}
+                              className="hover:bg-slate-50/70"
+                            >
+                              <TableCell className="font-medium text-slate-950">
+                                {row.apiName}
+                              </TableCell>
+                              <TableCell className="text-xs text-slate-500">
+                                {row.developerId}
+                              </TableCell>
+                              <TableCell>
+                                {row.apiMode === "test" ? (
+                                  <Badge
+                                    variant="outline"
+                                    className="border-amber-200 bg-amber-50 font-semibold capitalize text-amber-700"
+                                  >
+                                    Test
+                                  </Badge>
+                                ) : (
+                                  <Badge
+                                    variant="outline"
+                                    className="border-emerald-200 bg-emerald-50 font-semibold capitalize text-emerald-700"
+                                  >
+                                    Live
+                                  </Badge>
+                                )}
+                              </TableCell>
+                              <TableCell className="max-w-[260px] truncate text-slate-700">
+                                {row.title}
+                              </TableCell>
+                              <TableCell>
+                                <Badge
+                                  variant="outline"
+                                  className="capitalize text-slate-600"
+                                >
+                                  {row.status}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-xs text-slate-500">
+                                {new Date(row.created_at).toLocaleDateString()}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
                     </div>
                   </div>
                 )}
@@ -474,29 +484,29 @@ export default async function DashboardPage({
                 {apiCausesUnavailable && (
                   <div className="overflow-hidden rounded-[24px] border border-slate-200 bg-white">
                     <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="bg-slate-50/80 hover:bg-slate-50/80">
-                          <TableHead>API</TableHead>
-                          <TableHead>Developer ID</TableHead>
-                          <TableHead>Mode</TableHead>
-                          <TableHead>Cause</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Created</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        <TableRow>
-                          <TableCell
-                            colSpan={6}
-                            className="py-8 text-center text-sm text-slate-500"
-                          >
-                            API causes will appear here once data access is
-                            available.
-                          </TableCell>
-                        </TableRow>
-                      </TableBody>
-                    </Table>
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="bg-slate-50/80 hover:bg-slate-50/80">
+                            <TableHead>API</TableHead>
+                            <TableHead>Developer ID</TableHead>
+                            <TableHead>Mode</TableHead>
+                            <TableHead>Cause</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Created</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          <TableRow>
+                            <TableCell
+                              colSpan={6}
+                              className="py-8 text-center text-sm text-slate-500"
+                            >
+                              API causes will appear here once data access is
+                              available.
+                            </TableCell>
+                          </TableRow>
+                        </TableBody>
+                      </Table>
                     </div>
                   </div>
                 )}

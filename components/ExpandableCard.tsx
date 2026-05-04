@@ -9,7 +9,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
-import { getMediaUrl, isProxyMediaUrl } from "@/lib/utils/media";
+import { getMediaUrl, isProxyMediaUrl } from "@/lib/s3/media";
 
 // TYPES
 interface ExpandableCardItem {
@@ -194,7 +194,6 @@ export function ExpandableCard({ items, type }: ExpandableCardProps) {
                 unoptimized={isProxyMediaUrl(getMediaUrl(item.image))}
               />
 
-
               <div className="flex-1 flex flex-col gap-2">
                 <h3 className="line-clamp-1">{item.title}</h3>
 
@@ -230,7 +229,6 @@ export function ExpandableCard({ items, type }: ExpandableCardProps) {
                   unoptimized={isProxyMediaUrl(getMediaUrl(item.image))}
                 />
               </div>
-
 
               <h3 className="text-center">{item.title}</h3>
 

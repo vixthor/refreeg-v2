@@ -17,7 +17,7 @@ import {
 } from "@/actions/kyc-actions";
 import { getProfile } from "@/actions/profile-actions";
 import NavigationLoader from "@/components/NavigationLoader";
-import { getMediaUrl, isProxyMediaUrl } from "@/lib/utils/media";
+import { getMediaUrl, isProxyMediaUrl } from "@/lib/s3/media";
 
 export default function KycReviewPage() {
   const router = useRouter();

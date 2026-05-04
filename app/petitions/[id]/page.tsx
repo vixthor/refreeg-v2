@@ -34,7 +34,7 @@ import { CommentsSection } from "@/components/comments/comment-section";
 import { Signature } from "@/types";
 import { Metadata } from "next";
 import Image from "next/image";
-import { getMediaUrl, isProxyMediaUrl } from "@/lib/utils/media";
+import { getMediaUrl, isProxyMediaUrl } from "@/lib/s3/media";
 
 // Mock data for a petition
 const mockPetition = {
@@ -153,7 +153,9 @@ export default async function PetitionDetailPage({
         }
       })(),
       user ? getProfile(user.id as string) : Promise.resolve(undefined),
-      user ? checkUserSignature(petition.id, user.id as string) : Promise.resolve(false),
+      user
+        ? checkUserSignature(petition.id, user.id as string)
+        : Promise.resolve(false),
       getProfile(petition.user_id),
     ]);
 

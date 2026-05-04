@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Icons } from "@/components/icons";
 import { calculateServiceFee } from "@/lib/utils";
-import { getMediaUrl, isProxyMediaUrl } from "@/lib/utils/media";
+import { getMediaUrl, isProxyMediaUrl } from "@/lib/s3/media";
 import { usePayment } from "@/hooks/use-payment";
 import {
   Carousel,

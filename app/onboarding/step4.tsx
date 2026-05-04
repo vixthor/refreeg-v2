@@ -14,7 +14,7 @@ import { useRouter } from "next/navigation";
 import { Shield, ArrowRight, ArrowLeft } from "lucide-react";
 import Image from "next/image";
 import { getProfile } from "@/actions/profile-actions";
-import { getMediaUrl, isProxyMediaUrl } from "@/lib/utils/media";
+import { getMediaUrl, isProxyMediaUrl } from "@/lib/s3/media";
 
 interface Step4Props {
   user: any;
@@ -95,14 +95,19 @@ export default function Step4({
               ) : profile?.profile_photo || user?.user_metadata?.avatar_url ? (
                 <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-blue-200">
                   <Image
-                    src={
-                      getMediaUrl(profile?.profile_photo || user?.user_metadata?.avatar_url)
-                    }
+                    src={getMediaUrl(
+                      profile?.profile_photo || user?.user_metadata?.avatar_url,
+                    )}
                     alt="Your profile"
                     width={96}
                     height={96}
                     className="w-full h-full object-cover"
-                    unoptimized={isProxyMediaUrl(getMediaUrl(profile?.profile_photo || user?.user_metadata?.avatar_url))}
+                    unoptimized={isProxyMediaUrl(
+                      getMediaUrl(
+                        profile?.profile_photo ||
+                          user?.user_metadata?.avatar_url,
+                      ),
+                    )}
                   />
                 </div>
               ) : (

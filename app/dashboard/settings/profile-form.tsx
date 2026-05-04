@@ -28,7 +28,7 @@ import type { ProfileFormData } from "@/types";
 import { useProfile } from "@/hooks/use-profile";
 import Link from "next/link";
 import { compressImage } from "@/utils/image-compression";
-import { getMediaUrl } from "@/lib/utils/media";
+import { getMediaUrl } from "@/lib/s3/media";
 
 type AccountType =
   | "individual"

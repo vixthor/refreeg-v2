@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { Settings, CreditCard, FileText, LogOut, User } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { getMediaUrl, isProxyMediaUrl } from "@/lib/utils/media";
+import { getMediaUrl, isProxyMediaUrl } from "@/lib/s3/media";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -119,7 +119,7 @@ export default function ProfileDropdown({
           <div
             className={cn(
               "absolute -right-2 top-1/2 -translate-y-1/2 transition-all duration-200",
-              isOpen ? "opacity-100" : "opacity-60 group-hover:opacity-100"
+              isOpen ? "opacity-100" : "opacity-60 group-hover:opacity-100",
             )}
           >
             <svg
@@ -131,7 +131,7 @@ export default function ProfileDropdown({
                 "transition-all duration-200",
                 isOpen
                   ? "text-blue-500 scale-110"
-                  : "text-zinc-400 group-hover:text-zinc-600"
+                  : "text-zinc-400 group-hover:text-zinc-600",
               )}
               aria-hidden="true"
             >
@@ -171,7 +171,7 @@ export default function ProfileDropdown({
                             "text-xs font-medium rounded-md py-1 px-2 tracking-tight",
                             item.label === "Model"
                               ? "text-blue-600 bg-blue-50 border border-blue-500/10"
-                              : "text-purple-600 bg-purple-50 border border-purple-500/10"
+                              : "text-purple-600 bg-purple-50 border border-purple-500/10",
                           )}
                         >
                           {item.value}

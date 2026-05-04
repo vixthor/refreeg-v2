@@ -13,7 +13,7 @@ import { Progress } from "@/components/ui/progress";
 import { DonateButton } from "@/components/donate-button";
 import { H4, P } from "./typograpy";
 import AnimatedCard from "./home/components/AnimatedCard";
-import { getMediaUrl, isProxyMediaUrl } from "@/lib/utils/media";
+import { getMediaUrl, isProxyMediaUrl } from "@/lib/s3/media";
 
 interface PetitionCardProps {
   petition: {
@@ -59,14 +59,18 @@ export function PetitionCard({ petition }: PetitionCardProps) {
             <div className="flex justify-between items-center pt-2 text-xs">
               <P className="text-xs">Sign Now</P>
               <P className="text-xs">
-                {petition.percentRaised}% • {Number(petition.days_active || 0)} Days left
+                {petition.percentRaised}% • {Number(petition.days_active || 0)}{" "}
+                Days left
               </P>
             </div>
           </CardHeader>
 
           <div className="mt-auto w-full">
             <CardContent className="pb-4">
-              <Progress value={petition.percentRaised} className="h-2 bg-muted" />
+              <Progress
+                value={petition.percentRaised}
+                className="h-2 bg-muted"
+              />
             </CardContent>
 
             <CardFooter className="pt-0 border-t border-gray-100 mt-2">

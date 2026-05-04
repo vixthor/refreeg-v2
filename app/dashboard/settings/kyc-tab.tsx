@@ -27,7 +27,7 @@ import { useRouter } from "next/navigation";
 import type { Profile } from "@/types";
 import Image from "next/image";
 import NavigationLoader from "@/components/NavigationLoader";
-import { getMediaUrl, isProxyMediaUrl } from "@/lib/utils/media";
+import { getMediaUrl, isProxyMediaUrl } from "@/lib/s3/media";
 
 interface KycTabProps {
   profile: Profile;
@@ -46,7 +46,7 @@ export function KycTab({ profile, user }: KycTabProps) {
     async function fetchKycStatus() {
       try {
         const { status, error: kycError } = await getVerificationStatus(
-          user.id
+          user.id,
         );
         if (kycError) {
           setError(kycError);
@@ -263,7 +263,9 @@ export function KycTab({ profile, user }: KycTabProps) {
                         width={400}
                         height={300}
                         className="object-contain rounded shadow-sm max-h-64"
-                        unoptimized={isProxyMediaUrl(getMediaUrl(kycData.document_url))}
+                        unoptimized={isProxyMediaUrl(
+                          getMediaUrl(kycData.document_url),
+                        )}
                       />
                       <p className="text-sm text-blue-600 mt-2 text-center">
                         Click image to view full size
@@ -291,7 +293,9 @@ export function KycTab({ profile, user }: KycTabProps) {
                       alt="Full size document"
                       fill
                       className="object-contain rounded-lg bg-black"
-                      unoptimized={isProxyMediaUrl(getMediaUrl(kycData.document_url))}
+                      unoptimized={isProxyMediaUrl(
+                        getMediaUrl(kycData.document_url),
+                      )}
                     />
 
                     <button

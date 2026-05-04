@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { getMediaUrl, isProxyMediaUrl } from "@/lib/utils/media";
+import { getMediaUrl, isProxyMediaUrl } from "@/lib/s3/media";
 
 interface MediaItem {
   type: "image" | "video";
@@ -42,7 +42,7 @@ export default function MultimediaCarousel({
     } catch {
       // Fallback regex if URL constructor fails
       const direct = rawUrl.match(
-        /(?:v=|be\/|embed\/|shorts\/)([A-Za-z0-9_-]{6,})/
+        /(?:v=|be\/|embed\/|shorts\/)([A-Za-z0-9_-]{6,})/,
       );
       return direct ? direct[1] : null;
     }
