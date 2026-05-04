@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { getMediaUrl } from "@/lib/utils/media";
+import { getMediaUrl, isProxyMediaUrl } from "@/lib/utils/media";
 
 
 // Component for empty states
@@ -62,6 +62,7 @@ export function CauseCard({ cause }: { cause: any }) {
             alt={cause.title}
             fill
             className="object-cover"
+            unoptimized={isProxyMediaUrl(getMediaUrl(cause.image))}
           />
 
         </div>
@@ -140,6 +141,7 @@ export function PetitionCard({ petition }: { petition: any }) {
             alt={petition.title}
             fill
             className="object-cover"
+            unoptimized={isProxyMediaUrl(getMediaUrl(petition.image))}
           />
 
         </div>

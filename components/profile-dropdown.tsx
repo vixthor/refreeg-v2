@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { Settings, CreditCard, FileText, LogOut, User } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { getMediaUrl } from "@/lib/utils/media";
+import { getMediaUrl, isProxyMediaUrl } from "@/lib/utils/media";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -107,6 +107,7 @@ export default function ProfileDropdown({
                       width={28}
                       height={28}
                       className="w-full h-full object-cover rounded-full"
+                      unoptimized={isProxyMediaUrl(getMediaUrl(data.avatar))}
                     />
                   </div>
                 </div>

@@ -21,7 +21,7 @@ import { HandHeart, ShieldAlert, FilePenLine } from "lucide-react";
 import { Instagram, Facebook, Linkedin } from "lucide-react";
 import { FaXTwitter } from "react-icons/fa6";
 import { motion } from "framer-motion";
-import { getMediaUrl } from "@/lib/utils/media";
+import { getMediaUrl, isProxyMediaUrl } from "@/lib/utils/media";
 
 type ProfileProps = {
   profile: any;
@@ -174,6 +174,7 @@ export default function PublicProfile({
                   fill
                   className="object-cover"
                   priority
+                  unoptimized={isProxyMediaUrl(profileImage)}
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
                     target.onerror = null;

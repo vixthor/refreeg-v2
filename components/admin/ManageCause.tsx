@@ -63,7 +63,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getMediaUrl } from "@/lib/utils/media";
+import { getMediaUrl, isProxyMediaUrl } from "@/lib/utils/media";
 
 export default function ManageCauses() {
   const router = useRouter();
@@ -299,6 +299,7 @@ export default function ManageCauses() {
                               width={32}
                               height={32}
                               className="rounded-full object-cover"
+                              unoptimized={isProxyMediaUrl(getMediaUrl((item as any).profiles.profile_photo))}
                             />
                           ) : (
                             <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
@@ -659,6 +660,7 @@ export default function ManageCauses() {
                       className="object-cover w-full h-full"
                       width={800}
                       height={400}
+                      unoptimized={isProxyMediaUrl(getMediaUrl(detailDialog.cause.image))}
                     />
                   </div>
                 </div>

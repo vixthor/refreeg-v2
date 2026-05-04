@@ -9,7 +9,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
-import { getMediaUrl } from "@/lib/utils/media";
+import { getMediaUrl, isProxyMediaUrl } from "@/lib/utils/media";
 
 // TYPES
 interface ExpandableCardItem {
@@ -111,6 +111,7 @@ export function ExpandableCard({ items, type }: ExpandableCardProps) {
                   fill
                   sizes="500px"
                   className="object-cover"
+                  unoptimized={isProxyMediaUrl(getMediaUrl(active.image))}
                 />
               </div>
 
@@ -190,6 +191,7 @@ export function ExpandableCard({ items, type }: ExpandableCardProps) {
                 width={80}
                 height={80}
                 className="rounded-lg object-cover"
+                unoptimized={isProxyMediaUrl(getMediaUrl(item.image))}
               />
 
 
@@ -225,6 +227,7 @@ export function ExpandableCard({ items, type }: ExpandableCardProps) {
                   fill
                   sizes="(max-width: 768px) 100vw, 50vw"
                   className="rounded-lg object-cover"
+                  unoptimized={isProxyMediaUrl(getMediaUrl(item.image))}
                 />
               </div>
 

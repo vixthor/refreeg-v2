@@ -34,7 +34,7 @@ import { CommentsSection } from "@/components/comments/comment-section";
 import { Signature } from "@/types";
 import { Metadata } from "next";
 import Image from "next/image";
-import { getMediaUrl } from "@/lib/utils/media";
+import { getMediaUrl, isProxyMediaUrl } from "@/lib/utils/media";
 
 // Mock data for a petition
 const mockPetition = {
@@ -283,6 +283,7 @@ export default async function PetitionDetailPage({
                   sizes="(max-width: 1024px) 100vw, 66vw"
                   className="object-cover"
                   priority
+                  unoptimized={isProxyMediaUrl(getMediaUrl(petition.image))}
                 />
               </div>
             );

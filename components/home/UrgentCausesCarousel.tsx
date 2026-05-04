@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { getMediaUrl } from "@/lib/utils/media";
+import { getMediaUrl, isProxyMediaUrl } from "@/lib/utils/media";
 
 import {
   Carousel,
@@ -80,6 +80,7 @@ export default function UrgentCausesCarousel({ causes }: { causes: Cause[] }) {
                 fill
                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                 className="object-cover"
+                unoptimized={isProxyMediaUrl(getMediaUrl(cause.image))}
               />
             </div>
 

@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { getMediaUrl } from "@/lib/utils/media";
+import { getMediaUrl, isProxyMediaUrl } from "@/lib/utils/media";
 
 interface MediaItem {
   type: "image" | "video";
@@ -186,6 +186,7 @@ export default function MultimediaCarousel({
             fill
             sizes="(max-width: 768px) 100vw, 80vw"
             className="object-contain"
+            unoptimized={isProxyMediaUrl(item.url)}
           />
         </div>
       );

@@ -82,7 +82,7 @@ const defaultCategoryConfig = {
 };
 
 import { calculateDaysLeft, isCauseExpired } from "@/utils/cause-utils";
-import { getMediaUrl } from "@/lib/utils/media";
+import { getMediaUrl, isProxyMediaUrl } from "@/lib/utils/media";
 
 interface CauseCardProps {
   cause: Cause;
@@ -113,6 +113,7 @@ export function CauseCard({ cause, action }: CauseCardProps) {
               fill
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               className="object-cover transition-transform duration-500 group-hover:scale-105"
+              unoptimized={isProxyMediaUrl(getMediaUrl(cause.image))}
             />
             {/* Category Badge Overlay */}
             <div className="absolute top-3 left-3">
@@ -167,6 +168,7 @@ export function CauseCard({ cause, action }: CauseCardProps) {
                     width={20}
                     height={20}
                     className="rounded-full object-cover ring-1 ring-gray-200"
+                    unoptimized={isProxyMediaUrl(getMediaUrl(cause.profiles.profile_photo))}
                   />
                 ) : (
                   <div className="h-5 w-5 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-[10px] font-bold ring-1 ring-gray-200">

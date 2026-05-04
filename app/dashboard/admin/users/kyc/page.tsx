@@ -17,7 +17,7 @@ import {
 } from "@/actions/kyc-actions";
 import { getProfile } from "@/actions/profile-actions";
 import NavigationLoader from "@/components/NavigationLoader";
-import { getMediaUrl } from "@/lib/utils/media";
+import { getMediaUrl, isProxyMediaUrl } from "@/lib/utils/media";
 
 export default function KycReviewPage() {
   const router = useRouter();
@@ -136,6 +136,7 @@ export default function KycReviewPage() {
                     width={320}
                     height={192}
                     className="border rounded object-contain"
+                    unoptimized={isProxyMediaUrl(getMediaUrl(kyc.document_url))}
                   />
                 </a>
               ) : (
