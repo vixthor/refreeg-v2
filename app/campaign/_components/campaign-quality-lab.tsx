@@ -328,15 +328,19 @@ function TrustPanel({
   cause: CauseDetail;
 }) {
   const proofMedia = useMemo(() => {
-    const allMedia = cause.multimedia && cause.multimedia.length > 0 
-      ? cause.multimedia 
-      : (cause.image ? [cause.image] : []);
-    
+    const allMedia =
+      cause.multimedia && cause.multimedia.length > 0
+        ? cause.multimedia
+        : cause.image
+          ? [cause.image]
+          : [];
+
     // Filter out videos and only show images in the proof thumbnails
     return allMedia
-      .filter(url => {
-        const isVideo = url.match(/\.(mp4|mov|webm)$/i) || 
-                       url.match(/(youtube\.com|youtu\.be|tiktok\.com|drive\.google\.com)/i);
+      .filter((url) => {
+        const isVideo =
+          url.match(/\.(mp4|mov|webm)$/i) ||
+          url.match(/(youtube\.com|youtu\.be|tiktok\.com|drive\.google\.com)/i);
         return !isVideo;
       })
       .reverse() // Show latest first
@@ -1396,6 +1400,9 @@ export default function CampaignQualityLab({
                       width={20}
                       height={20}
                       className="rounded-full object-cover"
+                      unoptimized={isProxyMediaUrl(
+                        getMediaUrl(cause.user.profile_photo),
+                      )}
                     />
                   )}
                   <span className="font-medium text-slate-800">
