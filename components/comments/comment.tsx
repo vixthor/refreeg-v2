@@ -9,7 +9,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Pencil, Trash2 } from "lucide-react";
 import { EditCommentForm } from "./edit-comment-form";
-import { getMediaUrl } from "@/lib/utils/media";
+import { getMediaUrl, isProxyMediaUrl } from "@/lib/utils/media";
 
 
 interface CommentProps {
@@ -131,11 +131,11 @@ export function CommentComponent({
             {comment.user.profile_photo ? (
               <Image
                 src={getMediaUrl(comment.user.profile_photo)}
-
                 alt={comment.user.full_name || "User"}
                 width={40}
                 height={40}
                 className="rounded-full"
+                unoptimized={isProxyMediaUrl(getMediaUrl(comment.user.profile_photo))}
               />
             ) : (
               <div

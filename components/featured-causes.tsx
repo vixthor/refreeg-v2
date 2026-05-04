@@ -12,7 +12,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { listCauses } from "@/actions/cause-actions";
 import { DonateButton } from "@/components/donate-button";
-import { getMediaUrl } from "@/lib/utils/media";
+import { getMediaUrl, isProxyMediaUrl } from "@/lib/utils/media";
 import {
   GraduationCap,
   HeartPulse,
@@ -150,6 +150,7 @@ export async function FeaturedCauses() {
                   fill
                   sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                   className="object-cover"
+                  unoptimized={isProxyMediaUrl(getMediaUrl(cause.image))}
                 />
               </div>
               <CardHeader className="flex flex-col flex-1 p-4">

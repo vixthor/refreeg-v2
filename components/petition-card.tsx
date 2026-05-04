@@ -13,7 +13,7 @@ import { Progress } from "@/components/ui/progress";
 import { DonateButton } from "@/components/donate-button";
 import { H4, P } from "./typograpy";
 import AnimatedCard from "./home/components/AnimatedCard";
-import { getMediaUrl } from "@/lib/utils/media";
+import { getMediaUrl, isProxyMediaUrl } from "@/lib/utils/media";
 
 interface PetitionCardProps {
   petition: {
@@ -42,6 +42,7 @@ export function PetitionCard({ petition }: PetitionCardProps) {
               fill
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               className="object-cover"
+              unoptimized={isProxyMediaUrl(getMediaUrl(petition.image))}
             />
           </div>
 

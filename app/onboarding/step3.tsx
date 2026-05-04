@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { getMediaUrl } from "@/lib/utils/media";
+import { getMediaUrl, isProxyMediaUrl } from "@/lib/utils/media";
 import {
   Upload,
   MailIcon,
@@ -284,6 +284,7 @@ export default function Step3({
                         width={80}
                         height={80}
                         className="w-full h-full object-cover rounded-full"
+                        unoptimized={isProxyMediaUrl(getMediaUrl(profilePhotoUrl))}
                       />
                     ) : (
                       <Upload className="w-8 h-8 text-gray-400" />

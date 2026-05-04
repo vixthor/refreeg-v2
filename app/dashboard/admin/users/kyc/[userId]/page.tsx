@@ -28,7 +28,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import KycRejectionDialog from "./KycRejectionDialog";
-import { getMediaUrl } from "@/lib/utils/media";
+import { getMediaUrl, isProxyMediaUrl } from "@/lib/utils/media";
 
 export default async function KycReviewPage({
   params,
@@ -299,6 +299,7 @@ export default async function KycReviewPage({
                       width={500}
                       height={300}
                       className="object-contain rounded shadow-sm hover:shadow-md transition-shadow max-h-64"
+                      unoptimized={isProxyMediaUrl(getMediaUrl(kyc.document_url))}
                     />
                     <p className="text-sm text-blue-600 mt-2 text-center">
                       Click image to view full size
