@@ -8,6 +8,8 @@ import type { Cause } from "@/types";
 import { createPledge } from "@/actions/pledge-actions";
 import { usePayment } from "@/hooks/use-payment";
 import { PLEDGE_VERIFICATION_AMOUNT_NGN } from "@/lib/pledge-constants";
+import { getMediaUrl } from "@/lib/utils/media";
+import Image from "next/image";
 
 /** Local calendar YYYY-MM-DD (avoids UTC shifts from toISOString). */
 function formatLocalYYYYMMDD(date: Date) {
@@ -599,12 +601,13 @@ export default function PledgeScreen({ cause, profile }: PledgeScreenProps) {
               Campaign
             </p>
             <div className="mt-3 flex items-start gap-3">
-              <div className="h-12 w-12 overflow-hidden rounded-lg bg-slate-100">
+              <div className="relative h-12 w-12 overflow-hidden rounded-lg bg-slate-100">
                 {cause.image ? (
-                  <img
-                    src={cause.image}
+                  <Image
+                    src={getMediaUrl(cause.image)}
                     alt={cause.title}
-                    className="h-full w-full object-cover"
+                    fill
+                    className="object-cover"
                   />
                 ) : null}
               </div>

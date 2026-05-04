@@ -27,6 +27,7 @@ import type { Cause } from "@/types";
 import dynamic from "next/dynamic";
 import { Progress } from "@/components/ui/progress";
 import { getBaseURL, calculateServiceFee } from "@/lib/utils";
+import { getMediaUrl } from "@/lib/utils/media";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -393,7 +394,7 @@ function TrustPanel({
                 className="relative aspect-square overflow-hidden rounded-xl border border-slate-200 bg-slate-100"
               >
                 <Image
-                  src={item}
+                  src={getMediaUrl(item)}
                   alt="Proof"
                   fill
                   className="h-full w-full object-cover"
@@ -1380,7 +1381,7 @@ export default function CampaignQualityLab({
                 >
                   {cause.user.profile_photo && (
                     <Image
-                      src={cause.user.profile_photo}
+                      src={getMediaUrl(cause.user.profile_photo)}
                       alt={cause.user.name}
                       width={20}
                       height={20}

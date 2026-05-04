@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import KycRejectionDialog from "./KycRejectionDialog";
+import { getMediaUrl } from "@/lib/utils/media";
 
 export default async function KycReviewPage({
   params,
@@ -287,13 +288,13 @@ export default async function KycReviewPage({
               kyc.document_url.match(/\.(jpeg|jpg|gif|png)$/i) ? (
                 <div className="border rounded-lg p-4 bg-gray-50 flex justify-center items-center">
                   <a
-                    href={kyc.document_url}
+                    href={getMediaUrl(kyc.document_url)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="block"
                   >
                     <Image
-                      src={kyc.document_url}
+                      src={getMediaUrl(kyc.document_url)}
                       alt="KYC Document"
                       width={500}
                       height={300}
@@ -315,7 +316,7 @@ export default async function KycReviewPage({
                     </svg>
                   </span>
                   <a
-                    href={kyc.document_url}
+                    href={getMediaUrl(kyc.document_url)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-blue-600 underline"
