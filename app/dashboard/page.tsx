@@ -1,10 +1,3 @@
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DashboardCauses } from "@/components/dashboard-causes";
 import { DashboardStats } from "@/components/dashboard-stats";
@@ -13,25 +6,14 @@ import { DonationTrends } from "@/components/charts/donation-trends";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
   ArrowRight,
   CircleDollarSign,
   HeartHandshake,
   Search,
-  Satellite,
   Sparkles,
 } from "lucide-react";
 import Link from "next/link";
 import { auth } from "@/lib/auth/auth";
-import { prisma } from "@/lib/prisma";
-import { ApiCausesFilter } from "@/components/dashboard/ApiCausesFilter";
 import { redirect } from "next/navigation";
 import {
   getDashboardStats,
@@ -49,13 +31,6 @@ export const metadata: Metadata = {
   title: "Dashboard",
   description:
     "Manage your causes, petitions, and track your social impact on RefreeG.",
-};
-
-type ApiKeyRow = {
-  id: string;
-  name: string;
-  key_prefix: string;
-  mode: "live" | "test";
 };
 
 const formatNaira = (value: number) =>
@@ -85,105 +60,16 @@ export default async function DashboardPage({
   const search = params.search?.trim() || "";
   const modeFilter = params.mode || "all";
 
-  const [
-    stats,
-    petitionStats,
-    donationTrends,
-    userCauses,
-    userPetitions,
-    apiCampaignsResult,
-  ] = await Promise.all([
-    getDashboardStats(user.id as string),
-    getPetitionDashboardStats(user.id as string),
-    getDonationTrends(user.id as string),
-    getUserCausesWithStats(user.id as string),
-    getUserPetitionsWithStats(user.id as string),
-    (async () => {
-      try {
-        const apiCauses = await prisma.api_campaigns.findMany({
-          orderBy: { created_at: "desc" },
-          take: 50,
-        });
-
-        const apiKeyIds = [
-          ...new Set(
-            apiCauses
-              .map((cause) => cause.api_key_id)
-              .filter((id): id is string => Boolean(id)),
-          ),
-        ];
-
-        let apiKeys: ApiKeyRow[] = [];
-        if (apiKeyIds.length > 0) {
-          apiKeys = (await prisma.api_keys.findMany({
-            where: {
-              id: { in: apiKeyIds },
-            },
-            select: {
-              id: true,
-              name: true,
-              key_prefix: true,
-              mode: true,
-            },
-          })) as unknown as ApiKeyRow[];
-        }
-
-        return { apiCauses, apiKeys };
-      } catch (err) {
-        return {
-          error: err instanceof Error ? err.message : "Unexpected error",
-        };
-      }
-    })(),
-  ]);
+  const [stats, petitionStats, donationTrends, userCauses, userPetitions] =
+    await Promise.all([
+      getDashboardStats(user.id as string),
+      getPetitionDashboardStats(user.id as string),
+      getDonationTrends(user.id as string),
+      getUserCausesWithStats(user.id as string),
+      getUserPetitionsWithStats(user.id as string),
+    ]);
 
   const profile = await getProfile(user.id as string);
-
-  const apiCauses =
-    "apiCauses" in apiCampaignsResult
-      ? (apiCampaignsResult as any).apiCauses
-      : [];
-  const apiKeys =
-    "apiKeys" in apiCampaignsResult ? (apiCampaignsResult as any).apiKeys : [];
-  const apiCausesUnavailable = "error" in apiCampaignsResult;
-  const apiCausesError =
-    "error" in apiCampaignsResult ? (apiCampaignsResult as any).error : "";
-
-  const keyMap = new Map(apiKeys.map((key: any) => [key.id, key]));
-
-  const apiCauseRows = apiCauses.map((cause: any) => {
-    const key = cause.api_key_id
-      ? (keyMap.get(cause.api_key_id) as ApiKeyRow | undefined)
-      : null;
-
-    return {
-      ...cause,
-      apiName: key?.name || "Unknown API",
-      apiPrefix: key?.key_prefix || "N/A",
-      apiMode: cause.mode || key?.mode || "unknown",
-      developerId: cause.developer_id || "N/A",
-    };
-  });
-
-  const filteredRows = apiCauseRows.filter((row: any) => {
-    let matchesSearch = true;
-    let matchesMode = true;
-
-    if (search) {
-      const needle = search.toLowerCase();
-      matchesSearch =
-        row.title.toLowerCase().includes(needle) ||
-        row.apiName.toLowerCase().includes(needle) ||
-        row.apiMode.toLowerCase().includes(needle) ||
-        row.developerId.toLowerCase().includes(needle);
-    }
-
-    if (modeFilter !== "all") {
-      matchesMode = row.apiMode === modeFilter;
-    }
-
-    return matchesSearch && matchesMode;
-  });
 
   const firstName =
     profile?.full_name?.split(" ")?.[0] ||
@@ -329,10 +215,6 @@ export default async function DashboardPage({
               Manage everything in one place
             </p>
           </div>
-          <div className="inline-flex items-center gap-2 self-start rounded-full bg-slate-50 px-3 py-2 text-xs font-medium text-slate-500">
-            <Search className="h-3.5 w-3.5" />
-            Analytics includes API-created causes
-          </div>
         </div>
 
         <Tabs
@@ -366,153 +248,6 @@ export default async function DashboardPage({
           </TabsContent>
 
           <TabsContent value="analytics" className="space-y-5">
-            <Card className="rounded-[28px] border-slate-200/80 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] shadow-[0_20px_50px_-38px_rgba(15,23,42,0.45)]">
-              <CardHeader className="pb-4">
-                <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-3">
-                      <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
-                        <Satellite className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <CardTitle className="text-xl text-slate-950">
-                          API Causes
-                        </CardTitle>
-                        <CardDescription className="text-sm text-slate-600">
-                          Separate table of APIs and causes created with them.
-                        </CardDescription>
-                      </div>
-                    </div>
-                  </div>
-                  {!apiCausesUnavailable && (
-                    <Badge
-                      variant="secondary"
-                      className="w-fit rounded-full bg-blue-50 px-3 py-1 text-blue-700"
-                    >
-                      {filteredRows.length} shown
-                    </Badge>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-5">
-                <div className="rounded-[24px] border border-slate-100 bg-white p-4">
-                  <ApiCausesFilter search={search} modeFilter={modeFilter} />
-                </div>
-
-                {apiCausesUnavailable ? (
-                  <div className="rounded-[24px] border border-dashed border-slate-200 bg-slate-50/80 p-6">
-                    <p className="text-sm text-slate-600">
-                      API cause data is not available yet.
-                    </p>
-                    {apiCausesError ? (
-                      <p className="mt-2 text-xs text-slate-500">
-                        {apiCausesError}
-                      </p>
-                    ) : null}
-                  </div>
-                ) : filteredRows.length === 0 ? (
-                  <div className="rounded-[24px] border border-dashed border-slate-200 bg-slate-50/80 p-6">
-                    <p className="text-sm text-slate-600">
-                      No API causes found{search ? ` for "${search}"` : ""}.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="overflow-hidden rounded-[24px] border border-slate-200 bg-white">
-                    <div className="overflow-x-auto">
-                      <Table>
-                        <TableHeader>
-                          <TableRow className="bg-slate-50/80 hover:bg-slate-50/80">
-                            <TableHead>API</TableHead>
-                            <TableHead>Developer ID</TableHead>
-                            <TableHead>Mode</TableHead>
-                            <TableHead>Cause</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead>Created</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {filteredRows.map((row: any) => (
-                            <TableRow
-                              key={row.id}
-                              className="hover:bg-slate-50/70"
-                            >
-                              <TableCell className="font-medium text-slate-950">
-                                {row.apiName}
-                              </TableCell>
-                              <TableCell className="text-xs text-slate-500">
-                                {row.developerId}
-                              </TableCell>
-                              <TableCell>
-                                {row.apiMode === "test" ? (
-                                  <Badge
-                                    variant="outline"
-                                    className="border-amber-200 bg-amber-50 font-semibold capitalize text-amber-700"
-                                  >
-                                    Test
-                                  </Badge>
-                                ) : (
-                                  <Badge
-                                    variant="outline"
-                                    className="border-emerald-200 bg-emerald-50 font-semibold capitalize text-emerald-700"
-                                  >
-                                    Live
-                                  </Badge>
-                                )}
-                              </TableCell>
-                              <TableCell className="max-w-[260px] truncate text-slate-700">
-                                {row.title}
-                              </TableCell>
-                              <TableCell>
-                                <Badge
-                                  variant="outline"
-                                  className="capitalize text-slate-600"
-                                >
-                                  {row.status}
-                                </Badge>
-                              </TableCell>
-                              <TableCell className="text-xs text-slate-500">
-                                {new Date(row.created_at).toLocaleDateString()}
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  </div>
-                )}
-
-                {apiCausesUnavailable && (
-                  <div className="overflow-hidden rounded-[24px] border border-slate-200 bg-white">
-                    <div className="overflow-x-auto">
-                      <Table>
-                        <TableHeader>
-                          <TableRow className="bg-slate-50/80 hover:bg-slate-50/80">
-                            <TableHead>API</TableHead>
-                            <TableHead>Developer ID</TableHead>
-                            <TableHead>Mode</TableHead>
-                            <TableHead>Cause</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead>Created</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          <TableRow>
-                            <TableCell
-                              colSpan={6}
-                              className="py-8 text-center text-sm text-slate-500"
-                            >
-                              API causes will appear here once data access is
-                              available.
-                            </TableCell>
-                          </TableRow>
-                        </TableBody>
-                      </Table>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
             <DonationTrends data={donationTrendData} />
           </TabsContent>
         </Tabs>
