@@ -81,7 +81,7 @@ const defaultCategoryConfig = {
   bg: "bg-gray-50 border-gray-200",
 };
 
-import { calculateDaysLeft, isCauseExpired } from "@/utils/cause-utils";
+import { calculateDaysLeft, isCauseExpired } from "@/utils/cause/cause-utils";
 import { getMediaUrl, isProxyMediaUrl } from "@/lib/s3/media";
 
 interface CauseCardProps {
