@@ -15,6 +15,7 @@ const PUBLIC_API_PREFIXES = [
   "/api/countries", // Public lookup data
   "/api/states", // Public lookup data
   "/api/mail", // Donor-facing email endpoints (no auth required)
+  "/api/s3", // S3 image proxy (public images)
 ];
 
 export default auth((req) => {
