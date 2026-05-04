@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import {
   Card,
   CardContent,
@@ -97,11 +98,13 @@ export async function FeaturedCauses() {
                 >
                   <AnimatedCard>
                     <Card className="overflow-hidden cursor-pointer transition hover:shadow-2xl shadow-lg h-[420px] flex flex-col border border-gray-300">
-                      <div className="aspect-video w-full overflow-hidden">
-                        <img
+                      <div className="aspect-video w-full overflow-hidden relative">
+                        <Image
                           src={getMediaUrl(cause.image) || "/placeholder.svg"}
                           alt={cause.title}
-                          className="object-cover w-full h-full"
+                          fill
+                          sizes="(max-width: 768px) 88vw, (max-width: 1200px) 44vw, 33vw"
+                          className="object-cover"
                         />
                       </div>
 

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import {
   Card,
   CardContent,
@@ -34,12 +35,13 @@ export function PetitionCard({ petition }: PetitionCardProps) {
     <Link href={`/petitions/${petition.id}`} className="group block h-full">
       <AnimatedCard>
         <Card className="overflow-hidden cursor-pointer transition h-[420px] flex flex-col border border-gray-300">
-          <div className="aspect-video w-full overflow-hidden">
-            <img
+          <div className="aspect-video w-full overflow-hidden relative">
+            <Image
               src={getMediaUrl(petition.image) || "/placeholder.svg"}
               alt={petition.title}
-              loading="lazy"
-              className="object-cover w-full h-full"
+              fill
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              className="object-cover"
             />
           </div>
 

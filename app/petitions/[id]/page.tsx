@@ -33,6 +33,7 @@ import { SignersList } from "@/components/signers-list";
 import { CommentsSection } from "@/components/comments/comment-section";
 import { Signature } from "@/types";
 import { Metadata } from "next";
+import Image from "next/image";
 import { getMediaUrl } from "@/lib/utils/media";
 
 // Mock data for a petition
@@ -274,11 +275,14 @@ export default async function PetitionDetailPage({
                 title={petition.title}
               />
             ) : (
-              <div className="aspect-video w-full overflow-hidden rounded-lg">
-                <img
+              <div className="aspect-video w-full overflow-hidden rounded-lg relative">
+                <Image
                   src={getMediaUrl(petition.image) || "/placeholder.svg"}
                   alt={petition.title}
-                  className="object-cover w-full h-full"
+                  fill
+                  sizes="(max-width: 1024px) 100vw, 66vw"
+                  className="object-cover"
+                  priority
                 />
               </div>
             );
