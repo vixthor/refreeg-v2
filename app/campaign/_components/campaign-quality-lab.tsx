@@ -27,7 +27,7 @@ import type { Cause } from "@/types";
 import dynamic from "next/dynamic";
 import { Progress } from "@/components/ui/progress";
 import { getBaseURL, calculateServiceFee } from "@/lib/utils";
-import { getMediaUrl } from "@/lib/s3/media";
+import { getMediaUrl, isProxyMediaUrl } from "@/lib/s3/media";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -328,10 +328,19 @@ function TrustPanel({
   cause: CauseDetail;
 }) {
   const proofMedia = useMemo(() => {
-    if (cause.multimedia && cause.multimedia.length > 0)
-      return cause.multimedia;
-    if (cause.image) return [cause.image];
-    return [];
+    const allMedia = cause.multimedia && cause.multimedia.length > 0 
+      ? cause.multimedia 
+      : (cause.image ? [cause.image] : []);
+    
+    // Filter out videos and only show images in the proof thumbnails
+    return allMedia
+      .filter(url => {
+        const isVideo = url.match(/\.(mp4|mov|webm)$/i) || 
+                       url.match(/(youtube\.com|youtu\.be|tiktok\.com|drive\.google\.com)/i);
+        return !isVideo;
+      })
+      .reverse() // Show latest first
+      .slice(0, 3);
   }, [cause.image, cause.multimedia]);
 
   const tiles = trustTiles(cause);
@@ -399,6 +408,7 @@ function TrustPanel({
                   fill
                   className="h-full w-full object-cover"
                   loading="lazy"
+                  unoptimized={isProxyMediaUrl(getMediaUrl(item))}
                 />
               </div>
             ))}
