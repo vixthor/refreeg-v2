@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { getMediaUrl } from "@/lib/utils/media";
 
 import {
@@ -72,12 +73,13 @@ export default function UrgentCausesCarousel({ causes }: { causes: Cause[] }) {
         <AnimatedCard>
           <Card className="overflow-hidden cursor-pointer transition h-full flex flex-col border border-gray-300">
             
-            <div className="aspect-video w-full overflow-hidden rounded-t-lg">
-              <img
+            <div className="aspect-video w-full overflow-hidden rounded-t-lg relative">
+              <Image
                 src={getMediaUrl(cause.image) || "/placeholder.svg"}
                 alt={cause.title}
-                loading="lazy"
-                className="object-cover w-full h-full"
+                fill
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                className="object-cover"
               />
             </div>
 

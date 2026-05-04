@@ -1,5 +1,6 @@
 "use client";
 import React, { useState } from "react";
+import Image from "next/image";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { getMediaUrl } from "@/lib/utils/media";
 
@@ -178,11 +179,13 @@ export default function MultimediaCarousel({
     } else {
       // Image
       return (
-        <div className="flex h-full w-full items-center justify-center bg-slate-950">
-          <img
+        <div className="relative h-full w-full flex items-center justify-center bg-slate-950">
+          <Image
             src={item.url}
             alt={`${title} - Image ${idx + 1}`}
-            className="h-full w-full object-contain"
+            fill
+            sizes="(max-width: 768px) 100vw, 80vw"
+            className="object-contain"
           />
         </div>
       );

@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import {
   Card,
@@ -129,10 +130,12 @@ export default function KycReviewPage() {
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  <img
+                  <Image
                     src={getMediaUrl(kyc.document_url)}
                     alt="KYC Document"
-                    className="max-w-xs max-h-48 border rounded"
+                    width={320}
+                    height={192}
+                    className="border rounded object-contain"
                   />
                 </a>
               ) : (

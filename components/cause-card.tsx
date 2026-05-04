@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import {
   Card,
   CardContent,
@@ -106,11 +107,12 @@ export function CauseCard({ cause, action }: CauseCardProps) {
         <Card className="overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-2xl shadow-md h-full flex flex-col border border-gray-200/80 bg-white">
           {/* Image Section */}
           <div className="aspect-[16/10] w-full overflow-hidden relative">
-            <img
+            <Image
               src={getMediaUrl(cause.image) || "/placeholder.svg"}
               alt={cause.title}
-              loading="lazy"
-              className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-105"
+              fill
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              className="object-cover transition-transform duration-500 group-hover:scale-105"
             />
             {/* Category Badge Overlay */}
             <div className="absolute top-3 left-3">
@@ -159,10 +161,12 @@ export function CauseCard({ cause, action }: CauseCardProps) {
               <div className="flex items-center gap-2">
                 {/* Creator avatar + name */}
                 {cause.profiles?.profile_photo ? (
-                  <img
+                  <Image
                     src={getMediaUrl(cause.profiles.profile_photo)}
                     alt={cause.profiles.full_name || "Creator"}
-                    className="h-5 w-5 rounded-full object-cover ring-1 ring-gray-200"
+                    width={20}
+                    height={20}
+                    className="rounded-full object-cover ring-1 ring-gray-200"
                   />
                 ) : (
                   <div className="h-5 w-5 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-[10px] font-bold ring-1 ring-gray-200">
