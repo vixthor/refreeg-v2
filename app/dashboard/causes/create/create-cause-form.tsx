@@ -222,7 +222,7 @@ export default function CreateCauseForm() {
     coverImage: null,
     sections: [{ heading: "", description: "" }],
     startDate: startOfDay(new Date()),
-    endDate: addDays(startOfDay(new Date()), 30),
+    endDate: addDays(startOfDay(new Date()), 7),
     multimedia: [],
     videoLinks: [],
   });
@@ -234,15 +234,30 @@ export default function CreateCauseForm() {
     const savedDraft = localStorage.getItem("causeDraft");
     if (savedDraft) {
       const parsedDraft = JSON.parse(savedDraft);
+      const today = startOfDay(new Date());
+      const loadedStartDate = parsedDraft.startDate
+        ? new Date(parsedDraft.startDate)
+        : undefined;
+      
+      // Ensure start date is not in the past
+      const startDate = loadedStartDate && !isBefore(loadedStartDate, today)
+        ? loadedStartDate
+        : today;
+
+      const loadedEndDate = parsedDraft.endDate
+        ? new Date(parsedDraft.endDate)
+        : undefined;
+
+      // Ensure end date is after start date, default to 7 days if invalid
+      const endDate = loadedEndDate && isAfter(loadedEndDate, startDate)
+        ? loadedEndDate
+        : addDays(startDate, 7);
+
       setFormData((prev) => ({
         ...parsedDraft,
         coverImage: prev.coverImage,
-        startDate: parsedDraft.startDate
-          ? new Date(parsedDraft.startDate)
-          : undefined,
-        endDate: parsedDraft.endDate
-          ? new Date(parsedDraft.endDate)
-          : undefined,
+        startDate,
+        endDate,
         multimedia: [],
         videoLinks: parsedDraft.videoLinks || [],
       }));
@@ -915,6 +930,7 @@ export default function CreateCauseForm() {
                       disabled={(date) =>
                         isBefore(date, startOfDay(new Date()))
                       }
+                      defaultMonth={formData.startDate || new Date()}
                       initialFocus
                     />
                   </PopoverContent>
@@ -963,6 +979,7 @@ export default function CreateCauseForm() {
                         const maxEnd = addDays(start, MAX_DURATION_DAYS);
                         return isBefore(date, start) || isAfter(date, maxEnd);
                       }}
+                      defaultMonth={formData.endDate || formData.startDate || new Date()}
                       initialFocus
                     />
                   </PopoverContent>
