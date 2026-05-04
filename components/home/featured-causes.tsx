@@ -26,7 +26,7 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 
-import { calculateDaysLeft, isCauseExpired } from "@/utils/cause-utils";
+import { calculateDaysLeft, isCauseExpired } from "@/utils/cause/cause-utils";
 
 export async function FeaturedCauses() {
   const allCauses = await listCauses({ limit: 12, status: "approved" });
