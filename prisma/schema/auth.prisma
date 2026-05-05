@@ -109,14 +109,16 @@ model PasswordResetToken {
 }
 
 model PendingRegistration {
-  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  email        String   @unique
-  password     String
-  fullName     String
-  otpCode      String
-  expiresAt    DateTime
-  createdAt    DateTime @default(now()) @db.Timestamptz(6)
-  referralCode String?  @map("referral_code")
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email          String    @unique
+  password       String
+  fullName       String
+  otpCode        String
+  expiresAt      DateTime
+  createdAt      DateTime  @default(now()) @db.Timestamptz(6)
+  referralCode   String?   @map("referral_code")
+  failedAttempts Int       @default(0) @map("failed_attempts")
+  lastOtpSentAt  DateTime? @map("last_otp_sent_at") @db.Timestamptz(6)
 
   @@map("pending_registrations")
 }
