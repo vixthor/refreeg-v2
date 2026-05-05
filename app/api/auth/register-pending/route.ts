@@ -45,6 +45,8 @@ export async function POST(req: Request) {
         referralCode,
         otpCode,
         expiresAt,
+        failedAttempts: 0,
+        lastOtpSentAt: new Date(),
       },
       create: {
         email,
@@ -53,6 +55,7 @@ export async function POST(req: Request) {
         referralCode,
         otpCode,
         expiresAt,
+        lastOtpSentAt: new Date(),
       },
     });
 

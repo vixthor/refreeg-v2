@@ -4,9 +4,9 @@ import { prisma } from "@/lib/prisma";
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { email, otp } = body;
+    const { email, otpCode } = body;
 
-    if (!email || !otp) {
+    if (!email || !otpCode) {
       return NextResponse.json(
         { error: "Email and OTP are required" },
         { status: 400 }
@@ -27,7 +27,16 @@ export async function POST(req: Request) {
       );
     }
 
-    // 2. Check expiration
+    // 2. Check if locked out (too many failed attempts)
+    if (pending.failedAttempts >= 5) {
+      await prisma.pendingRegistration.delete({ where: { email: normalizedEmail } });
+      return NextResponse.json(
+        { error: "Too many failed attempts. Please sign up again." },
+        { status: 429 }
+      );
+    }
+
+    // 3. Check expiration
     if (new Date() > pending.expiresAt) {
       await prisma.pendingRegistration.delete({ where: { email: normalizedEmail } });
       return NextResponse.json(
@@ -36,10 +45,22 @@ export async function POST(req: Request) {
       );
     }
 
-    // 3. Validate OTP
-    if (pending.otpCode !== otp) {
+    // 4. Validate OTP
+    if (pending.otpCode !== otpCode) {
+      const newAttempts = pending.failedAttempts + 1;
+      if (newAttempts >= 5) {
+        await prisma.pendingRegistration.delete({ where: { email: normalizedEmail } });
+        return NextResponse.json(
+          { error: "Too many failed attempts. Please sign up again." },
+          { status: 429 }
+        );
+      }
+      await prisma.pendingRegistration.update({
+        where: { email: normalizedEmail },
+        data: { failedAttempts: newAttempts },
+      });
       return NextResponse.json(
-        { error: "Invalid verification code." },
+        { error: `Invalid verification code. ${5 - newAttempts} attempt(s) remaining.` },
         { status: 400 }
       );
     }
