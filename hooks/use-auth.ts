@@ -105,7 +105,9 @@ export function useAuth() {
   const signOut = async () => {
     try {
       await nextAuthSignOut({ redirect: false });
-      router.replace("/");
+      // Force a hard navigation to clear the Next.js Router Cache
+      // and ensure the JWT cookie removal is fully processed
+      window.location.href = "/";
     } catch (error: any) {
       console.error("Error signing out:", error);
       toast({
