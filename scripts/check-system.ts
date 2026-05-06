@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client'
-import { EC2Client, DescribeInstancesCommand } from '@aws-sdk/client-ec2'
+import { EC2Client, DescribeInstancesCommand, DescribeVolumesCommand } from '@aws-sdk/client-ec2'
 import * as dotenv from 'dotenv'
 import { execSync } from 'child_process'
 
@@ -92,6 +92,15 @@ async function main() {
         console.log(`   Type: ${instance.InstanceType}`)
         console.log(`   Public DNS: ${instance.PublicDnsName}`)
         console.log(`   Launch Time: ${instance.LaunchTime?.toLocaleString()}`)
+
+        // 3. Fetch Volume info
+        const volumeIds = instance.BlockDeviceMappings?.map(m => m.Ebs?.VolumeId).filter(Boolean) as string[]
+        if (volumeIds && volumeIds.length > 0) {
+          const volResponse = await ec2Client.send(new DescribeVolumesCommand({ VolumeIds: volumeIds }))
+          volResponse.Volumes?.forEach(vol => {
+            console.log(`   📦 Storage: ${vol.Size} GB (${vol.VolumeType}) - ID: ${vol.VolumeId}`)
+          })
+        }
       } else {
         console.log('❓ EC2: Could not find instance details in AWS.')
         console.log(`   Tried searching for IP: "${ip}" and DNS: "${hostname}"`)
