@@ -59,25 +59,43 @@ async function main() {
     })
 
     try {
-      // Try to find instance by public IP (the hostname usually has it)
-      const ip = hostname.split('-').slice(1, 5).join('.') // e.g. ec2-1-2-3-4 -> 1.2.3.4
+      // Robustly extract IP: find 4 groups of digits separated by dashes or dots
+      const ipMatch = hostname.match(/(\d+)[\.-](\d+)[\.-](\d+)[\.-](\d+)/)
+      const ip = ipMatch ? `${ipMatch[1]}.${ipMatch[2]}.${ipMatch[3]}.${ipMatch[4]}` : ''
       
       const response = await ec2Client.send(new DescribeInstancesCommand({
         Filters: [
-          { Name: 'ip-address', Values: [ip] },
+          { 
+            Name: ip ? 'ip-address' : 'dns-name', 
+            Values: [ip || hostname] 
+          },
           { Name: 'instance-state-name', Values: ['running', 'pending', 'stopping', 'stopped'] }
         ]
       }))
 
-      const instance = response.Reservations?.[0]?.Instances?.[0]
+      let instance = response.Reservations?.[0]?.Instances?.[0]
+
+      // Fallback: if not found by IP, try searching by DNS name directly
+      if (!instance && ip) {
+        const dnsResponse = await ec2Client.send(new DescribeInstancesCommand({
+          Filters: [
+            { Name: 'dns-name', Values: [hostname] },
+            { Name: 'instance-state-name', Values: ['running', 'pending', 'stopping', 'stopped'] }
+          ]
+        }))
+        instance = dnsResponse.Reservations?.[0]?.Instances?.[0]
+      }
       
       if (instance) {
         console.log(`✅ EC2 Found: ${instance.InstanceId}`)
         console.log(`   State: ${instance.State?.Name?.toUpperCase()}`)
         console.log(`   Type: ${instance.InstanceType}`)
+        console.log(`   Public DNS: ${instance.PublicDnsName}`)
         console.log(`   Launch Time: ${instance.LaunchTime?.toLocaleString()}`)
       } else {
-        console.log('❓ EC2: Could not find instance details in AWS (Check if IP is correct or keys have permissions)')
+        console.log('❓ EC2: Could not find instance details in AWS.')
+        console.log(`   Tried searching for IP: "${ip}" and DNS: "${hostname}"`)
+        console.log('   Check if the instance is in us-east-1 and your IAM user has DescribeInstances permission.')
       }
     } catch (error: any) {
       console.error(`❌ EC2: Could not fetch status from AWS API`)
