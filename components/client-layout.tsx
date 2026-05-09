@@ -24,6 +24,8 @@ export function ClientLayout({ children }: ClientLayoutProps) {
     "/docs/api",
     "/auth/verify-otp",
     "/dashboard/settings/kyc-setup",
+    "/dashboard/settings/kyc",
+    "/dashboard/settings/",
   ];
   const hideLayout = noLayoutRoutes.some((route) => pathname.startsWith(route));
 
