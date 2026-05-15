@@ -1,5 +1,6 @@
 import NextAuth from "next-auth";
 import { PrismaAdapter } from "@auth/prisma-adapter";
+import type { Adapter, AdapterUser } from "next-auth/adapters";
 import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
 import { prisma } from "@/lib/prisma";
@@ -19,8 +20,26 @@ function getDeviceLabel(userAgent: string | null): string {
   return "Unknown Device";
 }
 
+// Wrap PrismaAdapter to map NextAuth's default `name`/`image` fields
+// to our schema's `fullName`/`profilePhoto` fields
+const baseAdapter = PrismaAdapter(prisma);
+const customAdapter: Adapter = {
+  ...baseAdapter,
+  createUser: async (data: any) => {
+    const { name, image, ...rest } = data;
+    const user = await prisma.user.create({
+      data: {
+        ...rest,
+        fullName: name || null,
+        profilePhoto: image || null,
+      },
+    });
+    return user as unknown as AdapterUser;
+  },
+};
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  adapter: PrismaAdapter(prisma),
+  adapter: customAdapter,
   session: { strategy: "jwt" },
   providers: [
     Google({
