@@ -18,9 +18,54 @@ const PUBLIC_API_PREFIXES = [
   "/api/s3", // S3 image proxy (public images)
 ];
 
+const APP_ROUTE_PREFIXES = [
+  "/dashboard",
+  "/onboarding",
+  "/auth",
+  "/causes",
+  "/campaign",
+  "/petitions",
+  "/referrals",
+  "/api",
+  "/s",
+];
+
+const APP_HOST = "apps.refreeg.com";
+const WWW_HOST = "www.refreeg.com";
+
 export default auth((req) => {
   const { pathname } = req.nextUrl;
   const user = req.auth?.user;
+  const hostHeader =
+    req.headers.get("x-forwarded-host") || req.headers.get("host") || "";
+  const forwardedProto = req.headers.get("x-forwarded-proto") || "";
+  const targetProtocol = forwardedProto
+    ? `${forwardedProto.split(",")[0].trim()}:`
+    : req.nextUrl.protocol;
+  const host = hostHeader.split(":")[0].toLowerCase();
+
+  // ── 0. Domain split for single-process deployment ────────────────
+  // Keep landing pages on www and app features on apps while both hosts
+  // are served by the same Next.js process.
+  const isAppRoute = APP_ROUTE_PREFIXES.some((prefix) =>
+    pathname.startsWith(prefix),
+  );
+
+  if (host === WWW_HOST && isAppRoute) {
+    const target = req.nextUrl.clone();
+    target.hostname = APP_HOST;
+    target.protocol = targetProtocol;
+    target.port = req.nextUrl.port;
+    return NextResponse.redirect(target, 308);
+  }
+
+  if (host === APP_HOST && !isAppRoute && pathname !== "/") {
+    const target = req.nextUrl.clone();
+    target.hostname = WWW_HOST;
+    target.protocol = targetProtocol;
+    target.port = req.nextUrl.port;
+    return NextResponse.redirect(target, 308);
+  }
 
   // ── 1. Protect API routes ─────────────────────────────────────────
   // Return 401 for authenticated API routes when no session exists.
