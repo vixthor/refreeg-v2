@@ -83,7 +83,7 @@ export default function SignInPage() {
 
           {redirectTo && (
             <div className="mb-5 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-              You need to log in first to continue to that page.
+              You need to log in first to continue.
             </div>
           )}
 
