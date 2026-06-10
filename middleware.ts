@@ -32,6 +32,7 @@ const APP_ROUTE_PREFIXES = [
 
 const APP_HOST = "apps.refreeg.com";
 const WWW_HOST = "www.refreeg.com";
+const Test_HOST = "http://localhost:3000/"
 
 export default auth((req) => {
   const { pathname } = req.nextUrl;

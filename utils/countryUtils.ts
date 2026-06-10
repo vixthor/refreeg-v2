@@ -209,8 +209,8 @@ export const getCountries = async (): Promise<string[]> => {
       const data = await response.json();
       // If API returns valid data with countries, use it
       if (Array.isArray(data) && data.length > 0) {
-
-        return data;
+        // Map objects to strings if needed
+        return typeof data[0] === "object" ? data.map((c: any) => c.name) : data;
       }
     }
     // If response is not OK or returns empty array, use fallback
