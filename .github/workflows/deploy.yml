@@ -1,0 +1,54 @@
+name: Build & Upload to EC2
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # ✅ 1. Checkout repo
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ✅ 2. Install dependencies & build
+      - name: Install and build
+        run: |
+          npm ci
+          npm run build
+
+      # ✅ 3. Clean old files on EC2
+      - name: Clean remote directory
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            rm -rf /var/www/refreeg/*
+
+      # ✅ 4. Upload build files
+      - name: Upload build to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "dist/*"   # change if needed (.next/* or build/*)
+          target: "/var/www/refreeg"
+
+      # ✅ 5. Restart PM2 apps
+      - name: Restart apps
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd /var/www/refreeg
+
+            pm2 startOrRestart ecosystem.config.js
+            pm2 save
