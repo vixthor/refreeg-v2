@@ -58,8 +58,18 @@ export default function KycSetupPage() {
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
-    setIsMounted(true);
-  }, []);
+    // Clear potentially corrupted kycDraft on first load to prevent React Error #31
+    if (isMounted) {
+      try {
+        const draft = localStorage.getItem("kycDraft");
+        if (draft && draft.includes('{"name":')) {
+          console.warn("Detected corrupted KYC draft, clearing...");
+          localStorage.removeItem("kycDraft");
+          window.location.reload(); // Force reload to start fresh
+        }
+      } catch (e) {}
+    }
+  }, [isMounted]);
 
   // Auto-save KYC progress to localStorage or load from DB if rejected
   useEffect(() => {
@@ -74,7 +84,14 @@ export default function KycSetupPage() {
           
           // Basic schema validation
           if (parsedDraft && typeof parsedDraft === 'object') {
-            if (parsedDraft.formData) setFormData(prev => ({ ...prev, ...parsedDraft.formData }));
+            if (parsedDraft.formData) {
+              const cleanedFormData = { ...parsedDraft.formData };
+              // Ensure country is not an object if it was accidentally saved as one
+              if (cleanedFormData.country && typeof cleanedFormData.country === 'object') {
+                cleanedFormData.country = (cleanedFormData.country as any).name || "";
+              }
+              setFormData(prev => ({ ...prev, ...cleanedFormData }));
+            }
             if (parsedDraft.selectedDoc) setSelectedDoc(parsedDraft.selectedDoc);
             if (typeof parsedDraft.step === 'number') setStep(parsedDraft.step);
             return;
